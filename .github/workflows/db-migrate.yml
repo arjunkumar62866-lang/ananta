@@ -17,19 +17,42 @@ jobs:
       - name: Wait for Hostinger deployment
         run: sleep 60
 
-      - name: Run database migrations on Hostinger
+      - name: Configure SSH and Run Migrations
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
+          HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT }}
+          HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/hostinger_key
+          # Save private key safely
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/hostinger_key
           chmod 600 ~/.ssh/hostinger_key
 
-          ssh-keyscan -p "${{ secrets.HOSTINGER_PORT }}" "${{ secrets.HOSTINGER_HOST }}" >> ~/.ssh/known_hosts
+          # Clean environment variables (trim whitespace / hidden carriage returns)
+          CLEAN_HOST=$(echo "$HOSTINGER_HOST" | tr -d '\r\n ')
+          CLEAN_PORT=$(echo "$HOSTINGER_PORT" | tr -d '\r\n ')
+          CLEAN_USER=$(echo "$HOSTINGER_USER" | tr -d '\r\n ')
 
+          # Populate known_hosts
+          ssh-keyscan -p "$CLEAN_PORT" "$CLEAN_HOST" >> ~/.ssh/known_hosts
+
+          # Test SSH connection first
+          echo "Testing SSH connection to $CLEAN_USER@$CLEAN_HOST:$CLEAN_PORT..."
           ssh \
             -i ~/.ssh/hostinger_key \
-            -p "${{ secrets.HOSTINGER_PORT }}" \
+            -p "$CLEAN_PORT" \
             -o StrictHostKeyChecking=yes \
-            "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" \
+            "$CLEAN_USER@$CLEAN_HOST" \
+            'echo HOSTINGER_SSH_OK'
+
+          # Run database migrations on Hostinger
+          echo "Executing production database migrations..."
+          ssh \
+            -i ~/.ssh/hostinger_key \
+            -p "$CLEAN_PORT" \
+            -o StrictHostKeyChecking=yes \
+            "$CLEAN_USER@$CLEAN_HOST" \
             'cd /home/u914531711/domains/anantamtptl.com/public_html && php database/migration.php migrate'
