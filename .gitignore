@@ -5,6 +5,9 @@
 *.tar
 *.tar.gz
 
+# EXCEPT migration SQL files which MUST be tracked in Git
+!database/migrations/*.sql
+
 # Archive files inside repo root (public_html)
 ananta.zip
 dashboard.tar
