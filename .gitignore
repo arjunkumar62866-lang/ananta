@@ -1,0 +1,43 @@
+# Database & Backup Archives (Excluded from Git)
+*.sql
+*.sql.gz
+*.zip
+*.tar
+*.tar.gz
+
+# Archive files inside repo root (public_html)
+ananta.zip
+dashboard.tar
+dashboard.zip
+dashboard/admin.zip
+dashboard/user1.zip
+dashboard1 1/
+
+# Database Connection Files with Sensitive Production Credentials
+common/connection.php
+dashboard/admin/common/connection.php
+dashboard/use r/common/connection.php
+dashboard/user1/common/connection.php
+dashboard1 1/admin/common/connection.php
+dashboard1 1/use r/common/connection.php
+dashboard1 1/user1/common/connection.php
+
+# Environment Configuration Files
+.env
+.env.*
+!.env.example
+
+# Logs and PHP error files
+*.log
+error.log
+
+# System & Editor Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/

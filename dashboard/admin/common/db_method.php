@@ -1,0 +1,1382 @@
+<?php
+require_once 'common/connection.php'; 
+
+function newtime($st)
+{
+    // Set timezone if possible
+    if (function_exists('date_default_timezone_set')) {
+        date_default_timezone_set("Asia/Kolkata");
+    }
+
+    $date = date('Y-m-d');
+    $time = date('h:i a');
+
+    return ($st === "time") ? $time : $date;
+}
+
+
+function getHomeSettings($pdo) 
+{
+    $sql = "SELECT * FROM tbl_homest LIMIT 1";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            'mobile'      => $row['mobile'] ?? '',
+            'email'       => $row['email'] ?? '',
+            'emailfrom'   => $row['emailfrom'] ?? '',
+            'address'     => $row['address'] ?? '',
+            'title'       => $row['title'] ?? '',
+            'url'         => $row['url'] ?? '',
+            'package'     => $row['package'] ?? '',
+            'pre'         => $row['pre'] ?? '',
+            'logo'        => $row['logo'] ?? '',
+            'favicon'     => $row['favicon'] ?? '',
+            'background'  => $row['background'] ?? '',
+            'website'     => $row['website'] ?? '',
+            'offer_image' => $row['offer_image'] ?? '',
+            'color'       => $row['color'] ?? '',
+            'coin'        => $row['coin'] ?? '',
+            'currency'    => $row['currency'] ?? '',
+            'bitly'       => $row['bitly'] ?? ''
+        ];
+    }
+
+    return null;
+}
+
+
+function loginAdmin($auserid, $password, $pdo)
+{
+    
+
+    // Optimized query: only fetch required columns, use LIMIT 1
+    $stmt = $pdo->prepare("
+        SELECT auserid, pass
+        FROM admin
+        WHERE auserid = :auserid
+        LIMIT 1
+    ");
+    $stmt->execute(['auserid' => $auserid]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Compare passwords (plain-text for now to match old system)
+    if ($user && $user['pass'] === $password) {
+        $_SESSION['auserid'] = $user['auserid']; // match old system
+
+        return [
+            'status' => true,
+            'message' => 'Login successful',
+            'user' => $user
+        ];
+    }
+
+    return [
+        'status' => false,
+        'message' => 'Invalid User ID / Password'
+    ];
+}
+
+
+
+
+function registerUser($referrer_id, $name, $email, $mobile, $password, $terms_accepted, $pdo)
+{
+    
+    if (empty($name) || empty($email) || empty($mobile) || empty($password)) {
+        return [
+            'status' => false,
+            'message' => 'All fields are required!'
+        ];
+    }
+  
+    if (!$terms_accepted) {
+        return [
+            'status' => false,
+            'message' => 'You must agree to the terms and conditions.'
+        ];
+    }
+
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
+    $stmt->execute(['email' => $email]);
+
+    if ($stmt->rowCount() > 0) {
+        return [
+            'status' => false,
+            'message' => 'Email already registered!'
+        ];
+    }
+
+    // Hash the password
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+    // Insert into database
+    $stmt = $pdo->prepare("INSERT INTO users (referrer_id, name, email, mobile, password, terms_accepted)
+                           VALUES (:referrer_id, :name, :email, :mobile, :password, :terms_accepted)");
+
+    $success = $stmt->execute([
+        'referrer_id'    => $referrer_id,
+        'name'           => $name,
+        'email'          => $email,
+        'mobile'         => $mobile,
+        'password'       => $hashedPassword,
+        'terms_accepted' => $terms_accepted
+    ]);
+
+    if ($success) {
+        return [
+            'status' => true,
+            'message' => 'Registration successful!'
+        ];
+    } else {
+        return [
+            'status' => false,
+            'message' => 'Registration failed. Try again.'
+        ];
+    }
+}
+
+
+function updatenonworkwallet($sponsorcode, $newamount,$pdo)
+{
+    $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc WHERE userid = :sponsorcode";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':newamount', $newamount, PDO::PARAM_STR);
+    $stmt->bindParam(':totalinc', $newamount, PDO::PARAM_STR);
+    $stmt->bindParam(':sponsorcode', $sponsorcode, PDO::PARAM_STR);
+    
+    if ($stmt->execute()) {
+        // Update successful
+        return true;
+    } else {
+        // Update failed
+        return false;
+    }
+}
+
+
+function insertSponsor($pdo, $sponsorId, $referralId, $createdDate) 
+{
+    $sql = "INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (?, ?, ?)";
+    $stmt = $pdo->prepare($sql);
+    return $stmt->execute([$sponsorId, $referralId, $createdDate]);
+}
+
+function insertUser($pdo, $data) 
+{
+    $sql = "INSERT INTO user (
+        userid, name, mobile, email, pan, pass, txn_pass, sponserid, sponsername, underuserid,
+        active, status, join_side, package, joining_date, plan, pin, kyc, club, upgrade_date,
+        time, country, amount, capping, rank, closingdate, country_code, level, atime, pool,
+        state, father, gender, pin_code, address, otp, coin_wallet
+    ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?
+    )";
+    $stmt = $pdo->prepare($sql);
+    return $stmt->execute($data);
+}
+
+function insertKYC($pdo, $userId, $aadhar) {
+    $sql = "INSERT INTO kyc (
+        userid, holder_name, ac_number, bank, branch, ifsc, paytm, phone_pe, bhim,
+        idproof, card_no, adhar_front_img, adhar_back_img, pan, pan_img, status
+    ) VALUES (
+        ?, '', '', '', '', '', '', '', '', '', ?, '', '', '', '', '0'
+    )";
+    $stmt = $pdo->prepare($sql);
+    return $stmt->execute([$userId, $aadhar]);
+}
+
+function insertUserLevel($pdo, $sponsorId, $userId, $level) 
+{
+    $sql = "INSERT INTO user_level (sponsorid, downid, level) VALUES (?, ?, ?)";
+    $stmt = $pdo->prepare($sql);
+    return $stmt->execute([$sponsorId, $userId, $level]);
+}
+
+
+
+function getMetaInfo($pdo)
+{
+    $sql = "SELECT title, logo, favicon FROM meta_info LIMIT 1";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return [
+            'status'  => true,
+            'title'   => $row['title'],
+            'logo'    => $row['logo'],
+            'favicon' => $row['favicon']
+        ];
+    } else {
+        return [
+            'status' => false,
+            'message' => 'No meta information found.'
+        ];
+    }
+}
+
+function userid($userid) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT * FROM user WHERE userid = ?");
+    $stmt->execute([$userid]);
+
+    if ($stmt->rowCount() > 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+function getalluserpackage(PDO $pdo)
+{
+    $stmt = $pdo->query("SELECT SUM(total_package) AS total FROM user");
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $row['total'] ?? 0;
+}
+
+
+
+function getuserdatabysponserid($userid)
+{ 
+    global $pdo;
+    $sql = "SELECT * FROM user WHERE userid = :userid";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':userid', $userid, PDO::PARAM_STR);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0) {
+        $rowuser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            "id" => $rowuser['id'],
+            "name" => $rowuser["name"],
+            "mobile" => $rowuser["mobile"],
+            "email" => $rowuser["email"],
+            "pass" => $rowuser["pass"],
+            "txn_pass" => $rowuser["txn_pass"],
+            "amount" => $rowuser["amount"],
+            "userid" => $rowuser["userid"],
+            "status" => $rowuser["status"],
+            "pool" => $rowuser["pool"],
+            "sponsername" => $rowuser["sponsername"],
+            "sponserid" => $rowuser["sponserid"],
+            "total_package" => $rowuser["total_package"],
+            "idactive" => $rowuser["active"],
+            "upgrade_date" => $rowuser["upgrade_date"],
+            "joining_date" => $rowuser["joining_date"],
+            "inc_limit" => $rowuser["inc_limit"],
+            "total_inc" => $rowuser["total_inc"]
+        ];
+
+        
+    }
+
+    return null;
+}
+
+function checkuseridregister($mysponsernew)
+{
+    global $pdo;
+    $sql = "SELECT * FROM user WHERE userid = :userid";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':userid', $mysponsernew, PDO::PARAM_STR);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
+function getmydirectactiveright($sponsorId)
+{
+    global $pdo;
+
+    $sql = "
+        SELECT COUNT(DISTINCT u.userid) AS total
+        FROM user u
+        INNER JOIN (
+            SELECT downline_id 
+            FROM tbl_userlevel_b 
+            WHERE sponser_id = :sponsor_id
+        ) d ON d.downline_id = u.userid
+        WHERE u.active = 1
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':sponsor_id', $sponsorId, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return (int)$stmt->fetchColumn();
+}
+function getmydirectactiveleft($sponsorId)
+{
+    global $pdo;
+
+    $sql = "
+        SELECT COUNT(DISTINCT u.userid) AS total
+        FROM user u
+        INNER JOIN (
+            SELECT downline_id 
+            FROM tbl_userlevel_a 
+            WHERE sponser_id = :sponsor_id
+        ) d ON d.downline_id = u.userid
+        WHERE u.active = 1
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':sponsor_id', $sponsorId, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return (int)$stmt->fetchColumn();
+}
+
+
+function getmysponserid($userid)
+{
+    global $pdo; 
+    $sql = "SELECT sponsor_id FROM tbl_sponsor WHERE referral_id = :referral_id";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':referral_id', $userid, PDO::PARAM_STR);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row['sponsor_id'];
+    }
+
+    return null; // If no sponsor found
+}
+
+
+function getmydirectactive($direct)
+{
+    global $pdo;
+    $sql = "SELECT COUNT(*) as alluser 
+            FROM user tbsign  
+            INNER JOIN tbl_sponsor tbspon 
+            ON tbspon.referral_id = tbsign.userid  
+            WHERE tbspon.sponsor_id = :sponsor_id 
+            AND tbsign.active = '1'";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':sponsor_id', $direct, PDO::PARAM_STR);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0) {
+        $rowac = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $rowac['alluser'];
+    }
+
+    return 0; // If no records found
+}
+
+function insert_userlevel($sponserid, $downlineid, $level)
+{
+    global $pdo;
+
+    $sql = "INSERT INTO tbl_userlevel (sponser_id, downline_id, level, date) 
+            VALUES (:sponser_id, :downline_id, :level, CURDATE())";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':sponser_id', $sponserid, PDO::PARAM_STR);
+    $stmt->bindParam(':downline_id', $downlineid, PDO::PARAM_STR);
+    $stmt->bindParam(':level', $level, PDO::PARAM_INT);
+
+    $stmt->execute();
+}
+
+function incometotalnew($pdo, $table, $subject)
+{
+    $sql = "SELECT SUM(amount) AS totalamount 
+            FROM {$table} 
+            WHERE subject LIKE :subject";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':subject' => "%{$subject}%"
+    ]);
+
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $row ? $row['totalamount'] : 0;
+}
+
+
+
+function incometotalnewdate($date, $table, $userid, $subject)
+{
+    global $pdo; // Assuming $pdo is your PDO connection
+    $sqluser = "SELECT SUM(amount) as totalamount 
+                FROM $table 
+                WHERE created_date = '$date' 
+                AND user_id = '$userid' 
+                AND subject LIKE '%$subject%'";
+
+    $resultuser = $pdo->query($sqluser);
+
+    if ($resultuser->rowCount() > 0) {
+        while ($rowuser = $resultuser->fetch(PDO::FETCH_ASSOC)) {
+            $userdata = $rowuser['totalamount'];
+            return $userdata;
+        }
+    }
+}
+
+
+function getlevelDirectbusiness($userid, $level)
+{
+    global $pdo; // Assuming $pdo is your PDO connection
+    $sqlac = "SELECT SUM(total_package) as totalbusiness  
+              FROM user 
+              WHERE sponserid = '$userid'";
+
+    $resultac = $pdo->query($sqlac);
+
+    if ($resultac->rowCount() > 0) {
+        while ($rowac = $resultac->fetch(PDO::FETCH_ASSOC)) {
+            $alluser = $rowac['totalbusiness'];
+            return $alluser;
+        }
+    }
+}
+
+// function getlevelbusiness_left($userid, $level)
+// {
+//     global $pdo; // Assuming $pdo is your PDO connection
+//     $sqlac = "SELECT SUM(total_package) as totalbusiness  
+//               FROM tbl_userlevel_a tblevel  
+//               INNER JOIN user tbuser ON tblevel.downline_id = tbuser.userid  
+//               WHERE tblevel.sponser_id = '$userid' 
+//               AND tblevel.level = '$level'";
+
+//     $resultac = $pdo->query($sqlac);
+
+//     if ($resultac->rowCount() > 0) {
+//         while ($rowac = $resultac->fetch(PDO::FETCH_ASSOC)) {
+//             $alluser = $rowac['totalbusiness'];
+//             return $alluser;
+//         }
+//     }
+// }
+function getlevelbusiness_left($userid, $level)
+{
+    global $pdo;
+
+    $sql = "
+        SELECT SUM(u.total_package) AS leftbusiness
+        FROM user u
+        INNER JOIN tbl_userlevel_a t 
+            ON t.downline_id = u.userid
+        WHERE t.sponser_id = :userid 
+          AND t.level = :level
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':userid', $userid, PDO::PARAM_INT);
+    $stmt->bindValue(':level', $level, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->fetchColumn() ?: 0;
+}
+function getlevelbusiness_right($userid, $level)
+{
+    global $pdo;
+
+    $sql = "
+        SELECT SUM(u.total_package) AS rightbusiness
+        FROM user u
+        INNER JOIN tbl_userlevel_b t 
+            ON t.downline_id = u.userid
+        WHERE t.sponser_id = :userid 
+          AND t.level = :level
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':userid', $userid, PDO::PARAM_INT);
+    $stmt->bindValue(':level', $level, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->fetchColumn() ?: 0;
+}
+
+function gettotallevelbusiness_left($userid)
+{
+    global $pdo; // Assuming $pdo is your PDO connection
+
+    $totallevelbusiness =
+        getlevelbusiness_left($userid, 1) +
+        getlevelbusiness_left($userid, 2) +
+        getlevelbusiness_left($userid, 3) +
+        getlevelbusiness_left($userid, 4) +
+        getlevelbusiness_left($userid, 5) +
+        getlevelbusiness_left($userid, 6) +
+        getlevelbusiness_left($userid, 7) +
+        getlevelbusiness_left($userid, 8) +
+        getlevelbusiness_left($userid, 9) +
+        getlevelbusiness_left($userid, 10) +
+        getlevelbusiness_left($userid, 11) +
+        getlevelbusiness_left($userid, 12) +
+        getlevelbusiness_left($userid, 13) +
+        getlevelbusiness_left($userid, 14) +
+        getlevelbusiness_left($userid, 15) +
+        getlevelbusiness_left($userid, 16) +
+        getlevelbusiness_left($userid, 17) +
+        getlevelbusiness_left($userid, 18) +
+        getlevelbusiness_left($userid, 19) +
+        getlevelbusiness_left($userid, 20);
+
+    return $totallevelbusiness;
+}
+function gettotallevelbusiness_right($userid)
+{
+    global $pdo; // Assuming $pdo is your PDO connection
+
+    $totallevelbusiness =
+        getlevelbusiness_right($userid, 1) +
+        getlevelbusiness_right($userid, 2) +
+        getlevelbusiness_right($userid, 3) +
+        getlevelbusiness_right($userid, 4) +
+        getlevelbusiness_right($userid, 5) +
+        getlevelbusiness_right($userid, 6) +
+        getlevelbusiness_right($userid, 7) +
+        getlevelbusiness_right($userid, 8) +
+        getlevelbusiness_right($userid, 9) +
+        getlevelbusiness_right($userid, 10) +
+        getlevelbusiness_right($userid, 11) +
+        getlevelbusiness_right($userid, 12) +
+        getlevelbusiness_right($userid, 13) +
+        getlevelbusiness_right($userid, 14) +
+        getlevelbusiness_right($userid, 15) +
+        getlevelbusiness_right($userid, 16) +
+        getlevelbusiness_right($userid, 17) +
+        getlevelbusiness_right($userid, 18) +
+        getlevelbusiness_right($userid, 19) +
+        getlevelbusiness_right($userid, 20);
+
+    return $totallevelbusiness;
+}
+
+function getnews()
+{
+    global $pdo; 
+
+    $sqluser = "SELECT * FROM tbl_news WHERE id = '1'";
+    $resultuser = $pdo->query($sqluser);
+
+    if ($resultuser->rowCount() > 0) {
+        while ($rowuser = $resultuser->fetch(PDO::FETCH_ASSOC)) {
+            $newsdata = array(
+                "news" => $rowuser['news'],
+            );
+            return $newsdata;
+        }
+    }
+}
+
+function webtistime()
+{
+    if(function_exists('date_default_timezone_set')) {
+    date_default_timezone_set("Asia/Kolkata");
+     }
+
+
+return date('h:i a');
+}
+
+function webtisdate()
+{
+    if(function_exists('date_default_timezone_set')) {
+    date_default_timezone_set("Asia/Kolkata");
+   }
+
+
+return date('Y-m-d');
+}
+
+function getuserdatabyid($userid)
+{
+    global $pdo;
+
+    $sql = "SELECT * FROM user WHERE userid = :userid";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':userid', $userid, PDO::PARAM_STR);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0) {
+        $rowuser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $userdata = array(
+            "signup_id"     => $rowuser['signup_id'],
+            "name"          => $rowuser["name"],
+            "mobile"        => $rowuser["mobile"],
+            "type"          => $rowuser["type"],
+            "password"      => $rowuser["password"],
+            "wallet_amount" => $rowuser["wallet_amount"],
+            "sponsor_code"  => $rowuser["sponsor_code"],
+            "status"        => $rowuser["status"],
+            "active_date"   => $rowuser["active_date"],
+            "created_date"  => $rowuser["created_date"],
+        );
+
+        return $userdata;
+    }
+
+    return null; 
+}
+
+
+function paybinaycloing($user_sponsor_code, $weekly_earning, $record_id)
+{
+    global $pdo;
+
+    try {
+        $getdate = date("Y-m-d");
+        $time = newtime("time");
+
+        // Check pending income and user details
+        $userfinalincome = checkpedningincome($user_sponsor_code, 'thursday', $getdate);
+        $sponserdetails = getuserdatabysponserid($user_sponsor_code);
+        $userpackage = isset($sponserdetails['capping']) ? $sponserdetails['capping'] : 9999999999999999999999999999999;
+
+        if ($userfinalincome >= $userpackage) {
+            $messagenew = "Matching Income";
+            $cdtype = "Credit";
+
+            if (!empty($user_sponsor_code) && $userpackage > 0) {
+                updateuseramount($userpackage, $user_sponsor_code);
+                updateuserincome($user_sponsor_code, $getdate);
+                insert_transction($user_sponsor_code, $userpackage, $messagenew, $time, $cdtype);
+            }
+        } else {
+            if (!empty($user_sponsor_code) && $userfinalincome > 0) {
+                $messagenew = "Matching Income";
+                $cdtype = "Credit";
+
+                updateuseramount($userfinalincome, $user_sponsor_code);
+                updateuserincome($user_sponsor_code, $getdate);
+                insert_transction($user_sponsor_code, $userfinalincome, $messagenew, $time, $cdtype);
+            }
+        }
+
+        // ✅ Mark record as paid
+        $updateStmt = $pdo->prepare("UPDATE tbl_temp_data SET paid_date = :paid_date WHERE id = :id");
+        $updateStmt->execute([
+            'paid_date' => $getdate,
+            'id' => $record_id
+        ]);
+
+    } catch (PDOException $e) {
+        error_log("Error in paybinaycloing(): " . $e->getMessage());
+    }
+}
+
+
+function insert_transction($table, $userid, $amount, $transaction_type, $time, $cdtype)
+{
+    global $pdo; // Assuming $pdo is your PDO connection
+
+    $stmt = $pdo->prepare("
+        INSERT INTO $table 
+            (user_id, subject, type, amount, status, a_status, time, created_date)
+        VALUES 
+            (:userid, :subject, :type, :amount, 1, 0, :time, CURDATE())
+    ");
+
+    $stmt->execute([
+        ':userid'  => $userid,
+        ':subject' => $transaction_type,
+        ':type'    => $cdtype,
+        ':amount'  => $amount,
+        ':time' =>$time
+    ]);
+}
+
+
+function updateuserincome($sponserid, $ytdate)
+{
+    global $pdo; // Assuming $pdo is your PDO connection
+
+    $stmt = $pdo->prepare("UPDATE tbl_temp_data SET status = 1, paid_date = :ytdate WHERE user_id = :sponserid");
+    $stmt->execute([
+        ':ytdate'     => $ytdate,
+        ':sponserid'  => $sponserid
+    ]);
+}
+
+
+function updateuseramount($newamount, $sponsorcode)
+{
+    global $pdo; // Assuming $pdo is your PDO connection
+
+    $stmt = $pdo->prepare("UPDATE user SET amount = amount + :newamount WHERE userid = :sponsorcode");
+    $stmt->execute([
+        ':newamount'   => $newamount,
+        ':sponsorcode' => $sponsorcode
+    ]);
+}
+
+function checkpedningincome($userid, $day, $getdate)
+{
+    global $pdo; // Assuming $pdo is your PDO connection
+
+    $stmt = $pdo->prepare("SELECT SUM(weekly_earning) AS totalamount FROM tbl_temp_data WHERE user_id = :userid AND status = :status");
+    $stmt->execute([
+        'userid' => $userid,
+        'status' => 0
+    ]);
+
+    $rowuser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($rowuser && isset($rowuser['totalamount'])) {
+        return $rowuser['totalamount'];
+    }
+
+    return 0; // Return 0 if no pending income
+}
+
+
+function repurchasecheckpedningincome($userid, $day, $getdate)
+{
+    global $pdo; // Use PDO connection
+
+    $stmt = $pdo->prepare("
+        SELECT SUM(weekly_earning) AS totalamount 
+        FROM tbl_repurchase_data 
+        WHERE user_id = :userid AND status = '0'
+    ");
+    
+    $stmt->execute([':userid' => $userid]);
+
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row && $row['totalamount'] !== null) {
+        return $row['totalamount'];
+    } else {
+        return 0;
+    }
+}
+
+
+function repurchaseupdateuseramount($newamount, $sponsorcode)
+{
+    global $pdo; // Use your PDO connection variable
+
+    $stmt = $pdo->prepare("
+        UPDATE user 
+        SET amount = amount + :newamount 
+        WHERE userid = :sponsorcode
+    ");
+
+    $stmt->execute([
+        ':newamount' => $newamount,
+        ':sponsorcode' => $sponsorcode
+    ]);
+}
+
+
+
+function repurchaseupdateuserincome($sponserid, $ytdate)
+{
+    global $pdo; // your PDO connection
+
+    $stmt = $pdo->prepare("
+        UPDATE tbl_repurchase_data 
+        SET status = 1, paid_date = :ytdate 
+        WHERE user_id = :sponserid
+    ");
+
+    $stmt->execute([
+        ':ytdate' => $ytdate,
+        ':sponserid' => $sponserid
+    ]);
+}
+
+
+
+function repurchasecheckcloing( $ytdate)
+{
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS alluser FROM tbl_repurchase_data WHERE paid_date = :paid_date AND status = :status");
+    $stmt->execute([
+        ':paid_date' => $ytdate,
+        ':status' => 1
+    ]);
+
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ? $row['alluser'] : 0;
+}
+
+
+function repurchasepaybinaycloing()
+{
+    global $pdo;
+    $getdate = newtime("date");
+    $time = newtime("time");
+
+    // ✅ Fetch all users with status = 0
+    $stmt = $pdo->prepare("SELECT * FROM tbl_repurchase_data WHERE status = :status");
+    $stmt->execute([':status' => 0]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (count($rows) > 0) {
+        foreach ($rows as $rowuser) {
+
+            $updated_date = $rowuser['paid_date'];
+
+            // ✅ Process only if paid_date != today's date
+            if ($updated_date !== $getdate) {
+
+                $id = $rowuser['id'];
+                $userid = $rowuser['user_id'];
+                $amount = $rowuser['weekly_earning']; // previously undefined `$getincomedata['weekly_earning']`
+                $user_sponsor_code = $userid;
+
+                // ✅ Get pending income
+                $userfinalincome = repurchasecheckpedningincome($user_sponsor_code, 'Friday', $getdate);
+
+                // ✅ Get sponsor details
+                $sponserdetails = getuserdatabysponserid($user_sponsor_code);
+                $userpackage = $sponserdetails['capping'];
+
+                // ✅ Compare income with package
+                if ($userfinalincome >= $userpackage) {
+                    $messagenew = "Repurchase Income";
+                    $cdtype = "Credit";
+
+                    if (!empty($user_sponsor_code) && !empty($userpackage)) {
+
+                        repurchaseupdateuseramount($userpackage, $user_sponsor_code);
+                        repurchaseupdateuserincome($user_sponsor_code, $getdate);
+                        insert_transction($user_sponsor_code, $userpackage, $messagenew, $time, $cdtype);
+
+                        // ✅ (Optional) Level income logic commented intentionally for clarity
+                        // You can re-enable that loop here if you wish.
+                    }
+                } 
+                else {
+                    // ✅ If income < package
+                    if (!empty($user_sponsor_code) && !empty($userfinalincome)) {
+
+                        $messagenew = "Repurchase Income";
+                        $cdtype = "Credit";
+
+                        repurchaseupdateuseramount($userfinalincome, $user_sponsor_code);
+                        repurchaseupdateuserincome($user_sponsor_code, $getdate);
+                        insert_transction($user_sponsor_code, $userfinalincome, $messagenew, $time, $cdtype);
+
+                        
+                    }
+                }
+            }
+        }
+    }
+}
+
+function updatedatabysponserid1($userid, $transactionamounta, $transactionamountb)
+{
+    global $pdo;
+
+    $sqluser = "UPDATE `user` 
+                SET `pending_geninc` = `pending_geninc` + :transactionamounta
+                WHERE userid = :userid";
+                    // total_inc = total_inc + :transactionamountb 
+
+    $stmt = $pdo->prepare($sqluser);
+
+    $stmt->bindParam(':transactionamounta', $transactionamounta);
+    // $stmt->bindParam(':transactionamountb', $transactionamountb);
+    $stmt->bindParam(':userid', $userid);
+
+    $stmt->execute();
+}
+function updatedatabysponserid($userid, $transactionamounta, $transactionamountb)
+{
+    global $pdo;
+
+    $sqluser = "UPDATE `user` 
+                SET `amount` = `amount` + :transactionamounta, 
+                    total_inc = total_inc + :transactionamountb 
+                WHERE userid = :userid";
+
+    $stmt = $pdo->prepare($sqluser);
+
+    $stmt->bindParam(':transactionamounta', $transactionamounta);
+    $stmt->bindParam(':transactionamountb', $transactionamountb);
+    $stmt->bindParam(':userid', $userid);
+
+    if ($stmt->execute()) {
+
+    }
+}
+
+
+function getroidatabysponserid($userid)
+{
+    global $pdo;
+
+    $sqluser = "SELECT * FROM tbl_roi_one WHERE id = :userid";
+    $stmt = $pdo->prepare($sqluser);
+    $stmt->bindParam(':userid', $userid);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0);
+    while ($rowuser = $stmt->fetch(PDO::FETCH_ASSOC)) {
+
+        $userdata = array(
+            "id" => $rowuser['id'],
+            "amount" => $rowuser["amount"],
+            "capping" => $rowuser["capping"],
+            "percentage" => $rowuser["percentage"],
+        );
+
+        return $userdata;
+    }
+}
+
+
+
+/** ROI One Plan **/
+function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userlevelid)
+{
+
+    global $pdo;
+
+    if (function_exists('date_default_timezone_set')) {
+        date_default_timezone_set("Asia/Kolkata");
+    }
+
+    $time = date('h:i a');
+    $date = date('Y-m-d');
+
+    $sponserdetails = getroidatabysponserid($newid);
+    $income_limit = $sponserdetails['capping'];
+    $total_income = $sponserdetails['amount'];
+
+    // $newicome = getpercent($package, $roipercentage);
+    $newicome = $package;
+
+    $check_amt = (int)$total_income + (int)$newicome;
+
+    if ($total_income >= $income_limit) {
+
+        $stmt = $pdo->prepare("UPDATE tbl_roi_one SET status='1' WHERE id=?");
+        $stmt->execute([$userlevelid]);
+    }
+
+    else {
+
+        // $sqluser = "UPDATE user SET pending_geninc = pending_geninc + ? WHERE userid = ?";
+        // $stmt = $pdo->prepare($sqluser);
+
+        // if ($stmt->execute([$newicome, $sponserid])) {
+        if (1==1) {
+
+            $trasction_type = "Daily Profit Sharing Income";
+            $cdtype = "Credit";
+
+            // $table = "tbl_roiinc";
+            // insert_transction($table, $sponserid, $newicome, $trasction_type, $time, $cdtype);
+
+            $price = $newicome;
+            $pinfinal = $sponserid;
+            $activateuserid = $sponserid;
+            $packageid = $newicome;
+            $userid = $sponserid;
+            $pinfinal = $userid;
+
+            for ($i = 0; $i < 15; $i++) {
+
+                $mysponserid = getmysponserid($pinfinal);
+                $sponserdetails = getuserdatabysponserid($mysponserid);
+
+                if ($pinfinal !== '1290') {
+
+                    $spcode1 = $sponserdetails['userid'];
+                    $spamont = $sponserdetails['amount'];
+                    $isidactive = $sponserdetails['idactive'];
+
+                    $directactive = getmydirectactive($spcode1);
+
+                    if ($isidactive == 1) {
+
+                        if ($i == '0') {
+                            if ($directactive >= '0') {
+
+                                $transactionamount = (float)$price * (float)15 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-1.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '1') {
+                            if ($directactive >= '2') {
+
+                                $transactionamount = (float)$price * (float)7 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-2.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '2') {
+                            if ($directactive >= '3') {
+
+                                $transactionamount = (float)$price * (float)5 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-3.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '3') {
+                            if ($directactive >= '4') {
+
+                                $transactionamount = (float)$price * (float)3 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-4.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '4') {
+                            if ($directactive >= '5') {
+
+                                $transactionamount = (float)$price * (float)2 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-5.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '5') {
+                            if ($directactive >= '6') {
+
+                                $transactionamount = (float)$price * (float)1 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-6.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '6') {
+                            if ($directactive >= '7') {
+
+                                $transactionamount = (float)$price * (float)0.75 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-7.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '7') {
+                            if ($directactive >= '8') {
+
+                                $transactionamount = (float)$price * (float)0.50 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-8.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '8') {
+                            if ($directactive >= '9') {
+
+                                $transactionamount = (float)$price * (float)0.25 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-9.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '9') {
+                            if ($directactive >= '10') {
+
+                                $transactionamount = (float)$price * (float)0.25 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-10.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '10') {
+                            if ($directactive >= '11') {
+
+                                $transactionamount = (float)$price * (float)0.25 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-11.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '11') {
+                            if ($directactive >= '12') {
+
+                                $transactionamount = (float)$price * (float)0.25 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-12.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '12') {
+                            if ($directactive >= '13') {
+
+                                $transactionamount = (float)$price * (float)0.25 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-13.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '13') {
+                            if ($directactive >= '14') {
+
+                                $transactionamount = (float)$price * (float)0.25 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-14.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        else if ($i == '14') {
+                            if ($directactive >= '15') {
+
+                                $transactionamount = (float)$price * (float)0.25 / (float)100;
+
+                                $messagenew = "Profit Sharing Income on Level-15.of Id ($userid)";
+                                $table = "tbl_daily_levelinc";
+
+                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+                            }
+                        }
+
+                        if (isset($transactionamount)) {
+                            $new = $i + 1;
+                            $level = $new;
+                        }
+                    }
+
+                    $pinfinal = $spcode1;
+                }
+
+                else {
+                    $pinfinal = $spcode1;
+                }
+            }
+        }
+    }
+}
+function manual_pay_roi_one_income($uid)
+{
+    global $pdo;
+
+    date_default_timezone_set("Asia/Kolkata");
+    $date = date('Y-m-d');
+
+    // First get pending income
+    $stmt = $pdo->prepare("SELECT pending_geninc FROM user WHERE userid = ?");
+    $stmt->execute([$uid]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$row || $row['pending_geninc'] <= 0) {
+        return false;
+    }
+
+    $income = $row['pending_geninc'];
+
+    // Update user
+    $sqluser = "UPDATE user 
+                SET amount = amount + pending_geninc,
+                    total_inc = total_inc + pending_geninc,
+                    pending_geninc = 0
+                WHERE userid = ?";
+
+    $stmt = $pdo->prepare($sqluser);
+
+    if ($stmt->execute([$uid])) {
+
+        $insert = $pdo->prepare("
+            INSERT INTO tbl_transaction 
+                (user_id, type, subject, amount, created_date, status)
+            VALUES 
+                (:user_id, 'Pending Generation Income', 
+                 'Pending Generation Income Payout', 
+                 :amount, :date, '1')
+        ");
+
+        $insert->execute([
+            ':user_id' => $uid,
+            ':amount'  => $income,
+            ':date'    => $date
+        ]);
+    }
+}
+
+
+function getpercent($amount, $percent)
+{
+    $per_amount = $amount * $percent / 100;
+    return $per_amount;
+}
+
+function getroipercentage()
+{
+    global $pdo;
+
+    $sql2 = "SELECT * FROM tbl_roipercentage";
+    $stmt = $pdo->query($sql2);
+
+    while ($row2 = $stmt->fetch(PDO::FETCH_ASSOC)) {
+
+        $roiset = array(
+            "id" => $row2['id'],
+            "percentage" => $row2['percentage'],
+            "level_percentage" => $row2['level_percentage'],
+            "status" => $row2['status']
+        );
+
+        return $roiset;
+    }
+}
+
+/** ROI One Plan **/
+
+
+
+function checkuserid(PDO $pdo, $mysponsernew)
+{
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS alluser FROM user WHERE userid = :userid");
+    $stmt->execute([':userid' => $mysponsernew]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $row ? $row['alluser'] : 0;
+}
+
+function getproduct()
+{
+    global $pdo; // Make sure your PDO connection is in $pdo
+
+    $stmt = $pdo->prepare("SELECT * FROM tbl_product WHERE status = 1");
+    $stmt->execute();
+    $row1 = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row1) {
+        $productdata = [
+            "name"     => $row1['name'],
+            "image"    => $row1['image'],
+            "quantity" => $row1['quantity'],
+            "pv"       => $row1['pv'],
+            "price"    => $row1['price'],
+            "mrp"      => $row1['mrp']
+        ];
+        return $productdata;
+    }
+
+    return null; // Return null if no product found
+}
+function gettransactiondata($userid)
+{
+    global $pdo; // Make sure your PDO connection is in $pdo
+
+    $stmt = $pdo->prepare("SELECT * FROM tbl_transaction_details WHERE tr_id = :tr_id LIMIT 1");
+    $stmt->execute(['tr_id' => $userid]);
+    $rowuser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($rowuser) {
+        $userdata = [
+            "id" => $rowuser['id'],
+            "pro_code" => $rowuser['pro_code'],
+        ];
+        return $userdata;
+    }
+
+    return null; // return null if no transaction found
+}
+
+
+
+function checkcloing($ytdate)
+{
+    global $pdo;
+    // Prepare SQL query with a placeholder
+    $sql = "SELECT COUNT(*) AS alluser 
+            FROM tbl_temp_data 
+            WHERE paid_date = :ytdate 
+              AND status = '1'";
+
+    // Prepare the statement
+    $stmt = $pdo->prepare($sql);
+
+    // Bind parameter safely
+    $stmt->bindParam(':ytdate', $ytdate, PDO::PARAM_STR);
+
+    // Execute the query
+    $stmt->execute();
+
+    // Fetch the result
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Return the count or 0 if not found
+    return $row ? $row['alluser'] : 0;
+}
+
+
+?>
