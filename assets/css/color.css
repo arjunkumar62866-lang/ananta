@@ -1,9 +1,34 @@
+/* Modern Ananta Brand Color Palette & Design System Variables */
 
-/* template-color */
+:root {
+  /* Brand Color Palette */
+  --theme-color: #0d47a1;         /* Deep Royal Blue */
+  --primary-blue: #0a2540;        /* Deep Navy Blue */
+  --secondary-color: #001321;     /* Midnight Dark Blue */
+  --accent-cyan: #00b4d8;         /* Bright Cyan Blue */
+  --accent-lime: #10b981;         /* Lime / Emerald Green Accent */
+  
+  --text-color: #475569;          /* Slate Gray Body Text */
+  --title-color: #0f172a;         /* Dark Heading Text */
+  --light-bg: #f8fafc;            /* Crisp Light Surface */
+  --card-bg: #ffffff;             /* Card Surface */
+  
+  /* Gradients */
+  --bg-gradient-primary: linear-gradient(135deg, #0a2540 0%, #0d47a1 100%);
+  --bg-gradient-accent: linear-gradient(135deg, #00b4d8 0%, #10b981 100%);
+  --bg-gradient-dark: linear-gradient(180deg, #001321 0%, #0a2540 100%);
+  --bg-gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
 
-:root{
-  --theme-color: #dd2f22;
-  --secondary-color: #001321;
-  --text-color: #646768;
-  --title-color: #001321;
+  /* UI System Standards */
+  --border-radius-sm: 8px;
+  --border-radius-md: 14px;
+  --border-radius-lg: 20px;
+  --border-radius-full: 9999px;
+  
+  --box-shadow-subtle: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  --box-shadow-hover: 0 12px 30px -4px rgba(13, 71, 161, 0.12);
+  --box-shadow-card: 0 10px 25px -5px rgba(10, 37, 64, 0.08);
+
+  --font-family-sans: 'Inter', 'Funnel Sans', system-ui, -apple-system, sans-serif;
+  --font-family-display: 'Plus Jakarta Sans', 'Funnel Display', system-ui, -apple-system, sans-serif;
 }

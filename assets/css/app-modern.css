@@ -1,0 +1,833 @@
+/* ==========================================================================
+   ANANTA MULTI TRADE - NESTIFY FINTECH SAAS DESIGN SYSTEM & UI OVERHAUL
+   Color Palette: Deep Navy (#06152F), Royal Blue (#0B3D91), Cyan (#00B4D8), Teal (#00A6A6), Lime Accent (#7ED321)
+   ========================================================================== */
+
+:root {
+  --ananta-navy-dark: #f4f6f8;
+  --ananta-navy-main: #f8f9fa;
+  --ananta-navy-card: #ffffff;
+  --ananta-navy-light: #e2e8f0;
+  --ananta-royal: #0284c7;
+  --ananta-cyan: #0284c7;
+  --ananta-teal: #16a34a;
+  --ananta-lime: #16a34a;
+  --ananta-text-black: #0f172a;
+  --ananta-text-slate: #334155;
+  --ananta-text-muted: #64748b;
+  --ananta-text-dim: #94a3b8;
+  --ananta-glass-bg: #ffffff;
+  --ananta-glass-border: #e2e8f0;
+  --ananta-glass-glow: rgba(2, 132, 199, 0.1);
+  --ananta-font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --ananta-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Global Reset Overrides */
+body {
+  font-family: var(--ananta-font-body) !important;
+  background-color: #f4f6f8 !important;
+  color: #334155 !important;
+  overflow-x: hidden !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--ananta-font-heading) !important;
+  letter-spacing: -0.02em !important;
+  color: #0f172a;
+}
+
+/* Glass & Light Card Utility */
+.ananta-fintech-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.ananta-fintech-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 18px 40px rgba(2, 132, 199, 0.12) !important;
+}
+
+/* Badge System */
+.ananta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 100px;
+  background: rgba(0, 180, 216, 0.1);
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  color: var(--ananta-cyan);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.ananta-badge-lime {
+  background: rgba(126, 211, 33, 0.12);
+  border-color: rgba(126, 211, 33, 0.35);
+  color: var(--ananta-lime);
+}
+
+.ananta-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Buttons */
+.ananta-btn-primary {
+  background: linear-gradient(135deg, var(--ananta-royal) 0%, var(--ananta-cyan) 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  padding: 14px 32px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 10px 25px rgba(0, 180, 216, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.ananta-btn-primary:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 16px 36px rgba(0, 180, 216, 0.45) !important;
+  color: #FFFFFF !important;
+}
+
+.ananta-btn-secondary {
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(12px) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  padding: 14px 32px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.ananta-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  transform: translateY(-3px) !important;
+  color: #FFFFFF !important;
+}
+
+/* Nestify-Inspired Hero Layout with Responsive Desktop & Mobile Backgrounds */
+.ananta-hero-section {
+  position: relative;
+  min-height: 100vh !important;
+  height: auto !important;
+  display: flex;
+  align-items: center;
+  padding: 140px 0 90px 0;
+  background-color: #030b17 !important;
+}
+
+.ananta-hero-bg-holder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(3, 11, 23, 0.45) 0%, rgba(3, 11, 23, 0.75) 100%), url('../images/background/hero-building.jpg') center center / cover no-repeat;
+}
+
+@media (max-width: 768px) {
+  .ananta-hero-section {
+    padding: 100px 0 60px 0 !important;
+    display: block !important;
+    background-color: #030b17 !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+  
+  .ananta-hero-bg-holder {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1 !important;
+    background: linear-gradient(180deg, rgba(3, 11, 23, 0.45) 0%, rgba(3, 11, 23, 0.85) 100%), url('../images/background/hero-building-mobile.jpg') center center / cover no-repeat !important;
+  }
+}
+
+/* Ensure all landing page sections sit solid above hero with white background */
+#about, #businesses, #partners, #vision, #contact, .service-section, .no-guarantee-cta, #chooseus, .execution-architecture, .news-section, .testimonial-section, .main-footer {
+  position: relative !important;
+  z-index: 10 !important;
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.ananta-hero-glow-1 {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(0, 180, 216, 0.22) 0%, rgba(0,0,0,0) 70%);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.ananta-hero-glow-2 {
+  position: absolute;
+  bottom: 5%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(126, 211, 33, 0.12) 0%, rgba(0,0,0,0) 70%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.ananta-hero-title {
+  font-size: 60px !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  color: #FFFFFF !important;
+  margin-bottom: 24px !important;
+}
+
+.ananta-hero-title span.gradient-text {
+  background: linear-gradient(135deg, #FFFFFF 0%, #00B4D8 50%, #7ED321 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ananta-hero-desc {
+  font-size: 18px !important;
+  line-height: 1.65 !important;
+  color: #94A3B8 !important;
+  margin-bottom: 36px !important;
+  max-width: 620px;
+}
+
+/* Dashboard Mockup Graphic (Fintech SaaS Style) */
+.ananta-hero-dashboard-mockup {
+  background: rgba(10, 30, 63, 0.8);
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 180, 216, 0.15);
+  backdrop-filter: blur(20px);
+}
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 20px;
+}
+
+.mockup-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.mockup-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.dot-red { background: #FF5F56; }
+.dot-yellow { background: #FFBD2E; }
+.dot-green { background: #27C93F; }
+
+.mockup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.mockup-card {
+  background: rgba(6, 21, 47, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.mockup-stat-title {
+  font-size: 12px;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.mockup-stat-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.mockup-stat-change {
+  font-size: 13px;
+  font-weight: 700;
+  color: #7ED321;
+}
+
+/* Feature & Service Card Enhancements */
+.ananta-service-card {
+  background: var(--ananta-navy-card);
+  border: 1px solid var(--ananta-glass-border);
+  border-radius: 20px;
+  padding: 32px;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.ananta-service-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--ananta-cyan);
+  box-shadow: 0 16px 36px rgba(0, 180, 216, 0.2);
+}
+
+.ananta-icon-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(11, 61, 145, 0.5) 0%, rgba(0, 180, 216, 0.2) 100%);
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.ananta-icon-wrap img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+/* Section Headings */
+.ananta-section-heading {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 60px auto;
+}
+
+.ananta-section-heading h2 {
+  font-size: 42px !important;
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+  margin-top: 12px !important;
+  margin-bottom: 16px !important;
+}
+
+.ananta-section-heading p {
+  font-size: 16px !important;
+  color: #94A3B8 !important;
+}
+
+/* Footer Fintech Styling */
+.ananta-footer-redesign {
+  background: #020813 !important;
+  border-top: 1px solid rgba(0, 180, 216, 0.15) !important;
+  padding: 80px 0 30px 0 !important;
+}
+
+.ananta-footer-redesign a {
+  color: #94A3B8 !important;
+  transition: color 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+.ananta-footer-redesign a:hover {
+  color: #00B4D8 !important;
+}
+
+/* Premium Image & Video Borders (Glow Frame) */
+.ananta-img-border {
+  border: 1px solid rgba(0, 180, 216, 0.35) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 180, 216, 0.15) !important;
+  transition: all 0.35s ease !important;
+}
+
+.ananta-img-border:hover {
+  border-color: rgba(126, 211, 33, 0.6) !important;
+  box-shadow: 0 15px 40px rgba(126, 211, 33, 0.25) !important;
+  transform: translateY(-4px) !important;
+}
+
+.ananta-video-frame {
+  position: relative;
+  border: 2px solid transparent !important;
+  border-image: linear-gradient(135deg, #00B4D8 0%, #7ED321 50%, #0B3D91 100%) 1 !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 180, 216, 0.25) !important;
+  background: rgba(6, 21, 47, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.ananta-transparent-section {
+  background: rgba(3, 11, 23, 0.45) !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Tree Structure / Step-by-Step Market Analysis (Responsive Workflow Timeline) */
+.ananta-tree-wrapper {
+  position: relative;
+  padding: 40px 0;
+}
+
+.ananta-tree-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  background: linear-gradient(180deg, #00B4D8 0%, #7ED321 50%, #0B3D91 100%);
+  transform: translateX(-50%);
+  border-radius: 4px;
+  box-shadow: 0 0 15px rgba(0, 180, 216, 0.6);
+  z-index: 1;
+}
+
+.ananta-tree-node {
+  position: relative;
+  margin-bottom: 50px;
+  z-index: 2;
+}
+
+.ananta-tree-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+.ananta-tree-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 20px !important;
+  padding: 24px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
+  transition: all 0.35s ease !important;
+}
+
+.ananta-tree-card:hover {
+  border-color: #16a34a !important;
+  box-shadow: 0 16px 36px rgba(22, 163, 74, 0.12) !important;
+  transform: translateY(-4px) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .ananta-hero-title {
+    font-size: 38px !important;
+  }
+  .ananta-hero-section {
+    padding: 100px 0 80px 0 !important;
+    min-height: auto !important;
+  }
+  .ananta-tree-wrapper::before {
+    left: 30px;
+  }
+  .ananta-tree-badge {
+    left: 30px;
+  }
+  .ananta-tree-node .col-lg-6 {
+    padding-left: 70px !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .ananta-hero-title {
+    font-size: 28px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 16px !important;
+  }
+  .ananta-hero-desc {
+    font-size: 14px !important;
+    margin-bottom: 24px !important;
+  }
+  .ananta-badge {
+    font-size: 10.5px !important;
+    padding: 4px 12px !important;
+  }
+  .ananta-btn-primary, .ananta-btn-secondary {
+    padding: 10px 20px !important;
+    font-size: 13.5px !important;
+    width: 100%;
+  }
+  .mockup-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   PREMIUM FLOATING HELP & CONTACT CHAT POPUP MODAL
+   ========================================================================== */
+.chat-icon {
+  position: fixed !important;
+  right: 28px !important;
+  bottom: 85px !important;
+  z-index: 99999 !important;
+}
+
+.ananta-glass-chat-btn {
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #0B3D91 0%, #00B4D8 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: #FFFFFF !important;
+  font-size: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 10px 25px rgba(0, 180, 216, 0.45), 0 0 20px rgba(126, 211, 33, 0.3) !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative;
+}
+
+.ananta-glass-chat-btn:hover {
+  transform: scale(1.1) rotate(5deg) !important;
+  box-shadow: 0 14px 35px rgba(0, 180, 216, 0.6) !important;
+}
+
+.chat-btn-pulse {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  background-color: #7ED321;
+  border: 2px solid #030b17;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #7ED321;
+}
+
+/* ==========================================================================
+   PREMIUM FLOATING HELP & CONTACT CHAT POPUP MODAL (White & Green Theme)
+   ========================================================================== */
+.chat-icon {
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 84px !important;
+  z-index: 999999 !important;
+}
+
+.ananta-glass-chat-btn {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #7ED321 0%, #0B3D91 100%) !important;
+  border: 2px solid #FFFFFF !important;
+  color: #FFFFFF !important;
+  font-size: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 10px 25px rgba(126, 211, 33, 0.45), 0 4px 15px rgba(11, 61, 145, 0.3) !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative;
+}
+
+.ananta-glass-chat-btn:hover {
+  transform: scale(1.1) rotate(5deg) !important;
+  box-shadow: 0 14px 35px rgba(126, 211, 33, 0.6) !important;
+}
+
+.chat-btn-pulse {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  background-color: #7ED321;
+  border: 2px solid #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #7ED321;
+}
+
+/* Smooth Scale-Up Floating Pop-up Modal Window */
+.chat-popup.ananta-glass-chat-popup {
+  position: fixed !important;
+  right: 28px !important;
+  bottom: 100px !important;
+  width: auto !important;
+  max-width: 400px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  z-index: 1000000 !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  transform: scale(0.7) translateY(40px) !important;
+  transform-origin: bottom right !important;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.chat-popup.ananta-glass-chat-popup.popup-visible {
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: scale(1) translateY(0) !important;
+}
+
+.ananta-glass-chat-popup .popup-inner.ananta-chat-modal-inner {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 2px solid rgba(126, 211, 33, 0.45) !important;
+  border-radius: 28px !important;
+  padding: 24px 22px 20px 22px !important;
+  box-shadow: 0 24px 60px rgba(6, 21, 47, 0.4), 0 0 30px rgba(126, 211, 33, 0.25) !important;
+  max-width: 380px !important;
+  width: 90vw !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.ananta-glass-chat-popup .close-chat {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(6, 21, 47, 0.06);
+  border: 1px solid rgba(6, 21, 47, 0.12);
+  color: #06152F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.ananta-glass-chat-popup .close-chat:hover {
+  background: #FF5F56;
+  color: #FFFFFF;
+  transform: rotate(90deg);
+}
+
+.chat-modal-header {
+  position: relative;
+  background: linear-gradient(135deg, rgba(126, 211, 33, 0.1) 0%, rgba(11, 61, 145, 0.05) 100%);
+  margin: -24px -22px 18px -22px;
+  padding: 20px 18px 14px 18px;
+  border-bottom: 1px solid rgba(126, 211, 33, 0.25);
+}
+
+.chat-header-badge {
+  display: inline-block;
+  background: #7ED321;
+  color: #030b17;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 3px 12px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 8px rgba(126, 211, 33, 0.3);
+}
+
+.chat-title {
+  color: #06152F !important;
+  font-weight: 800 !important;
+  font-size: 19px !important;
+  margin-bottom: 4px !important;
+}
+
+.chat-subtitle {
+  color: #0B3D91 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin-bottom: 0 !important;
+}
+
+.ananta-glass-input {
+  width: 100% !important;
+  background: #F8FAFC !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 12px !important;
+  padding: 10px 14px 10px 38px !important;
+  color: #06152F !important;
+  font-weight: 600 !important;
+  font-size: 13.5px !important;
+  transition: all 0.25s ease !important;
+}
+
+.ananta-glass-input::placeholder {
+  color: #64748B !important;
+  font-weight: 500 !important;
+}
+
+.ananta-glass-input:focus {
+  outline: none !important;
+  border-color: #7ED321 !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 0 12px rgba(126, 211, 33, 0.3) !important;
+}
+
+.input-icon-left {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #0B3D91;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.chat-submit-btn {
+  width: 100% !important;
+  background: linear-gradient(135deg, #06152F 0%, #0B3D91 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  padding: 12px 20px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(126, 211, 33, 0.4) !important;
+  box-shadow: 0 6px 18px rgba(11, 61, 145, 0.35) !important;
+  transition: all 0.25s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.chat-submit-btn:hover {
+  background: linear-gradient(135deg, #0B3D91 0%, #7ED321 100%) !important;
+  color: #030b17 !important;
+  border-color: #7ED321 !important;
+  box-shadow: 0 8px 24px rgba(126, 211, 33, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ==========================================================================
+   OFF-WHITE & BLACK/BLUE/GREEN THEME OVERRIDES FOR SECTIONS BELOW HERO
+   ========================================================================== */
+
+/* Section titles on light background */
+.sec-title h2 {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+.sec-title h6 {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sec-title p {
+  color: #334155 !important;
+  font-weight: 500 !important;
+}
+
+/* Package Service Cards */
+.service-block-one .inner-box {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05) !important;
+  padding: 24px !important;
+  transition: all 0.3s ease !important;
+}
+
+.service-block-one .inner-box:hover {
+  border-color: #0284c7 !important;
+  box-shadow: 0 14px 30px rgba(2, 132, 199, 0.12) !important;
+  transform: translateY(-4px) !important;
+}
+
+.service-block-one .inner-box h3 a {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.service-block-one .inner-box span {
+  color: #16a34a !important;
+  font-weight: 800 !important;
+}
+
+.service-block-one .inner-box p {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+/* Key Highlights Chooseus Section */
+.chooseus-section .single-item h3 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.chooseus-section .single-item p {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+/* CTA Guarantee section */
+.no-guarantee-cta {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  border-radius: 20px;
+}
+
+.no-guarantee-cta h2 {
+  color: #ffffff !important;
+}
+
+.no-guarantee-cta p {
+  color: #cbd5e1 !important;
+}
+
+.no-guarantee-cta a {
+  background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3) !important;
+}

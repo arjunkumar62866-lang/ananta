@@ -2,7 +2,7 @@
     <footer class="footer">
       <div class="container">
         <div class="text-center">
-          Copyright © 2025 Ananta Admin
+          Copyright © <?php echo date('Y'); ?> Ananta Multi Trade Private Limited. All Rights Reserved.
         </div>
       </div>
     </footer>
@@ -67,3 +67,5 @@
 
   <!-- Index js -->
   <script src="assets/js/index.js"></script>
+  <!-- PWA Handler -->
+  <script src="/assets/js/app-pwa.js"></script>

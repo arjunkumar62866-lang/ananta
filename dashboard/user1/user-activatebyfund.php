@@ -420,55 +420,71 @@ if ($idactive == 0) {
 
 <body class="bg-theme bg-theme1">
 
-<div id="wrapper">
+<div id="wrapper" class="ananta-user-dashboard">
 
 <div class="content-wrapper">
     <div class="container-fluid">
 
         <div class="row mt-3">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
+            <div class="col-lg-8 offset-lg-2">
+                <div class="card shadow-lg border-0" style="border-radius: 20px; background: #ffffff;">
+                    <div class="card-body p-4 p-md-5">
 
-                        <h3 class="tile-title text-center">
-                            Activate Other User
-                            <span class="float-right" style="font-size:14pt;">
-                                Fund Balance: $<?php echo $pin_wallet; ?>
-                            </span>
-                        </h3>
-                        <hr>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
+                            <div>
+                                <h4 class="font-weight-bold text-dark mb-1" style="color: #0f172a;">Activate Other User ID</h4>
+                                <p class="text-muted small mb-0">Activate team member IDs directly using your fund wallet</p>
+                            </div>
+                            <div class="mt-3 mt-md-0 px-3 py-2" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%); border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.2);">
+                                <span class="text-muted small font-weight-bold d-block">Fund Balance</span>
+                                <span class="h5 font-weight-bold mb-0" style="color: #0284c7;">$<?php echo number_format((float)$pin_wallet, 2); ?></span>
+                            </div>
+                        </div>
 
                         <form method="post">
 
-                            <div class="form-group">
-                                <label>Enter User ID</label>
-                                <input type="text" name="userid" class="form-control" id = "referrerId" required placeholder="Enter User ID">
-                            </div>
-                            
-                            <div class="form-group" id="sponsor_name" style="display: none;">
-                                <div class="position-relative has-icon-right">
-                                    <input type="text" name="refferalid" id="response2" class="form-control input-shadow" readonly>
+                            <div class="form-group mb-4">
+                                <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Target User ID</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-light border-right-0" style="border-radius: 12px 0 0 12px; border-color: #cbd5e1;"><i class="zmdi zmdi-account text-primary"></i></span>
+                                    </div>
+                                    <input type="text" name="userid" class="form-control border-left-0" id="referrerId" required placeholder="Enter User ID (e.g. AN1290)" style="border-radius: 0 12px 12px 0; border-color: #cbd5e1; height: 48px;">
                                 </div>
                             </div>
                             
-                            <div class="form-group">
-                                <label>Select Package</label>
-                                <select name="package_id" class="form-control" required>
+                            <div class="form-group mb-4" id="sponsor_name" style="display: none;">
+                                <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Member Name</label>
+                                <div class="position-relative">
+                                    <input type="text" name="refferalid" id="response2" class="form-control font-weight-bold" readonly style="border-radius: 12px; border-color: #22c55e; background-color: #f0fdf4; color: #166534; height: 48px;">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group mb-4">
+                                <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Select Package</label>
+                                <select name="package_id" class="form-control" required style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
                                     <option value="">-- Select Package --</option>
                                     <?php foreach ($packages as $pkg): ?>
                                         <option value="<?= $pkg['id'] ?>">
-                                            <?= $pkg['name'] ?> — ₹<?= $pkg['price'] ?>
+                                            <?= $pkg['name'] ?> — ₹<?= number_format((float)$pkg['price'], 2) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
 
-                            <div class="form-group">
-                                <label>Amount</label>
-                                <input type="number" name="price" class="form-control" required>
+                            <div class="form-group mb-4">
+                                <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Amount ($)</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-light border-right-0" style="border-radius: 12px 0 0 12px; border-color: #cbd5e1;"><i class="zmdi zmdi-money text-success"></i></span>
+                                    </div>
+                                    <input type="number" name="price" class="form-control border-left-0" required placeholder="Enter Amount" style="border-radius: 0 12px 12px 0; border-color: #cbd5e1; height: 48px;">
+                                </div>
                             </div>
 
-                            <button type="submit" id="submitBtn" name="submit" class="btn btn-success text-center">Submit</button>
+                            <button type="submit" id="submitBtn" name="submit" class="btn btn-block font-weight-bold text-white shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); border: none; height: 50px; font-size: 16px;">
+                                <i class="zmdi zmdi-account-add me-1"></i> Activate Account Now
+                            </button>
 
                         </form>
 

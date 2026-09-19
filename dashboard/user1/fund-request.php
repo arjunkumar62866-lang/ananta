@@ -81,88 +81,86 @@ if($_SERVER["REQUEST_METHOD"]=="POST")
         <div class="content-wrapper">
             <div class="container-fluid">
 
-                <h4 class="text-center mb-4">Send Payment Request</h4>
+                <div class="row mt-3">
+                    <div class="col-lg-10 offset-lg-1">
+                        <div class="card shadow-lg border-0" style="border-radius: 20px; background: #ffffff;">
+                            <div class="card-body p-4 p-md-5">
 
-                <form method="POST" enctype="multipart/form-data">
-                    <h6> 
-                        <?php 
-                        if(isset($_GET['responce']))
-                        { 
-                            if($_GET['responce'] =="SUCCESS")
-                            { 
-                                echo "Withdrawal Request Send Successfuly";
-                            }
-                            else 
-                            {
-                                echo "Something went worng pls contact admin for more details!!!";
-                            } 
-                        } 
-                        ?></h6>
-                        <h6 style="text-align: center;color: red;">  <?php if(isset($error)){ echo $error;} ?></h6>
-                    <div class="row">
-                        <!-- Left Column -->
-                        <div class="col-md-6">
-                            <!--<div class="form-group">-->
-                            <!--<label for="input-7">Payment Request For</label>-->
-                            <!--    <select class="form-control" required="" name="title" id="price">-->
-                            <!--        <option value="">--Select Request--</option>-->
-                            <!--        <option value="Fund Request">Fund Request</option>-->
-                            <!--        <option value="Shopping Fund Request">Shopping Fund Request</option>-->
-                            <!--    </select>   -->
-                            <!--</div>-->
+                                <div class="mb-4 pb-3 border-bottom text-center text-md-left">
+                                    <h4 class="font-weight-bold text-dark mb-1" style="color: #0f172a;">Request Fund Deposit</h4>
+                                    <p class="text-muted small mb-0">Submit payment details and transaction proof for fund approval</p>
+                                </div>
 
-                            <div class="form-group">
-					        <label for="input-7">Payment Request For</label>
-					        <input type="text"  name="title" class="form-control" id="price"  value="Fund Request" readonly>
-					    </div>
-					    
-                            <div class="form-group">
-					        <label for="input-7">Transaction Id</label>
-					        <input type="text"  name="tr_id" class="form-control" id="fname"  required>
-					    </div>
-					    <div class="form-group">
-        				    <label for="input-7">Order Id</label>
-        					<input type="text"  name="order_id" class="form-control" id="fname"  required>
-        				</div>
-					    <div class="form-group">
-                            <label for="input-7">Select Mode Of Transaction</label>
-                                <?php
-                                //  $sqlpack="SELECT * FROM  tbl_package  where status='1' ";
-                                // $resultpack=mysqli_query($db,$sqlpack);
-                                // if(mysqli_num_rows($resultpack)>0); 
-                                    ?>
-                                <select class="form-control" required="" name="mode" id="price">
-                                   <option value="">--Select Mode--</option>
-                                   <option value="Cash">--Cash--</option>
-                                   <option value="Google Pay">--Google Pay--</option>
-                                   <option value="Phone Pay">--Phone Pay--</option>
-                                   <option value="UPI">--UPI--</option>
-                                   <option value="Paytm">--Paytm--</option>
-                                   <option value="IMPS">--IMPS--</option>
-                                   <option value="NEFT">--NEFT--</option>
-                                </select>   
-                         </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="form-group">
-					        <label for="input-7">Amount</label>
-					        <input type="number"  name="amount"   class="form-control" id="fname"  required>
-                         </div>
-    					    <div class="form-group">
-					        <label for="input-7">Date</label>
-					        <input type="date"  name="tr_date"   class="form-control" id="fname"  required>
-                         </div>
-					     <div class="form-group">
-					        <label for="input-7">Remark</label>
-					            <textarea type="text"  name="remark" rows="5" columns="40" class="form-control" id="fname"  required></textarea>
-    					 </div>
+                                <form method="POST" enctype="multipart/form-data">
+                                    <?php if(isset($_GET['responce'])) { ?>
+                                        <div class="alert alert-info border-0 mb-4" style="border-radius: 12px;">
+                                            <?php echo ($_GET['responce'] =="SUCCESS") ? "Withdrawal/Fund Request Sent Successfully" : "Something went wrong. Please contact admin!"; ?>
+                                        </div>
+                                    <?php } ?>
+                                    <?php if(isset($error)){ ?>
+                                        <div class="alert alert-danger border-0 mb-4" style="border-radius: 12px; background: #fef2f2; color: #991b1b;">
+                                            <?php echo $error; ?>
+                                        </div>
+                                    <?php } ?>
+
+                                    <div class="row">
+                                        <!-- Left Column -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-4">
+                                                <label class="font-weight-bold small text-uppercase" style="color: #475569;">Payment Request For</label>
+                                                <input type="text" name="title" class="form-control font-weight-bold" id="price" value="Fund Request" readonly style="border-radius: 12px; border-color: #cbd5e1; height: 48px; background: #f8fafc;">
+                                            </div>
+                                            
+                                            <div class="form-group mb-4">
+                                                <label class="font-weight-bold small text-uppercase" style="color: #475569;">Transaction ID</label>
+                                                <input type="text" name="tr_id" class="form-control" id="fname" placeholder="Enter Transaction Txn ID" required style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
+                                            </div>
+                                            <div class="form-group mb-4">
+                                                <label class="font-weight-bold small text-uppercase" style="color: #475569;">Order ID</label>
+                                                <input type="text" name="order_id" class="form-control" id="fname" placeholder="Enter Reference Order ID" required style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
+                                            </div>
+                                            <div class="form-group mb-4">
+                                                <label class="font-weight-bold small text-uppercase" style="color: #475569;">Select Mode Of Transaction</label>
+                                                <select class="form-control" required="" name="mode" id="price" style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
+                                                   <option value="">-- Select Mode --</option>
+                                                   <option value="Cash">Cash</option>
+                                                   <option value="Google Pay">Google Pay</option>
+                                                   <option value="Phone Pay">Phone Pay</option>
+                                                   <option value="UPI">UPI</option>
+                                                   <option value="Paytm">Paytm</option>
+                                                   <option value="IMPS">IMPS</option>
+                                                   <option value="NEFT">NEFT</option>
+                                                </select>   
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Right Column -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-4">
+                                                <label class="font-weight-bold small text-uppercase" style="color: #475569;">Amount ($ / ₹)</label>
+                                                <input type="number" name="amount" class="form-control" id="fname" placeholder="Enter Amount" required style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
+                                            </div>
+                                            <div class="form-group mb-4">
+                                                <label class="font-weight-bold small text-uppercase" style="color: #475569;">Transaction Date</label>
+                                                <input type="date" name="tr_date" class="form-control" id="fname" required style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
+                                            </div>
+                                            <div class="form-group mb-4">
+                                                <label class="font-weight-bold small text-uppercase" style="color: #475569;">Remark</label>
+                                                <textarea name="remark" rows="4" class="form-control" id="fname" placeholder="Enter any notes or remarks..." required style="border-radius: 12px; border-color: #cbd5e1;"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" name="submit" class="btn btn-block font-weight-bold text-white shadow-sm mt-3" style="border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); border: none; height: 50px; font-size: 16px;">
+                                        <i class="zmdi zmdi-upload me-1"></i> Submit Payment Request
+                                    </button>
+
+                                </form>
+
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group">
-					       <center><button type="submit" value="submit" name="submit" class="btn btn-primary shadow-primary px-5"><i class="fa fa-lock"></i> Proceed</button></center>
-					   </div>
-                </form>
+                </div>
 
             </div>
         </div><!--End content-wrapper-->

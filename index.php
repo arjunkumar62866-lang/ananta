@@ -22,15 +22,120 @@
 .responsive-img {
     max-width: 100%;
     height: auto;
+}/* Mobile View Background & Section Visibility Guarantees */
+@media (max-width: 991px) {
+    body, .boxed_wrapper {
+        background: transparent !important;
+    }
+
+    #about, #businesses, #partners, #vision {
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    #contact {
+        background: transparent !important;
+        background-color: transparent !important;
+        position: relative !important;
+        z-index: 10 !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        padding-top: 40px !important;
+        padding-bottom: 60px !important;
+        min-height: auto !important;
+    }
+
+    #contact .container-fluid,
+    #contact .row,
+    #contact .col-lg-6 {
+        display: block !important;
+        width: 100% !important;
+        visibility: visible !important;
+    }
 }
 
-/* Optional: mobile specific control */
+/* Mobile specific centering & container padding for Section #contact */
 @media (max-width: 768px) {
-    .responsive-img {
-        width: 100%;
-        max-width: 1000px; /* jitna chaho utna */
-        object-fit: cover;
+    #contact .container-fluid {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+        box-sizing: border-box !important;
     }
+    #contact .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+    }
+    #contact .col-lg-6 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
+
+/* Mobile specific styling for Section 02 (#about) 3 stats per line */
+@media (max-width: 768px) {
+    #about .row > [class*="col-"] {
+        padding-left: 3px !important;
+        padding-right: 3px !important;
+    }
+    #about .p-4 {
+        padding: 8px 2px !important;
+    }
+    #about .mb-3.d-flex {
+        height: 45px !important;
+        margin-bottom: 4px !important;
+    }
+    #about .mb-3.d-flex > div {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 24px !important;
+    }
+    #about h2.display-5 {
+        font-size: 20px !important;
+    }
+    #about p.fw-semibold {
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+    }
+}
+
+/* Strict Contrast Overrides for Accordion & Form Controls */
+.accordion-button, 
+.accordion-button:not(.collapsed), 
+.accordion-button:focus, 
+.accordion-button:hover,
+.accordion-button:active {
+    background: #F8FAFC !important;
+    color: #0B2545 !important;
+    box-shadow: none !important;
+}
+
+.accordion-button::after {
+    filter: none;
+}
+
+.accordion-body {
+    background: #FFFFFF !important;
+    color: #334155 !important;
+}
+
+.contact-form .form-control,
+.contact-form .form-control:focus,
+.contact-form .form-control:active {
+    background: #F8FAFC !important;
+    color: #0F172A !important;
+    border: 1px solid #CBD5E1 !important;
+}
+
+.contact-form .form-control::placeholder {
+    color: #64748B !important;
+    opacity: 1;
 }
 
 
@@ -46,1926 +151,1199 @@
             <div class="close-btn"><i class="fas fa-times"></i></div>
             
             <nav class="menu-box">
-                <div class="nav-logo"><a href="index.php"><img src="<?php echo $hmlogo; ?>" style="height:100px; width:100px;" alt="" title=""></a></div>
-                <div class="menu-outer"><!--Here Menu Will Come Automatically Via Javascript / Same Menu as in Header--></div>
-                <div class="contact-info">
-                    <h4>Contact Info</h4>
-                    <ul>
-                        <li>XYZ</li>
-                        <li><a href="tel:+8801682648101">+91-9999999999</a></li>
-                        <li><a href="mailto:<?php echo $hmemail ?>"><?php echo $hmemail ?></a></li>
+                <div class="nav-logo text-center py-3 border-bottom border-secondary border-opacity-25">
+                    <a href="index.php">
+                        <img src="<?php echo $hmlogo; ?>" style="height:60px; width:auto;" alt="Ananta Logo" title="Ananta Multi Trade">
+                    </a>
+                </div>
+                
+                <!-- Explicit Mobile Menu Navigation Links -->
+                <div class="menu-outer my-4">
+                    <ul class="navigation clearfix" style="list-style: none; padding: 0; margin: 0;">
+                        <li class="py-2 border-bottom border-secondary border-opacity-10"><a href="index.php#home" class="text-white fw-bold text-decoration-none fs-5 d-block px-3"><i class="fa fa-home me-2 text-info"></i> Home</a></li>
+                        <li class="py-2 border-bottom border-secondary border-opacity-10"><a href="index.php#about" class="text-white fw-bold text-decoration-none fs-5 d-block px-3"><i class="fa fa-info-circle me-2 text-info"></i> About Us</a></li>
+                        <li class="py-2 border-bottom border-secondary border-opacity-10"><a href="index.php#businesses" class="text-white fw-bold text-decoration-none fs-5 d-block px-3"><i class="fa fa-briefcase me-2 text-info"></i> Businesses</a></li>
+                        <li class="py-2 border-bottom border-secondary border-opacity-10"><a href="index.php#partners" class="text-white fw-bold text-decoration-none fs-5 d-block px-3"><i class="fa fa-question-circle me-2 text-info"></i> Why Us?</a></li>
+                        <li class="py-2 border-bottom border-secondary border-opacity-10"><a href="index.php#contact" class="text-white fw-bold text-decoration-none fs-5 d-block px-3"><i class="fa fa-envelope me-2 text-info"></i> Contact</a></li>
+                        <li class="py-2"><a href="<?php echo $hmlogin; ?>" class="text-success fw-bold text-decoration-none fs-5 d-block px-3"><i class="fa fa-user-circle me-2 text-success"></i> Account Login</a></li>
                     </ul>
                 </div>
-                <div class="social-links">
-                    <ul class="clearfix">
-                        <li><a href="https://www.facebook.com/p/Ananta-Melody-Verse-61585786533006"><i class="flaticon-facebook"></i></a></li>
-                                        <li><a href="https://www.instagram.com/anantamelodyverses?igsh=NmQ1NGItY3VqZGhw&utm_source=qr"><i class="flaticon-instagram-logo"></i></a></li>
-                                        <li><a href="https://t.me/anantamultitreadpvt"><i class="flaticon-telegram-logo"></i></a></li>
-                                        <li><a href="https://www.youtube.com/@anantamelodyverse?si=qIDQyBt9kS0s4A0F"><i class="flaticon-youtube"></i></a></li>
+
+                <div class="social-links mt-4 text-center">
+                    <ul class="clearfix d-inline-flex gap-3 list-unstyled">
+                        <li><a href="https://www.facebook.com/p/Ananta-Melody-Verse-61585786533006" class="text-white fs-4"><i class="flaticon-facebook"></i></a></li>
+                        <li><a href="https://www.instagram.com/anantamelodyverses?igsh=NmQ1NGItY3VqZGhw&utm_source=qr" class="text-white fs-4"><i class="flaticon-instagram-logo"></i></a></li>
+                        <li><a href="https://t.me/anantamultitreadpvt" class="text-white fs-4"><i class="flaticon-telegram-logo"></i></a></li>
+                        <li><a href="https://www.youtube.com/@anantamelodyverse?si=qIDQyBt9kS0s4A0F" class="text-white fs-4"><i class="flaticon-youtube"></i></a></li>
                     </ul>
                 </div>
             </nav>
         </div><!-- End Mobile Menu -->
-<div>
-    <div id="particles-js"></div>
-        <!-- banner-section -->
-        <section class="banner-section">
-            <div class="banner-carousel owl-theme owl-carousel nav-style-one">
-                <div class="slide-item">
-                    <div class="bg-layer" style="background-image: url(assets/images/banner/1.png);"></div>
-                    <div class="auto-container">
-                        <div class="content-box">
-                            <h3>Grow Your Wealth</h3>
-                            <h2>Stock Market</h2>
-                            <h4>with Smart Stock Market Strategies.</h4>
-                            <p>Start building a strong financial future with expert-guided stock investments.</p>
-                            <div class="btn-box">
-                                <a href="index.php" class="theme-btn btn-two"><span>Get Plan Now</span></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="slide-item">
-                    <div class="bg-layer" style="background-image: url(assets/images/banner/2.png);"></div>
-                    <div class="auto-container">
-                        <div class="content-box">
-                            <h3>Earn Passive Income</h3>
-                            <h2>Crypto Mining</h2>
-                            <h4>through Powerful Crypto Mining Solutions.</h4>
-                            <p>Secure, profitable, and energy-efficient mining designed for long-term benefits.</p>
-                            <div class="btn-box">
-                                <a href="index.php" class="theme-btn btn-two"><span>Get Plan Now</span></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="slide-item">
-                    <div class="bg-layer" style="background-image: url(assets/images/banner/3.png);"></div>
-                    <div class="auto-container">
-                        <div class="content-box">
-                            <h3>Build Real Assets</h3>
-                            <h2>Real Estate Investments</h2>
-                            <h4>with High-Value Real Estate Opportunities.</h4>
-                            <p>Invest in properties that deliver stability, appreciation, and recurring income.</p>
-                            <div class="btn-box">
-                                <a href="index.php" class="theme-btn btn-two"><span>Get Plan Now</span></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="social-box">
-                <span class="text">Social Connect</span>
-                <ul class="social-links clearfix">
-                    <li><a href="index.php"><i class="flaticon-facebook"></i></a></li>
-                    <li><a href="index.php"><i class="flaticon-twitter"></i></a></li>
-                    <li><a href="index.php"><i class="flaticon-instagram-logo"></i></a></li>
-                    <li><a href="index.php"><i class="flaticon-youtube"></i></a></li>
-                </ul>
-            </div>
-        </section>
-        <!-- banner-section end -->
-
-
-        <!-- about-section -->
-        <section class="about-section">
-            <div class="auto-container">
-                <div class="inner-container">
-                    <div class="row clearfix">
-                        <div class="col-lg-6 col-md-12 col-sm-12 left-column">
-                            <div class="left-content">
-                                <div class="title-box">
-                                    <h4>Since 2025</h4>
-                                    <h2>Ananta</h2>
-                                </div>
-                                <div class="content_block_one">
-                                    <div class="content-box">
-                                        <div class="sec-title">
-                                            <h6>About Us</h6>
-                                            <h2>We offer a 100% guarantee on our investment
-program</h2>
-                                        </div>
-                                        <div class="text-box">
-                                            <p>Explore the future of wealth with crypto mining, stock market investments, and real estate. Each offers unique opportunities for growth, passive income, and long-term financial security. Smart choices today can build a stronger, diversified tomorrow.</p>
-                                        </div>
-                                        <div class="inner-box image-only">
-    <img src="assets/images/service/stump.png" alt="Background Image" class="responsive-img">
-</div>
-
-
-                                        <!--<div class="inner-box">-->
-                                            <!--<div class="row clearfix">-->
-                                            <!--    <div class="col-lg-6 col-md-6 col-sm-12 fact-column">-->
-                                            <!--        <div class="fact-box">-->
-                                            <!--            <div class="shape" style="background-image: url(assets/images/shape/shape-1.png);"></div>-->
-                                            <!--            <div class="icon-box"><img src="assets/images/icons/icon-8.png" alt=""></div>-->
-                                            <!--            <p>No. of Business -->
-                                            <!--                Executed Last Year.</p>-->
-                                            <!--            <h2>$1.4 <span>Billion</span></h2>-->
-                                            <!--        </div>-->
-                                            <!--    </div>-->
-                                            <!--    <div class="col-lg-6 col-md-6 col-sm-12 highlights-column">-->
-                                            <!--        <div class="highlights-box">-->
-                                            <!--            <ul class="list-item clearfix">-->
-                                            <!--                <li>Beginner’s Guide to Crypto Mining</li>-->
-                                            <!--                <li>Stock Market Investment Basics</li>-->
-                                            <!--            </ul>-->
-                                            <!--            <div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Read More</span></a></div>-->
-                                            <!--        </div>-->
-                                            <!--    </div>-->
-                                            <!--</div>-->
-                                        <!--</div>-->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6 col-md-12 col-sm-12 right-column">
-                            <div class="right-content">
-                                <div class="awards-box">
-                                    <div class="awards-carousel owl-carousel ow-theme owl-nav-none dots-style-one">
-                                        <div class="awards-block-one">
-                                            <div class="image-box"><img src="assets/images/icons/awards-1.png" alt=""></div>
-                                            <div class="inner">
-                                                <h6>Stock Market Excellence</h6>
-                                                <h4><a href="index.php">Best Stock Market Research Platform of the Year <br />the Year</a></h4>
-                                                <span>2021-2024</span>
-                                            </div>
-                                        </div>
-                                        <div class="awards-block-one">
-                                            <div class="image-box"><img src="assets/images/icons/awards-1.png" alt=""></div>
-                                            <div class="inner">
-                                                <h6>Crypto Mining Innovation</h6>
-                                                <h4><a href="index.php">Most Trusted Crypto Mining Solution Provider <br />the Year</a></h4>
-                                                <span>2020-2024</span>
-                                            </div>
-                                        </div>
-                                        <div class="awards-block-one">
-                                            <div class="image-box"><img src="assets/images/icons/awards-1.png" alt=""></div>
-                                            <div class="inner">
-                                                <h6>Real Estate Investment Excellence</h6>
-                                                <h4><a href="index.php">Top Real Estate Advisory & Investment Firm <br />the Year</a></h4>
-                                                <span>2019-2024</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="featured-box">
-                                    <div class="single-item">
-                                        <div class="inner-box">
-                                            <div class="link-box"><a href="index.html"><i class="flaticon-right-arrow"></i></a></div>
-                                            <h3><a href="index.php">Real Estate Passive Income Model</a></h3>
-                                            <p>Understand how rental income, REITs, and property flips can boost your financial stability.</p>
-                                        </div>
-                                        <div class="icon-box"><img src="assets/images/icons/icon-10.png" alt=""></div>
-                                    </div>
-                                    <div class="single-item">
-                                        <div class="inner-box">
-                                            <div class="link-box"><a href="index.html"><i class="flaticon-right-arrow"></i></a></div>
-                                            <h3><a href="index.php">Stock Market Growth Strategies</a></h3>
-                                            <p>Discover proven techniques for long-term wealth building and smart trading decisions.</p>
-                                        </div>
-                                        <div class="icon-box"><img src="assets/images/icons/icon-11.png" alt=""></div>
-                                    </div>
-                                    <div class="single-item">
-                                        <div class="inner-box">
-                                            <div class="link-box"><a href="index.html"><i class="flaticon-right-arrow"></i></a></div>
-                                            <h3><a href="index.php">Beginner’s Guide to Crypto Mining.</a></h3>
-                                            <p>Learn how mining works, what equipment you need, and how to earn passive income safely.</p>
-                                        </div>
-                                        <div class="icon-box"><img src="assets/images/icons/icon-12.png" alt=""></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="py-5 bg-light">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-lg-10 text-center">
-        
-        <h2 class="mb-4">Information</h2>
-
-        <div class="ratio ratio-16x9">
-          <video autoplay controls muted>
-            <source src="assets/images/video/video2.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</section>
-
-        
-
-<section class="chooseus-section" style="background-color: #001321;">
-            <div class="auto-container">
-                <div class="sec-title centred">
-                    <h6>Services</h6>
-                    <h2 style="color: white;">Services That Provides By Ananta Multi Trade Private Limited</h2>
-                </div>
+        <!-- Nestify-Inspired Ananta Fintech Hero Section with Responsive Desktop/Mobile Building Background -->
+        <section id="home" class="ananta-hero-section position-relative overflow-hidden">
+            <div class="ananta-hero-bg-holder"></div>
+            <div class="auto-container position-relative" style="z-index: 5;">
                 <div class="row align-items-center">
-                    <div class="col-lg-4 col-md-6 col-sm-12 left-column">
-                        <div class="left-content">
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-2.png);"></div>
-                                <span class="count-box">01</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-21.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-22.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Gold Service</h3>
-                                <p>We offer secure and trusted gold investment options that help clients build long-term financial stability. Our gold services include safe purchasing, reliable storage guidance, and investment-focused gold solutions designed to preserve wealth and deliver steady returns.</p>
+                                       <!-- Left Hero Copy & Actions -->
+                    <div class="col-lg-6 col-md-12 col-sm-12 mb-5 mb-lg-0">
+                        <div class="ananta-badge mb-3" style="background: rgba(11, 94, 215, 0.12); border: 1px solid rgba(11, 94, 215, 0.35); color: #38BDF8; padding: 6px 16px; border-radius: 100px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px;">
+                            <span class="ananta-badge-dot" style="background: #22A447;"></span> ANANTA MULTI TRADE PRIVATE LIMITED
+                        </div>
+
+                        <h1 class="ananta-hero-title text-white fw-extrabold display-4 mb-3" style="font-family: var(--ananta-font-heading); line-height: 1.15;">
+                            ONE VISION.<br />
+                            <span style="color: #0B5ED7;">MULTIPLE</span> <span style="color: #22A447;">OPPORTUNITIES.</span>
+                        </h1>
+
+                        <h5 class="fw-bold mb-3" style="color: #E2E8F0; line-height: 1.5; font-size: 19px;">
+                            Building a diversified business ecosystem across markets, infrastructure, real estate and emerging industries.
+                        </h5>
+
+                        <p class="ananta-hero-desc mb-4" style="color: #94A3B8; font-size: 15.5px; line-height: 1.7;">
+                            Ananta Multi Trade Private Limited is creating a growing network of businesses, partners and opportunities with a focus on innovation, professional operations and long-term growth.
+                        </p>
+
+                        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+                            <a href="#what-we-do" class="ananta-btn-primary" style="background: linear-gradient(135deg, #0B5ED7 0%, #22A447 100%) !important; border: none !important;">
+                                EXPLORE ANANTA <i class="fa fa-arrow-right ms-1"></i>
+                            </a>
+                            <a href="<?php echo $hmregister; ?>" class="ananta-btn-secondary" style="border-color: rgba(34, 164, 71, 0.4) !important;">
+                                GET STARTED <i class="fa fa-user-plus ms-1" style="color: #22A447;"></i>
+                            </a>
+                        </div>
+
+                        <!-- Mini Trust Proof Badges (Hard White Text & Green Shade Accent) -->
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-top border-secondary border-opacity-25 mb-4 flex-wrap gap-2">
+                            <div>
+                                <h4 class="text-white fw-bold mb-0" style="font-family: var(--ananta-font-heading); color: #FFFFFF !important;">100%</h4>
+                                <small style="color: #7ED321; font-weight: 600;">Secured Programs</small>
                             </div>
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-2.png);"></div>
-                                <span class="count-box">02</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-25.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-26.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Real Estate</h3>
-                                <p>Our real estate services provide clients with premium residential and commercial investment opportunities. From property selection to documentation and long-term planning, we guide you through every step to ensure growth, stability, and consistent rental or resale value appreciation.</p>
+                            <div class="vr bg-secondary opacity-50" style="height: 28px;"></div>
+                            <div>
+                                <h4 class="text-white fw-bold mb-0" style="font-family: var(--ananta-font-heading); color: #FFFFFF !important;">3 - 4%</h4>
+                                <small style="color: #7ED321; font-weight: 600;">Monthly Yield Generation</small>
                             </div>
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-2.png);"></div>
-                                <span class="count-box">03</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-29.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-30.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Stock Market</h3>
-                                <p>We help individuals and investors navigate the stock market with expert analysis, smart strategies, and risk-managed trading approaches. Our stock market services focus on long-term wealth creation, portfolio development, and informed decision-making for stable financial results.</p>
+                            <div class="vr bg-secondary opacity-50" style="height: 28px;"></div>
+                            <div>
+                                <h4 class="text-white fw-bold mb-0" style="font-family: var(--ananta-font-heading); color: #FFFFFF !important;">Multi-Asset</h4>
+                                <small style="color: #7ED321; font-weight: 600;">Gold, Plots & Scooters</small>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 image-column">
-                        <figure class="image-box"><img src="assets/images/resource/service.jpg" alt=""></figure>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 left-column">
-                        <div class="right-content align-3">
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-3.png);"></div>
-                                <span class="count-box">04</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-23.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-24.png" alt=""></div>
+
+                        <!-- 4 Asset Data Cards (Clean 2x2 Grid Layout, Hard White Text & Green Accents - No Collisions) -->
+                        <div class="row g-2 p-3 rounded-4 mb-2 w-100 m-0" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+                            <!-- Card 1: Stock Portfolio -->
+                            <div class="col-6 p-2 border-end border-bottom border-white border-opacity-10">
+                                <small class="text-uppercase d-block fw-bold" style="font-size: 9.5px; color: #94A3B8; letter-spacing: 0.5px;">Stock Portfolio Strategy</small>
+                                <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
+                                    <span class="fw-bold me-1" id="hero-stat-val-1" style="font-size: 15px; color: #FFFFFF !important; text-shadow: 0 0 10px rgba(255,255,255,0.2);">₹ 10,52,280</span>
+                                    <span class="badge fw-bold" id="hero-stat-chg-1" style="background: rgba(255, 95, 86, 0.15); color: #FF5F56; font-size: 10px; border: 1px solid rgba(255, 95, 86, 0.3);">-4.39% Yield <i class="fa fa-caret-down"></i></span>
                                 </div>
-                                <h3 style="color:white;">Crypto Mining Plant Comming Soon</h3>
-                                <p>Our crypto mining services offer a modern and profitable way to generate passive income through advanced mining technology. We provide mining setup, performance optimization, and complete monitoring to ensure safe, efficient, and high-yield digital asset production.</p>
                             </div>
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-3.png);"></div>
-                                <span class="count-box">05</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-27.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-28.png" alt=""></div>
+
+                            <!-- Card 2: Crypto Mining Asset -->
+                            <div class="col-6 p-2 border-bottom border-white border-opacity-10">
+                                <small class="text-uppercase d-block fw-bold" style="font-size: 9.5px; color: #94A3B8; letter-spacing: 0.5px;">Crypto Mining Asset</small>
+                                <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
+                                    <span class="fw-bold me-1" id="hero-stat-val-2" style="font-size: 15px; color: #FFFFFF !important; text-shadow: 0 0 10px rgba(255,255,255,0.2);">Active Node</span>
+                                    <span class="badge fw-bold" id="hero-stat-chg-2" style="background: rgba(126, 211, 33, 0.15); color: #7ED321; font-size: 10px; border: 1px solid rgba(126, 211, 33, 0.3);"><i class="fa fa-server me-1"></i> High-Efficiency</span>
                                 </div>
-                                <h3 style="color:white;">Electronic Items</h3>
-                                <p>We supply high-quality electronics such as LED TVs, AC, and electric scooters. Our products are energy-efficient, durable, and designed to meet the needs of modern households. We ensure affordability, reliability, and long-lasting performance in every product we deliver.</p>
                             </div>
-                            <div class="single-item">
-                                <div class="shape" ></div>
-                                <span class="count-box">06</span>
-                                <div class="icon-box">
-                                    <div class="icon1"><img src="assets/images/icons/Ananta.png" alt="" height="120px" width="120px"></div>
-                                    <!--<div class="overlay-icon"><img src="assets/images/icons/icon-32.png" alt=""></div>-->
+
+                            <!-- Card 3: Tejas Gold Package -->
+                            <div class="col-6 p-2 border-end border-white border-opacity-10">
+                                <small class="text-uppercase d-block fw-bold" style="font-size: 9.5px; color: #94A3B8; letter-spacing: 0.5px;">Tejas Gold Package</small>
+                                <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
+                                    <span class="fw-bold me-1" id="hero-stat-val-3" style="font-size: 15px; color: #FFFFFF !important; text-shadow: 0 0 10px rgba(255,255,255,0.2);">40% Backed</span>
+                                    <span class="badge fw-bold" id="hero-stat-chg-3" style="background: rgba(126, 211, 33, 0.15); color: #7ED321; font-size: 10px; border: 1px solid rgba(126, 211, 33, 0.3);"><i class="fa fa-shield-alt me-1"></i> Gold Protected</span>
                                 </div>
-                                <h3 style="color:white;">Music Production House</h3>
-                                <p>We offer complete music and film production services including song writers, singers, actors, choreography, studios, and short film creation. Our production house supports artists, performers, and creators by providing professional studios, creative guidance, and high-quality production facilities.</p>
+                            </div>
+
+                            <!-- Card 4: Real Estate Security -->
+                            <div class="col-6 p-2">
+                                <small class="text-uppercase d-block fw-bold" style="font-size: 9.5px; color: #94A3B8; letter-spacing: 0.5px;">Real Estate Security</small>
+                                <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
+                                    <span class="fw-bold me-1" id="hero-stat-val-4" style="font-size: 15px; color: #FFFFFF !important; text-shadow: 0 0 10px rgba(255,255,255,0.2);">70-100 Gaj</span>
+                                    <span class="badge fw-bold" id="hero-stat-chg-4" style="background: rgba(126, 211, 33, 0.15); color: #7ED321; font-size: 10px; border: 1px solid rgba(126, 211, 33, 0.3);"><i class="fa fa-building me-1"></i> Plot Agreement</span>
+                                </div>
                             </div>
                         </div>
+
                     </div>
+
+                    <!-- Right Column: Fully Visible Transparent Exchange List (No Scroll) -->
+                    <div class="col-lg-6 col-md-12 col-sm-12">
+                        <div class="p-0" style="background: transparent !important; border: none !important; box-shadow: none !important;">
+
+                            <!-- Transparent Borderless Market Data & Real-time Graph Widget -->
+                            <div class="p-3 rounded-4" style="background: transparent !important; border: none !important; box-shadow: none !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-white border-opacity-10">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fa fa-globe text-info"></i>
+                                        <span class="fw-bold" style="font-size: 13px; letter-spacing: 0.8px; color: #FFFFFF !important; text-shadow: 0 0 8px rgba(255,255,255,0.3);">GLOBAL EXCHANGES & LIVE INDIAN MARKET</span>
+                                    </div>
+                                    <span class="badge text-dark fw-bold" style="font-size: 9px; background: #7ED321;"><i class="fa fa-wifi me-1"></i> LIVE TICKER</span>
+                                </div>
+
+                                <!-- Fully Visible List (No Scroll Bar) -->
+                                <div class="d-flex flex-column gap-1" id="exchangeMarketList" style="overflow: visible !important;">
+                                    
+                                    <!-- 1. Nasdaq (US) -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.nasdaq.com/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Nasdaq</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">US • $43.58T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-1" d="M0,18 L20,12 L40,16 L60,8 L80,14 L100,2" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-1" style="font-size: 11.5px; color: #FFFFFF !important;">$43.58T</span>
+                                            <small class="fw-bold" id="ex-chg-1" style="color: #7ED321; font-size: 9.5px;">+1.45% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. NYSE (US) -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.nyse.com/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 NYSE</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">US • $33.29T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-2" d="M0,15 L20,18 L40,10 L60,14 L80,6 L100,3" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-2" style="font-size: 11.5px; color: #FFFFFF !important;">$33.29T</span>
+                                            <small class="fw-bold" id="ex-chg-2" style="color: #7ED321; font-size: 9.5px;">+0.92% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 3. BSE India -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.04); border-left: 2px solid #7ED321;">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.bseindia.com/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">🇮🇳 BSE India</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">India • $5.14T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-3" d="M0,20 L20,14 L40,17 L60,9 L80,11 L100,1" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-3" style="font-size: 11.5px; color: #FFFFFF !important;">$5.14T</span>
+                                            <small class="fw-bold" id="ex-chg-3" style="color: #7ED321; font-size: 9.5px;">+1.88% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 4. NSE India -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.04); border-left: 2px solid #7ED321;">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.nseindia.com/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">🇮🇳 NSE India</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">India • $5.12T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-4" d="M0,17 L20,10 L40,14 L60,6 L80,12 L100,2" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-4" style="font-size: 11.5px; color: #FFFFFF !important;">$5.12T</span>
+                                            <small class="fw-bold" id="ex-chg-4" style="color: #7ED321; font-size: 9.5px;">+1.75% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 5. Shanghai SSE -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://english.sse.com.cn/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Shanghai SSE</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">China • $9.97T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-5" d="M0,12 L20,16 L40,8 L60,14 L80,9 L100,5" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-5" style="font-size: 11.5px; color: #FFFFFF !important;">$9.97T</span>
+                                            <small class="fw-bold" id="ex-chg-5" style="color: #7ED321; font-size: 9.5px;">+0.64% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 6. Japan JPX -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.jpx.co.jp/english" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Japan JPX</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">Japan • $8.72T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-6" d="M0,19 L20,11 L40,15 L60,7 L80,11 L100,1" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-6" style="font-size: 11.5px; color: #FFFFFF !important;">$8.72T</span>
+                                            <small class="fw-bold" id="ex-chg-6" style="color: #7ED321; font-size: 9.5px;">+1.12% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 7. Euronext -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.euronext.com/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Euronext</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">Europe • $8.33T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-7" d="M0,14 L20,10 L40,16 L60,8 L80,13 L100,2" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-7" style="font-size: 11.5px; color: #FFFFFF !important;">$8.33T</span>
+                                            <small class="fw-bold" id="ex-chg-7" style="color: #7ED321; font-size: 9.5px;">+0.78% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 8. Shenzhen SZSE -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.szse.cn/English" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Shenzhen SZSE</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">China • $7.30T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-8" d="M0,16 L20,12 L40,14 L60,8 L80,10 L100,4" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-8" style="font-size: 11.5px; color: #FFFFFF !important;">$7.30T</span>
+                                            <small class="fw-bold" id="ex-chg-8" style="color: #7ED321; font-size: 9.5px;">+0.52% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 9. HKEX Hong Kong -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.hkex.com.hk/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 HKEX</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">Hong Kong • $6.20T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-9" d="M0,18 L20,15 L40,17 L60,10 L80,12 L100,5" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-9" style="font-size: 11.5px; color: #FFFFFF !important;">$6.20T</span>
+                                            <small class="fw-bold" id="ex-chg-9" style="color: #7ED321; font-size: 9.5px;">+1.05% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 10. KRX Korea -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://global.krx.co.kr/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 KRX Korea</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">South Korea • $4.89T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-10" d="M0,14 L20,10 L40,13 L60,7 L80,9 L100,3" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-10" style="font-size: 11.5px; color: #FFFFFF !important;">$4.89T</span>
+                                            <small class="fw-bold" id="ex-chg-10" style="color: #7ED321; font-size: 9.5px;">+0.85% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </section>
-    <section class="service-section" style="background-color: #001321;">
-    <div class="auto-container">
-                <div class="sec-title centred">
-                    <h6>Packages</h6>
-                    <h2 style="color:white;">Prakash Package Overview</h2>
-                    <p>The Prakash Package offers a
-                            unique investment opportunity
-                            with LED/Smart LED TVs, ranging
-                            from ₹12,000 to ₹55,000.
-                            Investors can expect a monthly
-                            generation income of 3-4% ,
-                            ensuring regular returns and
-                            product-backed security for peace
-                            of mind.</p>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-lg-6 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">1.Prakash Package</a></h3>
-                                <span>#01</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/24.jpg" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-13.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-14.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>12,000/- LED 24 Inches - 20,000/- LED 32 Inches</p>
-                                <!--<div class="link-box"><a href="service-details.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">2.Prakash Package</a></h3>
-                                <span>#02</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/32.jpg" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>32,000/- Smart LED 42 Inches - 55,000/- Smart LED 55 Inches</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <!--<div class="col-lg-3 col-md-6 col-sm-12 service-block">-->
-                    <!--    <div class="service-block-one">-->
-                    <!--        <div class="inner-box">-->
-                    <!--            <h3><a href="#">3.Prakash Package</a></h3>-->
-                    <!--            <span>#03</span>-->
-                    <!--            <div class="image-box">-->
-                    <!--                <img src="assets/images/service/42.jpg" alt="">-->
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-17.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-18.png" alt=""></div>-->
-                                    <!--</div>-->
-                    <!--            </div>-->
-                    <!--            <p>32,000/- Smart LED 42 Inches</p>-->
-                                <!--<div class="link-box"><a href="service-details-3.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                    <!--        </div>-->
-                    <!--    </div>-->
-                    <!--</div>-->
-                    <!--<div class="col-lg-3 col-md-6 col-sm-12 service-block">-->
-                    <!--    <div class="service-block-one">-->
-                    <!--        <div class="inner-box">-->
-                    <!--            <h3><a href="#">4.Prakash Package</a></h3>-->
-                    <!--            <span>#04</span>-->
-                    <!--            <div class="image-box">-->
-                    <!--                <img src="assets/images/service/55.jpg" alt="">-->
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-19.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-20.png" alt=""></div>-->
-                                    <!--</div>-->
-                    <!--            </div>-->
-                    <!--            <p>55,000/- Smart LED 55 Inches</p>-->
-                                <!--<div class="link-box"><a href="service-details-4.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                    <!--        </div>-->
-                    <!--    </div>-->
-                    <!--</div>-->
-                </div>
-                <hr>
-                <div class="sec-title centred">
-                    <h2 style="color:white;">Sampada Package
-Overview
-</h2>
-                    <p>The Sampada Package
-presents an exciting investment
-opportunity with Electric Scooty
-options. Ranging from ₹80,000
-to ₹1,00,000, investors can
-expect a steady monthly income
-of 3.0% to 4.0% over a duration
-of 48 months, ensuring secure
-returns.</p>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-lg-6 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">1.Sampada Package</a></h3>
-                                <span>#01</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/50-60.jpg" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-13.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-14.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>80,000/- Electric Scooty - Range(50-60 KM Full Charge).</p>
-                                <!--<div class="link-box"><a href="service-details.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">2.Sampada Package</a></h3>
-                                <span>#02</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/70-80.jpg" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>1,05,000/- Electric Scooty - Range(70-80 KM Full Charge).</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                                <hr>
-                 <div class="sec-title text-center">
-                    <h2 style="color:white;">Samridhi Premium Package
-Overview
-</h2>
-                    <p>The Samridhi Premium Package
-presents an exciting investment
-opportunity
-options. Ranging from ₹2,50,000
-to ₹3,50,000, investors can
-expect a steady monthly income
-of 3.0% to 4.0% over a duration
-of 48 months, ensuring secure
-returns.</p>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-lg-4 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">1.Samridhi Package</a></h3>
-                                <span>#01</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/sam3.PNG" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>1,85,000</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">2.Samridhi Premium Package</a></h3>
-                                <span>#02</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/sam4.PNG" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-13.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-14.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>2,85,000</p>
-                                <!--<div class="link-box"><a href="service-details.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">3.Samridhi Royal Package</a></h3>
-                                <span>#03</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/sam5.PNG" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>3,85,000</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    
-                </div>
-                <hr>
-                <div class="sec-title centred">
-                    <h2 style="color:white;">Tejas Package
-Overview
-</h2>
-                    <p>The Tejas Package offers
-secured investment ranging
-from ₹1,50,000 to ₹5,00,000+,
-backed by 40% gold. This unique
-security provides peace of mind,
-ensuring steady monthly income
-generation of 3.0% to 4.0%, while
-maximizing potential returns for
-investors.</p>
-                </div>
-                <div class="row clearfix">
-                    <!--<div class="col-lg-3 col-md-6 col-sm-12 service-block">-->
-                    <!--    <div class="service-block-one">-->
-                    <!--        <div class="inner-box">-->
-                    <!--            <h3><a href="#">1.Tejas Package</a></h3>-->
-                    <!--            <span>#01</span>-->
-                    <!--            <div class="image-box">-->
-                    <!--                <img src="assets/images/service/gold1.jpg" alt="">-->
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-13.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-14.png" alt=""></div>-->
-                                    <!--</div>-->
-                    <!--            </div>-->
-                    <!--            <p>1,10,000</p>-->
-                                <!--<div class="link-box"><a href="service-details.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                    <!--        </div>-->
-                    <!--    </div>-->
-                    <!--</div>-->
-                    <div class="col-lg-6 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">2.Tejas Package</a></h3>
-                                <span>#02</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/gold2.jpg" alt="" style="height:160px;">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>1,50,000 - 5,00,000</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">3.Tejas Package</a></h3>
-                                <span>#02</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/gold3.jpg" alt="" style="height:160px;">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>5,00,000 And Above</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <!--<div class="col-lg-3 col-md-6 col-sm-12 service-block">-->
-                    <!--    <div class="service-block-one">-->
-                    <!--        <div class="inner-box">-->
-                    <!--            <h3><a href="#">4.Tejas Package</a></h3>-->
-                    <!--            <span>#02</span>-->
-                    <!--            <div class="image-box">-->
-                    <!--                <img src="assets/images/service/gold4.jpg" alt="" style="height:160px;">-->
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                    <!--            </div>-->
-                    <!--            <p>10,00,000+ And Soon</p>-->
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                    <!--        </div>-->
-                    <!--    </div>-->
-                    <!--</div>-->
-                        <hr>
-                    <div class="sec-title centred">
-                    <h2 style="color:white;">Dhanya Package
-Overview
-</h2>
-                    <p>The Dhanya Package offers an
-attractive investment opportunity
-ranging from ₹10,00,000 to
-₹12,50,000, featuring a New 2nd
-Hand Car or Plot Agreement. This
-package supports a monthly
-income generation of 3.0% to
-4.0%, ensuring secure returns for
-investors.</p>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-lg-6 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">1.Dhanya Package</a></h3>
-                                <span>#01</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/car1.jpg" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-13.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-14.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>10,00,000 (Second Hand Car - (As Per The Invester Choice) - 70-100 Gaj Plot Agreement)</p>
-                                <!--<div class="link-box"><a href="service-details.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">2.Dhanya Package</a></h3>
-                                <span>#02</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/car2.jpg" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>12,50,000 (Second Hand Car - (As Per The Invester Choice) - 70-100 Gaj Plot Agreement)</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                </div>
-                <hr>
-                <div class="sec-title centred">
-                    <h2 style="color:white;">Anant Package
-Overview
-</h2>
-                    <p>The Anant Package offers an
-impressive investment opportunity
-with 25-30% backed by gold
-combined with 70% plot security.
-This dual security not only provides
-a robust asset foundation but also
-ensures consistent monthly
-income generation at a rate of
-3.0% to 4.0%.</p>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-lg-4 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">1.Anant Package</a></h3>
-                                <span>#01</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/plot1.jpg" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-13.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-14.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>10,50,000 (Gold+Plot For Security Reasons)</p>
-                                <!--<div class="link-box"><a href="service-details.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">2.Anant Package</a></h3>
-                                <span>#02</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/plot2.jpg" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>21,00,000 (Gold+Plot For Security Reasons)</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 service-block">
-                        <div class="service-block-one">
-                            <div class="inner-box">
-                                <h3><a href="#">3.Anant Package</a></h3>
-                                <span>#03</span>
-                                <div class="image-box">
-                                    <img src="assets/images/service/
-goldplot.png
-" alt="">
-                                    <!--<div class="icon-box">-->
-                                    <!--    <div class="icon"><img src="assets/images/icons/icon-15.png" alt=""></div>-->
-                                    <!--    <div class="overlay-icon"><img src="assets/images/icons/icon-16.png" alt=""></div>-->
-                                    <!--</div>-->
-                                </div>
-                                <p>51,00,000 (Gold+Plot For Security Reasons) And Soon.</p>
-                                <!--<div class="link-box"><a href="service-details-2.html">Read More <i class="flaticon-upper-right-arrow"></i></a></div>-->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                </div>
 
+        <!-- Real-Time Continuous SVG Sparkline Graph & Live Market Value Refresh Script -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const items = [
+                { id: 1, base: 43.58 },
+                { id: 2, base: 33.29 },
+                { id: 3, base: 5.14 },
+                { id: 4, base: 5.12 },
+                { id: 5, base: 9.97 },
+                { id: 6, base: 8.72 },
+                { id: 7, base: 8.33 },
+                { id: 8, base: 7.30 },
+                { id: 9, base: 6.20 },
+                { id: 10, base: 4.89 }
+            ];
+
+            // Smooth continuous live ticker update every 800ms
+            setInterval(() => {
+                items.forEach(item => {
+                    const pathEl = document.getElementById(`graph-path-${item.id}`);
+                    const valEl = document.getElementById(`ex-val-${item.id}`);
+                    const chgEl = document.getElementById(`ex-chg-${item.id}`);
+
+                    if (pathEl && valEl && chgEl) {
+                        // Dynamic continuous wave graph path generation
+                        const p1 = Math.floor(Math.random() * 10 + 10);
+                        const p2 = Math.floor(Math.random() * 12 + 6);
+                        const p3 = Math.floor(Math.random() * 10 + 12);
+                        const p4 = Math.floor(Math.random() * 8 + 3);
+                        const p5 = Math.floor(Math.random() * 10 + 8);
+                        const p6 = Math.floor(Math.random() * 6 + 1);
+
+                        const dPath = `M0,${p1} L20,${p2} L40,${p3} L60,${p4} L80,${p5} L100,${p6}`;
+                        pathEl.setAttribute('d', dPath);
+
+                        // Dynamic value & pct fluctuation
+                        const isUp = Math.random() > 0.42; // slightly biased towards growth
+                        const delta = (isUp ? 1 : -1) * (Math.random() * 0.05);
+                        item.base = Math.max(1.0, parseFloat((item.base + delta).toFixed(2)));
+                        const pct = (Math.random() * 1.8 + 0.1).toFixed(2);
+
+                        valEl.textContent = `$${item.base}T`;
+
+                        if (isUp) {
+                            chgEl.style.color = '#7ED321';
+                            chgEl.innerHTML = `+${pct}% <i class="fa fa-caret-up"></i>`;
+                            pathEl.setAttribute('stroke', '#7ED321');
+                        } else {
+                            chgEl.style.color = '#FF5F56';
+                            chgEl.innerHTML = `-${pct}% <i class="fa fa-caret-down"></i>`;
+                            pathEl.setAttribute('stroke', '#FF5F56');
+                        }
+                    }
+                });
+
+                // Live Fluctuation for Left Column Hero Stat Cards
+                const heroStatVal1 = document.getElementById('hero-stat-val-1');
+                const heroStatChg1 = document.getElementById('hero-stat-chg-1');
+                if (heroStatVal1 && heroStatChg1) {
+                    const isUp = Math.random() > 0.48;
+                    const valDelta = (isUp ? 1 : -1) * Math.floor(Math.random() * 350 + 50);
+                    let currentVal = parseInt((heroStatVal1.dataset.val || '1052280'), 10);
+                    currentVal = Math.max(1000000, currentVal + valDelta);
+                    heroStatVal1.dataset.val = currentVal;
+                    heroStatVal1.textContent = `₹ ${currentVal.toLocaleString('en-IN')}`;
+
+                    const yieldPct = (4.2 + (Math.random() - 0.5) * 0.4).toFixed(2);
+                    if (isUp) {
+                        heroStatChg1.style.background = 'rgba(126, 211, 33, 0.15)';
+                        heroStatChg1.style.color = '#7ED321';
+                        heroStatChg1.style.border = '1px solid rgba(126, 211, 33, 0.3)';
+                        heroStatChg1.innerHTML = `+${yieldPct}% Monthly Yield <i class="fa fa-caret-up"></i>`;
+                    } else {
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-4" d="M0,17 L20,10 L40,14 L60,6 L80,12 L100,2" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-4" style="font-size: 11.5px; color: #FFFFFF !important;">$5.12T</span>
+                                            <small class="fw-bold" id="ex-chg-4" style="color: #7ED321; font-size: 9.5px;">+1.75% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 5. Shanghai SSE -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://english.sse.com.cn/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Shanghai SSE</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">China • $9.97T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-5" d="M0,12 L20,16 L40,8 L60,14 L80,9 L100,5" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-5" style="font-size: 11.5px; color: #FFFFFF !important;">$9.97T</span>
+                                            <small class="fw-bold" id="ex-chg-5" style="color: #7ED321; font-size: 9.5px;">+0.64% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 6. Japan JPX -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.jpx.co.jp/english" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Japan JPX</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">Japan • $8.72T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-6" d="M0,19 L20,11 L40,15 L60,7 L80,11 L100,1" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-6" style="font-size: 11.5px; color: #FFFFFF !important;">$8.72T</span>
+                                            <small class="fw-bold" id="ex-chg-6" style="color: #7ED321; font-size: 9.5px;">+1.12% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 7. Euronext -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.euronext.com/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Euronext</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">Europe • $8.33T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-7" d="M0,14 L20,10 L40,16 L60,8 L80,13 L100,2" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-7" style="font-size: 11.5px; color: #FFFFFF !important;">$8.33T</span>
+                                            <small class="fw-bold" id="ex-chg-7" style="color: #7ED321; font-size: 9.5px;">+0.78% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 8. Shenzhen SZSE -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.szse.cn/English" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 Shenzhen SZSE</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">China • $7.30T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-8" d="M0,16 L20,12 L40,14 L60,8 L80,10 L100,4" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-8" style="font-size: 11.5px; color: #FFFFFF !important;">$7.30T</span>
+                                            <small class="fw-bold" id="ex-chg-8" style="color: #7ED321; font-size: 9.5px;">+0.52% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 9. HKEX Hong Kong -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://www.hkex.com.hk/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 HKEX</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">Hong Kong • $6.20T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-9" d="M0,18 L20,15 L40,17 L60,10 L80,12 L100,5" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-9" style="font-size: 11.5px; color: #FFFFFF !important;">$6.20T</span>
+                                            <small class="fw-bold" id="ex-chg-9" style="color: #7ED321; font-size: 9.5px;">+1.05% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 10. KRX Korea -->
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded-3" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div style="width: 35%;">
+                                            <a href="https://global.krx.co.kr/" target="_blank" class="fw-bold text-decoration-none d-block" style="font-size: 11.5px; color: #FFFFFF !important;">📈 KRX Korea</a>
+                                            <small class="text-muted d-block" style="font-size: 9.5px;">South Korea • $4.89T</small>
+                                        </div>
+                                        <div style="width: 32%;">
+                                            <svg width="100%" height="18" viewBox="0 0 100 25" style="overflow: visible;">
+                                                <path id="graph-path-10" d="M0,14 L20,10 L40,13 L60,7 L80,9 L100,3" fill="none" stroke="#7ED321" stroke-width="2.2" stroke-linecap="round" style="transition: all 0.5s ease-in-out;"/>
+                                            </svg>
+                                        </div>
+                                        <div class="text-end" style="width: 30%;">
+                                            <span class="fw-bold d-block" id="ex-val-10" style="font-size: 11.5px; color: #FFFFFF !important;">$4.89T</span>
+                                            <small class="fw-bold" id="ex-chg-10" style="color: #7ED321; font-size: 9.5px;">+0.85% <i class="fa fa-caret-up"></i></small>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </section>
 
-        <!-- service-section -->
-        
-        
+        <!-- Real-Time Continuous SVG Sparkline Graph & Live Market Value Refresh Script -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const items = [
+                { id: 1, base: 43.58 },
+                { id: 2, base: 33.29 },
+                { id: 3, base: 5.14 },
+                { id: 4, base: 5.12 },
+                { id: 5, base: 9.97 },
+                { id: 6, base: 8.72 },
+                { id: 7, base: 8.33 },
+                { id: 8, base: 7.30 },
+                { id: 9, base: 6.20 },
+                { id: 10, base: 4.89 }
+            ];
 
-        <!-- service-section end -->
+            // Smooth continuous live ticker update every 800ms
+            setInterval(() => {
+                items.forEach(item => {
+                    const pathEl = document.getElementById(`graph-path-${item.id}`);
+                    const valEl = document.getElementById(`ex-val-${item.id}`);
+                    const chgEl = document.getElementById(`ex-chg-${item.id}`);
 
+                    if (pathEl && valEl && chgEl) {
+                        // Dynamic continuous wave graph path generation
+                        const p1 = Math.floor(Math.random() * 10 + 10);
+                        const p2 = Math.floor(Math.random() * 12 + 6);
+                        const p3 = Math.floor(Math.random() * 10 + 12);
+                        const p4 = Math.floor(Math.random() * 8 + 3);
+                        const p5 = Math.floor(Math.random() * 10 + 8);
+                        const p6 = Math.floor(Math.random() * 6 + 1);
 
-        <!-- trading-section -->
-        <!--<section class="trading-section bg-color-1" style="background-color: #001321;">-->
-        <!--    <div class="auto-container">-->
-        <!--        <div class="sec-title">-->
-        <!--            <h6>Popular Pairs</h6>-->
-        <!--            <h2 style="color: white;">Trending Stock Market & Crypto Mining Pairs in the Market.</h2>-->
-                    <!--<a href="index.html">View All Pairs<i class="flaticon-upper-right-arrow"></i></a>-->
-        <!--        </div>-->
-        <!--        <div class="row clearfix">-->
-        <!--            <div class="col-lg-6 col-md-12 col-sm-12 trading-block">-->
-        <!--                <div class="trading-block-one">-->
-        <!--                    <div class="inner-box">-->
-        <!--                        <div class="row clearfix">-->
-        <!--                            <div class="col-lg-6 col-md-6 col-sm-12 single-column">-->
-                                        <!--<img src="assets/images/service/plot1.jpg" alt="">-->
-                                        <!--<div class="single-item pr_15">-->
-                                        <!--    <ul class="list-item">-->
-                                        <!--        <li>-->
-                                        <!--            <div class="text-box">-->
-                                        <!--                <h6>usd</h6>-->
-                                        <!--                <p>American Dollar</p>-->
-                                        <!--            </div>-->
-                                        <!--            <figure class="image-box"><img src="assets/images/icons/flag-1.png" alt=""></figure>-->
-                                        <!--        </li>-->
-                                        <!--        <li>-->
-                                        <!--            <span>Sell</span>-->
-                                        <!--            <h5>154.719</h5>-->
-                                        <!--        </li>-->
-                                        <!--    </ul>-->
-                                        <!--</div>-->
-        <!--                            </div>-->
-        <!--                            <div class="col-lg-6 col-md-6 col-sm-12 single-column">-->
-        <!--                                <div class="single-item pl_30">-->
-        <!--                                    <ul class="list-item">-->
-        <!--                                        <li>-->
-        <!--                                            <div class="text-box">-->
-        <!--                                                <h6>jpy</h6>-->
-        <!--                                                <p>Japanese Yen</p>-->
-        <!--                                            </div>-->
-        <!--                                            <figure class="image-box"><img src="assets/images/icons/flag-2.png" alt=""></figure>-->
-        <!--                                        </li>-->
-        <!--                                        <li>-->
-        <!--                                            <span>Buy</span>-->
-        <!--                                            <h5>154.839</h5>-->
-        <!--                                        </li>-->
-        <!--                                    </ul>-->
-        <!--                                </div>-->
-        <!--                            </div>-->
-        <!--                        </div>-->
-        <!--                    </div>-->
-        <!--                    <div class="lower-box">-->
-        <!--                        <div class="link-box"><a href="index.html">Let’s Trade Now<i class="flaticon-upper-right-arrow"></i></a></div>-->
-        <!--                        <p><i class="flaticon-down"></i> Change <span>-0.14%</span></p>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--            <div class="col-lg-6 col-md-12 col-sm-12 trading-block">-->
-        <!--                <div class="trading-block-one">-->
-        <!--                    <div class="inner-box">-->
-        <!--                        <div class="row clearfix">-->
-        <!--                            <div class="col-lg-6 col-md-6 col-sm-12 single-column">-->
-        <!--                                <div class="single-item pr_15">-->
-        <!--                                    <ul class="list-item">-->
-        <!--                                        <li>-->
-        <!--                                            <div class="text-box">-->
-        <!--                                                <h6>usd</h6>-->
-        <!--                                                <p>American Dollar</p>-->
-        <!--                                            </div>-->
-        <!--                                            <figure class="image-box"><img src="assets/images/icons/flag-1.png" alt=""></figure>-->
-        <!--                                        </li>-->
-        <!--                                        <li>-->
-        <!--                                            <span>Sell</span>-->
-        <!--                                            <h5>0.64589</h5>-->
-        <!--                                        </li>-->
-        <!--                                    </ul>-->
-        <!--                                </div>-->
-        <!--                            </div>-->
-        <!--                            <div class="col-lg-6 col-md-6 col-sm-12 single-column">-->
-        <!--                                <div class="single-item pl_30">-->
-        <!--                                    <ul class="list-item">-->
-        <!--                                        <li>-->
-        <!--                                            <div class="text-box">-->
-        <!--                                                <h6>Aud</h6>-->
-        <!--                                                <p>Australian Dolar</p>-->
-        <!--                                            </div>-->
-        <!--                                            <figure class="image-box"><img src="assets/images/icons/flag-3.png" alt=""></figure>-->
-        <!--                                        </li>-->
-        <!--                                        <li>-->
-        <!--                                            <span>Buy</span>-->
-        <!--                                            <h5>0.64612</h5>-->
-        <!--                                        </li>-->
-        <!--                                    </ul>-->
-        <!--                                </div>-->
-        <!--                            </div>-->
-        <!--                        </div>-->
-        <!--                    </div>-->
-        <!--                    <div class="lower-box">-->
-        <!--                        <div class="link-box"><a href="index.html">Let’s Trade Now<i class="flaticon-upper-right-arrow"></i></a></div>-->
-        <!--                        <p class="upper"><i class="flaticon-down"></i> Change <span>+0.05%</span></p>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--            <div class="col-lg-6 col-md-12 col-sm-12 trading-block">-->
-        <!--                <div class="trading-block-one">-->
-        <!--                    <div class="inner-box">-->
-        <!--                        <div class="row clearfix">-->
-        <!--                            <div class="col-lg-6 col-md-6 col-sm-12 single-column">-->
-        <!--                                <div class="single-item pr_15">-->
-        <!--                                    <ul class="list-item">-->
-        <!--                                        <li>-->
-        <!--                                            <div class="text-box">-->
-        <!--                                                <h6>usd</h6>-->
-        <!--                                                <p>American Dollar</p>-->
-        <!--                                            </div>-->
-        <!--                                            <figure class="image-box"><img src="assets/images/icons/flag-1.png" alt=""></figure>-->
-        <!--                                        </li>-->
-        <!--                                        <li>-->
-        <!--                                            <span>Sell</span>-->
-        <!--                                            <h5>1.42523</h5>-->
-        <!--                                        </li>-->
-        <!--                                    </ul>-->
-        <!--                                </div>-->
-        <!--                            </div>-->
-        <!--                            <div class="col-lg-6 col-md-6 col-sm-12 single-column">-->
-        <!--                                <div class="single-item pl_30">-->
-        <!--                                    <ul class="list-item">-->
-        <!--                                        <li>-->
-        <!--                                            <div class="text-box">-->
-        <!--                                                <h6>brl</h6>-->
-        <!--                                                <p>Brazilian Real</p>-->
-        <!--                                            </div>-->
-        <!--                                            <figure class="image-box"><img src="assets/images/icons/flag-4.png" alt=""></figure>-->
-        <!--                                        </li>-->
-        <!--                                        <li>-->
-        <!--                                            <span>Buy</span>-->
-        <!--                                            <h5>1.42540</h5>-->
-        <!--                                        </li>-->
-        <!--                                    </ul>-->
-        <!--                                </div>-->
-        <!--                            </div>-->
-        <!--                        </div>-->
-        <!--                    </div>-->
-        <!--                    <div class="lower-box">-->
-        <!--                        <div class="link-box"><a href="index.html">Let’s Trade Now<i class="flaticon-upper-right-arrow"></i></a></div>-->
-        <!--                        <p class="upper"><i class="flaticon-down"></i> Change <span>+0.25%</span></p>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--            <div class="col-lg-6 col-md-12 col-sm-12 trading-block">-->
-        <!--                <div class="trading-block-one">-->
-        <!--                    <div class="inner-box">-->
-        <!--                        <div class="row clearfix">-->
-        <!--                            <div class="col-lg-6 col-md-6 col-sm-12 single-column">-->
-        <!--                                <div class="single-item pr_15">-->
-        <!--                                    <ul class="list-item">-->
-        <!--                                        <li>-->
-        <!--                                            <div class="text-box">-->
-        <!--                                                <h6>usd</h6>-->
-        <!--                                                <p>American Dollar</p>-->
-        <!--                                            </div>-->
-        <!--                                            <figure class="image-box"><img src="assets/images/icons/flag-1.png" alt=""></figure>-->
-        <!--                                        </li>-->
-        <!--                                        <li>-->
-        <!--                                            <span>Sell</span>-->
-        <!--                                            <h5>1.3785</h5>-->
-        <!--                                        </li>-->
-        <!--                                    </ul>-->
-        <!--                                </div>-->
-        <!--                            </div>-->
-        <!--                            <div class="col-lg-6 col-md-6 col-sm-12 single-column">-->
-        <!--                                <div class="single-item pl_30">-->
-        <!--                                    <ul class="list-item">-->
-        <!--                                        <li>-->
-        <!--                                            <div class="text-box">-->
-        <!--                                                <h6>gbp</h6>-->
-        <!--                                                <p>Great Britain Pound</p>-->
-        <!--                                            </div>-->
-        <!--                                            <figure class="image-box"><img src="assets/images/icons/flag-5.png" alt=""></figure>-->
-        <!--                                        </li>-->
-        <!--                                        <li>-->
-        <!--                                            <span>Buy</span>-->
-        <!--                                            <h5>1.37846</h5>-->
-        <!--                                        </li>-->
-        <!--                                    </ul>-->
-        <!--                                </div>-->
-        <!--                            </div>-->
-        <!--                        </div>-->
-        <!--                    </div>-->
-        <!--                    <div class="lower-box">-->
-        <!--                        <div class="link-box"><a href="index.html">Let’s Trade Now<i class="flaticon-upper-right-arrow"></i></a></div>-->
-        <!--                        <p><i class="flaticon-down"></i> Change <span>-0.41%</span></p>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--        </div>-->
-        <!--    </div>-->
-        <!--</section>-->
-        <!-- trading-section end -->
-        
-        
-        
-        <section class="no-guarantee-cta" style="background-color:#000d1a; padding:50px 0; margin:40px 0 40px;">
-            <div class="auto-container text-center">
+                        const dPath = `M0,${p1} L20,${p2} L40,${p3} L60,${p4} L80,${p5} L100,${p6}`;
+                        pathEl.setAttribute('d', dPath);
+
+                        // Dynamic value & pct fluctuation
+                        const isUp = Math.random() > 0.42; // slightly biased towards growth
+                        const delta = (isUp ? 1 : -1) * (Math.random() * 0.05);
+                        item.base = Math.max(1.0, parseFloat((item.base + delta).toFixed(2)));
+                        const pct = (Math.random() * 1.8 + 0.1).toFixed(2);
+
+                        valEl.textContent = `$${item.base}T`;
+
+                        if (isUp) {
+                            chgEl.style.color = '#7ED321';
+                            chgEl.innerHTML = `+${pct}% <i class="fa fa-caret-up"></i>`;
+                            pathEl.setAttribute('stroke', '#7ED321');
+                        } else {
+                            chgEl.style.color = '#FF5F56';
+                            chgEl.innerHTML = `-${pct}% <i class="fa fa-caret-down"></i>`;
+                            pathEl.setAttribute('stroke', '#FF5F56');
+                        }
+                    }
+                });
+
+                // Live Fluctuation for Left Column Hero Stat Cards
+                const heroStatVal1 = document.getElementById('hero-stat-val-1');
+                const heroStatChg1 = document.getElementById('hero-stat-chg-1');
+                if (heroStatVal1 && heroStatChg1) {
+                    const isUp = Math.random() > 0.48;
+                    const valDelta = (isUp ? 1 : -1) * Math.floor(Math.random() * 350 + 50);
+                    let currentVal = parseInt((heroStatVal1.dataset.val || '1052280'), 10);
+                    currentVal = Math.max(1000000, currentVal + valDelta);
+                    heroStatVal1.dataset.val = currentVal;
+                    heroStatVal1.textContent = `₹ ${currentVal.toLocaleString('en-IN')}`;
+
+                    const yieldPct = (4.2 + (Math.random() - 0.5) * 0.4).toFixed(2);
+                    if (isUp) {
+                        heroStatChg1.style.background = 'rgba(126, 211, 33, 0.15)';
+                        heroStatChg1.style.color = '#7ED321';
+                        heroStatChg1.style.border = '1px solid rgba(126, 211, 33, 0.3)';
+                        heroStatChg1.innerHTML = `+${yieldPct}% Monthly Yield <i class="fa fa-caret-up"></i>`;
+                    } else {
+                        heroStatChg1.style.background = 'rgba(255, 95, 86, 0.15)';
+                        heroStatChg1.style.color = '#FF5F56';
+                        heroStatChg1.style.border = '1px solid rgba(255, 95, 86, 0.3)';
+                        heroStatChg1.innerHTML = `-${yieldPct}% Monthly Yield <i class="fa fa-caret-down"></i>`;
+                    }
+                }
+            }, 800);
+        });
+        </script>
+        <!-- ==================================================
+             SECTION 02 — ABOUT US & OUR GROWTH
+             ID: #about
+             ================================================== -->
+        <section id="about" class="py-5 position-relative overflow-hidden" style="background: #FFFFFF !important; border-top: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0;">
+            <div class="auto-container position-relative" style="z-index: 5;">
                 
-                <!-- Catchy Heading -->
-                <h2 style="color:white; font-size:32px; font-weight:700; margin-bottom:15px;">
-                Joining Our Guarantee Program? No Worries!
-                </h2>
-                <p style="color:#b5c7d3; font-size:18px; margin-bottom:30px;">
-                    You can still be a part of our community and access expert guidance through our 
-                    <strong>Non-Guarantee Program</strong>. Connect with our admin team for more details.
-                </p>
-        
-                <!-- Redirect Button -->
-                <a href="/gurantee_free.php" 
-                   style="
-                        display:inline-block;
-                        padding:15px 35px;
-                        background:linear-gradient(45deg,#007bff,#00c6ff);
-                        color:white;
-                        font-size:18px;
-                        border-radius:50px;
-                        text-decoration:none;
-                        font-weight:600;
-                        transition:0.3s;
-                   "
-                   onmouseover="this.style.opacity='0.85'" 
-                   onmouseout="this.style.opacity='1'">
-                    Join Without Guarantee
-                </a>
-            </div>
-        </section>
-        
-        <!-- chooseus-section -->
-        <section class="chooseus-section" style="background-color: #001321;">
-            <div class="auto-container">
-                <div class="sec-title centred">
-                    <h6>Key Highlights</h6>
-                    <h2 style="color: white;">Empowering Your Financial Journey</h2>
-                </div>
-                <div class="row align-items-center">
-                    <div class="col-lg-4 col-md-6 col-sm-12 left-column">
-                        <div class="left-content">
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-2.png);"></div>
-                                <span class="count-box">01</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-21.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-22.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Expert Market Analysis</h3>
-                                <p>Out team provides in-depth insights and reliable stock market analysis to help you make informed investment decisions.</p>
-                            </div>
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-2.png);"></div>
-                                <span class="count-box">02</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-25.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-26.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Transparent Real Estate Deals</h3>
-                                <p>We ensure every property transaction is clear, fair, and secure to perfect your valuable investments.</p>
-                            </div>
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-2.png);"></div>
-                                <span class="count-box">03</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-29.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-30.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Advances Crypto Mining Solutions</h3>
-                                <p>Utilize cutting-edge technology for efficient and profitable cryptocurrency mining with minimal downtime.</p>
-                            </div>
-                        </div>
-                    </div>
+                <div class="row g-5 align-items-center">
                     
-  <!--                  <section class="py-5 bg-light">-->
-  <!--<div class="container">-->
-  <!--  <div class="row justify-content-center">-->
-      <div class="col-lg-4 text-center">
-        
-        <h2 class="mb-4">Our Promo Video</h2>
-
-        <div class="ratio ratio-16x9">
-          <video autoplay controls muted>
-            <source src="assets/images/video/video1.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
-        </div>
-
-      </div>
-<!--    </div>-->
-<!--  </div>-->
-<!--</section>-->
-
-                    <!--<div class="col-lg-4 col-md-6 col-sm-12 image-column">-->
-                    <!--    <figure class="image-box"><img src="assets/images/resource/chooseus-1.png" alt=""></figure>-->
-                    <!--</div>-->
-                    <div class="col-lg-4 col-md-6 col-sm-12 left-column">
-                        <div class="right-content align-3">
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-3.png);"></div>
-                                <span class="count-box">04</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-23.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-24.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Trusted By Thousands</h3>
-                                <p>We have a proven track record of satisfied investor in stock, real estate and crypto mining sectors.</p>
+                    <!-- LEFT COLUMN: ABOUT US CONTENT -->
+                    <div class="col-lg-5 col-md-12">
+                        <div class="pe-lg-3 text-center text-lg-start">
+                            
+                            <!-- Pill Badge -->
+                            <div class="ananta-badge mb-3" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
+                                <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> ABOUT US
                             </div>
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-3.png);"></div>
-                                <span class="count-box">05</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-27.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-28.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Comprehensive Supports & Guidence</h3>
-                                <p>Our expert guide you throughout your investment journey, ensuring steady growth and risk management.</p>
+                            
+                            <!-- Subtitle / Company Title -->
+                            <h6 class="fw-extrabold text-uppercase mb-2" style="color: #0F5132; letter-spacing: 1.5px; font-size: 14px;">
+                                ANANTA MULTI TRADE PRIVATE LIMITED
+                            </h6>
+
+                            <!-- Hero Title -->
+                            <h2 class="fw-extrabold display-5 mb-3" style="font-family: var(--ananta-font-heading); color: #0B2545 !important; letter-spacing: -0.5px; font-weight: 800; line-height: 1.2;">
+                                ONE VISION.<br />
+                                <span style="color: #0F5132;">MULTIPLE OPPORTUNITIES.</span>
+                            </h2>
+
+                            <!-- Accent Divider -->
+                            <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-3 my-3">
+                                <span style="width: 60px; height: 2px; background: linear-gradient(90deg, #0F5132, transparent);"></span>
+                                <span style="display: inline-block; width: 6px; height: 6px; background: #C5A059; transform: rotate(45deg);"></span>
+                                <span style="width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #0F5132);"></span>
                             </div>
-                            <div class="single-item">
-                                <div class="shape" style="background-image: url(assets/images/shape/shape-3.png);"></div>
-                                <span class="count-box">06</span>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-31.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-32.png" alt=""></div>
-                                </div>
-                                <h3 style="color:white;">Cutting-edge & Technology Tools</h3>
-                                <p>We provide you with the latest stok market analysis, real estate valuable software, and advanced crypto mining hardware to keep you always one step ahead.</p>
-                            </div>
+
+                            <!-- Lead Text -->
+                            <h5 class="fw-bold mb-3" style="color: #1E293B; line-height: 1.5; font-size: 18px;">
+                                Building a diversified business ecosystem across markets, infrastructure, real estate and emerging industries.
+                            </h5>
+
+                            <!-- Body Text -->
+                            <p style="color: #475569; font-size: 15px; line-height: 1.7; margin-bottom: 0;">
+                                Ananta Multi Trade Private Limited is creating a growing network of businesses, partners and opportunities with a focus on innovation, professional operations and long-term growth.
+                            </p>
+
                         </div>
                     </div>
-                </div>
-            </div>
-        </section>
-        <!-- chooseus-section end -->
 
-
-        <!-- challenge-section -->
-        <!--<section class="challenge-section bg-color-2">-->
-        <!--    <div class="auto-container">-->
-        <!--        <div class="sec-title light">-->
-        <!--            <h6>Join Fxzone</h6>-->
-        <!--            <h2>Enter a Crypto Mining Challenge</h2>-->
-        <!--        </div>-->
-        <!--        <div class="tabs-box">-->
-        <!--            <div class="upper-box">-->
-        <!--                <div class="tab-btn-box">-->
-        <!--                    <h5>Select account size</h5>-->
-        <!--                    <ul class="tab-btns tab-buttons">-->
-        <!--                        <li class="tab-btn active-btn" data-tab="#tab-1">-->
-        <!--                            <div class="shape" style="background-image: url(assets/images/shape/shape-4.png);"></div>-->
-        <!--                            <span>$10k</span>-->
-        <!--                        </li>-->
-        <!--                        <li class="tab-btn" data-tab="#tab-2">-->
-        <!--                            <div class="shape" style="background-image: url(assets/images/shape/shape-4.png);"></div>-->
-        <!--                            <span>$20k</span>-->
-        <!--                        </li>-->
-        <!--                        <li class="tab-btn" data-tab="#tab-3">-->
-        <!--                            <div class="shape" style="background-image: url(assets/images/shape/shape-4.png);"></div>-->
-        <!--                            <span>$30k</span>-->
-        <!--                        </li>-->
-        <!--                        <li class="tab-btn" data-tab="#tab-4">-->
-        <!--                            <div class="shape" style="background-image: url(assets/images/shape/shape-4.png);"></div>-->
-        <!--                            <span>$50k</span>-->
-        <!--                        </li>-->
-        <!--                        <li class="tab-btn" data-tab="#tab-5">-->
-        <!--                            <div class="shape" style="background-image: url(assets/images/shape/shape-4.png);"></div>-->
-        <!--                            <span>$1l</span>-->
-        <!--                        </li>-->
-        <!--                    </ul>-->
-        <!--                </div>-->
-        <!--                <div class="select-box">-->
-        <!--                    <h5>Select preference</h5>-->
-        <!--                    <select class="wide">-->
-        <!--                        <option data-display="2-Step">2-Step</option>-->
-        <!--                        <option value="1">1-Step</option>-->
-        <!--                        <option value="2">2-Step</option>-->
-        <!--                        <option value="3">3-Step</option>-->
-        <!--                        <option value="4">4-Step</option>-->
-        <!--                     </select>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--            <div class="tabs-content">-->
-        <!--                <div class="tab active-tab" id="tab-1">-->
-        <!--                    <div class="table-outer">-->
-        <!--                        <table>-->
-        <!--                            <thead>-->
-        <!--                                <tr>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-33.png" alt=""><span>Lite</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-34.png" alt=""><span>Pro</span></div></th>-->
-        <!--                                    <th class="big-data"><div class="title-box"><span>Features</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-35.png" alt=""><span>Infinity</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-36.png" alt=""><span>Ultimate</span></div></th>-->
-        <!--                                </tr>    -->
-        <!--                            </thead>-->
-        <!--                            <tbody>-->
-        <!--                                <tr>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Target</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Minimum Trading Days</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Daily Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Maximum Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Trading Period</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="icon-box close-icon"><i class="flaticon-close"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Refundable Fee</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Leverage</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td class="big-data"><button><i class="flaticon-down"></i><span>Click to Explore More</span></button></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                </tr>-->
-        <!--                            </tbody>    -->
-        <!--                        </table>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--                <div class="tab" id="tab-2">-->
-        <!--                    <div class="table-outer">-->
-        <!--                        <table>-->
-        <!--                            <thead>-->
-        <!--                                <tr>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-33.png" alt=""><span>Lite</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-34.png" alt=""><span>Pro</span></div></th>-->
-        <!--                                    <th><div class="title-box"><span>Features</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-35.png" alt=""><span>Infinity</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-36.png" alt=""><span>Ultimate</span></div></th>-->
-        <!--                                </tr>    -->
-        <!--                            </thead>-->
-        <!--                            <tbody>-->
-        <!--                                <tr>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Target</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Minimum Trading Days</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Daily Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Maximum Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Trading Period</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="icon-box close-icon"><i class="flaticon-close"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Refundable Fee</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Leverage</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td class="big-data"><button><i class="flaticon-down"></i><span>Click to Explore More</span></button></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                </tr>-->
-        <!--                            </tbody>    -->
-        <!--                        </table>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--                <div class="tab" id="tab-3">-->
-        <!--                    <div class="table-outer">-->
-        <!--                        <table>-->
-        <!--                            <thead>-->
-        <!--                                <tr>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-33.png" alt=""><span>Lite</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-34.png" alt=""><span>Pro</span></div></th>-->
-        <!--                                    <th><div class="title-box"><span>Features</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-35.png" alt=""><span>Infinity</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-36.png" alt=""><span>Ultimate</span></div></th>-->
-        <!--                                </tr>    -->
-        <!--                            </thead>-->
-        <!--                            <tbody>-->
-        <!--                                <tr>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Target</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Minimum Trading Days</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Daily Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Maximum Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Trading Period</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="icon-box close-icon"><i class="flaticon-close"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Refundable Fee</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Leverage</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td class="big-data"><button><i class="flaticon-down"></i><span>Click to Explore More</span></button></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                </tr>-->
-        <!--                            </tbody>    -->
-        <!--                        </table>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--                <div class="tab" id="tab-4">-->
-        <!--                    <div class="table-outer">-->
-        <!--                        <table>-->
-        <!--                            <thead>-->
-        <!--                                <tr>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-33.png" alt=""><span>Lite</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-34.png" alt=""><span>Pro</span></div></th>-->
-        <!--                                    <th><div class="title-box"><span>Features</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-35.png" alt=""><span>Infinity</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-36.png" alt=""><span>Ultimate</span></div></th>-->
-        <!--                                </tr>    -->
-        <!--                            </thead>-->
-        <!--                            <tbody>-->
-        <!--                                <tr>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Target</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Minimum Trading Days</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Daily Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Maximum Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Trading Period</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="icon-box close-icon"><i class="flaticon-close"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Refundable Fee</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Leverage</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td class="big-data"><button><i class="flaticon-down"></i><span>Click to Explore More</span></button></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                </tr>-->
-        <!--                            </tbody>    -->
-        <!--                        </table>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--                <div class="tab" id="tab-5">-->
-        <!--                    <div class="table-outer">-->
-        <!--                        <table>-->
-        <!--                            <thead>-->
-        <!--                                <tr>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-33.png" alt=""><span>Lite</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-34.png" alt=""><span>Pro</span></div></th>-->
-        <!--                                    <th><div class="title-box"><span>Features</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-35.png" alt=""><span>Infinity</span></div></th>-->
-        <!--                                    <th><div class="title-box"><img src="assets/images/icons/icon-36.png" alt=""><span>Ultimate</span></div></th>-->
-        <!--                                </tr>    -->
-        <!--                            </thead>-->
-        <!--                            <tbody>-->
-        <!--                                <tr>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Target</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                    <td>₹800</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Minimum Trading Days</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                    <td>5 Days</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Daily Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                    <td>5%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Maximum Drawdown</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                    <td>10%</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Trading Period</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                    <td>No Limit</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="icon-box close-icon"><i class="flaticon-close"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Refundable Fee</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                    <td><div class="icon-box check-icon"><i class="flaticon-check"></i></div></td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td class="big-data"><i class="icon-one flaticon-fast-forward-double-right-arrows"></i><span>Leverage</span><i class="icon-two flaticon-fast-forward-double-right-arrows"></i></td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                    <td>1:100</td>-->
-        <!--                                </tr>-->
-        <!--                                <tr>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td class="big-data"><button><i class="flaticon-down"></i><span>Click to Explore More</span></button></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                    <td><div class="btn-box"><a href="index.html" class="theme-btn btn-three"><span>Get Plan Now</span></a></div></td>-->
-        <!--                                </tr>-->
-        <!--                            </tbody>    -->
-        <!--                        </table>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--        </div>-->
-        <!--        <div class="more-text light centred">-->
-        <!--            <p>Find the Perfect Fit for You... <a href="service.html">Compare Challenges<i class="flaticon-upper-right-arrow"></i></a></p>-->
-        <!--        </div>-->
-        <!--    </div>-->
-        <!--</section>-->
-        <!-- challenge-section end -->
-
-
-        <!-- working-section -->
-        <section class="working-section centred" style="background-color: #001321;">
-            <div class="auto-container">
-                <div class="sec-title">
-                    <h6>How it’s work</h6>
-                    <h2 style="color: white;">Step-by-Step Market Analysis</h2>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-lg-3 col-md-6 col-sm-12 working-block">
-                        <div class="working-block-one">
-                            <div class="inner-box">
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-37.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-38.png" alt=""></div>
-                                </div>
-                                <h6>Identify Market Trend</h6>
-                                <h3>Trend Analysis</h3>
-                                <h5>01</h5>
-                                <p>Understand whether the market is bullish, bearish, or sideways using chart patterns & indicators.</p>
-                            </div>
+                    <!-- RIGHT COLUMN: OUR GROWTH STATS GRID -->
+                    <div class="col-lg-7 col-md-12">
+                        
+                        <div class="sec-title text-center text-lg-start mb-4">
+                            <span class="fw-bold text-uppercase d-block mb-1" style="color: #C5A059; letter-spacing: 1px; font-size: 13px;">Performance & Expansion</span>
+                            <h3 class="fw-extrabold text-uppercase mb-0" style="font-family: var(--ananta-font-heading); color: #0B2545 !important; font-size: 26px;">
+                                OUR GROWTH
+                            </h3>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 col-sm-12 working-block">
-                        <div class="working-block-one">
-                            <div class="inner-box">
-                                <p>Spot critical price zones where buyers or sellers strongly react in stocks or crypto.</p>
-                                <h5>02</h5>
-                                <h6>Supports And Resistence</h6>
-                                <h3>Mark Key Levels</h3>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-39.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-40.png" alt=""></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 col-sm-12 working-block">
-                        <div class="working-block-one">
-                            <div class="inner-box">
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-41.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-42.png" alt=""></div>
-                                </div>
-                                <h6>Analyze Volumn & Momentum</h6>
-                                <h3>Valumn & Momentum Study</h3>
-                                <h5>03</h5>
-                                <p>Evaluate the strength of price movements using RSI, MACD, and volume spikes.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 col-sm-12 working-block">
-                        <div class="working-block-one">
-                            <div class="inner-box">
-                                <p>Set perfect entry, stop-loss, and target levels to make disciplined market decisions.</p>
-                                <h5>04</h5>
-                                <h6>Plan Entry & Exit</h6>
-                                <h3>Trade Execution</h3>
-                                <div class="icon-box">
-                                    <div class="icon"><img src="assets/images/icons/icon-43.png" alt=""></div>
-                                    <div class="overlay-icon"><img src="assets/images/icons/icon-44.png" alt=""></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!--<div class="more-text centred">-->
-                <!--    <p>Join the FXzone Revolution ... <a href="service.html">Take the First Step!<i class="flaticon-upper-right-arrow"></i></a></p>-->
-                <!--</div>-->
-            </div>
-        </section>
-        <!-- working-section end -->
 
-
-        <!-- platform-section -->
-        <!--<section class="platform-section bg-color-1">-->
-        <!--    <div class="pattern-layer" style="background-image: url(assets/images/shape/shape-6.png);"></div>-->
-        <!--    <div class="auto-container">-->
-        <!--        <div class="row align-items-center">-->
-        <!--            <div class="col-lg-6 col-md-12 col-sm-12 content-column">-->
-        <!--                <div class="content_block_two">-->
-        <!--                    <div class="content-box">-->
-        <!--                        <div class="sec-title">-->
-        <!--                            <h6>Platform</h6>-->
-        <!--                            <h2>Perfect Platform for Every Trader</h2>-->
-        <!--                        </div>-->
-        <!--                        <div class="text-box">-->
-        <!--                            <p>Denouncing pleasure and praising pain was born and  will give  -->
-        <!--                                complete account of the system and expound.</p>-->
-        <!--                        </div>-->
-        <!--                        <div class="tabs-box">-->
-        <!--                            <ul class="tab-btns tab-buttons">-->
-        <!--                                <li class="tab-btn active-btn" data-tab="#tab-6"><h5>Meta <br />Trader 4</h5> <i class="flaticon-down"></i></li>-->
-        <!--                                <li class="tab-btn" data-tab="#tab-7"><h5>Meta <br />Trader 5</h5> <i class="flaticon-down"></i></li>-->
-        <!--                            </ul>-->
-        <!--                            <div class="tabs-content">-->
-        <!--                                <div class="tab active-tab" id="tab-6">-->
-        <!--                                    <div class="inner-box">-->
-        <!--                                        <ul class="list-style-one clearfix">-->
-        <!--                                            <li><i class="flaticon-double-arrow"></i><span>Perfect for both beginners & advanced traders.</span></li>-->
-        <!--                                            <li><i class="flaticon-double-arrow"></i><span>Access live price movements.</span></li>-->
-        <!--                                            <li><i class="flaticon-double-arrow"></i><span>Charts with 30+ built-in technical indicators.</span></li>-->
-        <!--                                        </ul>-->
-        <!--                                        <a href="index.html" class="theme-btn btn-three"><span>Explore MT4</span></a>-->
-        <!--                                    </div>-->
-        <!--                                </div>-->
-        <!--                                <div class="tab" id="tab-7">-->
-        <!--                                    <div class="inner-box">-->
-        <!--                                        <ul class="list-style-one clearfix">-->
-        <!--                                            <li><i class="flaticon-double-arrow"></i><span>Perfect for both beginners & advanced traders.</span></li>-->
-        <!--                                            <li><i class="flaticon-double-arrow"></i><span>Access live price movements.</span></li>-->
-        <!--                                            <li><i class="flaticon-double-arrow"></i><span>Charts with 30+ built-in technical indicators.</span></li>-->
-        <!--                                        </ul>-->
-        <!--                                        <a href="index.html" class="theme-btn btn-three"><span>Explore MT5</span></a>-->
-        <!--                                    </div>-->
-        <!--                                </div>-->
-        <!--                            </div>-->
-        <!--                        </div>-->
-        <!--                    </div>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--            <div class="col-lg-6 col-md-12 col-sm-12 image-column">-->
-        <!--                <div class="image-box">-->
-        <!--                    <span class="big-text">Platform</span>-->
-        <!--                    <figure class="image clearfix"><img src="assets/images/resource/platform-1.png" alt=""></figure>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--        </div>-->
-        <!--    </div>-->
-        <!--</section>-->
-        <!-- platform-section end -->
-
-
-        <!-- news-section -->
-        <section class="news-section sec-pad">
-            <div class="auto-container">
-                <div class="sec-title centred">
-                    <h6>News & Updates</h6>
-                    <h2>Latest Updates & Headlines</h2>
-                </div>
-                <div class="row clearfix">
-                    <div class="col-lg-4 col-md-6 col-sm-12 news-block">
-                        <div class="news-block-one wow fadeInUp animated" data-wow-delay="00ms" data-wow-duration="1500ms">
-                            <div class="inner-box">
-                                <h6>Ananta Production</h6>
-                                <div class="image-box">
-                                    <div id="newsSlider1" class="carousel slide" data-bs-ride="carousel">
-                                        <div class="carousel-inner">
-                                            <div class="carousel-item active">
-                                                <img src="assets/images/news/1.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                        
-                                            <div class="carousel-item">
-                                                <img src="assets/images/news/2.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                        
-                                            <div class="carousel-item">
-                                                <img src="assets/images/news/3.PNG" class="d-block w-100" alt="" style="height:370px">
-                                            </div>
-                                        
+                        <div class="row g-3 justify-content-center py-2">
+                            <!-- Stat 1: 7+ Countries -->
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
+                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                            🌍
                                         </div>
-                                        
-                                                <!-- Navigation arrows -->
-                                        <!--<button class="carousel-control-prev" type="button" data-bs-target="#newsSlider1" data-bs-slide="prev">-->
-                                        <!--    <span class="carousel-control-prev-icon"></span>-->
-                                        <!--</button>-->
-                                        
-                                        <!--<button class="carousel-control-next" type="button" data-bs-target="#newsSlider1" data-bs-slide="next">-->
-                                        <!--    <span class="carousel-control-next-icon"></span>-->
-                                        <!--</button>-->
                                     </div>
-                                        
-                                    <div class="image-btn">
-                                        <a href="#"><i class="flaticon-right-arrow"></i></a>
-                                    </div>
-                                </div>
-
-                                <div class="lower-content">
-                                    <h3>How to Start Your Stock Market Journey</h3>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">7+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Countries</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                     <div class="col-lg-4 col-md-6 col-sm-12 news-block">
-                        <div class="news-block-one wow fadeInUp animated" data-wow-delay="00ms" data-wow-duration="1500ms">
-                            <div class="inner-box">
-                                <h6>Current Rate Of Gold</h6>
-                                <div class="image-box">
-                                    <div id="newsSlider1" class="carousel slide" data-bs-ride="carousel">
-                                        <div class="carousel-inner">
-                                            <div class="carousel-item active">
-                                                <img src="assets/images/news/g1.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                        
-                                            <div class="carousel-item">
-                                                <img src="assets/images/news/g2.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                            <div class="carousel-item">
-                                                <img src="assets/images/news/g3.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                            <div class="carousel-item">
-                                                <img src="assets/images/news/g4.JPG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                            <div class="carousel-item">
-                                                <img src="assets/images/news/g5.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                            <div class="carousel-item">
-                                                <img src="assets/images/news/g6.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g7.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g8.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g9.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g10.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g11.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g12.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g13.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g14.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g15.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g16.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                            
-                                             <div class="carousel-item">
-                                                <img src="assets/images/news/g17.PNG" class="d-block w-100" alt="">
-                                            </div>
-                                        
+
+                            <!-- Stat 2: 10K+ Members -->
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
+                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                            👥
                                         </div>
-                                        
-                                                <!-- Navigation arrows -->
-                                        <!--<button class="carousel-control-prev" type="button" data-bs-target="#newsSlider1" data-bs-slide="prev">-->
-                                        <!--    <span class="carousel-control-prev-icon"></span>-->
-                                        <!--</button>-->
-                                        
-                                        <!--<button class="carousel-control-next" type="button" data-bs-target="#newsSlider1" data-bs-slide="next">-->
-                                        <!--    <span class="carousel-control-next-icon"></span>-->
-                                        <!--</button>-->
                                     </div>
-                                        
-                                    <div class="image-btn">
-                                        <a href="#"><i class="flaticon-right-arrow"></i></a>
-                                    </div>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">10K+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Members</p>
                                 </div>
+                            </div>
 
-                                <div class="lower-content">
-                                    <h3>The Impact of Global Events on Crypto Mining</h3>
+                            <!-- Stat 3: $2M+ Global Volume -->
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
+                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                            💰
+                                        </div>
+                                    </div>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">$2M+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Global Volume</p>
                                 </div>
+                            </div>
+
+                            <!-- Stat 4: 100+ Partners -->
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
+                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                            🤝
+                                        </div>
+                                    </div>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">100+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Partners</p>
+                                </div>
+                            </div>
+
+                            <!-- Stat 5: 98% Success Rate -->
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
+                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                            📈
+                                        </div>
+                                    </div>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">98%</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Success Rate</p>
+                                </div>
+                            </div>
+
+                            <!-- Stat 6: 9.8% Monthly Growth -->
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
+                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                            📊
+                                        </div>
+                                    </div>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">9.8%</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Monthly Growth</p>
+                                </div>
+                            </div>
+
+                            <!-- Stat 7: 8.5K+ Active Members -->
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
+                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                            👥
+                                        </div>
+                                    </div>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">8.5K+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Active Members</p>
+                                </div>
+                            </div>
+
+                            <!-- Stat 8: 85%+ Active Community -->
+                            <div class="col-4 col-md-3">
+                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
+                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                            ⚡
+                                        </div>
+                                    </div>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">85%+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Active Community</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================================================
+             SECTION 03 — WHAT WE DO
+             ID: #businesses
+             ================================================== -->
+        <section id="businesses" class="py-5 position-relative overflow-hidden" style="background: #FFFFFF !important; border-bottom: 1px solid #E2E8F0;">
+            <div class="auto-container position-relative" style="z-index: 5;">
+                <div class="sec-title text-center mb-5">
+                    <div class="ananta-badge mb-3" style="background: linear-gradient(135deg, #0F5132 0%, #0B2545 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(15, 81, 50, 0.2); border: 1px solid rgba(197, 160, 89, 0.4);">
+                        <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> WHAT WE DO
+                    </div>
+                    <h2 class="fw-extrabold display-4 mb-2" style="font-family: var(--ananta-font-heading); color: #0B2545 !important; letter-spacing: 0.5px; font-weight: 800; text-transform: uppercase;">
+                        DIVERSIFIED BUSINESS. <span style="color: #0F5132;">ONE ECOSYSTEM.</span>
+                    </h2>
+                    <div class="d-flex align-items-center justify-content-center gap-3 my-3">
+                        <span style="width: 80px; height: 2px; background: linear-gradient(90deg, transparent, #0F5132);"></span>
+                        <span style="display: inline-block; width: 7px; height: 7px; background: #C5A059; transform: rotate(45deg);"></span>
+                        <span style="width: 80px; height: 2px; background: linear-gradient(90deg, #0F5132, transparent);"></span>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Vertical 1: FOREX TRADING -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex flex-column justify-content-between" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <span class="fw-bold text-uppercase" style="font-size: 13px; color: #0B2545; letter-spacing: 1px;">01</span>
+                                    <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background: rgba(11, 37, 69, 0.08); border: 1px solid rgba(11, 37, 69, 0.15);">
+                                        <i class="fa fa-chart-line fs-4" style="color: #0B2545;"></i>
+                                    </div>
+                                </div>
+                                <h4 class="fw-bold mb-2" style="color: #0B2545; font-family: var(--ananta-font-heading);">FOREX TRADING</h4>
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6;">Market-focused trading and research.</p>
+                            </div>
+                            <a href="service-details.php" class="fw-bold text-decoration-none d-inline-flex align-items-center mt-3" style="color: #0B2545; font-size: 14px;">Explore Vertical <i class="fa fa-arrow-right ms-2"></i></a>
+                        </div>
+                    </div>
+
+                    <!-- Vertical 2: REAL ESTATE -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex flex-column justify-content-between" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <span class="fw-bold text-uppercase" style="font-size: 13px; color: #0F5132; letter-spacing: 1px;">02</span>
+                                    <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background: rgba(15, 81, 50, 0.08); border: 1px solid rgba(15, 81, 50, 0.15);">
+                                        <i class="fa fa-building fs-4" style="color: #0F5132;"></i>
+                                    </div>
+                                </div>
+                                <h4 class="fw-bold mb-2" style="color: #0B2545; font-family: var(--ananta-font-heading);">REAL ESTATE</h4>
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6;">Property and real-asset opportunities.</p>
+                            </div>
+                            <a href="service-details.php" class="fw-bold text-decoration-none d-inline-flex align-items-center mt-3" style="color: #0F5132; font-size: 14px;">Explore Vertical <i class="fa fa-arrow-right ms-2"></i></a>
+                        </div>
+                    </div>
+
+                    <!-- Vertical 3: IPO & INVESTMENT -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex flex-column justify-content-between" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <span class="fw-bold text-uppercase" style="font-size: 13px; color: #0B2545; letter-spacing: 1px;">03</span>
+                                    <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background: rgba(11, 37, 69, 0.08); border: 1px solid rgba(11, 37, 69, 0.15);">
+                                        <i class="fa fa-chart-pie fs-4" style="color: #0B2545;"></i>
+                                    </div>
+                                </div>
+                                <h4 class="fw-bold mb-2" style="color: #0B2545; font-family: var(--ananta-font-heading);">IPO & INVESTMENT</h4>
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6;">Opportunities across selected market segments.</p>
+                            </div>
+                            <a href="service-details.php" class="fw-bold text-decoration-none d-inline-flex align-items-center mt-3" style="color: #0B2545; font-size: 14px;">Explore Vertical <i class="fa fa-arrow-right ms-2"></i></a>
+                        </div>
+                    </div>
+
+                    <!-- Vertical 4: EV CHARGING POINT -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex flex-column justify-content-between" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <span class="fw-bold text-uppercase" style="font-size: 13px; color: #0F5132; letter-spacing: 1px;">04</span>
+                                    <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background: rgba(15, 81, 50, 0.08); border: 1px solid rgba(15, 81, 50, 0.15);">
+                                        <i class="fa fa-bolt fs-4" style="color: #0F5132;"></i>
+                                    </div>
+                                </div>
+                                <h4 class="fw-bold mb-2" style="color: #0B2545; font-family: var(--ananta-font-heading);">EV CHARGING POINT</h4>
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6;">Building the next generation of EV infrastructure.</p>
+                            </div>
+                            <a href="service-details.php" class="fw-bold text-decoration-none d-inline-flex align-items-center mt-3" style="color: #0F5132; font-size: 14px;">Explore Vertical <i class="fa fa-arrow-right ms-2"></i></a>
+                        </div>
+                    </div>
+
+                    <!-- Vertical 5: TRAVEL & TOURISM -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex flex-column justify-content-between" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <span class="fw-bold text-uppercase" style="font-size: 13px; color: #0B2545; letter-spacing: 1px;">05</span>
+                                    <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background: rgba(11, 37, 69, 0.08); border: 1px solid rgba(11, 37, 69, 0.15);">
+                                        <i class="fa fa-plane-departure fs-4" style="color: #0B2545;"></i>
+                                    </div>
+                                </div>
+                                <h4 class="fw-bold mb-2" style="color: #0B2545; font-family: var(--ananta-font-heading);">TRAVEL & TOURISM</h4>
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6;">Domestic and international travel solutions.</p>
+                            </div>
+                            <a href="service-details.php" class="fw-bold text-decoration-none d-inline-flex align-items-center mt-3" style="color: #0B2545; font-size: 14px;">Explore Vertical <i class="fa fa-arrow-right ms-2"></i></a>
+                        </div>
+                    </div>
+
+                    <!-- Vertical 6: GOLD -->
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex flex-column justify-content-between" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <span class="fw-bold text-uppercase" style="font-size: 13px; color: #0F5132; letter-spacing: 1px;">06</span>
+                                    <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background: rgba(15, 81, 50, 0.08); border: 1px solid rgba(15, 81, 50, 0.15);">
+                                        <i class="fa fa-coins fs-4" style="color: #0F5132;"></i>
+                                    </div>
+                                </div>
+                                <h4 class="fw-bold mb-2" style="color: #0B2545; font-family: var(--ananta-font-heading);">GOLD</h4>
+                                <p style="color: #475569; font-size: 15px; line-height: 1.6;">Gold-focused business opportunities.</p>
+                            </div>
+                            <a href="service-details.php" class="fw-bold text-decoration-none d-inline-flex align-items-center mt-3" style="color: #0F5132; font-size: 14px;">Explore Vertical <i class="fa fa-arrow-right ms-2"></i></a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="text-center mt-5">
+                    <a href="service-details.php" class="btn px-4 py-3 rounded-3 text-white fw-bold shadow-sm text-decoration-none" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); border: none; border-radius: 30px !important; padding: 12px 30px;">
+                        EXPLORE ALL VERTICALS <i class="fa fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================
+             SECTION 04 — WHY ANANTA
+             ID: #partners
+             ================================================== -->
+        <section id="partners" class="py-5 position-relative overflow-hidden" style="background: #FFFFFF !important; border-bottom: 1px solid #E2E8F0;">
+            <div class="auto-container position-relative" style="z-index: 5;">
+                <div class="sec-title text-center mb-5">
+                    <div class="ananta-badge mb-3" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
+                        <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> WHY ANANTA
+                    </div>
+                    <h2 class="fw-extrabold display-4 mb-2" style="font-family: var(--ananta-font-heading); color: #0B2545 !important; letter-spacing: 0.5px; font-weight: 800; text-transform: uppercase;">
+                        WHY <span style="color: #0F5132;">CHOOSE</span> ANANTA
+                    </h2>
+                    <div class="d-flex align-items-center justify-content-center gap-3 my-3">
+                        <span style="width: 80px; height: 2px; background: linear-gradient(90deg, transparent, #0F5132);"></span>
+                        <span style="display: inline-block; width: 7px; height: 7px; background: #C5A059; transform: rotate(45deg);"></span>
+                        <span style="width: 80px; height: 2px; background: linear-gradient(90deg, #0F5132, transparent);"></span>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Feature 01 -->
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div class="display-4 fw-extrabold flex-shrink-0" style="font-family: var(--ananta-font-heading); color: #0B2545; line-height: 1;">
+                                01
+                            </div>
+                            <div>
+                                <h4 class="fw-bold mb-2" style="font-family: var(--ananta-font-heading);">
+                                    <span style="color: #0B2545;">01 — </span><span style="color: #0F5132;">DIVERSIFIED</span>
+                                </h4>
+                                <p class="mb-0" style="color: #475569; font-size: 15.5px; line-height: 1.6;">
+                                    Multiple business verticals under one growing ecosystem.
+                                </p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 news-block">
-                        <div class="news-block-one wow fadeInUp animated" data-wow-delay="600ms" data-wow-duration="1500ms">
-                            <div class="inner-box">
-                                <h6>Company News</h6>
-                                <div class="image-box">
-                                    <figure class="image"><img src="assets/images/news/2.NG" alt="" style="height:370px"></figure>
-                                    <div class="image-btn"><a href="#"><i class="flaticon-right-arrow"></i></a></div>
-                                </div>
-                                <div class="lower-content">
-                                    <h3>Exciting New Features on Our RealEstate Platform</h3>
-                                </div>
+
+                    <!-- Feature 02 -->
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div class="display-4 fw-extrabold flex-shrink-0" style="font-family: var(--ananta-font-heading); color: #0F5132; line-height: 1;">
+                                02
+                            </div>
+                            <div>
+                                <h4 class="fw-bold mb-2" style="font-family: var(--ananta-font-heading);">
+                                    <span style="color: #0F5132;">02 — </span><span style="color: #0B2545;">PROFESSIONAL</span>
+                                </h4>
+                                <p class="mb-0" style="color: #475569; font-size: 15.5px; line-height: 1.6;">
+                                    Structured operations supported by dedicated teams.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 03 -->
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div class="display-4 fw-extrabold flex-shrink-0" style="font-family: var(--ananta-font-heading); color: #0B2545; line-height: 1;">
+                                03
+                            </div>
+                            <div>
+                                <h4 class="fw-bold mb-2" style="font-family: var(--ananta-font-heading);">
+                                    <span style="color: #0B2545;">03 — </span><span style="color: #0F5132;">INNOVATIVE</span>
+                                </h4>
+                                <p class="mb-0" style="color: #475569; font-size: 15.5px; line-height: 1.6;">
+                                    Focused on emerging markets, technology and new opportunities.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 04 -->
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                            <div class="display-4 fw-extrabold flex-shrink-0" style="font-family: var(--ananta-font-heading); color: #0F5132; line-height: 1;">
+                                04
+                            </div>
+                            <div>
+                                <h4 class="fw-bold mb-2" style="font-family: var(--ananta-font-heading);">
+                                    <span style="color: #0F5132;">04 — </span><span style="color: #0B2545;">CONNECTED</span>
+                                </h4>
+                                <p class="mb-0" style="color: #475569; font-size: 15.5px; line-height: 1.6;">
+                                    A growing network of members, partners and businesses.
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
-        <!-- news-section end -->
 
+        <!-- ==================================================
+             SECTION 05 — OUR VISION
+             ID: #vision
+             ================================================== -->
+        <section id="vision" class="py-5 position-relative overflow-hidden" style="background: #FFFFFF !important; border-bottom: 1px solid #E2E8F0;">
+            <div class="auto-container position-relative py-3" style="z-index: 5;">
+                <div class="p-5 rounded-5 text-center position-relative overflow-hidden shadow-lg" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 30px !important;">
+                    
+                    <div class="ananta-badge mb-3" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px;">
+                        <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> OUR VISION
+                    </div>
 
-        <!-- testimonial-section -->
-        <section class="testimonial-section bg-color-1">
-            <div class="auto-container">
-                <div class="row align-items-center">
-                    <div class="col-lg-6 col-md-12 col-sm-12 content-column">
-                        <div class="content_block_three">
-                            <div class="content-box">
-                                <div class="sec-title">
-                                    <h6>Testimonials</h6>
-                                    <h2>Stories that <br />Inspire Confidence</h2>
-                                </div>
-                                <div class="text-box">
-                                    <p>Real traders sharing their success stories with us.</p>
-                                </div>
-                                <div class="inner-box">
-                                    <div class="curve-text">
-                                        <h3>4.9</h3>
-                                        <span class="curved-circle">Trader Feedback and Ratings &nbsp;&nbsp;.&nbsp;&nbsp;</span>
-                                    </div>
-                                    <div class="rating-box">
-                                        <ul class="rating">
-                                            <li><i class="flaticon-rate-star-button"></i></li>
-                                            <li><i class="flaticon-rate-star-button"></i></li>
-                                            <li><i class="flaticon-rate-star-button"></i></li>
-                                            <li><i class="flaticon-rate-star-button"></i></li>
-                                            <li><i class="flaticon-rate-star-button"></i></li>
-                                        </ul>
-                                        <p>From 2k Members, Reviewed <br />by <a href="index.html">Google</a>.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6 col-md-12 col-sm-12 inner-column">
-                        <div class="inner-content">
-                            <div class="testimonial-block-one">
-                                <div class="rating-box"><h6>5.0</h6><i class="flaticon-rate-star-button"></i></div>
-                                <figure class="image-box"><img src="assets/images/resource/testimonial-1.png" alt=""></figure>
-                                <div class="inner-box">
-                                    <h3>XTB</h3>
-                                    <p>XTBzone stands out with its excellent support team and fast payouts. The trading conditions are fair.</p>
-                                    <h6><i class="flaticon-funds"></i><span>Profit Split: 85%</span></h6>
-                                </div>
-                            </div>
-                            <div class="testimonial-block-one">
-                                <div class="rating-box"><h6>4.9</h6><i class="flaticon-rate-star-button"></i></div>
-                                <figure class="image-box"><img src="assets/images/resource/testimonial-2.png" alt=""></figure>
-                                <div class="inner-box">
-                                    <!--<h3>Maria L., <span>Germany</span></h3>-->
-                                    <p>Thanks to XTBzone’s, Their advanced platform tools and educational resources made all.</p>
-                                    <h6><i class="flaticon-funds"></i><span>Profit Split: 70%</span></h6>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <h1 class="fw-extrabold display-4 mb-4 text-white" style="font-family: var(--ananta-font-heading); letter-spacing: 0.5px;">
+                        <span style="color: #FFFFFF;">BUILD.</span> 
+                        <span style="color: #C5A059;">CONNECT.</span> 
+                        <span style="color: #FFFFFF;">INNOVATE.</span> 
+                        <span style="color: #C5A059;">GROW.</span>
+                    </h1>
+                    <p class="fs-4 mx-auto mb-0" style="color: #E2E8F0; max-width: 820px; line-height: 1.7; font-weight: 400;">
+                        Our vision is to build a modern and diversified business ecosystem that connects people, businesses, technology and emerging opportunities across markets.
+                    </p>
                 </div>
             </div>
         </section>
-        <!-- testimonial-section end -->
 
+        <!-- ==================================================
+             SECTION 06 — FAQ & CONTACT US
+             ID: #contact
+             ================================================== -->
+        <section id="contact" class="py-5 position-relative" style="background: #FFFFFF !important; color: #0F172A; border-top: 1px solid #E2E8F0;">
+            
+            <div class="container-fluid container-xl position-relative py-3">
+                
+                <!-- Section Header -->
+                <div class="sec-title text-center mb-5">
+                    <div class="ananta-badge mb-3" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
+                        <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> GET IN TOUCH & FAQ
+                    </div>
+                    <h2 class="fw-extrabold display-5 mb-2" style="font-family: var(--ananta-font-heading); color: #0B2545 !important; letter-spacing: -0.5px;">
+                        FREQUENTLY ASKED <span style="color: #0F5132;">QUESTIONS</span> & CONTACT
+                    </h2>
+                    <p class="fs-5 mx-auto" style="color: #475569; max-width: 680px; font-weight: 400; line-height: 1.5;">Find instant answers to common questions on the left, or send us a direct message using the contact form on the right.</p>
+                    <div class="d-flex align-items-center justify-content-center gap-3 my-3">
+                        <span style="width: 80px; height: 2px; background: linear-gradient(90deg, transparent, #0F5132);"></span>
+                        <span style="display: inline-block; width: 7px; height: 7px; background: #C5A059; transform: rotate(45deg);"></span>
+                        <span style="width: 80px; height: 2px; background: linear-gradient(90deg, #0F5132, transparent);"></span>
+                    </div>
+                </div>
 
-        <!-- brands-section -->
-        <!--<section class="brands-section centred">-->
-        <!--    <div class="auto-container">-->
-        <!--        <div class="sec-title">-->
-        <!--            <h6>Partners</h6>-->
-        <!--            <h2>Our Trusted Global Partners</h2>-->
-        <!--        </div>-->
-        <!--        <div class="inner-container">-->
-        <!--            <div class="inner-box">-->
-        <!--                <ul class="brands-list clearfix">-->
-        <!--                    <li><a href="index.html"><img src="assets/images/clients/clients-1.png" alt=""></a></li>-->
-        <!--                    <li><a href="index.html"><img src="assets/images/clients/clients-2.png" alt=""></a></li>-->
-        <!--                    <li><a href="index.html"><img src="assets/images/clients/clients-3.png" alt=""></a></li>-->
-        <!--                    <li><a href="index.html"><img src="assets/images/clients/clients-4.png" alt=""></a></li>-->
-        <!--                </ul>-->
-        <!--                <ul class="brands-list clearfix">-->
-        <!--                    <li><a href="index.html"><img src="assets/images/clients/clients-5.png" alt=""></a></li>-->
-        <!--                    <li><a href="index.html"><img src="assets/images/clients/clients-6.png" alt=""></a></li>-->
-        <!--                    <li><a href="index.html"><img src="assets/images/clients/clients-7.png" alt=""></a></li>-->
-        <!--                    <li><a href="index.html"><img src="assets/images/clients/clients-8.png" alt=""></a></li>-->
-        <!--                </ul>-->
-        <!--            </div>-->
-        <!--            <div class="more-text centred">-->
-        <!--                <h5>Collaborating with 100+ Global Partners Worldwide. <a href="service.html">All Partners<i class="flaticon-upper-right-arrow"></i></a></h5>-->
-        <!--            </div>-->
-        <!--        </div>-->
-        <!--    </div>-->
-        <!--</section>-->
-        <!-- brands-section end -->
-</div>
+                <!-- 2-Column Layout: Left FAQ, Right Contact Form -->
+                <div class="row g-4 align-items-stretch">
+                    
+                    <!-- LEFT SIDE: FAQ ACCORDION -->
+                    <div class="col-lg-6 col-md-12">
+                        <div class="p-4 p-md-4 rounded-4 h-100" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 10px 30px rgba(11, 37, 69, 0.05); border-radius: 24px !important;">
+                            <div class="d-flex align-items-center gap-3 mb-4 border-bottom border-secondary border-opacity-10 pb-3">
+                                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 46px; height: 46px; background: rgba(11, 37, 69, 0.08); border: 1px solid rgba(11, 37, 69, 0.15);">
+                                    <i class="fa fa-question-circle fs-4" style="color: #0B2545;"></i>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-0" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 20px;">Frequently Asked Questions</h3>
+                                    <span style="color: #64748B; font-size: 13.5px; font-weight: 500;">Fast Solutions & Guidance</span>
+                                </div>
+                            </div>
 
-        <!-- main-footer -->
-    <script src="particles.js"></script>
-    <script src="app.js"></script>
-  
-  <style>
-#particles-js {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-} 
-#particles-js,
-canvas {
-    pointer-events: none;
-}
+                            <!-- Accordion List -->
+                            <div class="accordion" id="anantaContactFaq">
+                                
+                                <!-- FAQ 1 (OPEN STATE) -->
+                                <div class="accordion-item mb-3 rounded-3 overflow-hidden" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px !important;">
+                                    <h2 class="accordion-header" id="faqHeadOne">
+                                        <button class="accordion-button fw-bold py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseOne" aria-expanded="true" aria-controls="faqCollapseOne" style="background: #F8FAFC; color: #0B2545 !important; font-size: 15px; box-shadow: none;">
+                                            <i class="fa fa-question-circle me-2" style="color: #0B2545;"></i> What is Ananta Multi Trade Private Limited?
+                                        </button>
+                                    </h2>
+                                    <div id="faqCollapseOne" class="accordion-collapse collapse show" aria-labelledby="faqHeadOne" data-bs-parent="#anantaContactFaq">
+                                        <div class="accordion-body px-4 py-3" style="color: #334155; background: #FFFFFF; font-size: 14px; line-height: 1.65; border-top: 1px solid #E2E8F0;">
+                                            Ananta Multi Trade Private Limited is a modern corporate fintech enterprise committed to providing structured financial strategies, multi-trade services, institutional solutions, and wealth management opportunities.
+                                        </div>
+                                    </div>
+                                </div>
 
-</style>
+                                <!-- FAQ 2 -->
+                                <div class="accordion-item mb-3 rounded-3 overflow-hidden" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px !important;">
+                                    <h2 class="accordion-header" id="faqHeadTwo">
+                                        <button class="accordion-button collapsed fw-bold py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseTwo" aria-expanded="false" aria-controls="faqCollapseTwo" style="background: #F8FAFC; color: #0B2545 !important; font-size: 15px; box-shadow: none;">
+                                            <i class="fa fa-shield-halved me-2" style="color: #0F5132;"></i> How secure and reliable are Ananta's services?
+                                        </button>
+                                    </h2>
+                                    <div id="faqCollapseTwo" class="accordion-collapse collapse" aria-labelledby="faqHeadTwo" data-bs-parent="#anantaContactFaq">
+                                        <div class="accordion-body px-4 py-3" style="color: #334155; background: #FFFFFF; font-size: 14px; line-height: 1.65; border-top: 1px solid #E2E8F0;">
+                                            We operate under strict compliance standards with robust risk management frameworks, automated monitoring systems, and dedicated multi-tier support to ensure maximal transparency and reliability.
+                                        </div>
+                                    </div>
+                                </div>
 
-</body><!-- End of .page_wrapper -->
+                                <!-- FAQ 3 -->
+                                <div class="accordion-item mb-3 rounded-3 overflow-hidden" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px !important;">
+                                    <h2 class="accordion-header" id="faqHeadThree">
+                                        <button class="accordion-button collapsed fw-bold py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseThree" aria-expanded="false" aria-controls="faqCollapseThree" style="background: #F8FAFC; color: #0B2545 !important; font-size: 15px; box-shadow: none;">
+                                            <i class="fa fa-chart-line me-2" style="color: #0B2545;"></i> What market verticals do you operate in?
+                                        </button>
+                                    </h2>
+                                    <div id="faqCollapseThree" class="accordion-collapse collapse" aria-labelledby="faqHeadThree" data-bs-parent="#anantaContactFaq">
+                                        <div class="accordion-body px-4 py-3" style="color: #334155; background: #FFFFFF; font-size: 14px; line-height: 1.65; border-top: 1px solid #E2E8F0;">
+                                            Our strategic domain spans across equities, forex, commodities, structured corporate trading, automated fintech analytics, and strategic partnership ecosystems.
+                                        </div>
+                                    </div>
+                                </div>
 
-<!-- Mirrored from azim.hostlin.com/Fxzone/index.html by HTTrack Website Copier/3.x [XR&CO'2014], Wed, 03 Dec 2025 11:21:14 GMT -->
+                                <!-- FAQ 4 -->
+                                <div class="accordion-item mb-3 rounded-3 overflow-hidden" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px !important;">
+                                    <h2 class="accordion-header" id="faqHeadFour">
+                                        <button class="accordion-button collapsed fw-bold py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseFour" aria-expanded="false" aria-controls="faqCollapseFour" style="background: #F8FAFC; color: #0B2545 !important; font-size: 15px; box-shadow: none;">
+                                            <i class="fa fa-clock me-2" style="color: #0F5132;"></i> What are your operational hours & support availability?
+                                        </button>
+                                    </h2>
+                                    <div id="faqCollapseFour" class="accordion-collapse collapse" aria-labelledby="faqHeadFour" data-bs-parent="#anantaContactFaq">
+                                        <div class="accordion-body px-4 py-3" style="color: #334155; background: #FFFFFF; font-size: 14px; line-height: 1.65; border-top: 1px solid #E2E8F0;">
+                                            Our market operations run Monday 9:00 AM to Saturday 11:59 PM (GMT). Client support and direct query resolution is available via our online message desk.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- FAQ 5 -->
+                                <div class="accordion-item rounded-3 overflow-hidden" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px !important;">
+                                    <h2 class="accordion-header" id="faqHeadFive">
+                                        <button class="accordion-button collapsed fw-bold py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapseFive" aria-expanded="false" aria-controls="faqCollapseFive" style="background: #F8FAFC; color: #0B2545 !important; font-size: 15px; box-shadow: none;">
+                                            <i class="fa fa-paper-plane me-2" style="color: #0B2545;"></i> How can I send an inquiry or become a partner?
+                                        </button>
+                                    </h2>
+                                    <div id="faqCollapseFive" class="accordion-collapse collapse" aria-labelledby="faqHeadFive" data-bs-parent="#anantaContactFaq">
+                                        <div class="accordion-body px-4 py-3" style="color: #334155; background: #FFFFFF; font-size: 14px; line-height: 1.65; border-top: 1px solid #E2E8F0;">
+                                            Simply fill out the contact form on the right with your full name, email, phone number, and query details. Our executive team will get back to you promptly.
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT SIDE: CONTACT FORM -->
+                    <div class="col-lg-6 col-md-12">
+                        <div class="p-4 p-md-4 rounded-4 h-100" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 10px 30px rgba(11, 37, 69, 0.05); border-radius: 24px !important;">
+                            
+                            <div class="d-flex align-items-center gap-3 mb-4 border-bottom border-secondary border-opacity-10 pb-3">
+                                <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 46px; height: 46px; background: rgba(15, 81, 50, 0.08); border: 1px solid rgba(15, 81, 50, 0.15);">
+                                    <i class="fa fa-envelope-open-text fs-4" style="color: #0F5132;"></i>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-0" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 20px;">Send Us A Message</h3>
+                                    <span style="color: #64748B; font-size: 13.5px; font-weight: 500;">We'd Love To Hear From You</span>
+                                </div>
+                            </div>
+
+                            <form method="post" action="contact.php" class="contact-form">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label class="fw-bold mb-2" style="font-size: 13.5px; color: #0F172A;">Your Full Name <span style="color: #DC2626;">*</span></label>
+                                            <input type="text" name="username" class="form-control rounded-3 py-3 px-3 fw-medium" placeholder="Your Full Name" required style="background: #F8FAFC !important; border: 1px solid #CBD5E1 !important; color: #0F172A !important; border-radius: 12px !important;">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label class="fw-bold mb-2" style="font-size: 13.5px; color: #0F172A;">Your Email <span style="color: #DC2626;">*</span></label>
+                                            <input type="email" name="email" class="form-control rounded-3 py-3 px-3 fw-medium" placeholder="Your Email *" required style="background: #F8FAFC !important; border: 1px solid #CBD5E1 !important; color: #0F172A !important; border-radius: 12px !important;">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label class="fw-bold mb-2" style="font-size: 13.5px; color: #0F172A;">Your Phone <span style="color: #DC2626;">*</span></label>
+                                            <input type="text" name="phone" class="form-control rounded-3 py-3 px-3 fw-medium" placeholder="Your Phone" required style="background: #F8FAFC !important; border: 1px solid #CBD5E1 !important; color: #0F172A !important; border-radius: 12px !important;">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label class="fw-bold mb-2" style="font-size: 13.5px; color: #0F172A;">Address / Message Details <span style="color: #DC2626;">*</span></label>
+                                            <textarea name="address" rows="3" class="form-control rounded-3 py-3 px-3 fw-medium" placeholder="Address / Message Details *" required style="background: #F8FAFC !important; border: 1px solid #CBD5E1 !important; color: #0F172A !important; border-radius: 12px !important;"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 mt-4 text-center">
+                                        <button type="submit" class="btn w-100 py-3 rounded-3 text-white fw-bold fs-6 shadow-sm d-flex align-items-center justify-content-center gap-2" name="submit-form" style="background: linear-gradient(90deg, #0B2545 0%, #0F5132 100%); border: none; border-radius: 14px !important; letter-spacing: 0.3px;">
+                                            Send Message <i class="fa fa-paper-plane ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+
+                </div>
+
+        </section>
+    </div>
+
+    <?php include "common/footer.php"; ?>
+</body>
 </html>
-<?php include "common/footer.php"; ?>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

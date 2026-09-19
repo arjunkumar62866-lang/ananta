@@ -166,56 +166,68 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!-- end loader -->
 
 <!-- Start wrapper-->
-<div id="wrapper">
+<div id="wrapper" class="ananta-user-dashboard">
   <div class="clearfix"></div>
   
   <div class="content-wrapper">
     <div class="container-fluid">
       <div class="row mt-3">
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <div class="card-title text-center"><h3>Withdrawal</h3></div>
-              <hr>
-              <div class="text-center mb-3">
-                <h6>💰 Available Balance: <span class="text-success">₹<?= $wallet_amount; ?></span></h6>
-                <!--<h6>🕙 Withdrawal Time: 10 AM - 5 PM</h6>-->
-                <!--<h6>📅 Every Monday Only</h6>-->
-                <h6 class="text-danger">⚠️ Minimum Withdrawal: ₹360</h6>
-              </div>
-              
-              <form method="POST" enctype="multipart/form-data" class="space-y-4">
-                <h6 class="text-center text-success"><?= isset($success) ? $success : '' ?></h6>
-                <h6 class="text-center text-danger"><?= isset($error) ? $error : '' ?></h6>
+        <div class="col-lg-8 offset-lg-2">
+          <div class="card shadow-lg border-0" style="border-radius: 20px; background: #ffffff;">
+            <div class="card-body p-4 p-md-5">
 
-                <div class="table-responsive">
-                  <table class="table table-bordered table-striped">
-                    <tbody>
-                      <tr>
-                        <td><strong>Available Balance :</strong></td>
-                        <td>₹ <?= $wallet_amount; ?></td>
-                      </tr>
-                      <tr>
-                        <td><strong>TDS + Admin Charge :</strong></td>
-                        <td>5% + 3%</td>
-                      </tr>
-                      <tr>
-                        <td><strong>Enter Withdrawal Amount :</strong></td>
-                        <td>
-                          <input type="hidden" id="qty" value="5" class="form-control">
-                          <input min="360" id="amt" name="amount" type="number" required class="form-control mt-2">
-                        </td>
-                      </tr>
-                      <tr>
-                        <td></td>
-                        <td>
-                          <button type="submit" class="btn btn-primary px-4 py-2 mt-2">Submit</button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
+                <div>
+                  <h4 class="font-weight-bold text-dark mb-1" style="color: #0f172a;">Wallet Withdrawal</h4>
+                  <p class="text-muted small mb-0">Withdraw your earnings directly to your registered bank account</p>
                 </div>
+                <div class="mt-3 mt-md-0 px-3 py-2" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%); border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.2);">
+                  <span class="text-muted small font-weight-bold d-block">Available Balance</span>
+                  <span class="h5 font-weight-bold mb-0" style="color: #16a34a;">₹<?= number_format((float)$wallet_amount, 2); ?></span>
+                </div>
+              </div>
+
+              <?php if (isset($success)) { ?>
+                <div class="alert alert-success border-0" style="border-radius: 12px; background: #f0fdf4; color: #166534; font-weight: 600;"><?= $success ?></div>
+              <?php } ?>
+              <?php if (isset($error)) { ?>
+                <div class="alert alert-danger border-0" style="border-radius: 12px; background: #fef2f2; color: #991b1b; font-weight: 600;"><?= $error ?></div>
+              <?php } ?>
+
+              <form method="POST" enctype="multipart/form-data">
+
+                <div class="row mb-4">
+                  <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="p-3 bg-light" style="border-radius: 12px; border: 1px solid #e2e8f0;">
+                      <span class="text-muted small font-weight-bold d-block mb-1">TDS + Admin Deductions</span>
+                      <span class="font-weight-bold text-dark" style="font-size: 15px;">5% TDS + 3% Admin Charge</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="p-3 bg-light" style="border-radius: 12px; border: 1px solid #e2e8f0;">
+                      <span class="text-muted small font-weight-bold d-block mb-1">Minimum Limit</span>
+                      <span class="font-weight-bold text-danger" style="font-size: 15px;">₹360.00</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group mb-4">
+                  <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Withdrawal Amount (₹)</label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text bg-light border-right-0" style="border-radius: 12px 0 0 12px; border-color: #cbd5e1;"><i class="zmdi zmdi-money text-success"></i></span>
+                    </div>
+                    <input type="hidden" id="qty" value="5">
+                    <input min="360" id="amt" name="amount" type="number" required placeholder="Enter amount (min ₹360)" class="form-control border-left-0" style="border-radius: 0 12px 12px 0; border-color: #cbd5e1; height: 48px;">
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-block font-weight-bold text-white shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); border: none; height: 50px; font-size: 16px;">
+                  <i class="zmdi zmdi-mail-send me-1"></i> Submit Withdrawal Request
+                </button>
+
               </form>
+
             </div>
           </div>
         </div>

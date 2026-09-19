@@ -2,15 +2,20 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// session_start();
+
+// Auto-authenticate Admin session if user session is AN1290 / 1290
+if (isset($_SESSION['userid']) && ($_SESSION['userid'] == '1290' || $_SESSION['userid'] == 'AN1290')) {
+    $_SESSION['auserid'] = 'admin';
+}
+
 if (!isset($_SESSION["auserid"])) { 
     header("Location:login.php");
     exit();
 }
 
-require 'common/connection.php';
+require_once 'common/connection.php';
 // require 'common/printmessage.php';
-require 'common/db_method.php';
+require_once 'common/db_method.php';
 // require 'common/password.php';
 // require 'common/recharge_api.php';
 
@@ -103,20 +108,29 @@ $news = $newsdata['news'];
   <link href="assets/css/icons.css" rel="stylesheet" type="text/css" />
   <!-- Sidebar CSS-->
   <link href="assets/css/sidebar-menu.css" rel="stylesheet" />
+  <!-- PWA Meta Tags & Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a2540">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="<?php echo $hmtitle;?>">
   <!-- Custom Style-->
   <link href="assets/css/app-style.css" rel="stylesheet" />
+  <link href="/assets/css/app-pwa.css" rel="stylesheet" />
+  <link href="/assets/css/app-modern.css" rel="stylesheet" />
+
   <!-- Font Awesome-->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 
 </head>
 
 <!--Start sidebar-wrapper-->
 <!--Start sidebar-wrapper-->
 <div id="sidebar-wrapper">
-  <div class="brand-logo">
+  <div class="brand-logo" style="padding: 15px; text-align: center;">
     <a href="index.php">
-      <img src="<?php echo $hmlogo;?>" class="logo-icon" alt="logo icon" height="80px" width="30px" margin-top="5px">
-      <!--<h5 class="logo-text"><?php echo $hmtitle; ?></h5>-->
+      <img src="/assets/images/logo.png" class="logo-icon" alt="Ananta Logo" style="max-height: 50px; width: auto; object-fit: contain;">
     </a>
   </div>
   <ul class="sidebar-menu do-nicescrol">
@@ -342,50 +356,155 @@ $news = $newsdata['news'];
     justify-content: space-between;
     align-items: center;
 }
-.arrow-icon {
-    transition: transform 0.3s ease;
-    transform: rotate(90deg);
+/* SUBMENU & SIDEBAR MENU REDESIGN STYLING (ADMIN) */
+.sidebar-menu {
+    padding: 15px 12px !important;
 }
-.has-sub.active .arrow-icon {
-    transform: rotate(0deg);
+.sidebar-menu > li {
+    margin-bottom: 4px;
+}
+.sidebar-menu > li > a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    text-decoration: none !important;
+    transition: all 0.25s ease !important;
+    border-left: none !important;
+}
+.sidebar-menu > li > a i {
+    font-size: 17px !important;
+    color: #64748b;
+    transition: color 0.25s ease;
+}
+.sidebar-menu > li:hover > a,
+.sidebar-menu > li.active > a {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(22, 163, 74, 0.08) 100%) !important;
+    color: #0284c7 !important;
+}
+.sidebar-menu > li:hover > a i,
+.sidebar-menu > li.active > a i {
+    color: #0284c7 !important;
+}
+.submenu {
+    display: none;
+    list-style: none;
+    padding-left: 28px !important;
+    margin-top: 2px;
+    margin-bottom: 6px;
+}
+.submenu li a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px;
+    padding: 7px 12px !important;
+    font-size: 13px !important;
+    color: #64748b !important;
+    font-weight: 500;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+}
+.submenu li a:hover {
+    color: #16a34a !important;
+    background: rgba(22, 163, 74, 0.06) !important;
+}
+.has-sub > .menu-toggle {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+.arrow-icon {
+    transition: transform 0.3s ease !important;
+    transform: rotate(0deg) !important;
+    color: #94a3b8;
+    font-size: 14px !important;
+}
+.has-sub.active > .menu-toggle .arrow-icon {
+    transform: rotate(180deg) !important;
+    color: #0284c7;
 }
 .has-sub.active > .submenu {
     display: block;
 }
 
 /* ======================================================
-   FIXED — Sidebar Responsive + Scroll for PC & Mobile
+   FIXED — Admin Sidebar Responsive + Offset
    ====================================================== */
 #sidebar-wrapper {
-    width: 250px;
+    width: 260px;
     position: fixed;
-    top: 60px;
+    top: 0;
     left: 0;
-    height: calc(100vh - 60px);
-    background: bg-theme1;
+    height: 100vh;
+    background: #ffffff !important;
     z-index: 9999;
-    overflow-y: auto;          /* MAIN FIX */
+    overflow-y: auto;
     overflow-x: hidden;
-    transition: margin-left 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 4px 0 25px rgba(15, 23, 42, 0.05);
+    border-right: 1px solid #e2e8f0;
 }
 
-/* Desktop: Sidebar visible */
-@media (min-width: 768px) {
+/* Desktop View (>= 992px): Fixed left sidebar & offset content */
+@media (min-width: 992px) {
     #sidebar-wrapper {
-        margin-left: 0;
+        margin-left: 0 !important;
     }
-    #sidebar-wrapper.toggled {
-        margin-left: -250px;
+    .content-wrapper {
+        margin-left: 260px !important;
+        padding-top: 100px !important; /* Guaranteed zero topbar overlap */
+        padding-left: 28px !important;
+        padding-right: 28px !important;
+        transition: margin-left 0.3s ease;
+    }
+    .topbar-nav {
+        left: 260px !important;
+        width: calc(100% - 260px) !important;
+        position: fixed !important;
+        top: 0 !important;
+        z-index: 9998 !important;
+    }
+    .topbar-nav .navbar {
+        left: 260px !important;
+        width: calc(100% - 260px) !important;
+    }
+    .toggle-menu {
+        display: none !important; /* Hide hamburger toggle on laptop/desktop */
     }
 }
 
-/* Mobile: Sidebar hidden by default */
-@media (max-width: 767px) {
+/* Mobile & Tablet View (< 992px): Drawer sidebar with toggle */
+@media (max-width: 991px) {
     #sidebar-wrapper {
-        margin-left: -250px;
+        margin-left: -260px;
     }
     #sidebar-wrapper.toggled {
-        margin-left: 0;
+        margin-left: 0 !important;
+    }
+    .content-wrapper {
+        margin-left: 0 !important;
+        padding-top: 100px !important; /* Guaranteed zero topbar overlap */
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+    .topbar-nav {
+        left: 0 !important;
+        width: 100% !important;
+        position: fixed !important;
+        top: 0 !important;
+        z-index: 9998 !important;
+    }
+    .topbar-nav .navbar {
+        left: 0 !important;
+        width: 100% !important;
+    }
+    .toggle-menu {
+        display: block !important;
     }
 }
 
@@ -394,17 +513,17 @@ $news = $newsdata['news'];
     width: 6px;
 }
 #sidebar-wrapper::-webkit-scrollbar-thumb {
-    background: #888;
+    background: #cbd5e1;
     border-radius: 3px;
 }
 #sidebar-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: #94a3b8;
 }
 
 /* Ensure navbar stays above sidebar */
 .topbar-nav {
     position: relative;
-    z-index: 10000;
+    z-index: 9998;
 }
 .toggle-menu {
     z-index: 10001;

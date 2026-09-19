@@ -3,7 +3,7 @@ session_start();
 include "common/connection.php";
 header('Content-Type: application/json');
 
-$userid = $_SESSION['userid'];
+$userid = $_SESSION['userid'] ?? '';
 
 $data = [];
 $countnew = 1;
@@ -20,9 +20,10 @@ function getUserByUserId($userid)
 
 /* Fetch LEFT TEAM using tbl_userlevel_a */
 $sql = "
-    SELECT DISTINCT downline_id
+    SELECT downline_id, MIN(level) AS level
     FROM tbl_userlevel_a
     WHERE sponser_id = ?
+    GROUP BY downline_id
     ORDER BY level ASC
 ";
 

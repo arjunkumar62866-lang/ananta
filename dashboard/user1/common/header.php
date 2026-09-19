@@ -8,9 +8,9 @@ if (!isset($_SESSION["userid"])) {
     exit();
 }
 
-require 'common/connection.php';
+require_once 'common/connection.php';
 // require 'common/printmessage.php';
-require 'common/db_method.php';
+require_once 'common/db_method.php';
 // require 'common/password.php';
 // require 'common/recharge_api.php';
 
@@ -132,17 +132,30 @@ $news = $newsdata['news'];
   <link href="assets/css/icons.css" rel="stylesheet" type="text/css" />
   <!-- Sidebar CSS-->
   <link href="assets/css/sidebar-menu.css" rel="stylesheet" />
+  <!-- PWA Meta Tags & Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a2540">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="<?php echo $hmtitle;?>">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Funnel+Display:wght@300..800&display=swap" rel="stylesheet">
   <!-- Custom Style-->
   <link href="assets/css/app-style.css" rel="stylesheet" />
+  <link href="/assets/css/app-pwa.css" rel="stylesheet" />
+  <link href="/assets/css/app-modern.css" rel="stylesheet" />
+
+
 </head>
 
 <!--Start sidebar-wrapper-->
 <!--Start sidebar-wrapper-->
 <div id="sidebar-wrapper">
-  <div class="brand-logo">
+  <div class="brand-logo" style="padding: 15px; text-align: center;">
     <a href="index.php">
-      <img src="<?php echo $hmlogo;?>" class="logo-icon" alt="logo icon" height="80px" width="30px" margin-top="5px">
-      <!--<h5 class="logo-text"><?php echo $hmtitle; ?></h5>-->
+      <img src="/assets/images/logo.png" class="logo-icon" alt="Ananta Logo" style="max-height: 50px; width: auto; object-fit: contain;">
     </a>
   </div>
   <ul class="sidebar-menu do-nicescrol">
@@ -312,6 +325,15 @@ $news = $newsdata['news'];
         <i class="zmdi zmdi-power"></i> <span>Logout</span>
       </a>
     </li>
+
+    <?php if ($userid == '1290' || $userid == 'AN1290') { ?>
+    <!-- Special Admin Access Menu Item (Strictly for AN1290 Below Logout) -->
+    <li class="admin-panel-link" style="margin-top: 10px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(22, 163, 74, 0.12) 100%); border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.3);">
+      <a href="../admin/index.php" target="_blank" style="color: #0284c7 !important; font-weight: 700; padding: 12px 15px; display: flex; align-items: center; gap: 10px;">
+        <i class="fa fa-user-shield" style="color: #16a34a; font-size: 16px;"></i> <span>Admin Panel</span>
+      </a>
+    </li>
+    <?php } ?>
     
     
     </li>
@@ -320,73 +342,173 @@ $news = $newsdata['news'];
 
 <!-- Dropdown Script & Styles -->
 <style>
-/* SUBMENU STYLING */
+/* SUBMENU & SIDEBAR MENU REDESIGN STYLING */
+.sidebar-menu {
+    padding: 15px 12px !important;
+}
+.sidebar-menu > li {
+    margin-bottom: 4px;
+}
+.sidebar-menu > li > a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    text-decoration: none !important;
+    transition: all 0.25s ease !important;
+    border-left: none !important;
+}
+.sidebar-menu > li > a i {
+    font-size: 17px !important;
+    color: #64748b;
+    transition: color 0.25s ease;
+}
+.sidebar-menu > li:hover > a,
+.sidebar-menu > li.active > a {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(22, 163, 74, 0.08) 100%) !important;
+    color: #0284c7 !important;
+}
+.sidebar-menu > li:hover > a i,
+.sidebar-menu > li.active > a i {
+    color: #0284c7 !important;
+}
 .submenu {
     display: none;
     list-style: none;
-    padding-left: 20px;
+    padding-left: 28px !important;
+    margin-top: 2px;
+    margin-bottom: 6px;
 }
 .submenu li a {
-    display: block;
-    padding: 6px 0;
-    font-size: 14px;
-    color: #ccc;
-    text-decoration: none;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px;
+    padding: 7px 12px !important;
+    font-size: 13px !important;
+    color: #64748b !important;
+    font-weight: 500;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
 }
 .submenu li a:hover {
-    color: #fff;
+    color: #16a34a !important;
+    background: rgba(22, 163, 74, 0.06) !important;
 }
-
 .has-sub > .menu-toggle {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
 }
 .arrow-icon {
-    transition: transform 0.3s ease;
-    transform: rotate(90deg);
+    transition: transform 0.3s ease !important;
+    transform: rotate(0deg) !important;
+    color: #94a3b8;
+    font-size: 14px !important;
 }
-.has-sub.active .arrow-icon {
-    transform: rotate(0deg);
+.has-sub.active > .menu-toggle .arrow-icon {
+    transform: rotate(180deg) !important;
+    color: #0284c7;
 }
 .has-sub.active > .submenu {
     display: block;
 }
 
 /* ======================================================
-   FIXED — Sidebar Responsive + Scroll for PC & Mobile
+   FIXED — Sidebar Responsive + Content Wrapper Offset
    ====================================================== */
 #sidebar-wrapper {
-    width: 250px;
+    width: 260px;
     position: fixed;
-    top: 60px;
+    top: 0;
     left: 0;
-    height: calc(100vh - 60px);
-    /*background: bg-theme1;*/
-    background: black;
+    height: 100vh;
+    background: #ffffff !important;
     z-index: 9999;
-    overflow-y: auto;          /* MAIN FIX */
+    overflow-y: auto;
     overflow-x: hidden;
-    transition: margin-left 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 4px 0 25px rgba(15, 23, 42, 0.05);
+    border-right: 1px solid #e2e8f0;
 }
 
-/* Desktop: Sidebar visible */
-@media (min-width: 768px) {
+/* Desktop View (>= 992px): Fixed left sidebar & offset content */
+@media (min-width: 992px) {
     #sidebar-wrapper {
-        margin-left: 0;
+        margin-left: 0 !important;
     }
-    #sidebar-wrapper.toggled {
-        margin-left: -250px;
+    .content-wrapper {
+        margin-left: 260px !important;
+        padding-top: 100px !important; /* Guaranteed zero topbar overlap */
+        padding-left: 28px !important;
+        padding-right: 28px !important;
+        transition: margin-left 0.3s ease;
+    }
+    .topbar-nav {
+        left: 260px !important;
+        width: calc(100% - 260px) !important;
+        position: fixed !important;
+        top: 0 !important;
+        z-index: 9998 !important;
+    }
+    .topbar-nav .navbar {
+        left: 260px !important;
+        width: calc(100% - 260px) !important;
+    }
+    .toggle-menu {
+        display: none !important; /* Hide hamburger toggle on laptop/desktop */
     }
 }
 
-/* Mobile: Sidebar hidden by default */
-@media (max-width: 767px) {
+/* Mobile & Tablet View (< 992px): Drawer sidebar with toggle & Mobile Header layout */
+@media (max-width: 991px) {
     #sidebar-wrapper {
-        margin-left: -250px;
+        margin-left: -260px;
     }
     #sidebar-wrapper.toggled {
-        margin-left: 0;
+        margin-left: 0 !important;
+    }
+    .content-wrapper {
+        margin-left: 0 !important;
+        padding-top: 90px !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+    .topbar-nav {
+        left: 0 !important;
+        width: 100% !important;
+        position: fixed !important;
+        top: 0 !important;
+        z-index: 9998 !important;
+    }
+    .topbar-nav .navbar {
+        left: 0 !important;
+        width: 100% !important;
+        padding: 8px 14px !important;
+    }
+    .toggle-menu {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        background: #f1f5f9;
+        border-radius: 12px;
+        color: #0f172a !important;
+        font-size: 22px !important;
+    }
+    .mobile-header-logo {
+        display: block !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .mobile-header-logo {
+        display: none !important;
     }
 }
 
@@ -395,17 +517,17 @@ $news = $newsdata['news'];
     width: 6px;
 }
 #sidebar-wrapper::-webkit-scrollbar-thumb {
-    background: #888;
+    background: #cbd5e1;
     border-radius: 3px;
 }
 #sidebar-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: #94a3b8;
 }
 
 /* Ensure navbar stays above sidebar */
 .topbar-nav {
     position: relative;
-    z-index: 10000;
+    z-index: 9998;
 }
 .toggle-menu {
     z-index: 10001;
@@ -426,98 +548,1329 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
 <!--End sidebar-wrapper-->
 
 <!--Start topbar header-->
-<header class="topbar-nav">
-  <nav class="navbar navbar-expand fixed-top">
-    <ul class="navbar-nav mr-auto align-items-center">
-      <li class="nav-item">
-        <a class="nav-link toggle-menu" href="javascript:void();">
-          <i class="icon-menu menu-icon"></i>
-        </a>
-      </li>
-      <!--<li class="nav-item">-->
-      <!--  <form class="search-bar">-->
-      <!--    <input type="text" class="form-control" placeholder="Enter keywords">-->
-      <!--    <a href="javascript:void();"><i class="icon-magnifier"></i></a>-->
-      <!--  </form>-->
-      <!--</li>-->
-    </ul>
+<!-- =========================================================
+     ANANTA TOPBAR
+     MOBILE:
+     LEFT = HAMBURGER
+     CENTER = LOGO
+     RIGHT = PROFILE
+     DESKTOP = EXISTING NEWS + PROFILE
+========================================================= -->
 
-    <ul class="navbar-nav align-items-center right-nav-link">
-      <li class="nav-item dropdown-lg ">
-        <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" href="#">
-          <span class="user-profile">
-            <?php echo $hmpre.$userid;?>
-          </span>
+<header class="topbar-nav">
+
+    <nav class="navbar navbar-expand fixed-top ananta-topbar">
+
+        <!-- =================================================
+             MOBILE ONLY — LEFT HAMBURGER
+        ================================================== -->
+        <button
+            type="button"
+            class="ananta-mobile-menu-btn"
+            id="anantaMobileMenuBtn"
+            aria-label="Open menu"
+            aria-expanded="false"
+        >
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+
+        <!-- =================================================
+             DESKTOP/TABLET NEWS AREA
+        ================================================== -->
+        <div class="ananta-desktop-news">
+
+            <div class="ananta-news-box">
+
+                <span class="ananta-news-badge">
+                    NEWS
+                </span>
+
+                <marquee
+                    direction="left"
+                    scrollamount="5"
+                    class="ananta-news-text"
+                >
+                    <?php echo htmlspecialchars($news); ?>
+                </marquee>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             MOBILE ONLY — CENTER LOGO
+        ================================================== -->
+        <a
+            href="index.php"
+            class="ananta-mobile-logo"
+            aria-label="Ananta Home"
+        >
+            <img
+                src="/assets/images/logo.png"
+                alt="Ananta Logo"
+            >
         </a>
-      </li>
-      <li class="nav-item dropdown-lg d-block">
-        <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" href="#">
-          <span class="user-profile">
-            <?php echo $username;?>
-          </span>
-        </a>
-      </li>
-      <!--<li class="nav-item dropdown-lg">-->
-      <!--  <a class="nav-link dropdown-toggle dropdown-toggle-nocaret waves-effect" data-toggle="dropdown"-->
-      <!--    href="javascript:void();">-->
-      <!--    <i class="fa fa-bell-o"></i></a>-->
-      <!--</li>-->
-      <!--<li class="nav-item language">-->
-      <!--  <a class="nav-link dropdown-toggle dropdown-toggle-nocaret waves-effect" data-toggle="dropdown"-->
-      <!--    href="javascript:void();"><i class="fa fa-flag"></i></a>-->
-      <!--  <ul class="dropdown-menu dropdown-menu-right">-->
-      <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-gb mr-2"></i> English</li>-->
-      <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-fr mr-2"></i> French</li>-->
-      <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-cn mr-2"></i> Chinese</li>-->
-      <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-de mr-2"></i> German</li>-->
-      <!--  </ul>-->
-      <!--</li>-->
-      <li class="nav-item">
-        <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" href="#">
-          <span class="user-profile">
-            <img src="images/<?php echo $userimage; ?>" class="img-circle" alt="user avatar">
-          </span>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-right">
-          <li class="dropdown-item user-details">
-            <a href="javaScript:void();">
-              <div class="media">
-                <div class="avatar">
-                  <img class="align-self-start mr-3" src="images/<?php echo $userimage; ?>" alt="user avatar">
+
+
+        <!-- =================================================
+             RIGHT SIDE
+             DESKTOP = PROFILE
+             MOBILE = PROFILE ONLY
+        ================================================== -->
+        <div class="ananta-topbar-right">
+
+            <!-- =============================================
+                 MOBILE PROFILE CIRCLE
+            ============================================== -->
+            <div class="ananta-mobile-profile">
+
+                <div class="dropdown">
+
+                    <a
+                        href="#"
+                        class="ananta-profile-trigger dropdown-toggle dropdown-toggle-nocaret"
+                        data-toggle="dropdown"
+                        aria-expanded="false"
+                    >
+
+                        <span class="ananta-profile-circle">
+
+                            <img
+                                src="<?php
+                                    echo !empty($userimage)
+                                        ? 'images/' . htmlspecialchars($userimage)
+                                        : '/assets/images/usera.png';
+                                ?>"
+                                alt="User"
+                            >
+
+                        </span>
+
+                    </a>
+
+
+                    <!-- PROFILE DROPDOWN -->
+                    <ul class="dropdown-menu dropdown-menu-right ananta-profile-dropdown">
+
+                        <li class="dropdown-item ananta-user-details">
+
+                            <a href="javascript:void(0);">
+
+                                <div class="media align-items-center">
+
+                                    <div class="avatar mr-2">
+
+                                        <img
+                                            src="<?php
+                                                echo !empty($userimage)
+                                                    ? 'images/' . htmlspecialchars($userimage)
+                                                    : '/assets/images/usera.png';
+                                            ?>"
+                                            alt="User"
+                                        >
+
+                                    </div>
+
+                                    <div class="media-body">
+
+                                        <h6>
+                                            <?php echo htmlspecialchars($username); ?>
+                                        </h6>
+
+                                        <p>
+                                            <?php echo htmlspecialchars($useremail); ?>
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </a>
+
+                        </li>
+
+
+                        <li class="dropdown-item">
+
+                            <a href="profile.php">
+
+                                <i class="icon-user"></i>
+
+                                <span>Account Profile</span>
+
+                            </a>
+
+                        </li>
+
+
+                        <li class="dropdown-divider"></li>
+
+
+                        <li class="dropdown-item">
+
+                            <a
+                                href="logout.php"
+                                class="ananta-logout-link"
+                            >
+
+                                <i class="icon-power"></i>
+
+                                <span>Logout</span>
+
+                            </a>
+
+                        </li>
+
+                    </ul>
+
                 </div>
-                <div class="media-body">
-                  <h6 class="mt-2 user-title"><?php echo $username; ?></h6>
-                  <p class="user-subtitle"><?php echo $useremail; ?></p>
+
+            </div>
+
+
+            <!-- =============================================
+                 DESKTOP PROFILE
+            ============================================== -->
+            <div class="ananta-desktop-profile">
+
+                <div class="dropdown">
+
+                    <a
+                        href="#"
+                        class="nav-link dropdown-toggle dropdown-toggle-nocaret p-0"
+                        data-toggle="dropdown"
+                    >
+
+                        <span class="user-profile">
+
+                            <img
+                                src="<?php
+                                    echo !empty($userimage)
+                                        ? 'images/' . htmlspecialchars($userimage)
+                                        : '/assets/images/usera.png';
+                                ?>"
+                                class="img-circle"
+                                alt="user avatar"
+                            >
+
+                        </span>
+
+                    </a>
+
+
+                    <ul
+                        class="dropdown-menu dropdown-menu-right shadow-lg border-0"
+                        style="
+                            border-radius:16px;
+                            padding:12px 8px;
+                            margin-top:10px;
+                            background:#ffffff;
+                        "
+                    >
+
+                        <li
+                            class="dropdown-item user-details"
+                            style="
+                                border-bottom:1px solid #f1f5f9;
+                                padding-bottom:10px;
+                                margin-bottom:6px;
+                            "
+                        >
+
+                            <a href="javascript:void(0);">
+
+                                <div class="media align-items-center">
+
+                                    <div class="avatar me-2">
+
+                                        <img
+                                            class="align-self-start img-circle"
+                                            src="<?php
+                                                echo !empty($userimage)
+                                                    ? 'images/' . htmlspecialchars($userimage)
+                                                    : '/assets/images/usera.png';
+                                            ?>"
+                                            alt="user avatar"
+                                        >
+
+                                    </div>
+
+                                    <div class="media-body">
+
+                                        <h6
+                                            class="mt-0 mb-0 user-title font-weight-bold"
+                                            style="
+                                                color:#0f172a;
+                                                font-size:14px;
+                                            "
+                                        >
+                                            <?php echo htmlspecialchars($username); ?>
+                                        </h6>
+
+                                        <p
+                                            class="user-subtitle mb-0 text-muted small"
+                                            style="font-size:12px;"
+                                        >
+                                            <?php echo htmlspecialchars($useremail); ?>
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </a>
+
+                        </li>
+
+
+                        <li class="dropdown-item">
+
+                            <a
+                                href="profile.php"
+                                class="d-flex align-items-center gap-2 text-dark font-weight-bold small"
+                            >
+
+                                <i class="icon-wallet text-primary"></i>
+
+                                Account Profile
+
+                            </a>
+
+                        </li>
+
+
+                        <li class="dropdown-divider"></li>
+
+
+                        <li class="dropdown-item">
+
+                            <a
+                                href="logout.php"
+                                class="d-flex align-items-center gap-2 text-danger font-weight-bold small"
+                            >
+
+                                <i class="icon-power"></i>
+
+                                Logout
+
+                            </a>
+
+                        </li>
+
+                    </ul>
+
                 </div>
-              </div>
-            </a>
-          </li>
-          <!--<li class="dropdown-divider"></li>-->
-          <!--<li class="dropdown-item"><a href="inbox.php"><i class="icon-envelope mr-2"></i> Inbox</li>-->
-          <li class="dropdown-divider"></li>
-          <li class="dropdown-item"><a href="profile.php"><i class="icon-wallet mr-2"></i> Account</li>
-          <!--<li class="dropdown-divider"></li>-->
-          <!--<li class="dropdown-item"><i class="icon-settings mr-2"></i> Setting</li>-->
-          <li class="dropdown-divider"></li>
-          <li class="dropdown-item"><a href="logout.php"><i class="icon-power mr-2"></i> Logout</a></li>
-        </ul>
-      </li>
-    </ul>
-  </nav>
+
+            </div>
+
+        </div>
+
+    </nav>
+
 </header>
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.querySelector(".toggle-menu");
-    const sidebar = document.getElementById("sidebar-wrapper");
 
-    if (toggleBtn && sidebar) {
-      toggleBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        sidebar.classList.toggle("toggled");
-      });
+<!-- =========================================================
+     MOBILE SIDEBAR OVERLAY
+========================================================= -->
+
+<div
+    class="ananta-mobile-overlay"
+    id="anantaMobileOverlay"
+></div>
+
+
+<style>
+
+/* =========================================================
+   TOPBAR BASE
+========================================================= */
+
+.ananta-topbar {
+
+    position: fixed !important;
+
+    top: 0 !important;
+
+    height: 72px !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    box-sizing: border-box !important;
+
+    background: rgba(255,255,255,0.97) !important;
+
+    backdrop-filter: blur(14px) !important;
+
+    -webkit-backdrop-filter: blur(14px) !important;
+
+    border-bottom: 1px solid #e2e8f0 !important;
+
+    z-index: 9998 !important;
+
+    padding: 10px 20px !important;
+
+}
+
+
+/* =========================================================
+   DESKTOP NEWS
+========================================================= */
+
+.ananta-desktop-news {
+
+    flex: 1 !important;
+
+    display: block !important;
+
+    margin: 0 20px !important;
+
+}
+
+
+.ananta-news-box {
+
+    width: 100% !important;
+
+    height: 42px !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    padding: 0 12px !important;
+
+    box-sizing: border-box !important;
+
+    background: rgba(2,132,199,0.05) !important;
+
+    border: 1px solid rgba(2,132,199,0.15) !important;
+
+    border-radius: 14px !important;
+
+}
+
+
+.ananta-news-badge {
+
+    flex-shrink: 0 !important;
+
+    padding: 5px 9px !important;
+
+    border-radius: 8px !important;
+
+    background: linear-gradient(
+        135deg,
+        #0284c7,
+        #16a34a
+    ) !important;
+
+    color: #ffffff !important;
+
+    font-size: 10px !important;
+
+    font-weight: 800 !important;
+
+    letter-spacing: 0.5px !important;
+}
+
+
+.ananta-news-text {
+
+    margin-left: 10px !important;
+
+    color: #334155 !important;
+
+    font-size: 13px !important;
+
+    font-weight: 600 !important;
+}
+
+
+/* =========================================================
+   DESKTOP RIGHT
+========================================================= */
+
+.ananta-topbar-right {
+
+    margin-left: auto !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    flex-shrink: 0 !important;
+}
+
+
+/* =========================================================
+   DESKTOP PROFILE
+========================================================= */
+
+.ananta-desktop-profile {
+
+    display: block !important;
+}
+
+
+.ananta-desktop-profile .user-profile {
+
+    display: flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+}
+
+
+.ananta-desktop-profile .user-profile img {
+
+    width: 42px !important;
+
+    height: 42px !important;
+
+    border-radius: 50% !important;
+
+    object-fit: cover !important;
+
+    display: block !important;
+
+    border: 2px solid #0284c7 !important;
+
+    box-shadow:
+        0 4px 12px rgba(2,132,199,0.20) !important;
+}
+
+
+/* =========================================================
+   MOBILE ELEMENTS HIDDEN BY DEFAULT
+========================================================= */
+
+.ananta-mobile-menu-btn,
+.ananta-mobile-logo,
+.ananta-mobile-profile,
+.ananta-mobile-overlay {
+
+    display: none !important;
+}
+
+
+/* =========================================================
+   MOBILE / TABLET
+========================================================= */
+
+@media (max-width: 991px) {
+
+
+    /* ================================================
+       TOPBAR
+    ================================================ */
+
+    .topbar-nav {
+
+        position: fixed !important;
+
+        top: 0 !important;
+
+        left: 0 !important;
+
+        right: 0 !important;
+
+        width: 100% !important;
+
+        height: 68px !important;
+
+        z-index: 9998 !important;
     }
-  });
+
+
+    .ananta-topbar {
+
+        position: fixed !important;
+
+        top: 0 !important;
+
+        left: 0 !important;
+
+        right: 0 !important;
+
+        width: 100% !important;
+
+        height: 68px !important;
+
+        padding: 8px 12px !important;
+
+        margin: 0 !important;
+
+        display: grid !important;
+
+        grid-template-columns: 1fr auto 1fr !important;
+
+        align-items: center !important;
+
+        justify-content: initial !important;
+
+        background: rgba(255,255,255,0.94) !important;
+
+        backdrop-filter: blur(16px) !important;
+
+        -webkit-backdrop-filter: blur(16px) !important;
+
+        border-bottom: 1px solid #edf2f7 !important;
+
+        box-shadow:
+            0 4px 18px rgba(15,23,42,0.04) !important;
+    }
+
+
+    /* ================================================
+       HIDE DESKTOP NEWS
+    ================================================ */
+
+    .ananta-desktop-news {
+
+        display: none !important;
+    }
+
+
+    /* ================================================
+       HAMBURGER — FAR LEFT
+       SEPARATE ROUND BUTTON
+    ================================================ */
+
+    .ananta-mobile-menu-btn {
+
+        display: flex !important;
+
+        grid-column: 1 !important;
+
+        justify-self: start !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+
+        flex-direction: column !important;
+
+        width: 42px !important;
+
+        height: 42px !important;
+
+        padding: 0 !important;
+
+        margin: 0 !important;
+
+        border: 1px solid rgba(15,23,42,0.08) !important;
+
+        outline: none !important;
+
+        border-radius: 50% !important;
+
+        background: rgba(241,245,249,0.72) !important;
+
+        box-shadow:
+            0 4px 14px rgba(15,23,42,0.06) !important;
+
+        cursor: pointer !important;
+
+        -webkit-appearance: none !important;
+
+        appearance: none !important;
+
+        z-index: 10005 !important;
+    }
+
+
+    /* Hamburger lines */
+
+    .ananta-mobile-menu-btn span {
+
+        display: block !important;
+
+        width: 18px !important;
+
+        height: 2px !important;
+
+        margin: 2.5px 0 !important;
+
+        border-radius: 10px !important;
+
+        background: #0f172a !important;
+
+        transition:
+            transform 0.25s ease,
+            opacity 0.25s ease !important;
+    }
+
+
+    /* Hamburger active animation */
+
+    .ananta-mobile-menu-btn.active span:nth-child(1) {
+
+        transform:
+            translateY(7px)
+            rotate(45deg) !important;
+    }
+
+
+    .ananta-mobile-menu-btn.active span:nth-child(2) {
+
+        opacity: 0 !important;
+    }
+
+
+    .ananta-mobile-menu-btn.active span:nth-child(3) {
+
+        transform:
+            translateY(-7px)
+            rotate(-45deg) !important;
+    }
+
+
+    /* ================================================
+       CENTER LOGO
+       SEPARATE ROUND BUTTON
+    ================================================ */
+
+    .ananta-mobile-logo {
+
+        display: flex !important;
+
+        grid-column: 2 !important;
+
+        justify-self: center !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+
+        width: 48px !important;
+
+        height: 48px !important;
+
+        padding: 6px !important;
+
+        margin: 0 !important;
+
+        border-radius: 50% !important;
+
+        background: rgba(255,255,255,0.70) !important;
+
+        border: 1px solid rgba(2,132,199,0.12) !important;
+
+        box-shadow:
+            0 4px 16px rgba(2,132,199,0.08) !important;
+
+        text-decoration: none !important;
+
+        box-sizing: border-box !important;
+    }
+
+
+    .ananta-mobile-logo img {
+
+        display: block !important;
+
+        width: 100% !important;
+
+        height: 100% !important;
+
+        object-fit: contain !important;
+    }
+
+
+    /* ================================================
+       RIGHT PROFILE AREA
+    ================================================ */
+
+    .ananta-topbar-right {
+
+        grid-column: 3 !important;
+
+        justify-self: end !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: flex-end !important;
+    }
+
+
+    .ananta-desktop-profile {
+
+        display: none !important;
+    }
+
+
+    .ananta-mobile-profile {
+
+        display: block !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+    }
+
+
+    /* ================================================
+       PROFILE ROUND BUTTON
+    ================================================ */
+
+    .ananta-profile-trigger {
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+
+        width: 46px !important;
+
+        height: 46px !important;
+
+        padding: 3px !important;
+
+        margin: 0 !important;
+
+        border-radius: 50% !important;
+
+        background: rgba(255,255,255,0.72) !important;
+
+        border: 1px solid rgba(2,132,199,0.14) !important;
+
+        box-shadow:
+            0 4px 16px rgba(15,23,42,0.08) !important;
+
+        text-decoration: none !important;
+    }
+
+
+    /* ================================================
+       ACTUAL PROFILE IMAGE — CIRCLE
+    ================================================ */
+
+    .ananta-profile-circle {
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: center !important;
+
+        width: 38px !important;
+
+        height: 38px !important;
+
+        border-radius: 50% !important;
+
+        overflow: hidden !important;
+
+        background: #f1f5f9 !important;
+
+        border: 2px solid #0284c7 !important;
+    }
+
+
+    .ananta-profile-circle img {
+
+        display: block !important;
+
+        width: 100% !important;
+
+        height: 100% !important;
+
+        border-radius: 50% !important;
+
+        object-fit: cover !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+    }
+
+
+    /* Remove Bootstrap dropdown arrow */
+
+    .ananta-profile-trigger::after {
+
+        display: none !important;
+    }
+
+
+    /* ================================================
+       MOBILE PROFILE DROPDOWN
+    ================================================ */
+
+    .ananta-profile-dropdown {
+
+        position: absolute !important;
+
+        top: 54px !important;
+
+        right: 0 !important;
+
+        left: auto !important;
+
+        min-width: 235px !important;
+
+        padding: 10px 8px !important;
+
+        margin: 0 !important;
+
+        border: 1px solid #e2e8f0 !important;
+
+        border-radius: 16px !important;
+
+        background: #ffffff !important;
+
+        box-shadow:
+            0 15px 40px rgba(15,23,42,0.14) !important;
+
+        z-index: 10010 !important;
+    }
+
+
+    .ananta-profile-dropdown .dropdown-item {
+
+        border-radius: 10px !important;
+
+        background: transparent !important;
+
+        color: #334155 !important;
+    }
+
+
+    .ananta-profile-dropdown .dropdown-item:hover {
+
+        background: #f8fafc !important;
+    }
+
+
+    .ananta-user-details {
+
+        padding: 10px !important;
+
+        border-bottom:
+            1px solid #f1f5f9 !important;
+
+        margin-bottom: 5px !important;
+    }
+
+
+    .ananta-user-details img {
+
+        width: 40px !important;
+
+        height: 40px !important;
+
+        border-radius: 50% !important;
+
+        object-fit: cover !important;
+    }
+
+
+    .ananta-user-details h6 {
+
+        margin: 0 !important;
+
+        color: #0f172a !important;
+
+        font-size: 13px !important;
+
+        font-weight: 700 !important;
+    }
+
+
+    .ananta-user-details p {
+
+        margin: 2px 0 0 !important;
+
+        color: #64748b !important;
+
+        font-size: 11px !important;
+    }
+
+
+    .ananta-profile-dropdown a {
+
+        text-decoration: none !important;
+    }
+
+
+    .ananta-profile-dropdown .dropdown-item > a {
+
+        display: flex !important;
+
+        align-items: center !important;
+
+        gap: 9px !important;
+
+        padding: 8px !important;
+
+        color: #334155 !important;
+
+        font-size: 12px !important;
+
+        font-weight: 600 !important;
+    }
+
+
+    .ananta-profile-dropdown .ananta-logout-link {
+
+        color: #dc2626 !important;
+    }
+
+
+    /* ================================================
+       MOBILE SIDEBAR
+    ================================================ */
+
+    #sidebar-wrapper {
+
+        width: 260px !important;
+
+        position: fixed !important;
+
+        top: 0 !important;
+
+        left: 0 !important;
+
+        height: 100vh !important;
+
+        margin-left: -260px !important;
+
+        z-index: 10004 !important;
+
+        transition:
+            margin-left 0.3s
+            cubic-bezier(0.16,1,0.3,1) !important;
+    }
+
+
+    #sidebar-wrapper.toggled {
+
+        margin-left: 0 !important;
+    }
+
+
+    /* ================================================
+       MOBILE OVERLAY
+    ================================================ */
+
+    .ananta-mobile-overlay {
+
+        display: block !important;
+
+        position: fixed !important;
+
+        top: 0 !important;
+
+        left: 0 !important;
+
+        right: 0 !important;
+
+        bottom: 0 !important;
+
+        width: 100% !important;
+
+        height: 100vh !important;
+
+        background: rgba(15,23,42,0.35) !important;
+
+        backdrop-filter: blur(2px) !important;
+
+        -webkit-backdrop-filter: blur(2px) !important;
+
+        opacity: 0 !important;
+
+        visibility: hidden !important;
+
+        pointer-events: none !important;
+
+        transition:
+            opacity 0.25s ease,
+            visibility 0.25s ease !important;
+
+        z-index: 10003 !important;
+    }
+
+
+    .ananta-mobile-overlay.active {
+
+        opacity: 1 !important;
+
+        visibility: visible !important;
+
+        pointer-events: auto !important;
+    }
+
+
+    /* ================================================
+       MOBILE CONTENT
+    ================================================ */
+
+    .content-wrapper {
+
+        margin-left: 0 !important;
+
+        padding-top: 82px !important;
+
+        padding-left: 12px !important;
+
+        padding-right: 12px !important;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .ananta-topbar {
+
+        height: 64px !important;
+
+        padding-left: 8px !important;
+
+        padding-right: 8px !important;
+    }
+
+
+    .ananta-mobile-menu-btn {
+
+        width: 40px !important;
+
+        height: 40px !important;
+    }
+
+
+    .ananta-mobile-logo {
+
+        width: 44px !important;
+
+        height: 44px !important;
+    }
+
+
+    .ananta-profile-trigger {
+
+        width: 42px !important;
+
+        height: 42px !important;
+    }
+
+
+    .ananta-profile-circle {
+
+        width: 35px !important;
+
+        height: 35px !important;
+    }
+
+
+    .content-wrapper {
+
+        padding-top: 76px !important;
+    }
+
+}
+
+
+/* =========================================================
+   DESKTOP ONLY
+   MOBILE BUTTONS COMPLETELY HIDDEN
+========================================================= */
+
+@media (min-width: 992px) {
+
+    .ananta-mobile-menu-btn,
+    .ananta-mobile-logo,
+    .ananta-mobile-profile,
+    .ananta-mobile-overlay {
+
+        display: none !important;
+    }
+
+
+    .ananta-desktop-news {
+
+        display: block !important;
+    }
+
+
+    .ananta-desktop-profile {
+
+        display: block !important;
+    }
+
+
+    .ananta-topbar {
+
+        left: 260px !important;
+
+        right: 0 !important;
+
+        width: calc(100% - 260px) !important;
+    }
+
+}
+
+</style>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const menuButton = document.getElementById("anantaMobileMenuBtn");
+    const sidebar = document.getElementById("sidebar-wrapper");
+    const overlay = document.getElementById("anantaMobileOverlay");
+
+    if (!menuButton || !sidebar) {
+        return;
+    }
+
+
+    /* =============================================
+       OPEN / CLOSE MOBILE SIDEBAR
+    ============================================== */
+
+    function openMobileMenu() {
+
+        sidebar.classList.add("toggled");
+
+        menuButton.classList.add("active");
+
+        menuButton.setAttribute("aria-expanded", "true");
+
+        if (overlay) {
+            overlay.classList.add("active");
+        }
+
+        document.body.classList.add("ananta-menu-open");
+    }
+
+
+    function closeMobileMenu() {
+
+        sidebar.classList.remove("toggled");
+
+        menuButton.classList.remove("active");
+
+        menuButton.setAttribute("aria-expanded", "false");
+
+        if (overlay) {
+            overlay.classList.remove("active");
+        }
+
+        document.body.classList.remove("ananta-menu-open");
+    }
+
+
+    /* =============================================
+       HAMBURGER CLICK
+    ============================================== */
+
+    menuButton.addEventListener("click", function (e) {
+
+        e.preventDefault();
+
+        e.stopPropagation();
+
+        if (sidebar.classList.contains("toggled")) {
+
+            closeMobileMenu();
+
+        } else {
+
+            openMobileMenu();
+
+        }
+
+    });
+
+
+    /* =============================================
+       OVERLAY CLICK
+    ============================================== */
+
+    if (overlay) {
+
+        overlay.addEventListener("click", function () {
+
+            closeMobileMenu();
+
+        });
+
+    }
+
+
+    /* =============================================
+       CLOSE SIDEBAR WHEN NORMAL MENU LINK CLICKED
+    ============================================== */
+
+    sidebar.querySelectorAll(
+        'a:not(.menu-toggle):not([href="javascript:void(0)"])'
+    ).forEach(function (link) {
+
+        link.addEventListener("click", function () {
+
+            if (window.innerWidth <= 991) {
+
+                closeMobileMenu();
+
+            }
+
+        });
+
+    });
+
+
+    /* =============================================
+       ESC KEY
+    ============================================== */
+
+    document.addEventListener("keydown", function (e) {
+
+        if (e.key === "Escape") {
+
+            closeMobileMenu();
+
+        }
+
+    });
+
+
+    /* =============================================
+       RESIZE
+    ============================================== */
+
+    window.addEventListener("resize", function () {
+
+        if (window.innerWidth >= 992) {
+
+            closeMobileMenu();
+
+        }
+
+    });
+
+});
 </script>
 
-<!--End topbar header-->
+<!-- =========================================================
+     END ANANTA TOPBAR
+========================================================= -->

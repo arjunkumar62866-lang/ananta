@@ -417,23 +417,43 @@ function incometotalnew($pdo, $table, $subject)
 
 
 
-function incometotalnewdate($date, $table, $userid, $subject)
+function incometotalnewdate($date, $table, $arg3, $arg4 = null)
 {
-    global $pdo; // Assuming $pdo is your PDO connection
-    $sqluser = "SELECT SUM(amount) as totalamount 
-                FROM $table 
-                WHERE created_date = '$date' 
-                AND user_id = '$userid' 
-                AND subject LIKE '%$subject%'";
+    global $pdo;
 
-    $resultuser = $pdo->query($sqluser);
+    if ($arg4 === null) {
+        // 3 arguments passed: ($date, $table, $subject)
+        $subject = $arg3;
+        $sql = "SELECT SUM(amount) AS totalamount 
+                FROM {$table} 
+                WHERE created_date = :date 
+                AND subject LIKE :subject";
 
-    if ($resultuser->rowCount() > 0) {
-        while ($rowuser = $resultuser->fetch(PDO::FETCH_ASSOC)) {
-            $userdata = $rowuser['totalamount'];
-            return $userdata;
-        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':date' => $date,
+            ':subject' => "%{$subject}%"
+        ]);
+    } else {
+        // 4 arguments passed: ($date, $table, $userid, $subject)
+        $userid = $arg3;
+        $subject = $arg4;
+        $sql = "SELECT SUM(amount) AS totalamount 
+                FROM {$table} 
+                WHERE created_date = :date 
+                AND user_id = :userid 
+                AND subject LIKE :subject";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':date' => $date,
+            ':userid' => $userid,
+            ':subject' => "%{$subject}%"
+        ]);
     }
+
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ? ($row['totalamount'] ?? 0) : 0;
 }
 
 

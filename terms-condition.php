@@ -30,90 +30,138 @@
             </nav>
         </div><!-- End Mobile Menu -->
 
-        <div id="particles-js"></div>
-        <!-- page-title -->
-        <section class="page-title">
-            <div class="bg-layer" style="background-image: url(assets/images/background/page-title.jpg);"></div>
-            <div class="auto-container">
-                <div class="content-box">
-                    <h1>Terms & Conditions</h1>
-                    <ul class="bread-crumb">
-                        <li><a href="index.html">Home</a></li>
-                        <li>Terms & Conditions</li>
-                        <li><span>Terms & Conditions</span></li>
-                    </ul>
+        <!-- Page Banner Header -->
+        <section class="py-5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); margin-top: 80px;">
+            <div class="auto-container text-center text-white py-4 position-relative" style="z-index: 5;">
+                <div class="ananta-badge mb-3" style="background: rgba(255, 255, 255, 0.15); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.3);">
+                    <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> Terms & Governance
                 </div>
+                <h1 class="fw-extrabold display-4 mb-2 text-white" style="font-family: var(--ananta-font-heading); font-weight: 800;">
+                    TERMS & CONDITIONS
+                </h1>
+                <p class="fs-5 text-white-50 mx-auto mb-0" style="max-width: 600px;">
+                    Ananta Multi Trade Private Limited – Guidelines, user agreement, and operational policies.
+                </p>
             </div>
         </section>
-        <!-- page-title end -->
 
-
-        <!-- about-style-four -->
-        <section class="about-style-four" style="background-color: #001321;">
+        <!-- Main Content Section -->
+        <section class="py-5" style="background: #F8FAFC !important;">
             <div class="auto-container">
-                <div class="row align-items-center">
-                    <!--<div class="col-lg-6 col-md-12 col-sm-12 image-column">-->
-                    <!--    <div class="image-box">-->
-                    <!--        <figure class="image"><img src="assets/images/resource/about-1.jpg" alt=""></figure>-->
-                    <!--    </div>-->
-                    <!--</div>-->
-                    <div class="col-lg-12 col-md-12 col-sm-12 content-column">
-                        <div class="content_block_ten">
-                            <div class="content-box">
-                                <div class="sec-title">
-                                    <!--<h6 style="text-align:center; align-items:center;">Privacy Policy</h6>-->
-                                    <h2 style="color:white; text-align:center;">Ananta Multi-Trade Pvt. Ltd. – Terms & Conditions</h2>
-                                </div>
-                                <div class="text-box">
-                                    <p>At Ananta Multi-Trade Pvt. Ltd., we are committed to protecting the privacy, security, and confidentiality of our investors, clients, and users. This Privacy Policy explains how we collect, use, protect, and manage your personal information.</p>
-                                </div>
-                                <div class="inner-box">
-                                    <div class="row align-items-center">
-                                        <div class="col-lg-12 col-md-12 col-sm-12 list-column">
-                                            <ul class="list-item">
-                                                <li><span>1. Acceptance of Terms<br>
-	•	By accessing our services, website, or communication channels, you agree to these Terms & Conditions.</span></li>
-                                                <li><span>2. User Responsibilities<br>
-	•	Provide accurate and complete personal information<br>
-	•	Follow all company guidelines and procedures<br>
-	•	Maintain confidentiality of company agreements and documents
-                                                </span></li>
-                                                <li><span>3. Investment Terms<br>
-	•	All investments follow company rules, plans, and timelines.<br>
-	•	Investors must read all project details before investing.<br>
-	•	Refunds, withdrawals, or returns follow official company policy only.
-	</span></li>
-                                                <li><span>4. Prohibited Activities<br>
-	•Misuse of confidential company information<br>
-	•	Fraudulent activities<br>
-	•	Misrepresentation of identity or documents</span></li>
-                                                <li><span>5. Limitation of Liability Ananta Multi-Trade Pvt. Ltd. is not liable for:<br>
-	•	Market fluctuations<br>
-	•	External financial risks<br>
-	•	Losses caused by investor misjudgment</span></li>
-	                                            <li><span>6. Communication Consent By interacting with our company, you agree to receive:<br>
-	•	Messages<br>
-	•	Calls<br>
-	•	Email updates related to your investment or services</span></li>
-	                                            <li><span>7. Modifications<br>
-	•	The company reserves the right to modify or update these Terms & Conditions anytime</span></li>
-                                            </ul>
-                                        </div>
-                                        <!--<div class="col-lg-6 col-md-6 col-sm-12 inner-column">-->
-                                        <!--    <div class="statistics-box">-->
-                                        <!--        <h2>$50 <span>Million</span></h2>-->
-                                        <!--        <p>Revenue Growth in 2024.</p>-->
-                                        <!--        <div class="graph-box"><img src="assets/images/shape/shape-49.png" alt=""><span>36% in lfy</span></div>-->
-                                        <!--    </div>-->
-                                        <!--</div>-->
-                                    </div>
-                                </div>
-                                <!--<div class="author-box">-->
-                                <!--    <h3>Damien Frederick, <span>Ceo & Founder</span></h3>-->
-                                <!--    <figure class="signature"><img src="assets/images/icons/signature-1.png" alt=""></figure>-->
-                                <!--</div>-->
-                            </div>
+                <div class="row justify-content-center">
+                    <div class="col-lg-10 col-md-12">
+                        
+                        <!-- Introductory Card -->
+                        <div class="p-4 p-md-5 rounded-4 mb-4 bg-white shadow-sm border border-secondary border-opacity-10">
+                            <h3 class="fw-bold mb-3" style="color: #0B2545; font-family: var(--ananta-font-heading);">
+                                Ananta Multi-Trade Pvt. Ltd. – Terms & Conditions Agreement
+                            </h3>
+                            <p class="fs-6 text-secondary mb-0" style="line-height: 1.7;">
+                                Please read these Terms & Conditions carefully before using our platform, accessing services, or entering into agreements with Ananta Multi Trade Private Limited. By engaging with our ecosystem, you agree to comply with the terms specified below.
+                            </p>
                         </div>
+
+                        <!-- Structured Cards Grid -->
+                        <div class="row g-4">
+                            
+                            <!-- Card 1: Acceptance of Terms -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(11, 37, 69, 0.08);">
+                                            <i class="fa fa-handshake fs-5" style="color: #0B2545;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0B2545; font-size: 18px;">1. Acceptance of Terms</h4>
+                                    </div>
+                                    <p class="text-secondary mb-0" style="line-height: 1.7; font-size: 14.5px;">
+                                        By accessing our services, website, customer portals, or official communication channels, you agree to be bound by these Terms & Conditions and all applicable regulations.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: User Responsibilities -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(15, 81, 50, 0.08);">
+                                            <i class="fa fa-user-check fs-5" style="color: #0F5132;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0F5132; font-size: 18px;">2. User Responsibilities</h4>
+                                    </div>
+                                    <ul class="list-unstyled text-secondary mb-0" style="line-height: 1.8; font-size: 14.5px;">
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Provide accurate and complete personal details</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Follow all official company guidelines and procedures</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Maintain strict confidentiality of company documents</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: Investment Terms -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(11, 37, 69, 0.08);">
+                                            <i class="fa fa-chart-line fs-5" style="color: #0B2545;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0B2545; font-size: 18px;">3. Investment Terms</h4>
+                                    </div>
+                                    <ul class="list-unstyled text-secondary mb-0" style="line-height: 1.8; font-size: 14.5px;">
+                                        <li><i class="fa fa-check-circle text-primary me-2"></i> All programs follow company rules and schedules</li>
+                                        <li><i class="fa fa-check-circle text-primary me-2"></i> Investors must review project details prior to investing</li>
+                                        <li><i class="fa fa-check-circle text-primary me-2"></i> Withdrawals and returns follow official policy terms</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Card 4: Prohibited Activities -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(220, 38, 38, 0.08);">
+                                            <i class="fa fa-ban fs-5" style="color: #DC2626;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #DC2626; font-size: 18px;">4. Prohibited Activities</h4>
+                                    </div>
+                                    <ul class="list-unstyled text-secondary mb-0" style="line-height: 1.8; font-size: 14.5px;">
+                                        <li><i class="fa fa-times-circle text-danger me-2"></i> Misuse or unauthorized distribution of company data</li>
+                                        <li><i class="fa fa-times-circle text-danger me-2"></i> Any form of fraudulent or illegal behavior</li>
+                                        <li><i class="fa fa-times-circle text-danger me-2"></i> Misrepresentation of identity or forged documents</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Card 5: Limitation of Liability -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(11, 37, 69, 0.08);">
+                                            <i class="fa fa-exclamation-triangle fs-5" style="color: #0B2545;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0B2545; font-size: 18px;">5. Limitation of Liability</h4>
+                                    </div>
+                                    <p class="text-secondary mb-2" style="line-height: 1.7; font-size: 14.5px;">
+                                        Ananta Multi-Trade Pvt. Ltd. is not liable for external market fluctuations, unexpected economic shifts, or losses resulting from investor misjudgment.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Card 6: Communication & Modifications -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(15, 81, 50, 0.08);">
+                                            <i class="fa fa-sliders-h fs-5" style="color: #0F5132;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0F5132; font-size: 18px;">6. Communication & Updates</h4>
+                                    </div>
+                                    <p class="text-secondary mb-0" style="line-height: 1.7; font-size: 14.5px;">
+                                        By interacting with our platform, you consent to receive account notifications and service updates. The company reserves the right to modify these terms anytime.
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+
                     </div>
                 </div>
             </div>

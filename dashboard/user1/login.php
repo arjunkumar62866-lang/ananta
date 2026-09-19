@@ -72,133 +72,194 @@ $hmcolor = $homeset['color'] ?? '';
 
 </head>
 
-<body class="bg-theme bg-theme1">
-    <div id="particles-js"></div>
+  <!-- Custom CSS for Modern Floating White Card Login -->
+  <style>
+    body.ananta-auth-page {
+      background: radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.75)), url('assets/images/bg-1.jpg') center/cover no-repeat fixed !important;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 20px 15px;
+    }
+    #particles-js {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    .auth-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    .auth-card {
+      background: #ffffff !important;
+      border-radius: 24px !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+      border: none !important;
+      padding: 35px 30px;
+      color: #1e293b !important;
+    }
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .auth-logo img {
+      max-height: 110px;
+      width: auto;
+      object-fit: contain;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .auth-header h3 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 6px 0;
+    }
+    .auth-header p {
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: #64748b;
+      margin: 0;
+    }
+    .auth-card .form-group {
+      margin-bottom: 18px;
+    }
+    .auth-card .input-group-custom {
+      position: relative;
+    }
+    .auth-card .form-control {
+      background-color: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 12px !important;
+      height: 48px;
+      padding: 10px 42px 10px 18px;
+      font-size: 14px;
+      color: #0f172a !important;
+      box-shadow: none !important;
+      transition: all 0.2s ease;
+    }
+    .auth-card .form-control:focus {
+      border-color: #00b4d8 !important;
+      box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.15) !important;
+    }
+    .auth-card .input-icon {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 16px;
+      pointer-events: none;
+    }
+    .auth-card .btn-primary-action {
+      background: linear-gradient(135deg, #00b4d8 0%, #10b981 100%) !important;
+      border: none !important;
+      border-radius: 12px !important;
+      height: 48px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #ffffff !important;
+      text-transform: uppercase;
+      width: 100%;
+      box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .auth-card .btn-primary-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 24px -5px rgba(16, 185, 129, 0.5);
+      opacity: 0.96;
+    }
+    .auth-card .forgot-link {
+      display: inline-block;
+      color: #00b4d8;
+      font-weight: 600;
+      font-size: 13px;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .auth-card .forgot-link:hover {
+      color: #0284c7;
+      text-decoration: underline;
+    }
+    .auth-card .signup-text {
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 22px;
+      font-weight: 500;
+    }
+    .auth-card .signup-text a {
+      color: #10b981;
+      font-weight: 700;
+      text-decoration: none;
+      margin-left: 4px;
+    }
+    .auth-card .signup-text a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
 
-  <!-- start loader -->
-  <div id="pageloader-overlay" class="visible incoming">
-    <div class="loader-wrapper-outer">
-      <div class="loader-wrapper-inner">
-        <div class="loader"></div>
-      </div>
-    </div>
-  </div>
-  <!-- end loader -->
+<body class="ananta-auth-page">
+  <div id="particles-js"></div>
 
   <!-- Start wrapper-->
-  <div id="wrapper">
-
-    <div class="loader-wrapper">
-      <div class="lds-ring">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img src="/assets/images/logo-stacked.png" alt="Ananta Logo">
       </div>
-    </div>
-    <div class="card card-authentication1 mx-auto my-5">
-      <div class="card-body">
-        <div class="card-content p-2">
-          <div class="text-center">
-            <img src="<?php echo $hmlogo;?>" alt="logo icon" height="80px">
+      <div class="auth-header">
+        <h3>Login</h3>
+        <p>PLEASE LOGIN TO YOUR ACCOUNT TO CONTINUE</p>
+      </div>
+
+      <form action="login.php" method="POST">
+        <div class="form-group">
+          <div class="input-group-custom">
+            <input type="text" name="userid" id="exampleInputUsername" class="form-control" placeholder="Email or User ID" required>
+            <i class="icon-user input-icon"></i>
           </div>
-          <div class="card-title text-uppercase text-center py-3">Sign In</div>
-          <form action="login.php" method="POST">
-            <div class="form-group">
-              <label for="exampleInputUsername" class="sr-only">UserId</label>
-              <div class="position-relative has-icon-right">
-                <input type="text" name="userid" id="exampleInputUsername" class="form-control input-shadow"
-                  placeholder="Enter UserId">
-                <div class="form-control-position">
-                  <i class="icon-user"></i>
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="exampleInputPassword" class="sr-only">Password</label>
-              <div class="position-relative has-icon-right">
-                <input type="password" name="password" id="exampleInputPassword" class="form-control input-shadow"
-                  placeholder="Enter Password">
-                <div class="form-control-position">
-                  <i class="icon-lock"></i>
-                </div>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group col-6">
-                <div class="icheck-material-white">
-                  <input type="checkbox" id="user-checkbox" checked="" />
-                  <label for="user-checkbox">Remember me</label>
-                </div>
-              </div>
-              <div class="form-group col-6 text-right">
-                <a href="reset-password.php">Reset Password</a>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-light btn-block">Sign In</button>
-            <!--<div class="text-center mt-3">Sign In With</div>-->
-
-            <!--<div class="form-row mt-4">-->
-            <!--  <div class="form-group mb-0 col-6">-->
-            <!--    <button type="button" class="btn btn-light btn-block"><i class="fa fa-facebook-square"></i>-->
-            <!--      Facebook</button>-->
-            <!--  </div>-->
-            <!--  <div class="form-group mb-0 col-6 text-right">-->
-            <!--    <button type="button" class="btn btn-light btn-block"><i class="fa fa-twitter-square"></i>-->
-            <!--      Twitter</button>-->
-            <!--  </div>-->
-            <!--</div>-->
-
-          </form>
         </div>
-      </div>
-      <div class="card-footer text-center py-3">
-        <p class="text-warning mb-0">Do not have an account? <a href="new_binary_registration_form.php"> Sign Up here</a></p>
-      </div>
+        <div class="form-group">
+          <div class="input-group-custom">
+            <input type="password" name="password" id="exampleInputPassword" class="form-control" placeholder="Password" required>
+            <i class="icon-lock input-icon"></i>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div class="custom-control custom-checkbox" style="padding-left: 1.5rem;">
+            <input type="checkbox" class="custom-control-input" id="user-checkbox" checked>
+            <label class="custom-control-label" for="user-checkbox" style="color: #64748b; font-size: 13px; font-weight: 500;">Remember me</label>
+          </div>
+          <div>
+            <a href="reset-password.php" class="forgot-link">Forgot Password?</a>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary-action">LOGIN</button>
+
+        <div class="signup-text">
+          Don't have an account? <a href="new_binary_registration_form.php">Signup</a>
+        </div>
+      </form>
     </div>
-
-    <!--Start Back To Top Button-->
-    <a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i> </a>
-    <!--End Back To Top Button-->
-
-    <!--start color switcher-->
-    <div class="right-sidebar">
-      <div class="switcher-icon">
-        <i class="zmdi zmdi-settings zmdi-hc-spin"></i>
-      </div>
-      <div class="right-sidebar-content">
-
-        <p class="mb-0">Gaussion Texture</p>
-        <hr>
-
-        <ul class="switcher">
-          <li id="theme1"></li>
-          <li id="theme2"></li>
-          <li id="theme3"></li>
-          <li id="theme4"></li>
-          <li id="theme5"></li>
-          <li id="theme6"></li>
-        </ul>
-
-        <p class="mb-0">Gradient Background</p>
-        <hr>
-
-        <ul class="switcher">
-          <li id="theme7"></li>
-          <li id="theme8"></li>
-          <li id="theme9"></li>
-          <li id="theme10"></li>
-          <li id="theme11"></li>
-          <li id="theme12"></li>
-          <li id="theme13"></li>
-          <li id="theme14"></li>
-          <li id="theme15"></li>
-        </ul>
-
-      </div>
-    </div>
-    <!--end color switcher-->
-
   </div><!--wrapper-->
 
   <!-- Bootstrap core JavaScript-->
@@ -206,25 +267,11 @@ $hmcolor = $homeset['color'] ?? '';
   <script src="assets/js/popper.min.js"></script>
   <script src="assets/js/bootstrap.min.js"></script>
 
-  <!-- sidebar-menu js -->
-  <script src="assets/js/sidebar-menu.js"></script>
-
   <!-- Custom scripts -->
-  <script src="assets/js/app-script.js"></script>
   <script src="particles.js"></script>
   <script src="app.js"></script>
-  
-  <style>
-#particles-js {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-}
-</style>
 </body>
+
 
 <!-- Mirrored from themewagon.github.io/dashtreme/login.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 05 Aug 2025 06:02:00 GMT -->
 

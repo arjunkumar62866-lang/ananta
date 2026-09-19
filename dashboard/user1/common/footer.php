@@ -1,9 +1,8 @@
 <!--Start footer-->
-    <footer class="footer">
-      <div class="container">
+    <footer class="footer border-top py-3" style="background: #ffffff !important; color: #64748b !important; border-top: 1px solid #e2e8f0 !important; font-size: 13.5px; font-weight: 500;">
+      <div class="container-fluid">
         <div class="text-center">
-          <!--Copyright © <php echo date('Y'); ?> Ananta-->
-          Copyright © 2025 Ananta
+          Copyright © <?php echo date('Y'); ?> <strong style="color: #0284c7;">Ananta Multi Trade Private Limited</strong>. All Rights Reserved.
         </div>
       </div>
     </footer>
@@ -68,3 +67,5 @@
 
   <!-- Index js -->
   <script src="assets/js/index.js"></script>
+  <!-- PWA Handler -->
+  <script src="/assets/js/app-pwa.js"></script>

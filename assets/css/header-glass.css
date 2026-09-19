@@ -1,0 +1,409 @@
+/* ==========================================================================
+   Single White-Transparent Glass Pill Header (Matching Reference Image)
+   - Fixed top center pill bar
+   - Rounded pill edges (border-radius: 100px)
+   - Translucent off-white glass background (rgba(240, 245, 243, 0.85))
+   - Left brand logo integration with clean contrast
+   - Apple-style dynamic sliding glass pill hover/active highlighter
+   ========================================================================== */
+
+/* Outer Fixed Wrapper */
+.ananta-glass-header-wrapper {
+  position: fixed !important;
+  top: 20px !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 999999 !important;
+  padding: 0 24px !important;
+  pointer-events: none;
+}
+
+/* Single Inner Pill Container */
+.ananta-glass-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  pointer-events: auto;
+  background: rgba(240, 245, 243, 0.88) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-radius: 100px !important;
+  padding: 8px 16px 8px 24px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 1. LEFT BRAND LOGO (Integrated inside pill) */
+.glass-logo-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: 44px;
+}
+
+.glass-logo-card img {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+/* 2. NAVIGATION LINKS CONTAINER WITH SLIDING GLASS INDICATOR */
+.glass-nav-links {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 100px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Sliding Pill Highlight Effect */
+.nav-slide-pill {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 100px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+}
+
+.glass-nav-links .nav-item {
+  position: relative;
+  z-index: 2;
+}
+
+.glass-nav-links .nav-item a {
+  color: #1e293b !important;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 100px;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.glass-nav-links .nav-item.active a,
+.glass-nav-links .nav-item a:hover {
+  color: #000000 !important;
+  font-weight: 700;
+}
+
+/* 3. RIGHT ACTION BUTTONS (Login & Register) */
+.glass-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-glass-login {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  padding: 8px 18px !important;
+  border-radius: 100px !important;
+  font-weight: 600 !important;
+  font-size: 13.5px !important;
+  text-decoration: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.25s ease !important;
+}
+
+.btn-glass-login:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+.btn-glass-register {
+  background: linear-gradient(135deg, #06152F 0%, #0B3D91 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 8px 20px !important;
+  border-radius: 100px !important;
+  font-weight: 700 !important;
+  font-size: 13.5px !important;
+  text-decoration: none !important;
+  box-shadow: 0 4px 14px rgba(11, 61, 145, 0.3) !important;
+  transition: all 0.25s ease !important;
+}
+
+.btn-glass-register:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(11, 61, 145, 0.45) !important;
+  color: #ffffff !important;
+}
+
+/* Mobile Toggler */
+.glass-mobile-toggle {
+  display: none;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #0f172a;
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Fixed Bottom Mobile Navigation Bar (Pure Transparent Glass Blur & Equal Small Buttons) */
+.ananta-mobile-bottom-nav {
+  position: fixed !important;
+  bottom: 16px !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 999999 !important;
+  padding: 0 14px !important;
+  pointer-events: none;
+}
+
+/* Sliding Glass Pill Indicator for Mobile Footer Navbar */
+.ananta-mobile-bottom-nav-inner {
+  position: relative;
+  max-width: 480px;
+  margin: 0 auto;
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 100px !important;
+  padding: 6px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+}
+
+.mobile-slide-pill {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  height: 52px;
+  background: linear-gradient(135deg, rgba(11, 61, 145, 0.85) 0%, rgba(6, 21, 47, 0.95) 100%);
+  border: 1px solid rgba(126, 211, 33, 0.6);
+  border-radius: 100px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+}
+
+.mobile-bottom-item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 52px;
+  padding: 6px 4px;
+  border-radius: 100px;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  text-decoration: none !important;
+  font-size: 11px;
+  font-weight: 600;
+  transition: color 0.25s ease, transform 0.25s ease;
+  flex: 1 1 0px;
+  width: 20%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.mobile-bottom-item i {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.25s ease;
+}
+
+.mobile-bottom-item span {
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+  line-height: 1;
+}
+
+.mobile-bottom-item.active,
+.mobile-bottom-item:hover {
+  color: #FFFFFF !important;
+}
+
+.mobile-bottom-item.active i,
+.mobile-bottom-item:hover i {
+  color: #7ED321;
+  transform: scale(1.1);
+}
+
+.mobile-bottom-account {
+  color: #FFFFFF !important;
+}
+
+.mobile-bottom-account i {
+  color: #7ED321;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 991px) {
+  .ananta-glass-header-wrapper {
+    padding: 0 16px !important;
+    top: 14px !important;
+  }
+
+  .glass-nav-links {
+    display: none !important;
+  }
+
+  .glass-actions {
+    display: none !important;
+  }
+
+  .glass-mobile-toggle {
+    display: none !important;
+  }
+
+  .ananta-glass-header-inner {
+    padding: 8px 16px !important;
+    justify-content: space-between !important;
+  }
+
+  .glass-logo-card {
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  .glass-logo-card img {
+    height: 36px !important;
+  }
+
+  .mobile-header-login {
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .mobile-login-icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #06152F 0%, #0B3D91 100%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(11, 61, 145, 0.25);
+    color: #FFFFFF !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    text-decoration: none !important;
+    transition: all 0.25s ease;
+  }
+
+  .mobile-login-icon-btn:hover,
+  .mobile-login-icon-btn:active {
+    transform: scale(1.08);
+    color: #7ED321 !important;
+  }
+}
+
+/* ==========================================================================
+   AUTH MODAL POPUP & BLUR OVERLAY (Login & Registration Modals)
+   ========================================================================== */
+.ananta-auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ananta-auth-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ananta-auth-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8);
+  display: none;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.ananta-auth-modal-card.active {
+  display: block;
+  transform: translateY(0) scale(1);
+}
+
+.ananta-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ananta-modal-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.ananta-modal-input:focus {
+  border-color: #00b4d8 !important;
+  box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.15) !important;
+}
+

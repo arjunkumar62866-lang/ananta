@@ -30,98 +30,163 @@
             </nav>
         </div><!-- End Mobile Menu -->
 
-        <div id="particles-js"></div>
-        <!-- page-title -->
-        <section class="page-title">
-            <div class="bg-layer" style="background-image: url(assets/images/background/page-title.jpg);"></div>
-            <div class="auto-container">
-                <div class="content-box">
-                    <h1>Privacy Policy</h1>
-                    <ul class="bread-crumb">
-                        <li><a href="index.html">Home</a></li>
-                        <li>Privacy Policy</li>
-                        <li><span>Privacy Policy</span></li>
-                    </ul>
+        <!-- Page Banner Header -->
+        <section class="py-5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); margin-top: 80px;">
+            <div class="auto-container text-center text-white py-4 position-relative" style="z-index: 5;">
+                <div class="ananta-badge mb-3" style="background: rgba(255, 255, 255, 0.15); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.3);">
+                    <span style="width: 8px; height: 8px; background: #7ED321; border-radius: 50%; display: inline-block;"></span> Legal & Compliance
                 </div>
+                <h1 class="fw-extrabold display-4 mb-2 text-white" style="font-family: var(--ananta-font-heading); font-weight: 800;">
+                    PRIVACY POLICY
+                </h1>
+                <p class="fs-5 text-white-50 mx-auto mb-0" style="max-width: 600px;">
+                    Ananta Multi Trade Private Limited – Protecting your privacy, security and data confidentiality.
+                </p>
             </div>
         </section>
-        <!-- page-title end -->
 
-
-        <!-- about-style-four -->
-        <section class="about-style-four" style="background-color: #001321;">
+        <!-- Main Content Section -->
+        <section class="py-5" style="background: #F8FAFC !important;">
             <div class="auto-container">
-                <div class="row align-items-center">
-                    <!--<div class="col-lg-6 col-md-12 col-sm-12 image-column">-->
-                    <!--    <div class="image-box">-->
-                    <!--        <figure class="image"><img src="assets/images/resource/about-1.jpg" alt=""></figure>-->
-                    <!--    </div>-->
-                    <!--</div>-->
-                    <div class="col-lg-12 col-md-12 col-sm-12 content-column">
-                        <div class="content_block_ten">
-                            <div class="content-box">
-                                <div class="sec-title">
-                                    <!--<h6 style="text-align:center; align-items:center;">Privacy Policy</h6>-->
-                                    <h2 style="color:white; text-align:center;">Ananta Multi-Trade Pvt. Ltd. – Privacy Policy</h2>
-                                </div>
-                                <div class="text-box">
-                                    <p>At Ananta Multi-Trade Pvt. Ltd., we are committed to protecting the privacy, security, and confidentiality of our investors, clients, and users. This Privacy Policy explains how we collect, use, protect, and manage your personal information.</p>
-                                </div>
-                                <div class="inner-box">
-                                    <div class="row align-items-center">
-                                        <div class="col-lg-12 col-md-12 col-sm-12 list-column">
-                                            <ul class="list-item">
-                                                <li><span>1. Information We Collect We may collect the following types of information:<br>
-	•	Personal details (Name, Phone Number, Email Address, Address)<br>
-	•	Investment-related information<br>
-	•	Identification documents (if required for verification)<br>
-	•	Financial details voluntarily provided by the investor<br>
-	•	Communication records (messages/calls related to support)</span></li>
-                                                <li><span>2. How We Use Your Information Your information is used strictly for:<br>
-                                                	•Investor verification<br>
-	•	Maintaining investment records<br>
-	•	Providing updates, reports, and support<br>
-	•	Ensuring smooth operation of our services<br>
-	•	Legal and compliance requirements (if applicable)
-                                                </span></li>
-                                                <li><span>3. Data Security
-	•	We implement strict physical, electronic, and managerial safeguards to secure your data.<br>
-	•	Your personal information will not be sold, shared, or leaked to any third party.<br>
-	•	Data access is restricted only to authorized personnel.<br>
-	•	All investment-related information is stored securely.
-	</span></li>
-                                                <li><span>4. Data Confidentiality<br>
-	•	All investor details, financial information, agreements, and conversations remain 100% confidential unless required by law.</span></li>
-                                                <li><span>5. Your Rights You may:<br>
-	•	Request access to your data<br>
-	•	Request correction of inaccurate information<br>
-	•	Request deletion (if legally possible)<br>
-	•	Withdraw consent for communication</span></li>
-	                                            <li><span>6. Third-Party Services<br>
-	•	We do not share user data with external agencies unless legally mandated.</span></li>
-	                                            <li><span>7. Changes to This Policy<br>
-	•	Ananta Multi-Trade Pvt. Ltd. may update this Privacy Policy at any time. Updated policies will be posted promptly </span></li>
-	<li><span>8. Contact Us<br>
-	•	For questions regarding this Privacy Policy:<br>
-	•	Email: [Insert Email]<br>
-	•	Phone: [Insert Number]</span></li>
-                                            </ul>
+                <div class="row justify-content-center">
+                    <div class="col-lg-10 col-md-12">
+                        
+                        <!-- Introductory Card -->
+                        <div class="p-4 p-md-5 rounded-4 mb-4 bg-white shadow-sm border border-secondary border-opacity-10">
+                            <h3 class="fw-bold mb-3" style="color: #0B2545; font-family: var(--ananta-font-heading);">
+                                Ananta Multi-Trade Pvt. Ltd. – Privacy Commitment
+                            </h3>
+                            <p class="fs-6 text-secondary mb-0" style="line-height: 1.7;">
+                                At Ananta Multi-Trade Pvt. Ltd., we are committed to protecting the privacy, security, and confidentiality of our investors, clients, and users. This Privacy Policy explains how we collect, use, protect, and manage your personal information.
+                            </p>
+                        </div>
+
+                        <!-- Structured Cards Grid -->
+                        <div class="row g-4">
+                            
+                            <!-- Card 1: Information We Collect -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(11, 37, 69, 0.08);">
+                                            <i class="fa fa-database fs-5" style="color: #0B2545;"></i>
                                         </div>
-                                        <!--<div class="col-lg-6 col-md-6 col-sm-12 inner-column">-->
-                                        <!--    <div class="statistics-box">-->
-                                        <!--        <h2>$50 <span>Million</span></h2>-->
-                                        <!--        <p>Revenue Growth in 2024.</p>-->
-                                        <!--        <div class="graph-box"><img src="assets/images/shape/shape-49.png" alt=""><span>36% in lfy</span></div>-->
-                                        <!--    </div>-->
-                                        <!--</div>-->
+                                        <h4 class="fw-bold mb-0" style="color: #0B2545; font-size: 18px;">1. Information We Collect</h4>
+                                    </div>
+                                    <ul class="list-unstyled text-secondary mb-0" style="line-height: 1.8; font-size: 14.5px;">
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Personal details (Name, Phone Number, Email, Address)</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Investment-related information</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Identification documents for verification</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Financial details voluntarily provided</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Communication records (messages/calls)</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: How We Use Your Information -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(15, 81, 50, 0.08);">
+                                            <i class="fa fa-tasks fs-5" style="color: #0F5132;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0F5132; font-size: 18px;">2. How We Use Your Information</h4>
+                                    </div>
+                                    <ul class="list-unstyled text-secondary mb-0" style="line-height: 1.8; font-size: 14.5px;">
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Investor identity verification</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Maintaining active investment records</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Providing updates, reports, and dedicated support</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Ensuring smooth operation of services</li>
+                                        <li><i class="fa fa-check-circle text-success me-2"></i> Legal and regulatory compliance requirements</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: Data Security -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(11, 37, 69, 0.08);">
+                                            <i class="fa fa-shield-alt fs-5" style="color: #0B2545;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0B2545; font-size: 18px;">3. Data Security & Safeguards</h4>
+                                    </div>
+                                    <ul class="list-unstyled text-secondary mb-0" style="line-height: 1.8; font-size: 14.5px;">
+                                        <li><i class="fa fa-shield-halved text-primary me-2"></i> Strict physical, electronic, and managerial safeguards</li>
+                                        <li><i class="fa fa-shield-halved text-primary me-2"></i> Personal info is never sold, shared, or leaked</li>
+                                        <li><i class="fa fa-shield-halved text-primary me-2"></i> Data access strictly restricted to authorized personnel</li>
+                                        <li><i class="fa fa-shield-halved text-primary me-2"></i> All investment records stored with encryption</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Card 4: Data Confidentiality -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(15, 81, 50, 0.08);">
+                                            <i class="fa fa-lock fs-5" style="color: #0F5132;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0F5132; font-size: 18px;">4. Data Confidentiality</h4>
+                                    </div>
+                                    <p class="text-secondary mb-0" style="line-height: 1.7; font-size: 14.5px;">
+                                        All investor details, financial information, agreements, and official conversations remain 100% confidential unless required by applicable law or regulatory authorities.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Card 5: Your Rights -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(11, 37, 69, 0.08);">
+                                            <i class="fa fa-user-shield fs-5" style="color: #0B2545;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0B2545; font-size: 18px;">5. Your Rights</h4>
+                                    </div>
+                                    <ul class="list-unstyled text-secondary mb-0" style="line-height: 1.8; font-size: 14.5px;">
+                                        <li><i class="fa fa-angle-right text-dark me-2"></i> Request full access to your stored data</li>
+                                        <li><i class="fa fa-angle-right text-dark me-2"></i> Request correction of inaccurate info</li>
+                                        <li><i class="fa fa-angle-right text-dark me-2"></i> Request deletion where legally permissible</li>
+                                        <li><i class="fa fa-angle-right text-dark me-2"></i> Withdraw communication consents</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Card 6: Third-Party & Policy Updates -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(15, 81, 50, 0.08);">
+                                            <i class="fa fa-file-contract fs-5" style="color: #0F5132;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0F5132; font-size: 18px;">6. Third-Party & Policy Updates</h4>
+                                    </div>
+                                    <p class="text-secondary mb-2" style="line-height: 1.7; font-size: 14.5px;">
+                                        We do not share user data with external agencies unless legally mandated. Ananta Multi-Trade Pvt. Ltd. may update this policy periodically.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Card 7: Contact Us -->
+                            <div class="col-12">
+                                <div class="p-4 p-md-5 rounded-4 text-white shadow-sm" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%);">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8 col-12 mb-3 mb-md-0">
+                                            <h4 class="fw-bold text-white mb-2">Have Questions About Our Privacy Policy?</h4>
+                                            <p class="text-white-50 mb-0">Feel free to reach out to our legal support team for any data protection inquiries.</p>
+                                        </div>
+                                        <div class="col-md-4 col-12 text-md-end">
+                                            <a href="mailto:<?php echo $hmemail; ?>" class="btn btn-light fw-bold rounded-3 px-4 py-3 shadow-sm text-dark">
+                                                Contact Legal Desk <i class="fa fa-envelope me-1 ms-2"></i>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                                <!--<div class="author-box">-->
-                                <!--    <h3>Damien Frederick, <span>Ceo & Founder</span></h3>-->
-                                <!--    <figure class="signature"><img src="assets/images/icons/signature-1.png" alt=""></figure>-->
-                                <!--</div>-->
                             </div>
+
                         </div>
+
                     </div>
                 </div>
             </div>

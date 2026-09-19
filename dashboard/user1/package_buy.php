@@ -420,78 +420,56 @@ if (isset($_POST["submit"])) {
     <div class="container-fluid">
 
       <div class="row mt-3">
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <div class="card-title text-center">
-                <h3 class="tile-title">
-                      Buy Package
-                      <span class="float-right" style="font-size:14pt;">
-                        Fund Balance:  $<?php echo $pin_wallet; ?>
-                      </span>
-                    </h3>
-              </div>
-              <hr>
-              <div class="row ">
-                <div class="col-md-12 p-4">
-                  <div class="tile text-center">
-                    
-                  </div>
-                  <div class="tile">
-                    <form method="post" id="form-data">
-                      
-                      <div class="form-group">
-                        <a href="fund-request.php">Click here to Send Fund Request</a>
-                      </div>
-                      
-                      <div class="form-group">
-                        <label class="form-label">USER Id</label>
-                        <input type="text" 
-                               name="userid"  
-                               class="form-control" 
-                               placeholder="Please Enter Account Id" 
-                               value="<?php echo $hmpre; ?><?php echo $userid;?>" 
-                               readonly>    
-                      </div>
-                      
-                      <!--<div class="form-group">-->
-                      <!--  <label for="input-1">Choose Amount -->
-                      <!--    <span class="text-danger">-->
-                      <!--      (You can make a deposit of at least $50 or any multiples of $50.)-->
-                      <!--    </span>-->
-                      <!--  </label>-->
-                      <!--  <input type="text" -->
-                      <!--         min="50" -->
-                      <!--         name="price" -->
-                      <!--         class="form-control" -->
-                      <!--         required>-->
-                      <!--</div>-->
-                      
-                     <div class="form-group">
-                        <label for="package">Select Package</label>
-                            <select name="package_id" id="package" class="form-control" required>
-                                <option value="">-- Select Package --</option>
-                                <?php foreach($packages as $pkg): ?>
-                                <option value="<?= $pkg['id']; ?>">
-                                    <?= htmlspecialchars($pkg['name']); ?> — ₹<?= htmlspecialchars($pkg['price']); ?>
-                                </option>
-                                    <?php endforeach; ?>
-                            </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Amount</label>
-                        <input type="number" name="price" class="form-control" 
-                            value="<?= isset($_POST['amount']) ? $_POST['amount'] : '' ?>" required
-                        >
-                    </div>
+        <div class="col-lg-8 offset-lg-2">
+          <div class="card shadow-lg border-0" style="border-radius: 20px; background: #ffffff;">
+            <div class="card-body p-4 p-md-5">
 
-                      <button type="submit" name="submit" class="btn btn-success text-center">Submit</button>
-                      
-                    </form>
-                  </div>
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
+                <div>
+                  <h4 class="font-weight-bold text-dark mb-1" style="color: #0f172a;">Buy Investment Package</h4>
+                  <p class="text-muted small mb-0">Select and activate your desired investment plan</p>
+                </div>
+                <div class="mt-3 mt-md-0 px-3 py-2" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%); border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.2);">
+                  <span class="text-muted small font-weight-bold d-block">Fund Balance</span>
+                  <span class="h5 font-weight-bold mb-0" style="color: #0284c7;">$<?php echo number_format((float)$pin_wallet, 2); ?></span>
                 </div>
               </div>
-              <!-- ✅ End inserted form -->
+
+              <div class="mb-4 text-right">
+                <a href="fund-request.php" class="btn btn-sm font-weight-bold" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; border-radius: 8px;">
+                  <i class="zmdi zmdi-plus-circle me-1"></i> Send Fund Request
+                </a>
+              </div>
+
+              <form method="post" id="form-data">
+                
+                <div class="form-group mb-4">
+                  <label class="font-weight-bold small text-uppercase" style="color: #475569;">User ID</label>
+                  <input type="text" name="userid" class="form-control font-weight-bold" value="<?php echo $hmpre; ?><?php echo $userid;?>" readonly style="border-radius: 12px; border-color: #cbd5e1; height: 48px; background: #f8fafc;">    
+                </div>
+                
+                <div class="form-group mb-4">
+                  <label class="font-weight-bold small text-uppercase" style="color: #475569;">Select Package</label>
+                  <select name="package_id" id="package" class="form-control" required style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
+                      <option value="">-- Select Package --</option>
+                      <?php foreach($packages as $pkg): ?>
+                      <option value="<?= $pkg['id']; ?>">
+                          <?= htmlspecialchars($pkg['name']); ?> — ₹<?= htmlspecialchars($pkg['price']); ?>
+                      </option>
+                      <?php endforeach; ?>
+                  </select>
+                </div>
+
+                <div class="form-group mb-4">
+                  <label class="font-weight-bold small text-uppercase" style="color: #475569;">Amount ($)</label>
+                  <input type="number" name="price" class="form-control" placeholder="Enter Amount" value="<?= isset($_POST['amount']) ? $_POST['amount'] : '' ?>" required style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
+                </div>
+
+                <button type="submit" name="submit" class="btn btn-block font-weight-bold text-white shadow-sm mt-3" style="border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); border: none; height: 50px; font-size: 16px;">
+                  <i class="zmdi zmdi-check-circle me-1"></i> Buy Investment Now
+                </button>
+                
+              </form>
 
             </div>
           </div>

@@ -456,236 +456,317 @@ function findAvailableSlot(PDO $pdo, $currentId, $preferredSide, $newUserId) {
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
-<body class="bg-theme bg-theme1">
+  <!-- Custom CSS for Modern Floating White Card Registration -->
+  <style>
+    body.ananta-auth-page {
+      background: radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.75)), url('assets/images/bg-1.jpg') center/cover no-repeat fixed !important;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 30px 15px;
+    }
+    #particles-js {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    .auth-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .auth-card {
+      background: #ffffff !important;
+      border-radius: 24px !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+      border: none !important;
+      padding: 35px 30px;
+      color: #1e293b !important;
+    }
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .auth-logo img {
+      max-height: 110px;
+      width: auto;
+      object-fit: contain;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .auth-header h3 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 6px 0;
+    }
+    .auth-header p {
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: #64748b;
+      margin: 0;
+    }
+    .auth-card .form-group {
+      margin-bottom: 16px;
+    }
+    .auth-card .input-group-custom {
+      position: relative;
+    }
+    .auth-card .form-control, .auth-card select.form-control {
+      background-color: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 12px !important;
+      height: 48px;
+      padding: 10px 42px 10px 18px;
+      font-size: 14px;
+      color: #0f172a !important;
+      box-shadow: none !important;
+      transition: all 0.2s ease;
+    }
+    .auth-card select.form-control {
+      padding-right: 18px !important;
+    }
+    .auth-card .form-control:focus {
+      border-color: #00b4d8 !important;
+      box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.15) !important;
+    }
+    .auth-card .input-icon {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 16px;
+      pointer-events: none;
+    }
+    .auth-card .btn-primary-action {
+      background: linear-gradient(135deg, #00b4d8 0%, #10b981 100%) !important;
+      border: none !important;
+      border-radius: 12px !important;
+      height: 48px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #ffffff !important;
+      text-transform: uppercase;
+      width: 100%;
+      box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .auth-card .btn-primary-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 24px -5px rgba(16, 185, 129, 0.5);
+      opacity: 0.96;
+    }
+    .auth-card .position-selector {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .auth-card .position-selector label.title {
+      font-weight: 600;
+      font-size: 13px;
+      color: #475569;
+      margin: 0;
+    }
+    .auth-card .position-selector .radio-options {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .auth-card .position-selector .radio-options label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      cursor: pointer;
+    }
+    .auth-card .signin-text {
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 22px;
+      font-weight: 500;
+    }
+    .auth-card .signin-text a {
+      color: #10b981;
+      font-weight: 700;
+      text-decoration: none;
+      margin-left: 4px;
+    }
+    .auth-card .signin-text a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body class="ananta-auth-page">
     <div id="particles-js"></div>
-  <!-- start loader -->
-  <div id="pageloader-overlay" class="visible incoming">
-    <div class="loader-wrapper-outer">
-      <div class="loader-wrapper-inner">
-        <div class="loader"></div>
-      </div>
-    </div>
-  </div>
-  <!-- end loader -->
 
   <!-- Start wrapper-->
-  <div id="wrapper">
-    <div class="card card-authentication1 mx-auto my-4">
-      <div class="card-body">
-        <div class="card-content p-2">
-          <div class="text-center">
-            <img src="<?php echo $hmlogo;?>" alt="logo icon" height="80px">
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img src="/assets/images/logo-stacked.png" alt="Ananta Logo">
+      </div>
+      <div class="auth-header">
+        <h3>Create Account</h3>
+        <p>JOIN ANANTA TO START YOUR JOURNEY</p>
+      </div>
+
+      <form action="new_binary_registration_form.php" method="post" id="registration_form">
+        <!-- Referrer ID -->
+        <div class="form-group">
+          <div class="input-group-custom">
+            <input type="text" name="refferalId" id="referrerId" class="form-control"
+              placeholder="Enter Referrer ID" required value="<?php echo $defaultSponsorFromURL; ?>" <?php if(!empty($defaultSponsorFromURL)) echo 'readonly'; ?> >
+            <i class="icon-link input-icon"></i>
           </div>
-          <div class="card-title text-uppercase text-center py-3">Sign Up</div>
-          <form action="new_binary_registration_form.php" method="post" id="registration_form">
-            <!-- Referrer ID -->
-            <div class="form-group">
-              <label for="referrerId" class="sr-only"></label>
-              <div class="position-relative has-icon-right">
-                <input type="text" name="refferalId" id="referrerId" class="form-control input-shadow"
-                  placeholder="Enter Referrer ID" required value="<?php echo $defaultSponsorFromURL; ?>" <?php if(!empty($defaultSponsorFromURL)) echo 'readonly'; ?> >
-                <div class="form-control-position">
-                  <i class="icon-link"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sponsor Name -->
-            <div class="form-group" id="sponsor_name" style="display: none;">
-              <div class="position-relative has-icon-right">
-                <input type="text" name="refferalid" id="response2" class="form-control input-shadow" readonly>
-              </div>
-            </div>
-
-            <!-- Name -->
-            <div class="form-group">
-              <label for="exampleInputName" class="sr-only">Name</label>
-              <div class="position-relative has-icon-right">
-                <input type="text" name="userName" id="exampleInputName" class="form-control input-shadow"
-                  placeholder="Enter User-Name" required>
-                <div class="form-control-position">
-                  <i class="icon-user"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- Email -->
-            <div class="form-group">
-              <label for="exampleInputEmailId" class="sr-only">Email ID</label>
-              <div class="position-relative has-icon-right">
-                <input type="email" name="email" id="exampleInputEmailId" class="form-control input-shadow"
-                  placeholder="Enter User-Email" required>
-                <div class="form-control-position">
-                  <i class="icon-envelope-open"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- Mobile -->
-            <div class="form-group">
-              <label for="mobileNumber" class="sr-only">Mobile</label>
-              <div class="d-flex align-items-center" style="gap: 10px;">
-                <!-- Country Code Dropdown -->
-                <select class="form-control" name="mobilecode" id="countryCode" style="width: 35%; color:black;">
-                  <option value="+1">United States (+1)</option>
-                  <option value="+91">India (+91)</option>
-                  <option value="+44">United Kingdom (+44)</option>
-                  <option value="+61">Australia (+61)</option>
-                  <option value="+81">Japan (+81)</option>
-                  <option value="+49">Germany (+49)</option>
-                  <option value="+33">France (+33)</option>
-                  <option value="+86">China (+86)</option>
-                  <option value="+39">Italy (+39)</option>
-                  <option value="+34">Spain (+34)</option>
-                  <option value="+7">Russia (+7)</option>
-                  <option value="+55">Brazil (+55)</option>
-                  <option value="+27">South Africa (+27)</option>
-                  <option value="+62">Indonesia (+62)</option>
-                  <option value="+234">Nigeria (+234)</option>
-                  <option value="+52">Mexico (+52)</option>
-                  <option value="+31">Netherlands (+31)</option>
-                  <option value="+63">Philippines (+63)</option>
-                  <option value="+46">Sweden (+46)</option>
-                  <option value="+64">New Zealand (+64)</option>
-                  <option value="+20">Egypt (+20)</option>
-                  <option value="+90">Turkey (+90)</option>
-                  <option value="+66">Thailand (+66)</option>
-                  <option value="+41">Switzerland (+41)</option>
-                  <option value="+82">South Korea (+82)</option>
-                  <option value="+65">Singapore (+65)</option>
-                  <option value="+351">Portugal (+351)</option>
-                  <option value="+48">Poland (+48)</option>
-                  <option value="+886">Taiwan (+886)</option>
-                  <option value="+94">Sri Lanka (+94)</option>
-                  <option value="+880">Bangladesh (+880)</option>
-                  <option value="+98">Iran (+98)</option>
-                  <option value="+30">Greece (+30)</option>
-                  <option value="+354">Iceland (+354)</option>
-                  <option value="+372">Estonia (+372)</option>
-                  <option value="+60">Malaysia (+60)</option>
-                </select>
-                <div class="position-relative has-icon-right">
-                  <input type="text" name="mobile" id="mobileNumber" class="form-control input-shadow"
-                    placeholder="Enter User-Mobile" required>
-                  <div class="form-control-position">
-                    <i class="icon-phone"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Password -->
-            <div class="form-group">
-              <label for="exampleInputPassword" class="sr-only">Password</label>
-              <div class="position-relative has-icon-right">
-                <input type="password" name="pass1" id="exampleInputPassword" class="form-control input-shadow"
-                  placeholder="Enter Password" required>
-                <div class="form-control-position">
-                  <i class="icon-lock"></i>
-                </div>
-                <span id="passwordWarning" style="color: red; font-size: 14px;"></span>
-              </div>
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="form-group">
-              <label for="confirmPassword" class="sr-only">Confirm Password</label>
-              <div class="position-relative has-icon-right">
-                <input type="password" name="pass2" id="confirmPassword" class="form-control input-shadow"
-                  placeholder="Confirm Password" required>
-                <div class="form-control-position">
-                  <i class="icon-lock"></i>
-                </div>
-              </div>
-            </div>
-            
-            <!--Radio button--> 
-            <div class="form-group">
-                <div class="icheck-material-white">
-                    <label>Position: </label> 
-                    <label for="left">Left</label> 
-                    <input type="radio" id="left" name="position" value="left" required checked> 
-                    <label for="right">Right</label> 
-                    <input type="radio" id="right" name="position" value="right"><br><br>
-                </div>
-            </div>
-            
-            <!-- Terms and Conditions -->
-            <div class="form-group">
-              <div class="icheck-material-white">
-                <input type="checkbox" id="user-checkbox" name="terms_accepted" />
-                <label for="user-checkbox">I Agree With Terms & Conditions</label>
-              </div>
-            </div>
-
-            <!-- Submit Button -->
-            <button type="submit" id="submitBtn" class="btn btn-light btn-block waves-effect waves-light">Sign Up</button>
-
-            <!--<div class="text-center mt-3">Sign Up With</div>-->
-
-            <!--<div class="form-row mt-4">-->
-            <!--  <div class="form-group mb-0 col-6">-->
-            <!--    <button type="button" class="btn btn-light btn-block"><i class="fa fa-facebook-square"></i>-->
-            <!--      Facebook</button>-->
-            <!--  </div>-->
-            <!--  <div class="form-group mb-0 col-6 text-right">-->
-            <!--    <button type="button" class="btn btn-light btn-block"><i class="fa fa-twitter-square"></i>-->
-            <!--      Twitter</button>-->
-            <!--  </div>-->
-            <!--</div>-->
-          </form>
         </div>
-      </div>
-      <div class="card-footer text-center py-3">
-        <p class="text-warning mb-0">Already have an account? <a href="login.php"> Sign In here</a></p>
-      </div>
-    </div>
 
-    <!--Start Back To Top Button-->
-    <a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i> </a>
-    <!--End Back To Top Button-->
+        <!-- Sponsor Name -->
+        <div class="form-group" id="sponsor_name" style="display: none;">
+          <div class="input-group-custom">
+            <input type="text" name="refferalid" id="response2" class="form-control" style="background-color: #f1f5f9 !important; font-weight: 600;" readonly>
+          </div>
+        </div>
 
-    <!--start color switcher-->
-    <div class="right-sidebar">
-      <div class="switcher-icon">
-        <i class="zmdi zmdi-settings zmdi-hc-spin"></i>
-      </div>
-      <div class="right-sidebar-content">
-        <p class="mb-0">Gaussion Texture</p>
-        <hr>
-        <ul class="switcher">
-          <li id="theme1"></li>
-          <li id="theme2"></li>
-          <li id="theme3"></li>
-          <li id="theme4"></li>
-          <li id="theme5"></li>
-          <li id="theme6"></li>
-        </ul>
-        <p class="mb-0">Gradient Background</p>
-        <hr>
-        <ul class="switcher">
-          <li id="theme7"></li>
-          <li id="theme8"></li>
-          <li id="theme9"></li>
-          <li id="theme10"></li>
-          <li id="theme11"></li>
-          <li id="theme12"></li>
-          <li id="theme13"></li>
-          <li id="theme14"></li>
-          <li id="theme15"></li>
-        </ul>
-      </div>
+        <!-- Name -->
+        <div class="form-group">
+          <div class="input-group-custom">
+            <input type="text" name="userName" id="exampleInputName" class="form-control"
+              placeholder="Full Name" required>
+            <i class="icon-user input-icon"></i>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <div class="input-group-custom">
+            <input type="email" name="email" id="exampleInputEmailId" class="form-control"
+              placeholder="Email Address" required>
+            <i class="icon-envelope-open input-icon"></i>
+          </div>
+        </div>
+
+        <!-- Mobile -->
+        <div class="form-group">
+          <div class="d-flex align-items-center" style="gap: 10px;">
+            <select class="form-control" name="mobilecode" id="countryCode" style="flex: 0 0 40%; min-width: 0; padding-left: 8px; padding-right: 20px;">
+              <option value="+1">United States (+1)</option>
+              <option value="+91" selected>India (+91)</option>
+              <option value="+44">United Kingdom (+44)</option>
+              <option value="+61">Australia (+61)</option>
+              <option value="+81">Japan (+81)</option>
+              <option value="+49">Germany (+49)</option>
+              <option value="+33">France (+33)</option>
+              <option value="+86">China (+86)</option>
+              <option value="+39">Italy (+39)</option>
+              <option value="+34">Spain (+34)</option>
+              <option value="+7">Russia (+7)</option>
+              <option value="+55">Brazil (+55)</option>
+              <option value="+27">South Africa (+27)</option>
+              <option value="+62">Indonesia (+62)</option>
+              <option value="+234">Nigeria (+234)</option>
+              <option value="+52">Mexico (+52)</option>
+              <option value="+31">Netherlands (+31)</option>
+              <option value="+63">Philippines (+63)</option>
+              <option value="+46">Sweden (+46)</option>
+              <option value="+64">New Zealand (+64)</option>
+              <option value="+20">Egypt (+20)</option>
+              <option value="+90">Turkey (+90)</option>
+              <option value="+66">Thailand (+66)</option>
+              <option value="+41">Switzerland (+41)</option>
+              <option value="+82">South Korea (+82)</option>
+              <option value="+65">Singapore (+65)</option>
+              <option value="+351">Portugal (+351)</option>
+              <option value="+48">Poland (+48)</option>
+              <option value="+886">Taiwan (+886)</option>
+              <option value="+94">Sri Lanka (+94)</option>
+              <option value="+880">Bangladesh (+880)</option>
+              <option value="+98">Iran (+98)</option>
+              <option value="+30">Greece (+30)</option>
+              <option value="+354">Iceland (+354)</option>
+              <option value="+372">Estonia (+372)</option>
+              <option value="+60">Malaysia (+60)</option>
+            </select>
+            <div class="input-group-custom flex-grow-1" style="flex: 1 1 60%; min-width: 0;">
+              <input type="text" name="mobile" id="mobileNumber" class="form-control"
+                placeholder="Mobile Number" required>
+              <i class="icon-phone input-icon"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <div class="input-group-custom">
+            <input type="password" name="pass1" id="exampleInputPassword" class="form-control"
+              placeholder="Password" required>
+            <i class="icon-lock input-icon"></i>
+          </div>
+          <span id="passwordWarning" style="color: #ef4444; font-size: 12px; font-weight: 500; display: block; margin-top: 4px;"></span>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <div class="input-group-custom">
+            <input type="password" name="pass2" id="confirmPassword" class="form-control"
+              placeholder="Confirm Password" required>
+            <i class="icon-lock input-icon"></i>
+          </div>
+        </div>
+        
+        <!-- Position --> 
+        <div class="form-group">
+          <div class="position-selector">
+            <label class="title">Select Position:</label> 
+            <div class="radio-options">
+              <label for="left"><input type="radio" id="left" name="position" value="left" required checked> Left</label> 
+              <label for="right"><input type="radio" id="right" name="position" value="right"> Right</label> 
+            </div>
+          </div>
+        </div>
+        
+        <!-- Terms and Conditions -->
+        <div class="form-group mb-4">
+          <div class="custom-control custom-checkbox" style="padding-left: 1.5rem;">
+            <input type="checkbox" class="custom-control-input" id="user-checkbox" name="terms_accepted" checked required />
+            <label class="custom-control-label" for="user-checkbox" style="color: #64748b; font-size: 13px; font-weight: 500;">I Agree With Terms & Conditions</label>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="submitBtn" class="btn btn-primary-action">REGISTER</button>
+
+        <div class="signin-text">
+          Already have an account? <a href="login.php">Sign In</a>
+        </div>
+      </form>
     </div>
-    <!--end color switcher-->
   </div><!--wrapper-->
 
   <!-- Bootstrap core JavaScript-->
   <script src="assets/js/jquery.min.js"></script>
   <script src="assets/js/popper.min.js"></script>
   <script src="assets/js/bootstrap.min.js"></script>
-
-  <!-- sidebar-menu js -->
-  <script src="assets/js/sidebar-menu.js"></script>
 
   <!-- Custom scripts -->
   <script src="assets/js/app-script.js"></script>
@@ -744,17 +825,7 @@ function findAvailableSlot(PDO $pdo, $currentId, $preferredSide, $newUserId) {
     });
   });
   </script>
-    <script src="particles.js"></script>
+  <script src="particles.js"></script>
   <script src="app.js"></script>
-    <style>
-#particles-js {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-}
-</style>
 </body>
-</html>
+</html>

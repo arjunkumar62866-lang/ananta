@@ -30,73 +30,104 @@
             </nav>
         </div><!-- End Mobile Menu -->
 
-        <div id="particles-js"></div>
-        <!-- page-title -->
-        <section class="page-title">
-            <div class="bg-layer" style="background-image: url(assets/images/background/page-title.jpg);"></div>
-            <div class="auto-container">
-                <div class="content-box">
-                    <h1>Disclaimer(Draft)</h1>
-                    <ul class="bread-crumb">
-                        <li><a href="index.html">Home</a></li>
-                        <li>Disclaimer(Draft)</li>
-                        <li><span>Disclaimer(Draft)</span></li>
-                    </ul>
+        <!-- Page Banner Header -->
+        <section class="py-5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); margin-top: 80px;">
+            <div class="auto-container text-center text-white py-4 position-relative" style="z-index: 5;">
+                <div class="ananta-badge mb-3" style="background: rgba(255, 255, 255, 0.15); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.3);">
+                    <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> Risk Disclosure & Legal Statement
                 </div>
+                <h1 class="fw-extrabold display-4 mb-2 text-white" style="font-family: var(--ananta-font-heading); font-weight: 800;">
+                    DISCLAIMER
+                </h1>
+                <p class="fs-5 text-white-50 mx-auto mb-0" style="max-width: 600px;">
+                    Ananta Multi Trade Private Limited – Important information regarding risk disclosures and informational content.
+                </p>
             </div>
         </section>
-        <!-- page-title end -->
 
-
-        <!-- about-style-four -->
-        <section class="about-style-four" style="background-color: #001321;">
+        <!-- Main Content Section -->
+        <section class="py-5" style="background: #F8FAFC !important;">
             <div class="auto-container">
-                <div class="row align-items-center">
-                    <!--<div class="col-lg-6 col-md-12 col-sm-12 image-column">-->
-                    <!--    <div class="image-box">-->
-                    <!--        <figure class="image"><img src="assets/images/resource/about-1.jpg" alt=""></figure>-->
-                    <!--    </div>-->
-                    <!--</div>-->
-                    <div class="col-lg-12 col-md-12 col-sm-12 content-column">
-                        <div class="content_block_ten">
-                            <div class="content-box">
-                                <div class="sec-title">
-                                    <!--<h6 style="text-align:center; align-items:center;">Privacy Policy</h6>-->
-                                    <h2 style="color:white; text-align:center;">Ananta Multi-Trade Pvt. Ltd. – Disclaimer</h2>
-                                </div>
-                                <div class="text-box">
-                                    <p>At Ananta Multi-Trade Pvt. Ltd., we are committed to protecting the Disclaimer, security, and confidentiality of our investors, clients, and users. This Disclaimer explains how we collect, use, protect, and manage your personal information.</p>
-                                </div>
-                                <div class="inner-box">
-                                    <div class="row align-items-center">
-                                        <div class="col-lg-12 col-md-12 col-sm-12 list-column">
-                                            <ul class="list-item">
-                                                <li><span>All information provided by the company (including investment details, reports, projections, or marketing content) is for informational purposes only.<br>
-	•	Past performance is not a guarantee of future results.<br>
-	•	Investors are responsible for making decisions based on their own understanding and research.<br>
-	•		Ananta Multi-Trade Pvt. Ltd. does not take responsibility for:<br>
-	•			Third-party misinformation<br>
-	•			Market risks<br>
-	•			Losses arising due to external economic or financial conditions<br>
-	•			Company policies are subject to change based on business requirements.<br>
-	•		By engaging with our services, users agree that they understand all risks associated with investments.</span></li>
-                                            </ul>
-                                        </div>
-                                        <!--<div class="col-lg-6 col-md-6 col-sm-12 inner-column">-->
-                                        <!--    <div class="statistics-box">-->
-                                        <!--        <h2>$50 <span>Million</span></h2>-->
-                                        <!--        <p>Revenue Growth in 2024.</p>-->
-                                        <!--        <div class="graph-box"><img src="assets/images/shape/shape-49.png" alt=""><span>36% in lfy</span></div>-->
-                                        <!--    </div>-->
-                                        <!--</div>-->
-                                    </div>
-                                </div>
-                                <!--<div class="author-box">-->
-                                <!--    <h3>Damien Frederick, <span>Ceo & Founder</span></h3>-->
-                                <!--    <figure class="signature"><img src="assets/images/icons/signature-1.png" alt=""></figure>-->
-                                <!--</div>-->
-                            </div>
+                <div class="row justify-content-center">
+                    <div class="col-lg-10 col-md-12">
+                        
+                        <!-- Introductory Card -->
+                        <div class="p-4 p-md-5 rounded-4 mb-4 bg-white shadow-sm border border-secondary border-opacity-10">
+                            <h3 class="fw-bold mb-3" style="color: #0B2545; font-family: var(--ananta-font-heading);">
+                                Ananta Multi-Trade Pvt. Ltd. – Disclaimer Statement
+                            </h3>
+                            <p class="fs-6 text-secondary mb-0" style="line-height: 1.7;">
+                                All information provided by Ananta Multi Trade Private Limited (including investment details, reports, projections, or marketing content) is for informational purposes only. Please review our disclosures below.
+                            </p>
                         </div>
+
+                        <!-- Structured Cards Grid -->
+                        <div class="row g-4">
+                            
+                            <!-- Card 1: Informational Purpose -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(11, 37, 69, 0.08);">
+                                            <i class="fa fa-info-circle fs-5" style="color: #0B2545;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0B2545; font-size: 18px;">1. Informational Purpose Only</h4>
+                                    </div>
+                                    <p class="text-secondary mb-0" style="line-height: 1.7; font-size: 14.5px;">
+                                        Content, projections, and reports published across our channels serve general guidance. Past performance is not an indicator or guarantee of future returns.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Investor Responsibility -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(15, 81, 50, 0.08);">
+                                            <i class="fa fa-user-shield fs-5" style="color: #0F5132;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0F5132; font-size: 18px;">2. Independent Decision Making</h4>
+                                    </div>
+                                    <p class="text-secondary mb-0" style="line-height: 1.7; font-size: 14.5px;">
+                                        Investors are solely responsible for evaluating programs and making financial decisions based on their own independent analysis and risk appetite.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: Non-Liability Exclusions -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(220, 38, 38, 0.08);">
+                                            <i class="fa fa-exclamation-circle fs-5" style="color: #DC2626;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #DC2626; font-size: 18px;">3. Limitation of Liability</h4>
+                                    </div>
+                                    <ul class="list-unstyled text-secondary mb-0" style="line-height: 1.8; font-size: 14.5px;">
+                                        <li><i class="fa fa-times-circle text-danger me-2"></i> Third-party misinformation or external claims</li>
+                                        <li><i class="fa fa-times-circle text-danger me-2"></i> Broader market volatility & market risks</li>
+                                        <li><i class="fa fa-times-circle text-danger me-2"></i> Losses resulting from external economic conditions</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Card 4: Policy Updates & Acceptance -->
+                            <div class="col-md-6 col-12">
+                                <div class="p-4 rounded-4 h-100 bg-white shadow-sm border border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0" style="width: 44px; height: 44px; background: rgba(15, 81, 50, 0.08);">
+                                            <i class="fa fa-gavel fs-5" style="color: #0F5132;"></i>
+                                        </div>
+                                        <h4 class="fw-bold mb-0" style="color: #0F5132; font-size: 18px;">4. Terms Acceptance</h4>
+                                    </div>
+                                    <p class="text-secondary mb-0" style="line-height: 1.7; font-size: 14.5px;">
+                                        Company policies are subject to change based on operational requirements. By utilizing our services, users acknowledge and accept all associated operational terms.
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+
                     </div>
                 </div>
             </div>

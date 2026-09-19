@@ -17,7 +17,7 @@
     <!-- End Loader -->
 
     <!-- Wrapper -->
-    <div id="wrapper">
+    <div id="wrapper" class="ananta-admin-dashboard">
         <div class="clearfix"></div>
 
         <div class="content-wrapper">
@@ -25,22 +25,24 @@
 
                 <div class="row mt-3">
                     <div class="col-lg-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="card-title text-center">
-                                    <h3>All Users</h3>
+                        <div class="card shadow-sm border-0" style="border-radius: 16px; background: #ffffff;">
+                            <div class="card-body p-4">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
+                                    <div>
+                                        <h4 class="font-weight-bold text-dark mb-1" style="color: #0f172a;">All Registered Users</h4>
+                                        <p class="text-muted small mb-0">View, search and manage all system user accounts</p>
+                                    </div>
+                                    <div class="mt-3 mt-md-0">
+                                        <button id="customExportBtn" class="btn font-weight-bold text-white shadow-sm" style="background: #16a34a; border-radius: 10px; border: none; padding: 8px 18px;">
+                                            <i class="fa fa-file-excel-o me-1"></i> Export to Excel
+                                        </button>
+                                    </div>
                                 </div>
-                                <hr>
-
-                                <!-- Export Button -->
-                                <button id="customExportBtn" class="btn btn-success mb-3">
-                                    <i class="fa fa-file-excel-o"></i> Export to Excel
-                                </button>
 
                                 <!-- Table -->
                                 <div class="table-responsive" id="tblData">
-                                    <table class="table table-hover table-bordered" id="usersTable">
-                                        <thead>
+                                    <table class="table table-hover align-middle border" id="usersTable" style="border-radius: 12px; overflow: hidden;">
+                                        <thead style="background: #f8fafc; color: #475569; font-size: 13px; text-transform: uppercase;">
                                             <tr>
                                                 <th>Sr</th>
                                                 <th>User ID</th>

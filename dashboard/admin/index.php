@@ -2,124 +2,137 @@
 <!DOCTYPE html>
 <html lang="en">
     <style>
+body.ananta-admin-dashboard {
+  background-color: #f4f6f8 !important;
+  color: #334155 !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+.content-wrapper {
+  background-color: #f4f6f8 !important;
+  padding-top: 85px !important;
+}
+.topbar-nav .navbar {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+}
+.topbar-nav .nav-link {
+  color: #0f172a !important;
+}
 .wallet-box {
-    background: #083A3A;        /* same dark green */
-    border-radius: 20px 0 20px 0; /* right-side curve exactly like image */
-    height: 90px;               
-    color: white;
-    margin-top:20px;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    height: 96px;               
+    color: #0f172a !important;
+    margin-top: 15px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+    transition: all 0.3s ease;
+}
+
+.wallet-box:hover {
+    transform: translateY(-3px);
+    border-color: #0284c7 !important;
+    box-shadow: 0 15px 35px rgba(2, 132, 199, 0.12);
 }
 
 .wallet-icon {
-    width: 55px;
-    height: 55px;
-    background: #ffffff;
-    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%);
+    border: 1px solid rgba(2, 132, 199, 0.2);
+    border-radius: 16px;
 }
 
 .wallet-title {
-    font-size: 14px;
-    opacity: 0.9;
-}
-
-.wallet-amount {
-    font-size: 16px;
+    font-size: 13px;
+    color: #64748b;
     font-weight: 600;
 }
 
-.wallet-view {
-    font-size: 12px;
-    color: #d8d8d8;
-    text-decoration: none;
+.wallet-amount {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    font-family: 'Plus Jakarta Sans', sans-serif;
 }
-
-
 </style>
 <?php 
 include 'common/header.php'; 
 
 
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
-
-
-
 // withdraw ammount
 $table="tbl_transaction";
 $withdrawaltotal = incometotalnew($pdo, $table,'Withdrawal Request');
-$withdrawaltotal= round($withdrawaltotal, 2);
+$withdrawaltotal= round((float)($withdrawaltotal ?? 0), 2);
 
 // direct income
 $table="tbl_levelinc";
 $directincome = incometotalnew($pdo, $table,'Direct Income');
-$directincome= round($directincome, 2);
+$directincome= round((float)($directincome ?? 0), 2);
 
 // generation income
 $table="tbl_transaction";
 $generation_income = incometotalnew($pdo, $table,'Generation Income');
-$generation_income= round($generation_income, 2);
-
-// Direct Bonus
-$table="tbl_transaction";
-$direct_bonus = incometotalnew($pdo, $table,'Direct Bonus');
-$direct_bonus= round($direct_bonus, 2);
+$generation_income= round((float)($generation_income ?? 0), 2);
 
 // Ranking Income
 $table="tbl_transaction";
-$ranking_income = incometotalnew($pdo, $table,'Ranking Income');
-$ranking_income= round($ranking_income, 2);
+$ranking_income = incometotalnew($pdo, $table,'Ranking Income Payout');
+$ranking_income= round((float)($ranking_income ?? 0), 2);
+
+// Profit Sharing Income
+$table="tbl_daily_levelinc";
+$profit_sharing_income = incometotalnew($pdo, $table,'Profit Sharing Income');
+$profit_sharing_income= round((float)($profit_sharing_income ?? 0), 2);
 
 // Reward Income
 $table="tbl_transaction";
 $reward_income = incometotalnew($pdo, $table,'Reward Income');
-$reward_income= round($reward_income, 2);
+$reward_income= round((float)($reward_income ?? 0), 2);
 
 // Leadership Income
 $table="tbl_transaction";
 $leadership_income_income = incometotalnew($pdo, $table,'Leadership Income');
-$leadership_income_income= round($leadership_income_income, 2);
+$leadership_income_income= round((float)($leadership_income_income ?? 0), 2);
+
+// Direct Bonus
+$stmt = $pdo->prepare("SELECT SUM(package) AS total_package FROM tbl_roi_two");
+$stmt->execute();
+$result = $stmt->fetch(PDO::FETCH_ASSOC);
+$direct_bonus = $result['total_package'] ?? 0;
+$direct_bonus= round((float)($direct_bonus ?? 0), 2);
 
 // Daily Profit Sharing Incomes
 $table="tbl_roiinc";
 $roiincome = incometotalnew($pdo,$table,'Daily Profit Sharing Income');
-$roiincome= round($roiincome, 2);
+$roiincome= round((float)($roiincome ?? 0), 2);
 
 // Today Daily Profit Sharing Income
 $table="tbl_roiinc";
-$dailyroiincome = incometotalnewdate($date,$table,$userid,'Daily Profit Sharing Income');
+$dailyroiincome = incometotalnewdate($date,$table,'Daily Profit Sharing Income');
 
 //Level Income
 $table="tbl_daily_levelinc";
-$profit_sharing_income = incometotalnew($pdo,$table,'Profit Sharing Income');
-$profit_sharing_income= round($profit_sharing_income, 2);
+$dailylevelincome = incometotalnew($pdo,$table,'Daily Level Income');
+$dailylevelincome= round((float)($dailylevelincome ?? 0), 2);
 
 //Reward income
-
 $table="tbl_rewardinc";
 $rewardincome = incometotalnew($pdo,$table,'Reward Income');
-$rewardincome= round($rewardincome, 2);
+$rewardincome= round((float)($rewardincome ?? 0), 2);
 
-// direct business
-
-//TotalBusiness
-
-// $totallevelbusiness=gettotallevelbusiness($userid);
-// $totallevelbusiness1=$totallevelbusiness;
-
-// =========================
-// Active Users
-// =========================
+// Active & Inactive Users
 $stmt = $pdo->query("SELECT COUNT(*) AS active FROM user WHERE status='1' AND active='1'");
 $total_active = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
 
-// =========================
-// Inactive Users
-// =========================
 $stmt = $pdo->query("SELECT COUNT(*) AS active FROM user WHERE status='1' AND active='0'");
 $total_pending = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
-
 ?>
-<body class="bg-theme bg-theme1">
+
+<body class="ananta-admin-dashboard">
 
   <!-- Start wrapper-->
   <div id="wrapper">
@@ -134,12 +147,35 @@ $total_pending = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
     <div class="clearfix"></div>
 
     <div class="content-wrapper">
-                 
       
+      <!-- Premium Glass Admin Welcome Banner -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card border-0" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(22, 163, 74, 0.12) 100%), #ffffff; border-radius: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid rgba(2, 132, 199, 0.2) !important;">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="welcome-avatar-glow" style="width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; box-shadow: 0 8px 20px rgba(2, 132, 199, 0.35);">
+                  <i class="fa fa-user-shield"></i>
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 700; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">ADMIN PANEL</span>
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">System Overview</span>
+                  </div>
+                  <h4 class="mb-0" style="font-size: 22px; font-weight: 800; color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
+                    Welcome to Ananta Admin Console! 🛡️
+                  </h4>
+                  <p class="mb-0 text-muted" style="font-size: 13.5px; margin-top: 3px;">
+                    Monitor platform analytics, manage user activities, and oversee financial payouts seamlessly.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <!--Start Dashboard Content-->
-
-        <div class="card mt-3">
+      <div class="card mt-3" style="background-color: transparent; border: none; box-shadow: none;">
           <div class="card-content">
             <div class="row row-group m-0">
                 <div class="col-12 col-md-6 col-lg-3">
