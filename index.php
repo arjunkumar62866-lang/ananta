@@ -534,6 +534,90 @@
                             </div>
                         </div>
 
+                        <!-- Slide 7: Forex Trading (Duplicate for Infinite Loop) -->
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/forex.png" alt="Forex Trading">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 01</span>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">FOREX TRADING</h5>
+                                        <p class="showcase-detail-text mb-0">Institutional liquidity, currency market research & automated risk management strategies.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 8: Real Estate (Duplicate for Infinite Loop) -->
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/real.png" alt="Real Estate">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 02</span>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">REAL ESTATE</h5>
+                                        <p class="showcase-detail-text mb-0">Premium commercial & residential property acquisitions and real-asset development.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 9: IPO & Investment (Duplicate for Infinite Loop) -->
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/ipo.jpg" alt="IPO & Investment">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 03</span>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">IPO & INVESTMENT</h5>
+                                        <p class="showcase-detail-text mb-0">Pre-IPO capital structuring, market entry support & high-growth equity opportunities.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 10: EV Charging Point (Duplicate for Infinite Loop) -->
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/ev.png" alt="EV Charging Point">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 04</span>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">EV CHARGING POINT</h5>
+                                        <p class="showcase-detail-text mb-0">Pioneering green energy electric vehicle charging network & smart power stations.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 11: Travel & Tourism (Duplicate for Infinite Loop) -->
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/TRAVEL.png" alt="Travel & Tourism">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 05</span>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">TRAVEL & TOURISM</h5>
+                                        <p class="showcase-detail-text mb-0">Saqlaini Travels agency offering luxury global tours, flight ticketing & travel packages.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 12: Gold Opportunities (Duplicate for Infinite Loop) -->
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/gold.jpg" alt="Gold Opportunities">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 06</span>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">GOLD OPPORTUNITIES</h5>
+                                        <p class="showcase-detail-text mb-0">Physical gold trade, bullion asset security & long-term commodity value growth.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <!-- Swiper Pagination Dots -->
@@ -541,6 +625,7 @@
                 </div>
             </div>
         </section>
+
 
 
 
@@ -857,13 +942,14 @@
 
         revealElements.forEach(el => observer.observe(el));
 
-        // Swiper 5-Image Center Zoom Loop Slider (Always 5 slides on desktop, 2s interval)
+        // Swiper 5-Image Endless Circulation Slider (Always 5 slides on desktop, 2s interval)
         if (document.querySelector('.ananta-showcase-swiper')) {
             const showcaseSwiper = new Swiper('.ananta-showcase-swiper', {
                 slidesPerView: 1.5,
                 spaceBetween: 14,
                 centeredSlides: true,
                 loop: true,
+                loopAdditionalSlides: 5,
                 speed: 800,
                 autoplay: {
                     delay: 2000,
@@ -892,6 +978,7 @@
         }
     });
     </script>
+
 
 
 

@@ -984,7 +984,7 @@ h1, h2, h3, h4, h5, h6 {
 .framer-delay-6 { transition-delay: 0.6s; }
 
 /* ==========================================================================
-   SWIPER SHOWCASE — 5 VISIBLE IMAGES, CENTER ZOOM + CURSOR HOVER REVEAL
+   SWIPER SHOWCASE — CONTINUOUS NON-STOP MARQUEE SLIDER (ALWAYS 5 IMAGES VISIBLE)
    ========================================================================== */
 .ananta-showcase-swiper {
   width: 100%;
@@ -996,16 +996,17 @@ h1, h2, h3, h4, h5, h6 {
 .ananta-showcase-swiper .swiper-wrapper {
   display: flex;
   align-items: center;
+  transition-timing-function: linear !important;
 }
 
 /* Side Non-Active Slides (Zoomed Out) */
 .ananta-showcase-swiper .swiper-slide {
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease, filter 0.6s ease, z-index 0.3s ease !important;
-  opacity: 0.55;
-  transform: scale(0.84);
-  filter: blur(0.5px) grayscale(15%);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease, filter 0.5s ease, z-index 0.3s ease !important;
+  opacity: 0.7;
+  transform: scale(0.88);
   z-index: 1;
 }
+
 
 /* Center Active Slide (Zoomed In Prominently) */
 .ananta-showcase-swiper .swiper-slide-active,
