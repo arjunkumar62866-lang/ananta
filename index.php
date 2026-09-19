@@ -446,7 +446,7 @@
                     </h3>
                 </div>
 
-                <!-- Swiper 5-Image Center Zoom Slider -->
+                <!-- Swiper 5-Image Continuous Loop Slider -->
                 <div class="swiper ananta-showcase-swiper">
                     <div class="swiper-wrapper align-items-center">
                         
@@ -457,7 +457,8 @@
                                     <img src="assets/images/about/forex.png" alt="Forex Trading">
                                     <div class="showcase-overlay">
                                         <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 01</span>
-                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">FOREX TRADING</h5>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">FOREX TRADING</h5>
+                                        <p class="showcase-detail-text mb-0">Institutional liquidity, currency market research & automated risk management strategies.</p>
                                     </div>
                                 </div>
                             </div>
@@ -470,7 +471,8 @@
                                     <img src="assets/images/about/real.png" alt="Real Estate">
                                     <div class="showcase-overlay">
                                         <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 02</span>
-                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">REAL ESTATE</h5>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">REAL ESTATE</h5>
+                                        <p class="showcase-detail-text mb-0">Premium commercial & residential property acquisitions and real-asset development.</p>
                                     </div>
                                 </div>
                             </div>
@@ -483,7 +485,8 @@
                                     <img src="assets/images/about/ipo.jpg" alt="IPO & Investment">
                                     <div class="showcase-overlay">
                                         <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 03</span>
-                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">IPO & INVESTMENT</h5>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">IPO & INVESTMENT</h5>
+                                        <p class="showcase-detail-text mb-0">Pre-IPO capital structuring, market entry support & high-growth equity opportunities.</p>
                                     </div>
                                 </div>
                             </div>
@@ -496,7 +499,8 @@
                                     <img src="assets/images/about/ev.png" alt="EV Charging Point">
                                     <div class="showcase-overlay">
                                         <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 04</span>
-                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">EV CHARGING POINT</h5>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">EV CHARGING POINT</h5>
+                                        <p class="showcase-detail-text mb-0">Pioneering green energy electric vehicle charging network & smart power stations.</p>
                                     </div>
                                 </div>
                             </div>
@@ -509,7 +513,8 @@
                                     <img src="assets/images/about/TRAVEL.png" alt="Travel & Tourism">
                                     <div class="showcase-overlay">
                                         <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 05</span>
-                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">TRAVEL & TOURISM</h5>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">TRAVEL & TOURISM</h5>
+                                        <p class="showcase-detail-text mb-0">Saqlaini Travels agency offering luxury global tours, flight ticketing & travel packages.</p>
                                     </div>
                                 </div>
                             </div>
@@ -522,7 +527,8 @@
                                     <img src="assets/images/about/gold.jpg" alt="Gold Opportunities">
                                     <div class="showcase-overlay">
                                         <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 06</span>
-                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">GOLD OPPORTUNITIES</h5>
+                                        <h5 class="fw-bold text-white mb-1" style="font-size: 14px;">GOLD OPPORTUNITIES</h5>
+                                        <p class="showcase-detail-text mb-0">Physical gold trade, bullion asset security & long-term commodity value growth.</p>
                                     </div>
                                 </div>
                             </div>
@@ -535,6 +541,7 @@
                 </div>
             </div>
         </section>
+
 
 
         <!-- ==================================================
@@ -850,14 +857,14 @@
 
         revealElements.forEach(el => observer.observe(el));
 
-        // Swiper 5-Image Center Zoom Showcase Slider (Every 2 seconds)
+        // Swiper 5-Image Continuous Loop Slider (Always 5 slides on desktop, 2s interval)
         if (document.querySelector('.ananta-showcase-swiper')) {
             const showcaseSwiper = new Swiper('.ananta-showcase-swiper', {
-                slidesPerView: 1.6,
-                spaceBetween: 16,
-                centeredSlides: true,
+                slidesPerView: 1.5,
+                spaceBetween: 14,
+                centeredSlides: false,
                 loop: true,
-                speed: 700,
+                speed: 800,
                 autoplay: {
                     delay: 2000,
                     disableOnInteraction: false,
@@ -866,15 +873,15 @@
                 breakpoints: {
                     576: {
                         slidesPerView: 2.5,
-                        spaceBetween: 20
+                        spaceBetween: 16
                     },
                     768: {
                         slidesPerView: 3.5,
-                        spaceBetween: 24
+                        spaceBetween: 18
                     },
                     1200: {
                         slidesPerView: 5,
-                        spaceBetween: 28
+                        spaceBetween: 20
                     }
                 },
                 pagination: {
@@ -885,6 +892,7 @@
         }
     });
     </script>
+
 
     <?php include "common/footer.php"; ?>
 </body>
