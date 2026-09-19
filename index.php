@@ -141,7 +141,7 @@
                 <div class="row g-5 align-items-center">
                     
                     <!-- LEFT COLUMN: ABOUT US CONTENT -->
-                    <div class="col-lg-5 col-md-12">
+                    <div class="col-lg-5 col-md-12 framer-reveal framer-delay-1">
                         <div class="pe-lg-3 text-center text-lg-start">
                             
                             <!-- Pill Badge -->
@@ -181,7 +181,7 @@
                     </div>
 
                     <!-- RIGHT COLUMN: OUR GROWTH STATS GRID -->
-                    <div class="col-lg-7 col-md-12">
+                    <div class="col-lg-7 col-md-12 framer-reveal framer-delay-2">
                         
                         <div class="sec-title text-center text-lg-start mb-4">
                             <span class="fw-bold text-uppercase d-block mb-1" style="color: #C5A059; letter-spacing: 1px; font-size: 13px;">Performance & Expansion</span>
@@ -193,105 +193,105 @@
                         <div class="row g-3 justify-content-center py-2">
                             <!-- Stat 1: 7+ Countries -->
                             <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
-                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
+                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                                             🌍
                                         </div>
                                     </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">7+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Countries</p>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">7+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Countries</p>
                                 </div>
                             </div>
 
                             <!-- Stat 2: 10K+ Members -->
                             <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
-                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
+                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                                             👥
                                         </div>
                                     </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">10K+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Members</p>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">10K+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Members</p>
                                 </div>
                             </div>
 
                             <!-- Stat 3: $2M+ Global Volume -->
                             <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
-                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
+                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                                             💰
                                         </div>
                                     </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">$2M+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Global Volume</p>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">$2M+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Global Volume</p>
                                 </div>
                             </div>
 
                             <!-- Stat 4: 100+ Partners -->
                             <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
-                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
+                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                                             🤝
                                         </div>
                                     </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">100+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Partners</p>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">100+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Partners</p>
                                 </div>
                             </div>
 
                             <!-- Stat 5: 98% Success Rate -->
                             <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
-                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
+                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                                             📈
                                         </div>
                                     </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">98%</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Success Rate</p>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">98%</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Success Rate</p>
                                 </div>
                             </div>
 
                             <!-- Stat 6: 9.8% Monthly Growth -->
                             <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
-                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
+                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                                             📊
                                         </div>
                                     </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">9.8%</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Monthly Growth</p>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">9.8%</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Monthly Growth</p>
                                 </div>
                             </div>
 
                             <!-- Stat 7: 8.5K+ Active Members -->
                             <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
-                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
+                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                                             👥
                                         </div>
                                     </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">8.5K+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Active Members</p>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">8.5K+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Active Members</p>
                                 </div>
                             </div>
 
                             <!-- Stat 8: 85%+ Active Community -->
                             <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 transition-all border-0 bg-light" style="background: rgba(248, 250, 252, 0.8) !important; border: 1px solid #E2E8F0 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 50px;">
-                                        <div style="width: 48px; height: 48px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;">
+                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
+                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
+                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
                                             ⚡
                                         </div>
                                     </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 26px; font-weight: 800;">85%+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 13px;">Active Community</p>
+                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">85%+</h2>
+                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Active Community</p>
                                 </div>
                             </div>
 
@@ -328,12 +328,12 @@
                     </div>
                 </div>
 
-                <!-- 6 Business Cards Grid (Exact Design to Screenshot) -->
+                <!-- 6 Business Cards Grid (Exact Design to Screenshot with Framer Motion) -->
                 <div class="row g-4">
                     
                     <!-- Vertical 1: FOREX TRADING -->
-                    <div class="col-lg-4 col-md-6 col-sm-12">
-                        <div class="h-100 transition-all overflow-hidden" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
+                    <div class="col-lg-4 col-md-6 col-sm-12 framer-reveal framer-delay-1">
+                        <div class="h-100 transition-all overflow-hidden ananta-motion-card" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
                             <img src="assets/images/about/forex.png" alt="Forex Trading" style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;">
                             <div style="margin-top: -22px; margin-left: 20px; margin-bottom: 10px; position: relative; z-index: 2;">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 shadow-sm" style="width: 42px; height: 42px; background: #FFFDF8; border: 1.5px solid #E2D3B4;">
@@ -348,8 +348,8 @@
                     </div>
 
                     <!-- Vertical 2: REAL ESTATE -->
-                    <div class="col-lg-4 col-md-6 col-sm-12">
-                        <div class="h-100 transition-all overflow-hidden" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
+                    <div class="col-lg-4 col-md-6 col-sm-12 framer-reveal framer-delay-2">
+                        <div class="h-100 transition-all overflow-hidden ananta-motion-card" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
                             <img src="assets/images/about/real.png" alt="Real Estate" style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;">
                             <div style="margin-top: -22px; margin-left: 20px; margin-bottom: 10px; position: relative; z-index: 2;">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 shadow-sm" style="width: 42px; height: 42px; background: #FFFDF8; border: 1.5px solid #E2D3B4;">
@@ -364,8 +364,8 @@
                     </div>
 
                     <!-- Vertical 3: IPO & INVESTMENT -->
-                    <div class="col-lg-4 col-md-6 col-sm-12">
-                        <div class="h-100 transition-all overflow-hidden" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
+                    <div class="col-lg-4 col-md-6 col-sm-12 framer-reveal framer-delay-3">
+                        <div class="h-100 transition-all overflow-hidden ananta-motion-card" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
                             <img src="assets/images/about/ipo.jpg" alt="IPO & Investment" style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;">
                             <div style="margin-top: -22px; margin-left: 20px; margin-bottom: 10px; position: relative; z-index: 2;">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 shadow-sm" style="width: 42px; height: 42px; background: #FFFDF8; border: 1.5px solid #E2D3B4;">
@@ -380,8 +380,8 @@
                     </div>
 
                     <!-- Vertical 4: EV CHARGING POINT -->
-                    <div class="col-lg-4 col-md-6 col-sm-12">
-                        <div class="h-100 transition-all overflow-hidden" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
+                    <div class="col-lg-4 col-md-6 col-sm-12 framer-reveal framer-delay-4">
+                        <div class="h-100 transition-all overflow-hidden ananta-motion-card" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
                             <img src="assets/images/about/ev.png" alt="EV Charging Point" style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;">
                             <div style="margin-top: -22px; margin-left: 20px; margin-bottom: 10px; position: relative; z-index: 2;">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 shadow-sm" style="width: 42px; height: 42px; background: #FFFDF8; border: 1.5px solid #E2D3B4;">
@@ -396,8 +396,8 @@
                     </div>
 
                     <!-- Vertical 5: TRAVEL & TOURISM -->
-                    <div class="col-lg-4 col-md-6 col-sm-12">
-                        <div class="h-100 transition-all overflow-hidden" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
+                    <div class="col-lg-4 col-md-6 col-sm-12 framer-reveal framer-delay-5">
+                        <div class="h-100 transition-all overflow-hidden ananta-motion-card" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
                             <img src="assets/images/about/TRAVEL.png" alt="Travel & Tourism" style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;">
                             <div style="margin-top: -22px; margin-left: 20px; margin-bottom: 10px; position: relative; z-index: 2;">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 shadow-sm" style="width: 42px; height: 42px; background: #FFFDF8; border: 1.5px solid #E2D3B4;">
@@ -413,8 +413,8 @@
                     </div>
 
                     <!-- Vertical 6: GOLD -->
-                    <div class="col-lg-4 col-md-6 col-sm-12">
-                        <div class="h-100 transition-all overflow-hidden" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
+                    <div class="col-lg-4 col-md-6 col-sm-12 framer-reveal framer-delay-6">
+                        <div class="h-100 transition-all overflow-hidden ananta-motion-card" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
                             <img src="assets/images/about/gold.jpg" alt="Gold" style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;">
                             <div style="margin-top: -22px; margin-left: 20px; margin-bottom: 10px; position: relative; z-index: 2;">
                                 <div class="d-inline-flex align-items-center justify-content-center rounded-3 shadow-sm" style="width: 42px; height: 42px; background: #FFFDF8; border: 1.5px solid #E2D3B4;">
@@ -433,12 +433,141 @@
         </section>
 
         <!-- ==================================================
+             SECTION 03.5 — INTERACTIVE IMAGE SLIDER SHOWCASE
+             ================================================== -->
+        <section class="py-5 position-relative overflow-hidden ananta-slider-section" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important;">
+            <div class="auto-container position-relative framer-reveal framer-delay-1" style="z-index: 5;">
+                <div class="sec-title text-center mb-4">
+                    <div class="ananta-badge mb-2" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
+                        <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> BUSINESS SHOWCASE
+                    </div>
+                    <h3 class="fw-extrabold text-uppercase mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif; color: #0B2545 !important; font-size: 28px; letter-spacing: -0.5px;">
+                        EXPLORE OUR <span style="color: #967431;">HIGH-GROWTH SECTORS</span>
+                    </h3>
+                </div>
+
+                <!-- Bootstrap Carousel with Framer-Motion Animations -->
+                <div id="anantaBusinessCarousel" class="carousel slide carousel-fade ananta-slider-container" data-bs-ride="carousel" data-bs-interval="4500">
+                    
+                    <!-- Carousel Indicators -->
+                    <div class="carousel-indicators ananta-carousel-indicators mb-3">
+                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Forex Trading"></button>
+                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="1" aria-label="Real Estate"></button>
+                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="2" aria-label="IPO & Investment"></button>
+                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="3" aria-label="EV Charging Point"></button>
+                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="4" aria-label="Travel & Tourism"></button>
+                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="5" aria-label="Gold Opportunities"></button>
+                    </div>
+
+                    <div class="carousel-inner">
+                        
+                        <!-- Slide 1: Forex Trading -->
+                        <div class="carousel-item active">
+                            <div class="ananta-slider-img-wrap">
+                                <img src="assets/images/about/forex.png" alt="Forex Trading">
+                                <div class="ananta-slider-overlay">
+                                    <div class="ananta-slider-caption">
+                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 01</span>
+                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">FOREX TRADING & RESEARCH</h2>
+                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Institutional liquidity, market-focused trading strategies, and dedicated financial analytics.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 2: Real Estate -->
+                        <div class="carousel-item">
+                            <div class="ananta-slider-img-wrap">
+                                <img src="assets/images/about/real.png" alt="Real Estate">
+                                <div class="ananta-slider-overlay">
+                                    <div class="ananta-slider-caption">
+                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 02</span>
+                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">PREMIUM REAL ESTATE</h2>
+                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Strategic property developments, land acquisition, and commercial real-asset opportunities.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 3: IPO & Investment -->
+                        <div class="carousel-item">
+                            <div class="ananta-slider-img-wrap">
+                                <img src="assets/images/about/ipo.jpg" alt="IPO & Investment">
+                                <div class="ananta-slider-overlay">
+                                    <div class="ananta-slider-caption">
+                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 03</span>
+                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">IPO & CAPITAL MARKETS</h2>
+                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">High-potential investment opportunities across rapidly emerging market segments.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 4: EV Charging Point -->
+                        <div class="carousel-item">
+                            <div class="ananta-slider-img-wrap">
+                                <img src="assets/images/about/ev.png" alt="EV Charging Point">
+                                <div class="ananta-slider-overlay">
+                                    <div class="ananta-slider-caption">
+                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 04</span>
+                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">EV CHARGING INFRASTRUCTURE</h2>
+                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Pioneering next-generation electric vehicle charging networks and green energy solutions.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 5: Travel & Tourism -->
+                        <div class="carousel-item">
+                            <div class="ananta-slider-img-wrap">
+                                <img src="assets/images/about/TRAVEL.png" alt="Travel & Tourism">
+                                <div class="ananta-slider-overlay">
+                                    <div class="ananta-slider-caption">
+                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 05</span>
+                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">TRAVEL & TOURISM (Saqlaini Travels)</h2>
+                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Comprehensive domestic & international travel operations, ticketing, and luxury tours.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 6: Gold -->
+                        <div class="carousel-item">
+                            <div class="ananta-slider-img-wrap">
+                                <img src="assets/images/about/gold.jpg" alt="Gold Opportunities">
+                                <div class="ananta-slider-overlay">
+                                    <div class="ananta-slider-caption">
+                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 06</span>
+                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">GOLD & PRECIOUS METALS</h2>
+                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Physical gold trade, bullion management, and long-term commodity asset security.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Carousel Controls -->
+                    <button class="carousel-control-prev ananta-carousel-control" type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide="prev">
+                        <i class="fa fa-chevron-left"></i>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next ananta-carousel-control" type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide="next">
+                        <i class="fa fa-chevron-right"></i>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================
              SECTION 04 — WHY ANANTA
              ID: #partners
              ================================================== -->
         <section id="partners" class="py-5 position-relative overflow-hidden" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important; border-bottom: 1px solid rgba(197, 160, 89, 0.3);">
             <div class="auto-container position-relative" style="z-index: 5;">
-                <div class="sec-title text-center mb-5">
+                <div class="sec-title text-center mb-5 framer-reveal">
                     <div class="ananta-badge mb-3" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
                         <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> WHY ANANTA
                     </div>
@@ -454,8 +583,8 @@
 
                 <div class="row g-4">
                     <!-- Feature 01 -->
-                    <div class="col-lg-6 col-md-6 col-sm-12">
-                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                    <div class="col-lg-6 col-md-6 col-sm-12 framer-reveal framer-delay-1">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start ananta-feature-card" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
                             <div class="display-4 fw-extrabold flex-shrink-0" style="font-family: var(--ananta-font-heading); color: #0B2545; line-height: 1;">
                                 01
                             </div>
@@ -471,8 +600,8 @@
                     </div>
 
                     <!-- Feature 02 -->
-                    <div class="col-lg-6 col-md-6 col-sm-12">
-                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                    <div class="col-lg-6 col-md-6 col-sm-12 framer-reveal framer-delay-2">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start ananta-feature-card" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
                             <div class="display-4 fw-extrabold flex-shrink-0" style="font-family: var(--ananta-font-heading); color: #0F5132; line-height: 1;">
                                 02
                             </div>
@@ -488,8 +617,8 @@
                     </div>
 
                     <!-- Feature 03 -->
-                    <div class="col-lg-6 col-md-6 col-sm-12">
-                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                    <div class="col-lg-6 col-md-6 col-sm-12 framer-reveal framer-delay-3">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start ananta-feature-card" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
                             <div class="display-4 fw-extrabold flex-shrink-0" style="font-family: var(--ananta-font-heading); color: #0B2545; line-height: 1;">
                                 03
                             </div>
@@ -505,8 +634,8 @@
                     </div>
 
                     <!-- Feature 04 -->
-                    <div class="col-lg-6 col-md-6 col-sm-12">
-                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
+                    <div class="col-lg-6 col-md-6 col-sm-12 framer-reveal framer-delay-4">
+                        <div class="p-4 rounded-4 h-100 transition-all d-flex gap-4 align-items-start ananta-feature-card" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 6px 24px rgba(11, 37, 69, 0.05); border-radius: 20px !important;">
                             <div class="display-4 fw-extrabold flex-shrink-0" style="font-family: var(--ananta-font-heading); color: #0F5132; line-height: 1;">
                                 04
                             </div>
@@ -529,8 +658,8 @@
              ID: #vision
              ================================================== -->
         <section id="vision" class="py-5 position-relative overflow-hidden" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important; border-bottom: 1px solid rgba(197, 160, 89, 0.3);">
-            <div class="auto-container position-relative py-3" style="z-index: 5;">
-                <div class="p-5 rounded-5 text-center position-relative overflow-hidden shadow-lg" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 30px !important;">
+            <div class="auto-container position-relative py-3 framer-reveal" style="z-index: 5;">
+                <div class="p-5 rounded-5 text-center position-relative overflow-hidden shadow-lg ananta-vision-box" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 30px !important;">
                     
                     <div class="ananta-badge mb-3" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px;">
                         <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> OUR VISION
@@ -558,7 +687,7 @@
             <div class="container-fluid container-xl position-relative py-3">
                 
                 <!-- Section Header -->
-                <div class="sec-title text-center mb-5">
+                <div class="sec-title text-center mb-5 framer-reveal">
                     <div class="ananta-badge mb-3" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
                         <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> GET IN TOUCH & FAQ
                     </div>
@@ -577,7 +706,7 @@
                 <div class="row g-4 align-items-stretch">
                     
                     <!-- LEFT SIDE: FAQ ACCORDION -->
-                    <div class="col-lg-6 col-md-12">
+                    <div class="col-lg-6 col-md-12 framer-reveal framer-delay-1">
                         <div class="p-4 p-md-4 rounded-4 h-100" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 10px 30px rgba(11, 37, 69, 0.05); border-radius: 24px !important;">
                             <div class="d-flex align-items-center gap-3 mb-4 border-bottom border-secondary border-opacity-10 pb-3">
                                 <div class="d-flex align-items-center justify-content-center rounded-3" style="width: 46px; height: 46px; background: rgba(11, 37, 69, 0.08); border: 1px solid rgba(11, 37, 69, 0.15);">
@@ -667,7 +796,7 @@
                     </div>
 
                     <!-- RIGHT SIDE: CONTACT FORM -->
-                    <div class="col-lg-6 col-md-12">
+                    <div class="col-lg-6 col-md-12 framer-reveal framer-delay-2">
                         <div class="p-4 p-md-4 rounded-4 h-100" style="background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: 0 10px 30px rgba(11, 37, 69, 0.05); border-radius: 24px !important;">
                             
                             <div class="d-flex align-items-center gap-3 mb-4 border-bottom border-secondary border-opacity-10 pb-3">
@@ -726,6 +855,27 @@
         </section>
     </div>
 
+    <!-- Scroll Reveal Framer-Motion Observer Script -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const revealElements = document.querySelectorAll('.framer-reveal');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                }
+            });
+        }, {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        revealElements.forEach(el => observer.observe(el));
+    });
+    </script>
+
     <?php include "common/footer.php"; ?>
 </body>
 </html>
+
