@@ -857,12 +857,12 @@
 
         revealElements.forEach(el => observer.observe(el));
 
-        // Swiper 5-Image Continuous Loop Slider (Always 5 slides on desktop, 2s interval)
+        // Swiper 5-Image Center Zoom Loop Slider (Always 5 slides on desktop, 2s interval)
         if (document.querySelector('.ananta-showcase-swiper')) {
             const showcaseSwiper = new Swiper('.ananta-showcase-swiper', {
                 slidesPerView: 1.5,
                 spaceBetween: 14,
-                centeredSlides: false,
+                centeredSlides: true,
                 loop: true,
                 speed: 800,
                 autoplay: {
@@ -892,6 +892,7 @@
         }
     });
     </script>
+
 
 
     <?php include "common/footer.php"; ?>
