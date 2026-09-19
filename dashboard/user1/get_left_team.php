@@ -43,8 +43,8 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         "sponsorid" => $details['sponserid'],
         "joining_date" => $details['joining_date'],
         "status" => $details['active'] == '1'
-            ? "<b style='color:green'>Active</b>"
-            : "<b style='color:red'>Inactive</b>"
+            ? "<span class='badge-status active'><i class='fa fa-check-circle me-1'></i>Active</span>"
+            : "<span class='badge-status inactive'><i class='fa fa-times-circle me-1'></i>Inactive</span>"
     ];
 }
 

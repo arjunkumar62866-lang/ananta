@@ -24,9 +24,10 @@
 }
 
 /* Global Reset Overrides */
-body {
+body, .boxed_wrapper {
   font-family: var(--ananta-font-body) !important;
-  background-color: #f4f6f8 !important;
+  background-image: url('../images/background/bg.png') !important;
+  background-repeat: repeat !important;
   color: #334155 !important;
   overflow-x: hidden !important;
 }
@@ -39,10 +40,11 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Glass & Light Card Utility */
 .ananta-fintech-card {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(197, 160, 89, 0.3) !important;
   border-radius: 20px !important;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
   position: relative;
   overflow: hidden;
@@ -132,15 +134,15 @@ h1, h2, h3, h4, h5, h6 {
   color: #FFFFFF !important;
 }
 
-/* Nestify-Inspired Hero Layout with Responsive Desktop & Mobile Backgrounds */
 .ananta-hero-section {
   position: relative;
-  min-height: 100vh !important;
-  height: auto !important;
+  min-height: 100vh;
+  height: 100vh;
   display: flex;
   align-items: center;
-  padding: 140px 0 90px 0;
-  background-color: #030b17 !important;
+  padding: 140px 0 60px 0;
+  background-color: #0F172A !important;
+  box-sizing: border-box;
 }
 
 .ananta-hero-bg-holder {
@@ -151,35 +153,34 @@ h1, h2, h3, h4, h5, h6 {
   height: 100%;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(3, 11, 23, 0.45) 0%, rgba(3, 11, 23, 0.75) 100%), url('../images/background/hero-building.jpg') center center / cover no-repeat;
+  background-image: url('../images/background/hero-building.jpg');
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
   .ananta-hero-section {
-    padding: 100px 0 60px 0 !important;
+    padding: 120px 0 60px 0 !important;
     display: block !important;
-    background-color: #030b17 !important;
-    position: relative !important;
-    overflow: hidden !important;
+    background-color: #0F172A !important;
+    min-height: 100vh !important;
+    height: auto !important;
   }
   
   .ananta-hero-bg-holder {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: 1 !important;
-    background: linear-gradient(180deg, rgba(3, 11, 23, 0.45) 0%, rgba(3, 11, 23, 0.85) 100%), url('../images/background/hero-building-mobile.jpg') center center / cover no-repeat !important;
+    background-image: url('../images/background/hero-building-mobile.jpg') !important;
+    background-position: center center !important;
+    background-size: cover !important;
   }
 }
 
-/* Ensure all landing page sections sit solid above hero with white background */
+/* Ensure all landing page sections sit solid above hero with bg.png background */
 #about, #businesses, #partners, #vision, #contact, .service-section, .no-guarantee-cta, #chooseus, .execution-architecture, .news-section, .testimonial-section, .main-footer {
   position: relative !important;
   z-index: 10 !important;
-  background: #FFFFFF !important;
-  background-color: #FFFFFF !important;
+  background-image: url('../images/background/bg.png') !important;
+  background-repeat: repeat !important;
   display: block !important;
   opacity: 1 !important;
   visibility: visible !important;
