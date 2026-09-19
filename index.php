@@ -433,10 +433,10 @@
         </section>
 
         <!-- ==================================================
-             SECTION 03.5 — INTERACTIVE IMAGE SLIDER SHOWCASE
+             SECTION 03.5 — INTERACTIVE 5-IMAGE CENTER ZOOM SHOWCASE
              ================================================== -->
-        <section class="py-5 position-relative overflow-hidden ananta-slider-section" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important;">
-            <div class="auto-container position-relative framer-reveal framer-delay-1" style="z-index: 5;">
+        <section class="py-5 position-relative overflow-hidden ananta-slider-section" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important; border-top: 1px solid rgba(197, 160, 89, 0.3); border-bottom: 1px solid rgba(197, 160, 89, 0.3);">
+            <div class="container-fluid px-2 px-md-4 position-relative framer-reveal framer-delay-1" style="z-index: 5;">
                 <div class="sec-title text-center mb-4">
                     <div class="ananta-badge mb-2" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
                         <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> BUSINESS SHOWCASE
@@ -446,100 +446,83 @@
                     </h3>
                 </div>
 
-                <!-- Bootstrap Carousel with Framer-Motion Animations -->
-                <div id="anantaBusinessCarousel" class="carousel slide carousel-fade ananta-slider-container" data-bs-ride="carousel" data-bs-interval="4500">
-                    
-                    <!-- Carousel Indicators -->
-                    <div class="carousel-indicators ananta-carousel-indicators mb-3">
-                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Forex Trading"></button>
-                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="1" aria-label="Real Estate"></button>
-                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="2" aria-label="IPO & Investment"></button>
-                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="3" aria-label="EV Charging Point"></button>
-                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="4" aria-label="Travel & Tourism"></button>
-                        <button type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide-to="5" aria-label="Gold Opportunities"></button>
-                    </div>
-
-                    <div class="carousel-inner">
+                <!-- Swiper 5-Image Center Zoom Slider -->
+                <div class="swiper ananta-showcase-swiper">
+                    <div class="swiper-wrapper align-items-center">
                         
                         <!-- Slide 1: Forex Trading -->
-                        <div class="carousel-item active">
-                            <div class="ananta-slider-img-wrap">
-                                <img src="assets/images/about/forex.png" alt="Forex Trading">
-                                <div class="ananta-slider-overlay">
-                                    <div class="ananta-slider-caption">
-                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 01</span>
-                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">FOREX TRADING & RESEARCH</h2>
-                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Institutional liquidity, market-focused trading strategies, and dedicated financial analytics.</p>
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/forex.png" alt="Forex Trading">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 01</span>
+                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">FOREX TRADING</h5>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Slide 2: Real Estate -->
-                        <div class="carousel-item">
-                            <div class="ananta-slider-img-wrap">
-                                <img src="assets/images/about/real.png" alt="Real Estate">
-                                <div class="ananta-slider-overlay">
-                                    <div class="ananta-slider-caption">
-                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 02</span>
-                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">PREMIUM REAL ESTATE</h2>
-                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Strategic property developments, land acquisition, and commercial real-asset opportunities.</p>
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/real.png" alt="Real Estate">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 02</span>
+                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">REAL ESTATE</h5>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Slide 3: IPO & Investment -->
-                        <div class="carousel-item">
-                            <div class="ananta-slider-img-wrap">
-                                <img src="assets/images/about/ipo.jpg" alt="IPO & Investment">
-                                <div class="ananta-slider-overlay">
-                                    <div class="ananta-slider-caption">
-                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 03</span>
-                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">IPO & CAPITAL MARKETS</h2>
-                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">High-potential investment opportunities across rapidly emerging market segments.</p>
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/ipo.jpg" alt="IPO & Investment">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 03</span>
+                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">IPO & INVESTMENT</h5>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Slide 4: EV Charging Point -->
-                        <div class="carousel-item">
-                            <div class="ananta-slider-img-wrap">
-                                <img src="assets/images/about/ev.png" alt="EV Charging Point">
-                                <div class="ananta-slider-overlay">
-                                    <div class="ananta-slider-caption">
-                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 04</span>
-                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">EV CHARGING INFRASTRUCTURE</h2>
-                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Pioneering next-generation electric vehicle charging networks and green energy solutions.</p>
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/ev.png" alt="EV Charging Point">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 04</span>
+                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">EV CHARGING POINT</h5>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Slide 5: Travel & Tourism -->
-                        <div class="carousel-item">
-                            <div class="ananta-slider-img-wrap">
-                                <img src="assets/images/about/TRAVEL.png" alt="Travel & Tourism">
-                                <div class="ananta-slider-overlay">
-                                    <div class="ananta-slider-caption">
-                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 05</span>
-                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">TRAVEL & TOURISM (Saqlaini Travels)</h2>
-                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Comprehensive domestic & international travel operations, ticketing, and luxury tours.</p>
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/TRAVEL.png" alt="Travel & Tourism">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 05</span>
+                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">TRAVEL & TOURISM</h5>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Slide 6: Gold -->
-                        <div class="carousel-item">
-                            <div class="ananta-slider-img-wrap">
-                                <img src="assets/images/about/gold.jpg" alt="Gold Opportunities">
-                                <div class="ananta-slider-overlay">
-                                    <div class="ananta-slider-caption">
-                                        <span class="badge bg-warning text-dark fw-bold px-3 py-2 text-uppercase mb-2" style="letter-spacing: 1px; font-size: 11px; background-color: #C5A059 !important; color: #0F172A !important;">SECTOR 06</span>
-                                        <h2 class="text-white fw-black display-5 mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">GOLD & PRECIOUS METALS</h2>
-                                        <p class="text-white-50 fs-5 mb-0" style="max-width: 600px;">Physical gold trade, bullion management, and long-term commodity asset security.</p>
+                        <!-- Slide 6: Gold Opportunities -->
+                        <div class="swiper-slide">
+                            <div class="showcase-card">
+                                <div class="showcase-img-holder">
+                                    <img src="assets/images/about/gold.jpg" alt="Gold Opportunities">
+                                    <div class="showcase-overlay">
+                                        <span class="badge text-dark fw-bold px-2 py-1 text-uppercase mb-1" style="background-color: #C5A059; font-size: 10px;">SECTOR 06</span>
+                                        <h5 class="fw-bold text-white mb-0" style="font-size: 14px;">GOLD OPPORTUNITIES</h5>
                                     </div>
                                 </div>
                             </div>
@@ -547,19 +530,12 @@
 
                     </div>
 
-                    <!-- Carousel Controls -->
-                    <button class="carousel-control-prev ananta-carousel-control" type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide="prev">
-                        <i class="fa fa-chevron-left"></i>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next ananta-carousel-control" type="button" data-bs-target="#anantaBusinessCarousel" data-bs-slide="next">
-                        <i class="fa fa-chevron-right"></i>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-
+                    <!-- Swiper Pagination Dots -->
+                    <div class="swiper-pagination showcase-pagination mt-4"></div>
                 </div>
             </div>
         </section>
+
 
         <!-- ==================================================
              SECTION 04 — WHY ANANTA
@@ -855,9 +831,10 @@
         </section>
     </div>
 
-    <!-- Scroll Reveal Framer-Motion Observer Script -->
+    <!-- Scroll Reveal & Swiper Slider Script -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Scroll Reveal Observer
         const revealElements = document.querySelectorAll('.framer-reveal');
         
         const observer = new IntersectionObserver((entries) => {
@@ -872,10 +849,45 @@
         });
 
         revealElements.forEach(el => observer.observe(el));
+
+        // Swiper 5-Image Center Zoom Showcase Slider (Every 2 seconds)
+        if (document.querySelector('.ananta-showcase-swiper')) {
+            const showcaseSwiper = new Swiper('.ananta-showcase-swiper', {
+                slidesPerView: 1.6,
+                spaceBetween: 16,
+                centeredSlides: true,
+                loop: true,
+                speed: 700,
+                autoplay: {
+                    delay: 2000,
+                    disableOnInteraction: false,
+                    pauseOnMouseEnter: true
+                },
+                breakpoints: {
+                    576: {
+                        slidesPerView: 2.5,
+                        spaceBetween: 20
+                    },
+                    768: {
+                        slidesPerView: 3.5,
+                        spaceBetween: 24
+                    },
+                    1200: {
+                        slidesPerView: 5,
+                        spaceBetween: 28
+                    }
+                },
+                pagination: {
+                    el: '.showcase-pagination',
+                    clickable: true
+                }
+            });
+        }
     });
     </script>
 
     <?php include "common/footer.php"; ?>
 </body>
 </html>
+
 
