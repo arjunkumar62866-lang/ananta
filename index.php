@@ -341,8 +341,8 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4">
-                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; letter-spacing: 0.3px;">FOREX TRADING</h5>
-                                <p class="mb-0" style="color: #64748B; font-size: 13.5px; line-height: 1.5;">Market-focused trading and research.</p>
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">FOREX TRADING</h5>
+                                <p class="mb-0" style="color: #64748B; font-family: 'Roboto', sans-serif; font-size: 13.5px; line-height: 1.5;">Market-focused trading and research.</p>
                             </div>
                         </div>
                     </div>
@@ -357,8 +357,8 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4">
-                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; letter-spacing: 0.3px;">REAL ESTATE</h5>
-                                <p class="mb-0" style="color: #64748B; font-size: 13.5px; line-height: 1.5;">Property and real-asset opportunities.</p>
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">REAL ESTATE</h5>
+                                <p class="mb-0" style="color: #64748B; font-family: 'Roboto', sans-serif; font-size: 13.5px; line-height: 1.5;">Property and real-asset opportunities.</p>
                             </div>
                         </div>
                     </div>
@@ -373,8 +373,8 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4">
-                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; letter-spacing: 0.3px;">IPO & INVESTMENT</h5>
-                                <p class="mb-0" style="color: #64748B; font-size: 13.5px; line-height: 1.5;">Opportunities across selected market segments.</p>
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">IPO & INVESTMENT</h5>
+                                <p class="mb-0" style="color: #64748B; font-family: 'Roboto', sans-serif; font-size: 13.5px; line-height: 1.5;">Opportunities across selected market segments.</p>
                             </div>
                         </div>
                     </div>
@@ -389,8 +389,8 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4">
-                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; letter-spacing: 0.3px;">EV CHARGING POINT</h5>
-                                <p class="mb-0" style="color: #64748B; font-size: 13.5px; line-height: 1.5;">Building the next generation of EV infrastructure.</p>
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">EV CHARGING POINT</h5>
+                                <p class="mb-0" style="color: #64748B; font-family: 'Roboto', sans-serif; font-size: 13.5px; line-height: 1.5;">Building the next generation of EV infrastructure.</p>
                             </div>
                         </div>
                     </div>
@@ -405,9 +405,9 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4">
-                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; letter-spacing: 0.3px;">TRAVEL & TOURISM</h5>
-                                <p class="mb-1" style="color: #64748B; font-size: 13.5px; line-height: 1.5;">Domestic and international travel solutions.</p>
-                                <span class="d-block fw-bold" style="font-size: 12px; color: #1E293B;">Agency - Saqlaini Travels</span>
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">TRAVEL & TOURISM</h5>
+                                <p class="mb-1" style="color: #64748B; font-family: 'Roboto', sans-serif; font-size: 13.5px; line-height: 1.5;">Domestic and international travel solutions.</p>
+                                <span class="d-block fw-bold" style="font-size: 12px; color: #1E293B; font-family: 'Roboto', sans-serif;">Agency - Saqlaini Travels</span>
                             </div>
                         </div>
                     </div>
@@ -422,8 +422,8 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4">
-                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; letter-spacing: 0.3px;">GOLD</h5>
-                                <p class="mb-0" style="color: #64748B; font-size: 13.5px; line-height: 1.5;">Gold-focused business opportunities.</p>
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">GOLD</h5>
+                                <p class="mb-0" style="color: #64748B; font-family: 'Roboto', sans-serif; font-size: 13.5px; line-height: 1.5;">Gold-focused business opportunities.</p>
                             </div>
                         </div>
                     </div>
@@ -744,12 +744,397 @@
                     </p>
                 </div>
             </div>
+        <!-- ==================================================
+             SECTION 05.5 — WHAT OUR USERS SAY (CUSTOMER FEEDBACK)
+             ID: #testimonials
+             ================================================== -->
+        <section id="testimonials" class="py-5 position-relative overflow-hidden ananta-testimonials-section" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important; border-bottom: 1px solid rgba(197, 160, 89, 0.3);">
+            <div class="container-fluid position-relative py-3 framer-reveal" style="z-index: 5;">
+                
+                <!-- Section Header -->
+                <div class="sec-title text-center mb-5">
+                    <div class="ananta-badge mb-3" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
+                        <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> CUSTOMER FEEDBACK
+                    </div>
+                    <h2 class="fw-extrabold display-4 mb-2" style="font-family: var(--ananta-font-heading); color: #0B2545 !important; letter-spacing: 0.5px; font-weight: 800; text-transform: uppercase;">
+                        WHAT OUR <span style="color: #0F5132;">USERS SAY</span>
+                    </h2>
+                    <p class="fs-5 mx-auto" style="color: #475569; max-width: 650px; font-weight: 400; line-height: 1.5;">Real experiences and reviews from our valued partners, members, and investors across the world.</p>
+                    <div class="d-flex align-items-center justify-content-center gap-3 my-3">
+                        <span style="width: 80px; height: 2px; background: linear-gradient(90deg, transparent, #0F5132);"></span>
+                        <span style="display: inline-block; width: 7px; height: 7px; background: #C5A059; transform: rotate(45deg);"></span>
+                        <span style="width: 80px; height: 2px; background: linear-gradient(90deg, #0F5132, transparent);"></span>
+                    </div>
+                </div>
+
+                <!-- Marquee Wrapper with Soft Edge Fade Mask -->
+                <div class="testimonial-marquee-wrapper">
+                    
+                    <!-- ROW 1: Right-to-Left Infinite Scroll -->
+                    <div class="testimonial-marquee-container mb-4">
+                        <div class="marquee-track marquee-track-left">
+                            
+                            <!-- Card 1 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" alt="Sophia Patel">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Sophia Patel</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Equity Investor • Dubai</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Ananta's diversified business ecosystem provided me with unprecedented transparency and steady capital growth!"</p>
+                            </div>
+
+                            <!-- Card 2 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80" alt="Rajesh Kumar">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Rajesh Kumar</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Forex Partner • Mumbai</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"The institutional research and trading strategies are top-notch. Truly professional team and execution."</p>
+                            </div>
+
+                            <!-- Card 3 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80" alt="Ananya Roy">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Ananya Roy</h6>
+                                        <span class="text-muted" style="font-size: 12px;">EV Network Partner • Delhi</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Extremely thrilled with the EV charging setup. Smooth deployment and great support from Ananta team."</p>
+                            </div>
+
+                            <!-- Card 4 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80" alt="Vikram Sharma">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Vikram Sharma</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Real Estate Client • Bangalore</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Secured premium commercial land through Ananta. Honest advice and completely transparent deal."</p>
+                            </div>
+
+                            <!-- Card 5 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80" alt="Elena Rostova">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Elena Rostova</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Traveler • London</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Saqlaini Travels booked our luxury tour seamlessly. Best itinerary management and support throughout!"</p>
+                            </div>
+
+                            <!-- Duplicate Set for Seamless Continuous Loop -->
+                            <!-- Card 1 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" alt="Sophia Patel">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Sophia Patel</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Equity Investor • Dubai</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Ananta's diversified business ecosystem provided me with unprecedented transparency and steady capital growth!"</p>
+                            </div>
+
+                            <!-- Card 2 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80" alt="Rajesh Kumar">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Rajesh Kumar</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Forex Partner • Mumbai</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"The institutional research and trading strategies are top-notch. Truly professional team and execution."</p>
+                            </div>
+
+                            <!-- Card 3 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80" alt="Ananya Roy">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Ananya Roy</h6>
+                                        <span class="text-muted" style="font-size: 12px;">EV Network Partner • Delhi</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Extremely thrilled with the EV charging setup. Smooth deployment and great support from Ananta team."</p>
+                            </div>
+
+                            <!-- Card 4 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80" alt="Vikram Sharma">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Vikram Sharma</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Real Estate Client • Bangalore</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Secured premium commercial land through Ananta. Honest advice and completely transparent deal."</p>
+                            </div>
+
+                            <!-- Card 5 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80" alt="Elena Rostova">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Elena Rostova</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Traveler • London</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Saqlaini Travels booked our luxury tour seamlessly. Best itinerary management and support throughout!"</p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ROW 2: Left-to-Right Infinite Scroll -->
+                    <div class="testimonial-marquee-container">
+                        <div class="marquee-track marquee-track-right">
+                            
+                            <!-- Card 6 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80" alt="Marcus Vance">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Marcus Vance</h6>
+                                        <span class="text-muted" style="font-size: 12px;">IPO Investor • Singapore</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Participated in Pre-IPO capital structuring through Ananta. High professionalism and timely updates."</p>
+                            </div>
+
+                            <!-- Card 7 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&auto=format&fit=crop&q=80" alt="Neha Gupta">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Neha Gupta</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Gold Bullion Client • Pune</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Physical gold asset management with 100% security and verified purity. Highly recommended!"</p>
+                            </div>
+
+                            <!-- Card 8 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80" alt="David Miller">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">David Miller</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Corporate Member • Sydney</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"The ecosystem model connects multiple revenue streams seamlessly. Super impressed by the vision."</p>
+                            </div>
+
+                            <!-- Card 9 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=120&auto=format&fit=crop&q=80" alt="Priya Singh">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Priya Singh</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Franchise Partner • Kolkata</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Excellent onboarding and dedicated relationship management. Glad to be a part of Ananta."</p>
+                            </div>
+
+                            <!-- Card 10 -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80" alt="Arjun Mehta">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Arjun Mehta</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Fintech Investor • Ahmedabad</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Innovating every single quarter. Ananta Multi Trade is setting new standards in diversified trade."</p>
+                            </div>
+
+                            <!-- Duplicate Set for Seamless Continuous Loop -->
+                            <!-- Card 6 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80" alt="Marcus Vance">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Marcus Vance</h6>
+                                        <span class="text-muted" style="font-size: 12px;">IPO Investor • Singapore</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Participated in Pre-IPO capital structuring through Ananta. High professionalism and timely updates."</p>
+                            </div>
+
+                            <!-- Card 7 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&auto=format&fit=crop&q=80" alt="Neha Gupta">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Neha Gupta</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Gold Bullion Client • Pune</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Physical gold asset management with 100% security and verified purity. Highly recommended!"</p>
+                            </div>
+
+                            <!-- Card 8 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80" alt="David Miller">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">David Miller</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Corporate Member • Sydney</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"The ecosystem model connects multiple revenue streams seamlessly. Super impressed by the vision."</p>
+                            </div>
+
+                            <!-- Card 9 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=120&auto=format&fit=crop&q=80" alt="Priya Singh">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Priya Singh</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Franchise Partner • Kolkata</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Excellent onboarding and dedicated relationship management. Glad to be a part of Ananta."</p>
+                            </div>
+
+                            <!-- Card 10 Duplicate -->
+                            <div class="testimonial-card">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="avatar-holder">
+                                        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80" alt="Arjun Mehta">
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0" style="color: #0B2545;">Arjun Mehta</h6>
+                                        <span class="text-muted" style="font-size: 12px;">Fintech Investor • Ahmedabad</span>
+                                    </div>
+                                </div>
+                                <div class="star-rating mb-2">
+                                    <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                                </div>
+                                <p class="feedback-text mb-0">"Innovating every single quarter. Ananta Multi Trade is setting new standards in diversified trade."</p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </section>
 
         <!-- ==================================================
              SECTION 06 — FAQ & CONTACT US
              ID: #contact
              ================================================== -->
+
         <section id="contact" class="py-5 position-relative" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important; color: #0F172A; border-top: 1px solid rgba(197, 160, 89, 0.3);">
             
             <div class="container-fluid container-xl position-relative py-3">
