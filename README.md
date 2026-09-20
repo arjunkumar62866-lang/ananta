@@ -73,7 +73,7 @@ Press `Ctrl + C` in your terminal window running the server.
 #### Commit & Push Code Updates to GitHub:
 ```bash
 git add .
-git commit -m "fix font style , business section , feedback "
+git commit -m "redesign about section and font style fix"
 git push origin main
 ```
 *(Hostinger automatically deploys updates pushed to the `main` branch, and GitHub Actions automatically runs pending database migrations safely).*

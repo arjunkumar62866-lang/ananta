@@ -135,167 +135,276 @@
              SECTION 02 — ABOUT US & OUR GROWTH
              ID: #about
              ================================================== -->
-        <section id="about" class="py-5 position-relative overflow-hidden" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important; border-top: 1px solid rgba(197, 160, 89, 0.3); border-bottom: 1px solid rgba(197, 160, 89, 0.3);">
-            <div class="auto-container position-relative" style="z-index: 5;">
+        <section id="about" class="py-4 position-relative overflow-hidden w-100" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important; border-top: 1px solid rgba(197, 160, 89, 0.3); border-bottom: 1px solid rgba(197, 160, 89, 0.3);">
+            <div class="container-fluid p-0 position-relative" style="z-index: 5;">
                 
-                <div class="row g-5 align-items-center">
+                <div class="row g-0 align-items-center">
                     
-                    <!-- LEFT COLUMN: ABOUT US CONTENT -->
-                    <div class="col-lg-5 col-md-12 framer-reveal framer-delay-1">
-                        <div class="pe-lg-3 text-center text-lg-start">
-                            
-                            <!-- Pill Badge -->
-                            <div class="ananta-badge mb-3" style="background: linear-gradient(135deg, #0B2545 0%, #0F5132 100%); color: #FFFFFF; font-weight: 600; padding: 7px 20px; border-radius: 30px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(11, 37, 69, 0.25); border: 1px solid rgba(197, 160, 89, 0.4);">
-                                <span style="width: 8px; height: 8px; background: #C5A059; border-radius: 50%; display: inline-block;"></span> ABOUT US
-                            </div>
-                            
-                            <!-- Subtitle / Company Title -->
-                            <h6 class="fw-extrabold text-uppercase mb-2" style="color: #0F5132; letter-spacing: 1.5px; font-size: 14px;">
-                                ANANTA MULTI TRADE PRIVATE LIMITED
-                            </h6>
-
-                            <!-- Hero Title -->
-                            <h2 class="fw-extrabold display-5 mb-3" style="font-family: var(--ananta-font-heading); color: #0B2545 !important; letter-spacing: -0.5px; font-weight: 800; line-height: 1.2;">
-                                ONE VISION.<br />
-                                <span style="color: #0F5132;">MULTIPLE OPPORTUNITIES.</span>
-                            </h2>
-
-                            <!-- Accent Divider -->
-                            <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-3 my-3">
-                                <span style="width: 60px; height: 2px; background: linear-gradient(90deg, #0F5132, transparent);"></span>
-                                <span style="display: inline-block; width: 6px; height: 6px; background: #C5A059; transform: rotate(45deg);"></span>
-                                <span style="width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #0F5132);"></span>
-                            </div>
-
-                            <!-- Lead Text -->
-                            <h5 class="fw-bold mb-3" style="color: #1E293B; line-height: 1.5; font-size: 18px;">
-                                Building a diversified business ecosystem across markets, infrastructure, real estate and emerging industries.
-                            </h5>
-
-                            <!-- Body Text -->
-                            <p style="color: #475569; font-size: 15px; line-height: 1.7; margin-bottom: 0;">
-                                Ananta Multi Trade Private Limited is creating a growing network of businesses, partners and opportunities with a focus on innovation, professional operations and long-term growth.
-                            </p>
-
-                        </div>
-                    </div>
-
-                    <!-- RIGHT COLUMN: OUR GROWTH STATS GRID -->
-                    <div class="col-lg-7 col-md-12 framer-reveal framer-delay-2">
+                    <!-- OUR GROWTH STATS INFOGRAPHIC (FULL WIDTH ON MAIN SITE BACKGROUND) -->
+                    <div class="col-12 framer-reveal framer-delay-1">
                         
-                        <div class="sec-title text-center text-lg-start mb-4">
-                            <span class="fw-bold text-uppercase d-block mb-1" style="color: #C5A059; letter-spacing: 1px; font-size: 13px;">Performance & Expansion</span>
-                            <h3 class="fw-extrabold text-uppercase mb-0" style="font-family: var(--ananta-font-heading); color: #0B2545 !important; font-size: 26px;">
-                                OUR GROWTH
-                            </h3>
+                        <!-- OUR GROWTH INFOGRAPHIC OVER IMAGE (DESKTOP ONLY - LAPTOP VIEW) -->
+                        <div class="growth-image-infographic-wrapper position-relative w-100 mx-auto d-none d-lg-block">
+                            
+                            <!-- Base Image with Framer Reveal -->
+                            <img src="assets/images/about/circle.png" alt="Our Growth Infographic" class="w-100 d-block framer-reveal" style="border-radius: 20px; box-shadow: 0 15px 45px rgba(0, 0, 0, 0.08);">
+
+                            <!-- OVERLAY HEADER TITLE -->
+                            <div class="position-absolute text-center" style="top: 3.5%; left: 50%; transform: translateX(-50%); width: 100%; z-index: 10;">
+                                <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 3px; color: #0F5132; text-transform: uppercase;">OUR</span>
+                                <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 38px; font-weight: 900; letter-spacing: 2px; background: linear-gradient(135deg, #0B2545 0%, #1D4ED8 50%, #0284C7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; margin-bottom: 2px; line-height: 1;">GROWTH</h2>
+                                <div class="d-flex align-items-center justify-content-center gap-3 mt-1">
+                                    <span style="font-size: 11.5px; font-weight: 800; letter-spacing: 2px; color: #1E293B; text-transform: uppercase;">STRONGER NETWORK</span>
+                                    <span style="color: #94A3B8; font-weight: 400; font-size: 13px;">|</span>
+                                    <span style="font-size: 11.5px; font-weight: 800; letter-spacing: 2px; color: #1E293B; text-transform: uppercase;">BIGGER TOMORROW</span>
+                                </div>
+                            </div>
+
+                            <!-- NODE 01: COUNTRIES -->
+                            <div class="img-callout-box framer-reveal framer-delay-1" style="top: 29%; left: 3.8%; text-align: left;">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span style="font-size: 14px; font-weight: 900; color: #1D4ED8;">01</span>
+                                    <span style="font-size: 12px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">COUNTRIES</span>
+                                </div>
+                                <p class="m-0" style="font-size: 10.5px; color: #475569; line-height: 1.25; max-width: 135px;">Expanding our presence across global markets.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-1" style="top: 50.8%; left: 8.8%; transform: translate(-50%, -50%); text-align: center;">
+                                <i class="fas fa-globe-americas" style="font-size: 22px; color: #1D4ED8; margin-bottom: 2px; display: block;"></i>
+                                <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1;">7+</div>
+                                <div style="font-size: 8.5px; font-weight: 800; color: #475569; text-transform: uppercase;">COUNTRIES</div>
+                            </div>
+
+                            <!-- NODE 02: MEMBERS -->
+                            <div class="img-callout-box framer-reveal framer-delay-2" style="top: 21%; left: 19%; text-align: left;">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span style="font-size: 14px; font-weight: 900; color: #0284C7;">02</span>
+                                    <span style="font-size: 12px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">MEMBERS</span>
+                                </div>
+                                <p class="m-0" style="font-size: 10.5px; color: #475569; line-height: 1.25; max-width: 140px;">A growing community of active members.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-2" style="top: 41.5%; left: 24.2%; transform: translate(-50%, -50%); text-align: center;">
+                                <i class="fas fa-users" style="font-size: 22px; color: #0284C7; margin-bottom: 2px; display: block;"></i>
+                                <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1;">10K+</div>
+                                <div style="font-size: 8.5px; font-weight: 800; color: #475569; text-transform: uppercase;">MEMBERS</div>
+                            </div>
+
+                            <!-- NODE 03: PARTNERS -->
+                            <div class="img-callout-box framer-reveal framer-delay-3" style="top: 74.5%; left: 27.5%; text-align: left;">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span style="font-size: 14px; font-weight: 900; color: #0D9488;">03</span>
+                                    <span style="font-size: 12px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">PARTNERS</span>
+                                </div>
+                                <p class="m-0" style="font-size: 10.5px; color: #475569; line-height: 1.25; max-width: 140px;">Building valuable partnerships worldwide.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-3" style="top: 56.5%; left: 34.3%; transform: translate(-50%, -50%); text-align: center;">
+                                <i class="fas fa-handshake" style="font-size: 22px; color: #0D9488; margin-bottom: 2px; display: block;"></i>
+                                <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1;">100+</div>
+                                <div style="font-size: 8.5px; font-weight: 800; color: #475569; text-transform: uppercase;">PARTNERS</div>
+                            </div>
+
+                            <!-- NODE 04: GLOBAL VOLUME -->
+                            <div class="img-callout-box framer-reveal framer-delay-4" style="top: 17%; left: 39%; text-align: left;">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span style="font-size: 14px; font-weight: 900; color: #16A34A;">04</span>
+                                    <span style="font-size: 12px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">GLOBAL VOLUME</span>
+                                </div>
+                                <p class="m-0" style="font-size: 10.5px; color: #475569; line-height: 1.25; max-width: 145px;">Creating stronger business opportunities.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-4" style="top: 41.5%; left: 45.8%; transform: translate(-50%, -50%); text-align: center;">
+                                <i class="fas fa-coins" style="font-size: 22px; color: #16A34A; margin-bottom: 2px; display: block;"></i>
+                                <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1;">$2M+</div>
+                                <div style="font-size: 8px; font-weight: 800; color: #475569; text-transform: uppercase;">GLOBAL VOLUME</div>
+                            </div>
+
+                            <!-- NODE 05: SUCCESS RATE -->
+                            <div class="img-callout-box framer-reveal framer-delay-5" style="top: 74.5%; left: 51.5%; text-align: left;">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span style="font-size: 14px; font-weight: 900; color: #65A30D;">05</span>
+                                    <span style="font-size: 12px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">SUCCESS RATE</span>
+                                </div>
+                                <p class="m-0" style="font-size: 10.5px; color: #475569; line-height: 1.25; max-width: 140px;">Turning opportunities into results.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-5" style="top: 56.5%; left: 57.3%; transform: translate(-50%, -50%); text-align: center;">
+                                <i class="fas fa-chart-line" style="font-size: 22px; color: #65A30D; margin-bottom: 2px; display: block;"></i>
+                                <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1;">98%</div>
+                                <div style="font-size: 8px; font-weight: 800; color: #475569; text-transform: uppercase;">SUCCESS RATE</div>
+                            </div>
+
+                            <!-- NODE 06: MONTHLY GROWTH -->
+                            <div class="img-callout-box framer-reveal framer-delay-6" style="top: 19%; left: 61%; text-align: left;">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span style="font-size: 14px; font-weight: 900; color: #84CC16;">06</span>
+                                    <span style="font-size: 12px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">MONTHLY GROWTH</span>
+                                </div>
+                                <p class="m-0" style="font-size: 10.5px; color: #475569; line-height: 1.25; max-width: 145px;">Consistent progress, bigger milestones.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-6" style="top: 42.5%; left: 67.2%; transform: translate(-50%, -50%); text-align: center;">
+                                <i class="fas fa-calendar-alt" style="font-size: 22px; color: #84CC16; margin-bottom: 2px; display: block;"></i>
+                                <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1;">9.8%</div>
+                                <div style="font-size: 8px; font-weight: 800; color: #475569; text-transform: uppercase;">MONTHLY GROWTH</div>
+                            </div>
+
+                            <!-- Node 07: ACTIVE MEMBERS -->
+                            <div class="img-callout-box framer-reveal framer-delay-5" style="top: 21%; left: 78.5%; text-align: left;">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span style="font-size: 14px; font-weight: 900; color: #EAB308;">07</span>
+                                    <span style="font-size: 12px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">ACTIVE MEMBERS</span>
+                                </div>
+                                <p class="m-0" style="font-size: 10.5px; color: #475569; line-height: 1.25; max-width: 140px;">More people, more possibilities.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-5" style="top: 41.5%; left: 84.7%; transform: translate(-50%, -50%); text-align: center;">
+                                <i class="fas fa-user-check" style="font-size: 22px; color: #EAB308; margin-bottom: 2px; display: block;"></i>
+                                <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1;">8.5K+</div>
+                                <div style="font-size: 8px; font-weight: 800; color: #475569; text-transform: uppercase;">ACTIVE MEMBERS</div>
+                            </div>
+
+                            <!-- NODE 08: ACTIVE COMMUNITY -->
+                            <div class="img-callout-box framer-reveal framer-delay-6" style="top: 76%; left: 84%; text-align: left;">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span style="font-size: 14px; font-weight: 900; color: #F97316;">08</span>
+                                    <span style="font-size: 12px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">ACTIVE COMMUNITY</span>
+                                </div>
+                                <p class="m-0" style="font-size: 10.5px; color: #475569; line-height: 1.25; max-width: 145px;">Engaged community, stronger growth.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-6" style="top: 57.5%; left: 91.2%; transform: translate(-50%, -50%); text-align: center;">
+                                <i class="fas fa-bullhorn" style="font-size: 22px; color: #F97316; margin-bottom: 2px; display: block;"></i>
+                                <div style="font-size: 18px; font-weight: 900; color: #0F172A; line-height: 1;">85%+</div>
+                                <div style="font-size: 8px; font-weight: 800; color: #475569; text-transform: uppercase;">ACTIVE COMMUNITY</div>
+                            </div>
+
                         </div>
 
-                        <div class="row g-3 justify-content-center py-2">
-                            <!-- Stat 1: 7+ Countries -->
-                            <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
-                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                                            🌍
-                                        </div>
-                                    </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">7+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Countries</p>
+                        <!-- OUR GROWTH INFOGRAPHIC OVER PORTRAIT IMAGE (MOBILE ONLY VIEW - pcircle.png) -->
+                        <div class="growth-mobile-infographic-wrapper position-relative w-100 mx-auto d-block d-lg-none" style="max-width: 440px;">
+                            
+                            <!-- Base Portrait Image -->
+                            <img src="assets/images/about/pcircle.png" alt="Our Growth Mobile Infographic" class="w-100 d-block framer-reveal" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);">
+
+                            <!-- OVERLAY HEADER TITLE (MOBILE) -->
+                            <div class="position-absolute text-center" style="top: 2.2%; left: 50%; transform: translateX(-50%); width: 100%; z-index: 10;">
+                                <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 2px; color: #0F5132; text-transform: uppercase;">OUR</span>
+                                <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 900; letter-spacing: 1.5px; background: linear-gradient(135deg, #0B2545 0%, #1D4ED8 50%, #0284C7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; margin-bottom: 2px; line-height: 1;">GROWTH</h2>
+                                <div class="d-flex align-items-center justify-content-center gap-1 mt-1">
+                                    <span style="font-size: 7.5px; font-weight: 800; letter-spacing: 0.8px; color: #1E293B; text-transform: uppercase;">STRONGER NETWORK</span>
+                                    <span style="color: #94A3B8; font-weight: 400; font-size: 8px;">|</span>
+                                    <span style="font-size: 7.5px; font-weight: 800; letter-spacing: 0.8px; color: #1E293B; text-transform: uppercase;">BIGGER TOMORROW</span>
                                 </div>
                             </div>
 
-                            <!-- Stat 2: 10K+ Members -->
-                            <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
-                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                                            👥
-                                        </div>
-                                    </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">10K+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Members</p>
+                            <!-- MOBILE NODE 01: COUNTRIES (Left) -->
+                            <div class="img-callout-box framer-reveal framer-delay-1" style="top: 12.2%; left: 1.5%; text-align: left; width: 92px;">
+                                <div class="d-flex align-items-center gap-1 mb-0" style="line-height: 1.1;">
+                                    <span style="font-size: 10px; font-weight: 900; color: #1D4ED8;">01</span>
+                                    <span style="font-size: 8px; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">COUNTRIES</span>
                                 </div>
+                                <p class="m-0" style="font-size: 6.8px; color: #475569; line-height: 1.15; max-width: 90px;">Expanding presence across global markets.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-1" style="top: 13.8%; left: 33.2%; transform: translate(-50%, -50%); text-align: center; width: 62px;">
+                                <i class="fas fa-globe-americas" style="font-size: 12px; color: #1D4ED8; margin-bottom: 1px; display: block;"></i>
+                                <div style="font-size: 11px; font-weight: 900; color: #0F172A; line-height: 1;">7+</div>
+                                <div style="font-size: 5px; font-weight: 800; color: #475569; line-height: 1;">COUNTRIES</div>
                             </div>
 
-                            <!-- Stat 3: $2M+ Global Volume -->
-                            <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
-                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                                            💰
-                                        </div>
-                                    </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">$2M+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Global Volume</p>
+                            <!-- MOBILE NODE 02: MEMBERS (Right) -->
+                            <div class="img-callout-box framer-reveal framer-delay-2" style="top: 22.2%; left: 74.5%; text-align: left; width: 95px;">
+                                <div class="d-flex align-items-center gap-1 mb-0" style="line-height: 1.1;">
+                                    <span style="font-size: 10px; font-weight: 900; color: #0284C7;">02</span>
+                                    <span style="font-size: 8px; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">MEMBERS</span>
                                 </div>
+                                <p class="m-0" style="font-size: 6.8px; color: #475569; line-height: 1.15; max-width: 92px;">Active community members.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-2" style="top: 23.8%; left: 54.8%; transform: translate(-50%, -50%); text-align: center; width: 62px;">
+                                <i class="fas fa-users" style="font-size: 12px; color: #0284C7; margin-bottom: 1px; display: block;"></i>
+                                <div style="font-size: 11px; font-weight: 900; color: #0F172A; line-height: 1;">10K+</div>
+                                <div style="font-size: 5px; font-weight: 800; color: #475569; line-height: 1;">MEMBERS</div>
                             </div>
 
-                            <!-- Stat 4: 100+ Partners -->
-                            <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
-                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                                            🤝
-                                        </div>
-                                    </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">100+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Partners</p>
+                            <!-- MOBILE NODE 03: PARTNERS (Left) -->
+                            <div class="img-callout-box framer-reveal framer-delay-3" style="top: 31.8%; left: 1.5%; text-align: left; width: 92px;">
+                                <div class="d-flex align-items-center gap-1 mb-0" style="line-height: 1.1;">
+                                    <span style="font-size: 10px; font-weight: 900; color: #0D9488;">03</span>
+                                    <span style="font-size: 8px; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">PARTNERS</span>
                                 </div>
+                                <p class="m-0" style="font-size: 6.8px; color: #475569; line-height: 1.15; max-width: 90px;">Valuable partnerships worldwide.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-3" style="top: 33.3%; left: 37.9%; transform: translate(-50%, -50%); text-align: center; width: 62px;">
+                                <i class="fas fa-handshake" style="font-size: 12px; color: #0D9488; margin-bottom: 1px; display: block;"></i>
+                                <div style="font-size: 11px; font-weight: 900; color: #0F172A; line-height: 1;">100+</div>
+                                <div style="font-size: 5px; font-weight: 800; color: #475569; line-height: 1;">PARTNERS</div>
                             </div>
 
-                            <!-- Stat 5: 98% Success Rate -->
-                            <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
-                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                                            📈
-                                        </div>
-                                    </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">98%</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Success Rate</p>
+                            <!-- MOBILE NODE 04: GLOBAL VOLUME (Right) -->
+                            <div class="img-callout-box framer-reveal framer-delay-4" style="top: 41.5%; left: 77.5%; text-align: left; width: 95px;">
+                                <div class="d-flex align-items-center gap-1 mb-0" style="line-height: 1.1;">
+                                    <span style="font-size: 10px; font-weight: 900; color: #16A34A;">04</span>
+                                    <span style="font-size: 8px; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">VOLUME</span>
                                 </div>
+                                <p class="m-0" style="font-size: 6.8px; color: #475569; line-height: 1.15; max-width: 92px;">Stronger opportunities.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-4" style="top: 43.1%; left: 57.6%; transform: translate(-50%, -50%); text-align: center; width: 62px;">
+                                <i class="fas fa-coins" style="font-size: 12px; color: #16A34A; margin-bottom: 1px; display: block;"></i>
+                                <div style="font-size: 11px; font-weight: 900; color: #0F172A; line-height: 1;">$2M+</div>
+                                <div style="font-size: 4.8px; font-weight: 800; color: #475569; line-height: 1;">GLOBAL VOLUME</div>
                             </div>
 
-                            <!-- Stat 6: 9.8% Monthly Growth -->
-                            <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
-                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                                            📊
-                                        </div>
-                                    </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">9.8%</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Monthly Growth</p>
+                            <!-- MOBILE NODE 05: SUCCESS RATE (Left) -->
+                            <div class="img-callout-box framer-reveal framer-delay-5" style="top: 51.0%; left: 1.5%; text-align: left; width: 92px;">
+                                <div class="d-flex align-items-center gap-1 mb-0" style="line-height: 1.1;">
+                                    <span style="font-size: 10px; font-weight: 900; color: #65A30D;">05</span>
+                                    <span style="font-size: 7.5px; font-weight: 800; color: #0F172A; letter-spacing: -0.3px;">SUCCESS RATE</span>
                                 </div>
+                                <p class="m-0" style="font-size: 6.8px; color: #475569; line-height: 1.15; max-width: 90px;">Turning opportunities into results.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-5" style="top: 52.8%; left: 38.5%; transform: translate(-50%, -50%); text-align: center; width: 62px;">
+                                <i class="fas fa-chart-line" style="font-size: 12px; color: #65A30D; margin-bottom: 1px; display: block;"></i>
+                                <div style="font-size: 11px; font-weight: 900; color: #0F172A; line-height: 1;">98%</div>
+                                <div style="font-size: 4.8px; font-weight: 800; color: #475569; line-height: 1;">SUCCESS RATE</div>
                             </div>
 
-                            <!-- Stat 7: 8.5K+ Active Members -->
-                            <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
-                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(15,81,50,0.1) 0%, rgba(11,37,69,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                                            👥
-                                        </div>
-                                    </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0F5132; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">8.5K+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Active Members</p>
+                            <!-- MOBILE NODE 06: MONTHLY GROWTH (Right) -->
+                            <div class="img-callout-box framer-reveal framer-delay-6" style="top: 60.8%; left: 78.5%; text-align: left; width: 92px;">
+                                <div class="d-flex align-items-center gap-1 mb-0" style="line-height: 1.1;">
+                                    <span style="font-size: 10px; font-weight: 900; color: #84CC16;">06</span>
+                                    <span style="font-size: 8px; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">GROWTH</span>
                                 </div>
+                                <p class="m-0" style="font-size: 6.8px; color: #475569; line-height: 1.15; max-width: 90px;">Bigger milestones.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-6" style="top: 62.4%; left: 60.1%; transform: translate(-50%, -50%); text-align: center; width: 62px;">
+                                <i class="fas fa-calendar-alt" style="font-size: 12px; color: #84CC16; margin-bottom: 1px; display: block;"></i>
+                                <div style="font-size: 11px; font-weight: 900; color: #0F172A; line-height: 1;">9.8%</div>
+                                <div style="font-size: 4.8px; font-weight: 800; color: #475569; line-height: 1;">MONTHLY GROWTH</div>
                             </div>
 
-                            <!-- Stat 8: 85%+ Active Community -->
-                            <div class="col-4 col-md-3">
-                                <div class="p-3 rounded-4 text-center h-100 ananta-stat-box" style="background: rgba(248, 250, 252, 0.85) !important; border: 1px solid #CBD5E1 !important;">
-                                    <div class="mb-2 d-flex justify-content-center align-items-center" style="height: 48px;">
-                                        <div class="stat-emoji-wrapper" style="width: 44px; height: 44px; background: radial-gradient(circle, rgba(11,37,69,0.1) 0%, rgba(15,81,50,0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                                            ⚡
-                                        </div>
-                                    </div>
-                                    <h2 class="fw-extrabold mb-1 display-5" style="color: #0B2545; font-family: var(--ananta-font-heading); font-size: 24px; font-weight: 800;">85%+</h2>
-                                    <p class="mb-0 fw-semibold" style="color: #334155; font-size: 12.5px;">Active Community</p>
+                            <!-- MOBILE NODE 07: ACTIVE MEMBERS (Left) -->
+                            <div class="img-callout-box framer-reveal framer-delay-5" style="top: 70.2%; left: 1.5%; text-align: left; width: 92px;">
+                                <div class="d-flex align-items-center gap-1 mb-0" style="line-height: 1.1;">
+                                    <span style="font-size: 10px; font-weight: 900; color: #EAB308;">07</span>
+                                    <span style="font-size: 7.5px; font-weight: 800; color: #0F172A; letter-spacing: -0.3px;">ACTIVE MEMBERS</span>
                                 </div>
+                                <p class="m-0" style="font-size: 6.8px; color: #475569; line-height: 1.15; max-width: 90px;">More people, more possibilities.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-5" style="top: 72.1%; left: 39.4%; transform: translate(-50%, -50%); text-align: center; width: 62px;">
+                                <i class="fas fa-user-check" style="font-size: 12px; color: #EAB308; margin-bottom: 1px; display: block;"></i>
+                                <div style="font-size: 11px; font-weight: 900; color: #0F172A; line-height: 1;">8.5K+</div>
+                                <div style="font-size: 4.8px; font-weight: 800; color: #475569; line-height: 1;">ACTIVE MEMBERS</div>
+                            </div>
+
+                            <!-- MOBILE NODE 08: ACTIVE COMMUNITY (Right) -->
+                            <div class="img-callout-box framer-reveal framer-delay-6" style="top: 79.8%; left: 77.5%; text-align: left; width: 95px;">
+                                <div class="d-flex align-items-center gap-1 mb-0" style="line-height: 1.1;">
+                                    <span style="font-size: 10px; font-weight: 900; color: #F97316;">08</span>
+                                    <span style="font-size: 7.5px; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">COMMUNITY</span>
+                                </div>
+                                <p class="m-0" style="font-size: 6.8px; color: #475569; line-height: 1.15; max-width: 92px;">Stronger growth.</p>
+                            </div>
+                            <div class="img-circle-content framer-reveal framer-delay-6" style="top: 81.6%; left: 59.8%; transform: translate(-50%, -50%); text-align: center; width: 62px;">
+                                <i class="fas fa-bullhorn" style="font-size: 12px; color: #F97316; margin-bottom: 1px; display: block;"></i>
+                                <div style="font-size: 11px; font-weight: 900; color: #0F172A; line-height: 1;">85%+</div>
+                                <div style="font-size: 4.8px; font-weight: 800; color: #475569; line-height: 1;">COMMUNITY</div>
                             </div>
 
                         </div>
+
                     </div>
 
                 </div>
