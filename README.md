@@ -73,7 +73,7 @@ Press `Ctrl + C` in your terminal window running the server.
 #### Commit & Push Code Updates to GitHub:
 ```bash
 git add .
-git commit -m "feat: complete Requirements #1-#11 Profit Income, Monthly Closing, Profit Sharing & User Growth system"
+git commit -m "Admin role and active bonus done"
 git push origin main
 ```
 *(Hostinger automatically deploys updates pushed to the `main` branch, and GitHub Actions automatically runs pending database migrations safely).*

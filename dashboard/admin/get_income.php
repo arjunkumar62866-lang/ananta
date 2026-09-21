@@ -23,6 +23,29 @@ switch ($type) {
     case 'direct_bonus':
         $stmt = $pdo->prepare("select user_id, subject, amount, created_date from tbl_transaction where subject Like '%Direct Bonus%' order by id desc");
         break;
+    case 'direct_bonus_schedule':
+        $stmt = $pdo->prepare("
+            SELECT 
+                s.id,
+                s.investment_id,
+                s.beneficiary_id,
+                u1.name as beneficiary_name,
+                u1.direct_bonus_wallet as beneficiary_wallet,
+                s.source_user_id,
+                u2.name as source_user_name,
+                s.investment_amount,
+                s.total_bonus,
+                s.installment_amount,
+                s.installment_number,
+                s.installment_month,
+                s.status,
+                s.credited_at
+            FROM tbl_direct_bonus_schedule s
+            LEFT JOIN user u1 ON u1.userid = s.beneficiary_id
+            LEFT JOIN user u2 ON u2.userid = s.source_user_id
+            ORDER BY s.id DESC
+        ");
+        break;
     case 'ranking_income':
         $stmt = $pdo->prepare("select user_id, subject, amount, created_date from tbl_transaction where subject Like '%Ranking Income%' order by id desc");
         break;

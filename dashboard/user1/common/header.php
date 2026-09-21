@@ -45,7 +45,7 @@ $useramount      = $rowheader['amount'];
 $user_income     = $rowheader['total_inc'];
 $rank            = $rowheader['rank'];
 $side            =$rowheader['join_side'];
-$useramount      = round((double)$useramount, 2);
+$useramount      = round((float)$useramount, 2);
 $usertotal_package=$rowheader['total_package'];
 $pin_wallet=$rowheader['pin_wallet'];
 $idactive=$rowheader['active'];
@@ -53,6 +53,7 @@ $kyc=$rowheader['kyc'];
 $pending_geninc = $rowheader['pending_geninc'];
 $profit_income_wallet = $rowheader['profit_income_wallet'] ?? 0;
 $profit_sharing_wallet = $rowheader['profit_sharing_wallet'] ?? 0;
+$direct_bonus_wallet = $rowheader['direct_bonus_wallet'] ?? 0;
 
 
 
@@ -1848,30 +1849,116 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("keydown", function (e) {
 
         if (e.key === "Escape") {
-
             closeMobileMenu();
-
         }
-
     });
-
 
     /* =============================================
        RESIZE
     ============================================== */
-
     window.addEventListener("resize", function () {
-
         if (window.innerWidth >= 992) {
-
             closeMobileMenu();
-
         }
+    });
 
+    /* =============================================
+       TOPBAR PROFILE DROPDOWN TOGGLE
+    ============================================== */
+    document.querySelectorAll('[data-toggle="dropdown"], .ananta-profile-trigger').forEach(function(element) {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var parent = this.closest('.dropdown');
+            if (parent) {
+                var isShow = parent.classList.contains('show');
+                document.querySelectorAll('.dropdown.show').forEach(function(d) {
+                    d.classList.remove('show');
+                    var m = d.querySelector('.dropdown-menu');
+                    if (m) m.classList.remove('show');
+                });
+                if (!isShow) {
+                    parent.classList.add('show');
+                    var menu = parent.querySelector('.dropdown-menu');
+                    if (menu) menu.classList.add('show');
+                }
+            }
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown.show').forEach(function(d) {
+                d.classList.remove('show');
+                var m = d.querySelector('.dropdown-menu');
+                if (m) m.classList.remove('show');
+            });
+        }
     });
 
 });
 </script>
+
+<style>
+.dropdown-menu.show,
+.dropdown.show > .dropdown-menu {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 100% !important;
+    z-index: 999999 !important;
+}
+</style>
+
+<!-- Global DataTables High-Contrast Black Text Controls -->
+<style>
+.dataTables_wrapper,
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_length label,
+
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_filter label,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    background: #ffffff !important;
+    outline: none !important;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+    background: #ffffff !important;
+    outline: none !important;
+}
+
+.dataTables_wrapper .dataTables_filter input::placeholder {
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+
+.dataTables_wrapper .dataTables_info {
+    color: #334155 !important;
+    font-weight: 600 !important;
+}
+</style>
 
 <!-- =========================================================
      END ANANTA TOPBAR

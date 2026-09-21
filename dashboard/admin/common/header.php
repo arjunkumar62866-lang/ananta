@@ -3,15 +3,16 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Auto-authenticate Admin session if user session is AN1290 / 1290
-if (isset($_SESSION['userid']) && ($_SESSION['userid'] == '1290' || $_SESSION['userid'] == 'AN1290')) {
+// Strictly allow Admin access ONLY to user AN1290 / 1290
+$current_session_user = $_SESSION['userid'] ?? '';
+if ($current_session_user === '1290' || $current_session_user === 'AN1290') {
     $_SESSION['auserid'] = 'admin';
-}
-
-if (!isset($_SESSION["auserid"])) { 
-    header("Location:login.php");
+} else {
+    unset($_SESSION['auserid']);
+    header("Location: /dashboard/user1/index.php");
     exit();
 }
+
 
 require_once 'common/connection.php';
 // require 'common/printmessage.php';
@@ -200,39 +201,6 @@ $news = $newsdata['news'];
     
     
     
-<!--    <li class="has-sub">-->
-<!--    <a href="javascript:void(0)" class="menu-toggle">-->
-<!--        <span><i class="zmdi zmdi-shopping-cart"></i><span>Our Shopping Portal</span></span>-->
-<!--        <i class="zmdi zmdi-chevron-down arrow-icon"></i>-->
-<!--    </a>-->
-<!--    <ul class="sidebar-submenu">-->
-<!--        
-        
-<!--            $sel = "SELECT * FROM tbl_category WHERE status = :status ORDER BY id ASC";-->
-<!--            $stmt = $pdo->prepare($sel);-->
-<!--            $stmt->execute([':status' => 1]);-->
-<!--            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);-->
-
-<!--            if ($categories) {-->
-<!--                foreach ($categories as $rowp) {-->
-<!--                    ?>-->
-<!--                    <li>-->
-<!--                        <a target="_blank" href="all-product.php?slug=<?php echo htmlspecialchars($rowp['slug']); ?>">-->
-<!--                            <i class="fa fa-circle-o"></i> <?php echo htmlspecialchars($rowp['name']); ?>-->
-<!--                        </a>-->
-<!--                    </li>-->
-<!--                    
-<!--                }-->
-<!--            }-->
-        
-<!--        ?>-->
-<!--    </ul>-->
-<!--</li>-->
-
-<!--<li class="has-sub">-->
-<!--      <a href="javascript:void(0)" class="menu-toggle">-->
-<!--        <span><i class="zmdi zmdi-shopping-basket"></i><span> Order form</span></span>-->
-<!--        <i class="zmdi zmdi-chevron-down arrow-icon"></i>-->
 <!--      </a>-->
 <!--      <ul class="submenu">-->
 <!--        <li><a href="all-order.php"><i class="zmdi zmdi-circle-o"></i> Orders </a></li>-->
@@ -580,39 +548,55 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
       <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-de mr-2"></i> German</li>-->
       <!--  </ul>-->
       <!--</li>-->
-      <li class="nav-item">
-        <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" href="#">
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" href="javascript:void(0);" role="button" aria-haspopup="true" aria-expanded="false">
           <span class="user-profile">
-            <img src="images/logo.png" class="img-circle" alt="admin avatar">
+            <img src="/assets/images/usera.png" class="img-circle" alt="admin avatar" style="width:36px; height:36px; object-fit:cover; border:2px solid #0284c7;">
           </span>
         </a>
-        <!--<ul class="dropdown-menu dropdown-menu-right">-->
-        <!--  <li class="dropdown-item user-details">-->
-        <!--    <a href="javaScript:void();">-->
-        <!--      <div class="media">-->
-        <!--        <div class="avatar">-->
-        <!--          <img class="align-self-start mr-3" src="images/<php echo $userimage; ?>" alt="user avatar">-->
-        <!--        </div>-->
-        <!--        <div class="media-body">-->
-        <!--          <h6 class="mt-2 user-title"><php echo $username; ?></h6>-->
-        <!--          <p class="user-subtitle"><php echo $useremail; ?></p>-->
-        <!--        </div>-->
-        <!--      </div>-->
-        <!--    </a>-->
-        <!--  </li>-->
-        <!--  <li class="dropdown-divider"></li>-->
-        <!--  <li class="dropdown-item"><i class="icon-envelope mr-2"></i> Inbox</li>-->
-        <!--  <li class="dropdown-divider"></li>-->
-        <!--  <li class="dropdown-item"><i class="icon-wallet mr-2"></i> Account</li>-->
-        <!--  <li class="dropdown-divider"></li>-->
-        <!--  <li class="dropdown-item"><i class="icon-settings mr-2"></i> Setting</li>-->
-        <!--  <li class="dropdown-divider"></li>-->
-        <!--  <li class="dropdown-item"><a href="logout.php"><i class="icon-power mr-2"></i> Logout</a></li>-->
-        <!--</ul>-->
+        <ul class="dropdown-menu dropdown-menu-right shadow-lg border-0" style="border-radius:16px; padding:14px; margin-top:10px; background:#ffffff; min-width:220px;">
+          <li class="dropdown-item user-details" style="border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:8px;">
+            <a href="javascript:void(0);" style="text-decoration:none;">
+              <div class="media align-items-center">
+                <div class="avatar mr-2">
+                  <img class="align-self-start img-circle" src="/assets/images/usera.png" alt="admin avatar" style="width:38px; height:38px; object-fit:cover;">
+                </div>
+                <div class="media-body">
+                  <h6 class="mt-0 mb-0 user-title font-weight-bold" style="color:#0f172a; font-size:14px;"><?php echo htmlspecialchars($username ?? 'Ananta Admin'); ?></h6>
+                  <p class="user-subtitle mb-0 text-muted small" style="font-size:12px;"><?php echo htmlspecialchars($usermobile ?? 'admin@ananta.com'); ?></p>
+                </div>
+              </div>
+            </a>
+          </li>
+          <li class="dropdown-item" style="padding: 8px 12px; border-radius:8px;">
+            <a href="password.php" class="d-flex align-items-center gap-2 text-dark font-weight-bold small" style="color:#0f172a !important; text-decoration:none;">
+              <i class="fa fa-key text-primary mr-2"></i> Update Password
+            </a>
+          </li>
+          <li class="dropdown-divider" style="margin: 6px 0;"></li>
+          <li class="dropdown-item" style="padding: 8px 12px; border-radius:8px;">
+            <a href="logout.php" class="d-flex align-items-center gap-2 text-danger font-weight-bold small" style="color:#ef4444 !important; text-decoration:none;">
+              <i class="icon-power mr-2"></i> Logout
+            </a>
+          </li>
+        </ul>
       </li>
     </ul>
   </nav>
 </header>
+
+<style>
+.dropdown-menu.show,
+.dropdown.show > .dropdown-menu {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 100% !important;
+    z-index: 999999 !important;
+}
+</style>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -625,6 +609,39 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
         sidebar.classList.toggle("toggled");
       });
     }
+
+    // Toggle Topbar Dropdowns
+    document.querySelectorAll('[data-toggle="dropdown"]').forEach(function(element) {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var parent = this.closest('.dropdown');
+            if (parent) {
+                var isShow = parent.classList.contains('show');
+                document.querySelectorAll('.dropdown.show').forEach(function(d) {
+                    d.classList.remove('show');
+                    var m = d.querySelector('.dropdown-menu');
+                    if (m) m.classList.remove('show');
+                });
+                if (!isShow) {
+                    parent.classList.add('show');
+                    var menu = parent.querySelector('.dropdown-menu');
+                    if (menu) menu.classList.add('show');
+                }
+            }
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown.show').forEach(function(d) {
+                d.classList.remove('show');
+                var m = d.querySelector('.dropdown-menu');
+                if (m) m.classList.remove('show');
+            });
+        }
+    });
   });
 </script>
 <!--End topbar header-->
+

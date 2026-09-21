@@ -19,7 +19,7 @@ $today = date("Y-m-d");
 // $requiredPV = 2500000;
 $today = date('Y-m-d');
 
-$users = $pdo->query("SELECT userid, rank, ranking_percentage FROM user")->fetchAll(PDO::FETCH_ASSOC);
+$users = $pdo->query("SELECT userid, `rank`, ranking_percentage FROM user")->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($users as $u) {
 

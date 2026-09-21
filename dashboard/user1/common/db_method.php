@@ -1283,7 +1283,207 @@ function find_parent($sponser, $side, $pdo) {
 }
 
 
+/****************========================================
+ * REQUIREMENT #12 — DIRECT BONUS SYSTEM HELPERS
+ * ========================================================*/
 
+if (!defined('DIRECT_BONUS_PERCENT')) {
+    define('DIRECT_BONUS_PERCENT', 6.0);
+}
+if (!defined('DIRECT_BONUS_MONTHS')) {
+    define('DIRECT_BONUS_MONTHS', 10);
+}
+if (!defined('MIN_QUALIFIED_INVESTMENT')) {
+    define('MIN_QUALIFIED_INVESTMENT', 13000.0);
+}
+if (!defined('REQUIRED_QUALIFIED_DIRECTS')) {
+    define('REQUIRED_QUALIFIED_DIRECTS', 2);
+}
 
+/**
+ * Get count of Qualified Directs for a user.
+ * A Qualified Direct is a direct referral who:
+ * 1. Has active access / user.active = '1'
+ * 2. Has total active investment (SUM of tbl_roi_one packages) >= ₹13,000
+ */
+function getQualifiedDirectCount($userid, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$userid) return 0;
+
+    $sql = "SELECT s.referral_id
+            FROM tbl_sponsor s
+            INNER JOIN user u ON u.userid = s.referral_id
+            INNER JOIN tbl_roi_one r ON r.user_id = u.userid
+            WHERE s.sponsor_id = :sponsor_id
+              AND u.active = '1'
+            GROUP BY s.referral_id
+            HAVING SUM(r.package) >= :min_inv";
+
+    $stmt = $db->prepare($sql);
+    $minInv = MIN_QUALIFIED_INVESTMENT;
+    $stmt->bindParam(':sponsor_id', $userid, PDO::PARAM_STR);
+    $stmt->bindParam(':min_inv', $minInv);
+    $stmt->execute();
+    
+    return $stmt->rowCount();
+}
+
+/**
+ * Generate 10-month Direct Bonus Schedule for an eligible investment.
+ * Direct Bonus = Eligible Investment * 6% divided into 10 monthly installments.
+ * Only generated if investment >= ₹13,000 and user has active access.
+ */
+function generateDirectBonusSchedule($investment_id, $source_user_id, $investment_amount, $investment_date = null, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$investment_id || !$source_user_id || (float)$investment_amount < MIN_QUALIFIED_INVESTMENT) {
+        return false;
+    }
+
+    // Find direct sponsor
+    $stmtSpon = $db->prepare("SELECT sponsor_id FROM tbl_sponsor WHERE referral_id = :ref_id LIMIT 1");
+    $stmtSpon->execute([':ref_id' => $source_user_id]);
+    $beneficiary_id = $stmtSpon->fetchColumn();
+
+    if (!$beneficiary_id) {
+        return false; // No sponsor found
+    }
+
+    $investment_amount = (float)$investment_amount;
+    $total_bonus = round($investment_amount * (DIRECT_BONUS_PERCENT / 100.0), 2);
+    
+    // Calculate monthly installment with rounding safety
+    $base_installment = floor(($total_bonus / DIRECT_BONUS_MONTHS) * 100) / 100;
+    $remainder = round($total_bonus - ($base_installment * DIRECT_BONUS_MONTHS), 2);
+
+    $invDateObj = $investment_date ? new DateTime($investment_date) : new DateTime();
+    
+    // Check if schedule already exists for this investment to prevent duplicates
+    $checkStmt = $db->prepare("SELECT COUNT(*) FROM tbl_direct_bonus_schedule WHERE investment_id = :inv_id");
+    $checkStmt->execute([':inv_id' => $investment_id]);
+    if ($checkStmt->fetchColumn() > 0) {
+        return true; // Already generated
+    }
+
+    $insertStmt = $db->prepare("
+        INSERT INTO tbl_direct_bonus_schedule
+        (investment_id, beneficiary_id, source_user_id, investment_amount, total_bonus, installment_amount, installment_number, installment_month, status)
+        VALUES
+        (:investment_id, :beneficiary_id, :source_user_id, :investment_amount, :total_bonus, :installment_amount, :installment_number, :installment_month, 'PENDING')
+    ");
+
+    for ($i = 1; $i <= DIRECT_BONUS_MONTHS; $i++) {
+        $monthDate = clone $invDateObj;
+        $monthDate->modify("+" . ($i - 1) . " month");
+        $installment_month = $monthDate->format('Y-m');
+
+        // Add remainder paise to final installment if needed
+        $inst_amount = ($i == DIRECT_BONUS_MONTHS) ? round($base_installment + $remainder, 2) : $base_installment;
+
+        $insertStmt->execute([
+            ':investment_id'     => $investment_id,
+            ':beneficiary_id'    => $beneficiary_id,
+            ':source_user_id'   => $source_user_id,
+            ':investment_amount' => $investment_amount,
+            ':total_bonus'       => $total_bonus,
+            ':installment_amount'=> $inst_amount,
+            ':installment_number'=> $i,
+            ':installment_month' => $installment_month
+        ]);
+    }
+
+    return true;
+}
+
+/**
+ * Process Direct Bonus Monthly Closing Installments.
+ * Executed during admin Monthly Profit Closing.
+ */
+function processDirectBonusInstallments($closing_month, $closing_date = null, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$closing_month) {
+        return ['processed' => 0, 'total_paid' => 0.0, 'eligible_users' => 0];
+    }
+
+    $cDate = $closing_date ?: date('Y-m-d');
+
+    // Fetch all pending installments for or up to the target closing_month
+    $stmt = $db->prepare("
+        SELECT * FROM tbl_direct_bonus_schedule
+        WHERE status = 'PENDING'
+          AND installment_month <= :closing_month
+        FOR UPDATE
+    ");
+    $stmt->execute([':closing_month' => $closing_month]);
+    $pendingInstallments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $processedCount = 0;
+    $totalPaid = 0.0;
+    $beneficiariesPaid = [];
+
+    $updSchedule = $db->prepare("
+        UPDATE tbl_direct_bonus_schedule
+        SET status = 'CREDITED', credited_at = NOW(), closing_id = :closing_month
+        WHERE id = :id AND status = 'PENDING'
+    ");
+
+    $updWallet = $db->prepare("
+        UPDATE user
+        SET direct_bonus_wallet = direct_bonus_wallet + :amount
+        WHERE userid = :userid
+    ");
+
+    $insTxn = $db->prepare("
+        INSERT INTO tbl_transaction
+        (user_id, type, subject, amount, created_date, status)
+        VALUES
+        (:user_id, 'Credit', :subject, :amount, :created_date, 1)
+    ");
+
+    foreach ($pendingInstallments as $inst) {
+        $benId = $inst['beneficiary_id'];
+        $qCount = getQualifiedDirectCount($benId, $db);
+
+        // Requirement #3 & #8: Credit only if qualified directs >= 2
+        if ($qCount >= REQUIRED_QUALIFIED_DIRECTS) {
+            $amount = (float)$inst['installment_amount'];
+            
+            // 1. Update schedule status
+            $updSchedule->execute([
+                ':closing_month' => $closing_month,
+                ':id'            => $inst['id']
+            ]);
+
+            if ($updSchedule->rowCount() > 0) {
+                // 2. Credit direct_bonus_wallet
+                $updWallet->execute([
+                    ':amount' => $amount,
+                    ':userid' => $benId
+                ]);
+
+                // 3. Create transaction entry
+                $subject = "Direct Bonus Installment " . $inst['installment_number'] . "/10 - Investment #" . $inst['investment_id'] . " - " . $inst['installment_month'];
+                $insTxn->execute([
+                    ':user_id'      => $benId,
+                    ':subject'      => $subject,
+                    ':amount'       => $amount,
+                    ':created_date' => $cDate
+                ]);
+
+                $processedCount++;
+                $totalPaid += $amount;
+                $beneficiariesPaid[$benId] = true;
+            }
+        }
+    }
+
+    return [
+        'processed'      => $processedCount,
+        'total_paid'     => round($totalPaid, 2),
+        'eligible_users' => count($beneficiariesPaid)
+    ];
+}
 
 ?>

@@ -167,6 +167,11 @@ if (isset($_POST["submit"])) {
                             ":inc_limitpackage" => $inc_limitpackage,
                         ]);
                         
+                        $inv_id = $pdo->lastInsertId();
+                        if (function_exists('generateDirectBonusSchedule') && $inv_id) {
+                            generateDirectBonusSchedule($inv_id, $activate_userid, $price, $date, $pdo);
+                        }
+                        
                         $pinfinal = $activate_userid;
                         // get sponsor code by user id
                         $mysponserid = getmysponserid($pinfinal);
@@ -418,51 +423,249 @@ if ($idactive == 0) {
 ?>
 
 
-<body class="bg-theme bg-theme1">
+<style>
+/* =========================================================
+   ANANTA FINTECH THEME - USER ACTIVATION BY FUND REDESIGN
+   Matches Dashboard (index.php) & Profile Styling
+========================================================= */
 
-<div id="wrapper" class="ananta-user-dashboard">
+html,
+body {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body.ananta-user-dashboard,
+body.bg-theme,
+body.bg-theme1,
+body.ananta-user-dashboard.bg-theme,
+body.ananta-user-dashboard.bg-theme1 {
+    background: #f4f6f8 !important;
+    background-color: #f4f6f8 !important;
+    background-image: none !important;
+    color: #0f172a !important;
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Remove old legacy dark overlays */
+html::before,
+html::after,
+body::before,
+body::after,
+#wrapper::before,
+#wrapper::after,
+.content-wrapper::before,
+.content-wrapper::after {
+    content: none !important;
+    display: none !important;
+    background: none !important;
+    background-color: transparent !important;
+}
+
+#wrapper {
+    background: #f4f6f8 !important;
+    min-height: 100vh !important;
+}
+
+.content-wrapper {
+    background-color: #f4f6f8 !important;
+    padding-top: 85px !important;
+    padding-bottom: 60px !important;
+}
+
+/* Header Banner */
+.income-header-card {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.10) 0%, rgba(22, 163, 74, 0.10) 100%), #ffffff !important;
+    border-radius: 24px !important;
+    border: 1px solid rgba(2, 132, 199, 0.18) !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
+    margin-bottom: 24px;
+}
+
+.income-header-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%);
+    color: #ffffff;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
+    flex-shrink: 0;
+}
+
+/* Main Card Container */
+.ananta-fintech-card {
+    background: #ffffff !important;
+    border-radius: 22px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.06) !important;
+    overflow: hidden;
+}
+
+.card-header-bar {
+    padding: 24px 28px;
+    border-bottom: 1px solid #f1f5f9;
+    background: linear-gradient(135deg, #ffffff 0%, #fbfdff 60%, #f8fafc 100%);
+}
+
+.card-header-title h4 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.card-header-title p {
+    margin: 4px 0 0;
+    font-size: 13.5px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Form Controls Styling */
+label.form-label,
+label {
+    color: #334155 !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+}
+
+.form-control,
+input.form-control,
+select.form-control {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    padding: 10px 16px !important;
+    transition: all 0.2s ease-in-out !important;
+    box-shadow: none !important;
+}
+
+.form-control:focus,
+input.form-control:focus,
+select.form-control:focus {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12) !important;
+    outline: none !important;
+}
+
+/* Submit Button */
+.btn-ananta-submit {
+    background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    height: 52px !important;
+    font-weight: 700 !important;
+    font-size: 16px !important;
+    box-shadow: 0 8px 25px rgba(2, 132, 199, 0.25) !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+}
+
+.btn-ananta-submit:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 30px rgba(2, 132, 199, 0.35) !important;
+    color: #ffffff !important;
+}
+</style>
+
+<body class="ananta-user-dashboard">
+
+<div id="wrapper">
 
 <div class="content-wrapper">
     <div class="container-fluid">
 
-        <div class="row mt-3">
-            <div class="col-lg-8 offset-lg-2">
-                <div class="card shadow-lg border-0" style="border-radius: 20px; background: #ffffff;">
-                    <div class="card-body p-4 p-md-5">
-
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
-                            <div>
-                                <h4 class="font-weight-bold text-dark mb-1" style="color: #0f172a;">Activate Other User ID</h4>
-                                <p class="text-muted small mb-0">Activate team member IDs directly using your fund wallet</p>
+        <!-- Header Welcome Banner -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card income-header-card border-0 p-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="income-header-icon">
+                                <i class="fa fa-user-plus"></i>
                             </div>
-                            <div class="mt-3 mt-md-0 px-3 py-2" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%); border-radius: 12px; border: 1px solid rgba(2, 132, 199, 0.2);">
-                                <span class="text-muted small font-weight-bold d-block">Fund Balance</span>
-                                <span class="h5 font-weight-bold mb-0" style="color: #0284c7;">$<?php echo number_format((float)$pin_wallet, 2); ?></span>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 700; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">ACCOUNT ACTIVATION</span>
+                                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">TEAM ACTIVATION</span>
+                                </div>
+                                <h4 class="mb-0" style="font-size: 22px; font-weight: 800; color: #0f172a;">
+                                    Activate <span style="background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Other User ID</span> ⚡
+                                </h4>
+                                <p class="mb-0 text-muted" style="font-size: 13.5px; margin-top: 3px;">
+                                    Activate team member accounts instantly using your available fund wallet balance.
+                                </p>
                             </div>
                         </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="px-3 py-2" style="background: #ffffff; border-radius: 14px; border: 1px solid rgba(2, 132, 199, 0.25); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
+                                <span class="text-muted d-block" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Fund Balance</span>
+                                <span class="font-weight-bold" style="font-size: 18px; color: #0284c7; font-weight: 800;">$<?php echo number_format((float)($pin_wallet ?? 0), 2); ?></span>
+                            </div>
+                            <a href="fund-request.php" class="btn btn-outline-success font-weight-bold px-3 py-2" style="border-radius: 12px; font-size: 13px;">
+                                <i class="fa fa-plus-circle me-1"></i> Add Fund
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8 offset-lg-2">
+                <div class="ananta-fintech-card">
+
+                    <div class="card-header-bar">
+                        <div class="card-header-title">
+                            <h4><i class="fa fa-user-check text-primary me-2"></i> Account Activation Details</h4>
+                            <p>Enter the member's User ID and select their package</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 p-md-5">
 
                         <form method="post">
 
                             <div class="form-group mb-4">
-                                <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Target User ID</label>
+                                <label>Target User ID</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
-                                        <span class="input-group-text bg-light border-right-0" style="border-radius: 12px 0 0 12px; border-color: #cbd5e1;"><i class="zmdi zmdi-account text-primary"></i></span>
+                                        <span class="input-group-text bg-light border-right-0" style="border-radius: 12px 0 0 12px; border-color: #cbd5e1; font-size: 16px; color: #0284c7;"><i class="fa fa-user"></i></span>
                                     </div>
                                     <input type="text" name="userid" class="form-control border-left-0" id="referrerId" required placeholder="Enter User ID (e.g. AN1290)" style="border-radius: 0 12px 12px 0; border-color: #cbd5e1; height: 48px;">
                                 </div>
                             </div>
                             
                             <div class="form-group mb-4" id="sponsor_name" style="display: none;">
-                                <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Member Name</label>
+                                <label>Member Name Verification</label>
                                 <div class="position-relative">
                                     <input type="text" name="refferalid" id="response2" class="form-control font-weight-bold" readonly style="border-radius: 12px; border-color: #22c55e; background-color: #f0fdf4; color: #166534; height: 48px;">
                                 </div>
                             </div>
                             
                             <div class="form-group mb-4">
-                                <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Select Package</label>
-                                <select name="package_id" class="form-control" required style="border-radius: 12px; border-color: #cbd5e1; height: 48px;">
+                                <label>Select Package</label>
+                                <select name="package_id" class="form-control" required style="height: 48px;">
                                     <option value="">-- Select Package --</option>
                                     <?php foreach ($packages as $pkg): ?>
                                         <option value="<?= $pkg['id'] ?>">
@@ -473,17 +676,17 @@ if ($idactive == 0) {
                             </div>
 
                             <div class="form-group mb-4">
-                                <label class="font-weight-bold small text-uppercase" style="color: #475569; letter-spacing: 0.5px;">Amount ($)</label>
+                                <label>Investment Amount (₹ / $)</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
-                                        <span class="input-group-text bg-light border-right-0" style="border-radius: 12px 0 0 12px; border-color: #cbd5e1;"><i class="zmdi zmdi-money text-success"></i></span>
+                                        <span class="input-group-text bg-light border-right-0" style="border-radius: 12px 0 0 12px; border-color: #cbd5e1; font-size: 16px; color: #16a34a;"><i class="fa fa-dollar"></i></span>
                                     </div>
                                     <input type="number" name="price" class="form-control border-left-0" required placeholder="Enter Amount" style="border-radius: 0 12px 12px 0; border-color: #cbd5e1; height: 48px;">
                                 </div>
                             </div>
 
-                            <button type="submit" id="submitBtn" name="submit" class="btn btn-block font-weight-bold text-white shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); border: none; height: 50px; font-size: 16px;">
-                                <i class="zmdi zmdi-account-add me-1"></i> Activate Account Now
+                            <button type="submit" id="submitBtn" name="submit" class="btn-ananta-submit mt-2">
+                                <i class="fa fa-user-plus me-1"></i> Activate Account Now
                             </button>
 
                         </form>
@@ -496,19 +699,17 @@ if ($idactive == 0) {
     </div>
 </div>
 
+<a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i></a>
+<?php include 'common/footer.php'; ?>
+
 </div>
- <!-- Bootstrap core JavaScript-->
-  <script src="assets/js/jquery.min.js"></script>
-  <script src="assets/js/popper.min.js"></script>
-  <script src="assets/js/bootstrap.min.js"></script>
 
-  <!-- sidebar-menu js -->
-  <script src="assets/js/sidebar-menu.js"></script>
+<!-- jQuery and Scripts -->
+<script src="assets/js/jquery.min.js"></script>
+<script src="assets/js/popper.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
 
-  <!-- Custom scripts -->
-  <script src="assets/js/app-script.js"></script>
-
-  <!-- Ajax for auto-matic Name fetching -->
+<!-- Ajax for automatic Name fetching -->
 <script>
 $(document).ready(function () {
 
@@ -545,3 +746,4 @@ $(document).ready(function () {
 
 </body>
 </html>
+

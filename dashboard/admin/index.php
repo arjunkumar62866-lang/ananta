@@ -178,137 +178,126 @@ $total_pending = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
       <div class="card mt-3" style="background-color: transparent; border: none; box-shadow: none;">
           <div class="card-content">
             <div class="row row-group m-0">
-                <div class="col-12 col-md-6 col-lg-3">
+            <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/active-user.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(2, 132, 199, 0.1); border-color: rgba(2, 132, 199, 0.25);">
+                        <i class="fa fa-users" style="font-size:22px; color:#0284c7;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Active Users</h6>
                         <h5 class="wallet-amount mb-1"><?php echo $total_active;?></h5>
                     </div>
-
                 </div>
             </div>
             
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/inactive-user.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.25);">
+                        <i class="fa fa-user-times" style="font-size:22px; color:#ef4444;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Inactive User</h6>
                         <h5 class="wallet-amount mb-1"><?php echo $total_pending;?></h5>
                     </div>
-
                 </div>
             </div>
             
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/withdrawal.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(22, 163, 74, 0.1); border-color: rgba(22, 163, 74, 0.25);">
+                        <i class="fa fa-briefcase" style="font-size:22px; color:#16a34a;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Total Business</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".getalluserpackage($pdo);?></h5>
                     </div>
-
                 </div>
             </div>
             
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/withdrawal.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.25);">
+                        <i class="fa fa-sitemap" style="font-size:22px; color:#8b5cf6;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Generation Income</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".$generation_income;?></h5>
                     </div>
-
                 </div>
             </div>
             
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/withdrawal.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.25);">
+                        <i class="fa fa-user-plus" style="font-size:22px; color:#06b6d4;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Direct Income</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".$directincome;?></h5>
                     </div>
-
                 </div>
             </div>
             
-            
-            
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/withdrawal.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.25);">
+                        <i class="fa fa-gift" style="font-size:22px; color:#f59e0b;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Direct Bonus 10M</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".$direct_bonus;?></h5>
                     </div>
-
                 </div>
             </div>
             
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/withdrawal.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.25);">
+                        <i class="fa fa-pie-chart" style="font-size:22px; color:#ec4899;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Profit Sharing Income</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".$profit_sharing_income;?></h5>
                     </div>
-
                 </div>
             </div>
             
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/withdrawal.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.25);">
+                        <i class="fa fa-trophy" style="font-size:22px; color:#eab308;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Ranking Income</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".$ranking_income;?></h5>
                     </div>
-
                 </div>
             </div>
             
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/withdrawal.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.25);">
+                        <i class="fa fa-star" style="font-size:22px; color:#3b82f6;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Leadership Bonus</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".$leadership_income_income;?></h5>
                     </div>
-
                 </div>
             </div>
             
             <div class="col-12 col-md-6 col-lg-3">
                 <div class="wallet-box d-flex align-items-center px-3 py-3">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center">
-                        <img src="images/withdrawal.png" width="30px" height="30px">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.25);">
+                        <i class="fa fa-shield" style="font-size:22px; color:#10b981;"></i>
                     </div>
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Rank and Rewards</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".$reward_income;?></h5>
                     </div>
-
                 </div>
             </div>
+
             
             
             

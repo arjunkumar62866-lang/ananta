@@ -4,79 +4,136 @@
 
 <?php include 'common/header.php'; ?>
 
-<body class="bg-theme bg-theme1">
+<body class="bg-theme bg-theme1" style="background-color: #f1f5f9 !important; color: #0f172a !important; font-family: 'Inter', sans-serif;">
 
-    <!-- Loader -->
-    <div id="pageloader-overlay" class="visible incoming">
-        <div class="loader-wrapper-outer">
-            <div class="loader-wrapper-inner">
-                <div class="loader"></div>
-            </div>
-        </div>
-    </div>
-    <!-- End Loader -->
+<style>
+  body, .content-wrapper, .container-fluid {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+  .page-banner {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    border-radius: 16px;
+    padding: 24px 28px;
+    color: #ffffff;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.25);
+  }
+  .page-banner h3 {
+    color: #ffffff !important;
+    font-weight: 700;
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  .page-banner p {
+    color: #e0f2fe !important;
+    margin: 4px 0 0 0;
+    font-size: 0.9rem;
+  }
+  .ananta-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+    padding: 24px !important;
+  }
+  .dataTables_wrapper {
+    color: #0f172a !important;
+  }
+  .dataTables_wrapper .dataTables_length,
+  .dataTables_wrapper .dataTables_filter,
+  .dataTables_wrapper .dataTables_info,
+  .dataTables_wrapper .dataTables_processing,
+  .dataTables_wrapper .dataTables_paginate {
+    color: #0f172a !important;
+    margin-bottom: 12px;
+  }
+  .dataTables_wrapper .dataTables_length select,
+  .dataTables_wrapper .dataTables_filter input {
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 6px 12px !important;
+    outline: none !important;
+  }
+  .table-custom {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    margin-top: 15px !important;
+  }
+  .table-custom thead th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.05em !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    padding: 14px 16px !important;
+  }
+  .table-custom tbody td {
+    color: #0f172a !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 14px 16px !important;
+    vertical-align: middle !important;
+    font-size: 0.9rem !important;
+  }
+  .table-custom tbody tr:hover {
+    background-color: #f8fafc !important;
+  }
+</style>
 
     <!-- Wrapper -->
     <div id="wrapper">
         <div class="clearfix"></div>
 
         <div class="content-wrapper">
-            <div class="container-fluid">
+            <div class="container-fluid" style="padding: 24px;">
 
-                <div class="row mt-3">
+                <div class="page-banner">
+                    <h3><i class="fa fa-history mr-2"></i> Manage Fund History</h3>
+                    <p>Complete record of funds added or sent to user wallets</p>
+                </div>
+
+                <div class="row">
                     <div class="col-lg-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="card-title text-center">
-                                    <h3><i class="fa fa-table" aria-hidden="true"></i> Send Fund History</h3>
-                                </div>
-                                <hr>
-
-                                <!-- Export Button -->
-                                <button id="customExportBtn" class="btn btn-success mb-3">
-                                    <i class="fa fa-download"></i>
+                        <div class="ananta-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 style="color:#0f172a; font-weight:700; margin:0;">Fund Transfer Records</h5>
+                                <button id="customExportBtn" class="btn btn-outline-success btn-sm style-btn" style="border-radius:8px; font-weight:600;">
+                                    <i class="fa fa-download mr-1"></i> Export Excel
                                 </button>
-
-                                <!-- Table -->
-                                <div class="table-responsive" id="tblData">
-                                    <table class="table table-hover table-bordered" id="usersTable">
-                                        <thead>
-                                            <tr>
-                                                <th>Sr</th>
-                                                <th>User ID</th>
-                                                <th>User Name</th>
-                                                <th>Message</th>
-                                                <th>Amount</th>
-                                                <!--<th>Time</th>-->
-                                                <th>Date</th>
-                                                
-                                               
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- DataTables will load this directly -->
-                                        </tbody>
-                                    </table>
-                                </div>
-
                             </div>
+
+                            <!-- Table -->
+                            <div class="table-responsive" id="tblData">
+                                <table class="table table-custom" id="usersTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Sr</th>
+                                            <th>User ID</th>
+                                            <th>User Name</th>
+                                            <th>Message</th>
+                                            <th>Amount</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- DataTables will load this directly -->
+                                    </tbody>
+                                </table>
+                            </div>
+
                         </div>
                     </div>
                 </div><!-- End Row -->
-
-                <!-- Overlay -->
-                <div class="overlay toggle-menu"></div>
-                <!-- End Overlay -->
 
             </div>
             <!-- End container-fluid -->
         </div>
         <!-- End content-wrapper -->
-
-        <!-- Back To Top -->
-        <a href="javaScript:void();" class="back-to-top">
-            <i class="fa fa-angle-double-up"></i>
-        </a>
 
         <!-- Footer -->
         <?php include 'common/footer.php'; ?>
@@ -115,22 +172,18 @@
                     {
                         data: 'user_id',
                         render: function (data) {
-                            return `<?php echo $hmpre; ?>${data}`;
+                            return `<strong style="color:#0284c7;"><?php echo $hmpre; ?>${data}</strong>`;
                         }
                     },
                     { data: 'name'},
                     { data: 'subject'},
-                    
                     {
                         data: 'amount',
                         render: function (data) {
-                            return `${data}<?php echo '/-'; ?>`;
+                            return `<span style="font-weight:700; color:#16a34a;">₹${data}</span>`;
                         }
                     },
-                    // { data: 'time'},
                     { data: 'created_date'},
-                   
-
                 ],
                 pageLength: 10,
                 lengthMenu: [5, 10, 25, 50, 100, 1000],
@@ -138,7 +191,7 @@
                 buttons: [
                     {
                         extend: 'excelHtml5',
-                        title: 'Members Data'
+                        title: 'Fund History Data'
                     }
                 ]
             });
@@ -152,3 +205,4 @@
 
 </body>
 </html>
+

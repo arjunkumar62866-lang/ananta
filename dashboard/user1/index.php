@@ -101,6 +101,11 @@ $reward_income= round((float)($reward_income ?? 0), 2);
 // Total Income (Profit Income Wallet + Profit Sharing Wallet)
 $total_income = round((float)$profit_income_wallet + (float)$profit_sharing_wallet, 2);
 
+// Leadership Income
+$table="tbl_transaction";
+$leadership_income_income = incometotalnew($pdo, $table,$userid,'Leadership Income');
+$leadership_income_income= round((float)($leadership_income_income ?? 0), 2);
+
 // User Growth Combined Total (7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor/Generation Income, VIP Club/Ranking Income, Company Turnover/Leadership, Rank Reward)
 $user_growth_total = round(
     (float)$profit_income_wallet +
@@ -108,15 +113,10 @@ $user_growth_total = round(
     (float)$direct_bonus +
     (float)$generation_income +
     (float)$ranking_income +
-    (float)$leadership_income_income +
+    (float)($leadership_income_income ?? 0) +
     (float)$reward_income,
     2
 );
-
-// Leadership Income
-$table="tbl_transaction";
-$leadership_income_income = incometotalnew($pdo, $table,$userid,'Leadership Income');
-$leadership_income_income= round((float)($leadership_income_income ?? 0), 2);
 
 // direct income
 $table="tbl_levelinc";
@@ -612,6 +612,18 @@ body.ananta-user-dashboard {
             </div>
 
             <div class="col-12 col-md-6 col-lg-3 mb-4">
+                <div class="ananta-fintech-card p-4 d-flex align-items-center">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(234, 88, 12, 0.1); border-radius: 16px; flex-shrink: 0;">
+                        <img src="images/direct-bonus.gif" width="30" height="30">
+                    </div>
+                    <div>
+                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Direct Bonus Wallet</span>
+                        <h4 class="font-weight-bold mb-0" style="color: #ea580c; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$direct_bonus_wallet, 2); ?></h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-4">
                 <div class="ananta-fintech-card p-4 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(22, 163, 74, 0.08) 100%), #ffffff; border: 1.5px solid rgba(2, 132, 199, 0.25) !important;">
                     <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(16, 185, 129, 0.15); border-radius: 16px; flex-shrink: 0;">
                         <img src="images/income.png" width="30">
@@ -802,6 +814,7 @@ body.ananta-user-dashboard {
 
         <!-- Business & Personal Details Grid -->
         <div class="row mb-4">
+            <!-- Business Overview Column -->
             <div class="col-md-6 mb-4">
                 <div class="ananta-fintech-card p-4 h-100">
                     <h5 class="font-weight-bold mb-3 pb-2 border-bottom" style="color: #0f172a;">Business Overview</h5>
@@ -838,6 +851,7 @@ body.ananta-user-dashboard {
                 </div>
             </div>
 
+            <!-- Personal Profile Details Column -->
             <div class="col-md-6 mb-4">
                 <div class="ananta-fintech-card p-4 h-100">
                     <h5 class="font-weight-bold mb-3 pb-2 border-bottom" style="color: #0f172a;">Personal Profile Details</h5>
@@ -869,6 +883,10 @@ body.ananta-user-dashboard {
                         <div class="d-flex justify-content-between py-1">
                             <span class="text-muted">Joining Date</span>
                             <span class="font-weight-bold text-dark"><?php echo htmlspecialchars($dateofjoining);?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Level-wise Profit Sharing Income Section -->
@@ -897,19 +915,19 @@ body.ananta-user-dashboard {
         <div class="row mb-4">
             <div class="col-12">
                 <div class="ananta-fintech-card p-4 p-md-5">
-                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
                         <h5 class="font-weight-bold mb-0" style="color: #0f172a;">Level-Wise Profit Sharing Income Summary</h5>
                         <a href="profit_sharing_income.php" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 600;">View Transaction History</a>
                     </div>
                     <p class="text-muted small mb-4">Aggregated earnings per level from downline profit sharing activity.</p>
 
-                    <div class="row g-3">
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
                         <?php for ($l = 1; $l <= 15; $l++): ?>
-                        <div class="col-6 col-md-4 col-lg-2.4 mb-3">
+                        <div class="col mb-3">
                             <div class="p-3 bg-white rounded-lg border text-center shadow-sm" style="border-radius: 14px !important; background: #f8fafc !important;">
                                 <span class="badge mb-2" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; font-weight: 700; font-size: 11px;">LEVEL <?php echo $l; ?></span>
                                 <h6 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
-                                    <?php echo $hmcurrency . ' ' . number_format($levelSharingSummary[$l], 2); ?>
+                                    <?php echo $hmcurrency . ' ' . number_format((float)($levelSharingSummary[$l] ?? 0.00), 2); ?>
                                 </h6>
                             </div>
                         </div>
@@ -919,16 +937,6 @@ body.ananta-user-dashboard {
             </div>
         </div>
 
-        <!--End Dashboard Content-->
-
-
-
-        <!--start overlay-->
-        <div class="overlay toggle-menu"></div>
-        <!--end overlay-->
-
-      </div>
-      
         <!-- Sponsor Level Team Section -->
         <div class="row mb-4">
             <div class="col-12">
@@ -1011,8 +1019,15 @@ body.ananta-user-dashboard {
                 </div>
             </div>
         </div>
-      
-     
+
+        <!-- Footer -->
+        <?php include 'common/footer.php'; ?>
+
+        <!--start overlay-->
+        <div class="overlay toggle-menu"></div>
+        <!--end overlay-->
+
+      </div>
       <!-- End container-fluid-->
 
     </div><!--End content-wrapper-->
@@ -1020,10 +1035,8 @@ body.ananta-user-dashboard {
     <a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i> </a>
     <!--End Back To Top Button-->
 
-    <?php include 'common/footer.php'?>
-
   </div>
-  
+
   <script>
   $('.copy_text').click(function (e) {
       e.preventDefault();

@@ -1,9 +1,8 @@
 <?php
-session_start();
-session_unset();
-session_destroy();
-?>
-
-<script>
-   window.location = "login.php";
- </script>
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+unset($_SESSION['auserid']);
+header("Location: /dashboard/user1/index.php");
+exit();
+?>

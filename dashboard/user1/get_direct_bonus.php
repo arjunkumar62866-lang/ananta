@@ -1,33 +1,41 @@
 <?php
 session_start();
 require 'common/connection.php';
-// require 'common/header.php';
+require_once 'common/db_method.php';
 header('Content-Type: application/json');
 
 try {
+    $userid = $_SESSION['userid'] ?? '';
+    if (!$userid) {
+        echo json_encode([]);
+        exit;
+    }
+
     $stmt = $pdo->prepare("
-        SELECT amount, created_date, time, type, subject
-        FROM tbl_transaction 
-        WHERE subject LIKE :subject 
-        AND user_id = :user_id
+        SELECT 
+            s.id,
+            s.investment_id,
+            s.source_user_id,
+            u.name as source_user_name,
+            s.investment_amount,
+            s.total_bonus,
+            s.installment_amount,
+            s.installment_number,
+            s.installment_month,
+            s.status,
+            s.credited_at,
+            s.withdrawal_status,
+            s.withdrawal_date
+        FROM tbl_direct_bonus_schedule s
+        LEFT JOIN user u ON u.userid = s.source_user_id
+        WHERE s.beneficiary_id = :beneficiary_id
+        ORDER BY s.installment_month ASC, s.installment_number ASC
     ");
+    $stmt->execute([':beneficiary_id' => $userid]);
+    $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Bind parameters
-    $userid = $_SESSION['userid'];
-    $subject = "Direct Bonus%";
-    $stmt->bindParam(':subject', $subject, PDO::PARAM_STR);
-    $stmt->bindParam(':user_id', $userid);
-
-    // Execute query
-    $stmt->execute();
-
-    // Fetch results
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Output JSON
-    echo json_encode($users);
+    echo json_encode($schedules);
 } catch (PDOException $e) {
     echo json_encode(['error' => $e->getMessage()]);
 }
-
 exit;

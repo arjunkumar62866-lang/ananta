@@ -8,20 +8,13 @@ if (!isset($_SESSION["auserid"])) {
 include("common/connection.php");
 include "common/db_method.php";
 
-if (function_exists('date_default_timezone_set')) {
-    date_default_timezone_set("Asia/Kolkata");
-}
-
-$date = date("Y-m-d");
-
-/**********************************************
- *  ROI TWO – GENERATION LEVEL 2 INCOME PAY
- **********************************************/
-
-$sql = "SELECT * FROM tbl_roi_two WHERE count < lock_day AND status = '0'";
-$stmt = $pdo->prepare($sql);
-$stmt->execute();
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+/******************************************************************************
+ * LEGACY ROI TWO / DIRECT BONUS SCRIPT - ISOLATED & DISABLED FOR REQ #12
+ * Direct Bonus payouts are now handled via the 10-Month Schedule system in
+ * processDirectBonusInstallments() during Monthly Profit Closing.
+ * Historical records in tbl_roi_two remain preserved for audit.
+ ******************************************************************************/
+die("Legacy Direct Bonus script is disabled. Direct Bonus payouts are now managed via Monthly Profit Closing and 10-Month Schedules.");
 
 foreach ($rows as $r) {
 

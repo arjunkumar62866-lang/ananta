@@ -1,5 +1,5 @@
 <!--Start footer-->
-    <footer class="footer border-top py-3" style="background: #ffffff !important; color: #64748b !important; border-top: 1px solid #e2e8f0 !important; font-size: 13.5px; font-weight: 500;">
+    <footer class="footer border-top py-3" style="position: static !important; width: 100% !important; margin-top: 35px !important; background: #ffffff !important; color: #64748b !important; border-top: 1px solid #e2e8f0 !important; font-size: 13.5px; font-weight: 500; clear: both !important; float: none !important; left: auto !important; right: auto !important; bottom: auto !important;">
       <div class="container-fluid">
         <div class="text-center">
           Copyright © <?php echo date('Y'); ?> <strong style="color: #0284c7;">Ananta Multi Trade Private Limited</strong>. All Rights Reserved.
