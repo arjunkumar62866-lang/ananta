@@ -267,6 +267,7 @@ $news = $newsdata['news'];
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
+        <li><a href="monthly-profit-closing.php"><i class="zmdi zmdi-circle-o"></i> Monthly Profit Closing</a></li>
         <li><a href="roi-update.php"><i class="zmdi zmdi-circle-o"></i> Set Percentage</a></li>
         <!--<li><a href="withdraw-history.php"><i class="zmdi zmdi-circle-o"></i> Withdraw History</a></li>-->
       </ul>

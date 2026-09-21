@@ -44,8 +44,10 @@
                                             <tr>
                                                 <th>Sr</th>
                                                 <th>Amount</th>
+                                                <th>Level</th>
+                                                <th>Closing Month</th>
                                                 <th>Remark</th>
-                                                <th>Status</th>
+                                                <th>Type</th>
                                                 <th>Date</th>
                                                 <th>Time</th>
                                             </tr>
@@ -109,7 +111,9 @@
                 },
                 columns: [
                     { data: null, render: (data, type, row, meta) => meta.row + 1 },
-                    { data: 'amount' },
+                    { data: 'amount', render: (data) => '₹' + parseFloat(data).toFixed(2) },
+                    { data: 'level_num', render: (data) => data ? 'Level ' + data : 'N/A' },
+                    { data: 'closing_month', render: (data) => data ? data : 'N/A' },
                     { data: 'subject' },
                     { data: 'type' },
                     { data: 'created_date' },

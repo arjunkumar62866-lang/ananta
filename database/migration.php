@@ -109,7 +109,6 @@ if ($action === 'migrate') {
         $checksum = hash('sha256', $sql);
         
         try {
-            $pdo->beginTransaction();
             $pdo->exec($sql);
             
             $stmt = $pdo->prepare("INSERT INTO `schema_migrations` (`version`, `filename`, `checksum`) VALUES (:version, :filename, :checksum)");
@@ -119,7 +118,9 @@ if ($action === 'migrate') {
                 ':checksum' => $checksum
             ]);
             
-            $pdo->commit();
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
             echo "[SUCCESS]\n";
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {

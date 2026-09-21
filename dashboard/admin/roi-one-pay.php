@@ -122,8 +122,9 @@ foreach ($rows as $r) {
     ]);
     
 
-    
-    pay_roi_one_income($user_id, $income, $percent, $id, $id);
+    // NOTE: Profit Sharing is now calculated exclusively by Monthly Closing (monthly_closing_action.php).
+    // Disabling legacy daily Profit Sharing call here to prevent duplicate payouts.
+    // pay_roi_one_income($user_id, $income, $percent, $id, $id);
 
     /**********************************************
      * Mark completed (48 days finished)

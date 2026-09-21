@@ -6,10 +6,11 @@ header('Content-Type: application/json');
 
 try {
     $stmt = $pdo->prepare("
-        SELECT amount, created_date, time, type, subject
+        SELECT amount, created_date, time, type, subject, level_num, closing_month, source_investment_id
         FROM tbl_daily_levelinc 
         WHERE subject LIKE :subject 
         AND user_id = :user_id
+        ORDER BY id DESC
     ");
 
     // Bind parameters

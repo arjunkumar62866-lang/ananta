@@ -711,9 +711,9 @@ function insert_transction($table, $userid, $amount, $transaction_type, $time, $
 
     $stmt = $pdo->prepare("
         INSERT INTO $table 
-            (user_id, subject, type, amount, status, a_status, time, created_date)
+            (name, user_id, subject, type, amount, status, a_status, time, created_date, wallet_type, beneficiary_id, api_status, api_txn_no, api_bank_ref_no, api_message)
         VALUES 
-            (:userid, :subject, :type, :amount, 1, 0, :time, CURDATE())
+            ('', :userid, :subject, :type, :amount, 1, 0, :time, CURDATE(), '', '', '', '', '', '')
     ");
 
     $stmt->execute([
@@ -911,14 +911,12 @@ function updatedatabysponserid1($userid, $transactionamounta, $transactionamount
     global $pdo;
 
     $sqluser = "UPDATE `user` 
-                SET `pending_geninc` = `pending_geninc` + :transactionamounta
+                SET `profit_sharing_wallet` = `profit_sharing_wallet` + :transactionamounta
                 WHERE userid = :userid";
-                    // total_inc = total_inc + :transactionamountb 
 
     $stmt = $pdo->prepare($sqluser);
 
     $stmt->bindParam(':transactionamounta', $transactionamounta);
-    // $stmt->bindParam(':transactionamountb', $transactionamountb);
     $stmt->bindParam(':userid', $userid);
 
     $stmt->execute();
@@ -970,7 +968,7 @@ function getroidatabysponserid($userid)
 
 
 /** ROI One Plan **/
-function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userlevelid)
+function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userlevelid, $closing_month = null)
 {
 
     global $pdo;
@@ -982,9 +980,13 @@ function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userl
     $time = date('h:i a');
     $date = date('Y-m-d');
 
+    if (empty($closing_month)) {
+        $closing_month = date('Y-m');
+    }
+
     $sponserdetails = getroidatabysponserid($newid);
-    $income_limit = $sponserdetails['capping'];
-    $total_income = $sponserdetails['amount'];
+    $income_limit = isset($sponserdetails['capping']) ? $sponserdetails['capping'] : 999999999;
+    $total_income = isset($sponserdetails['amount']) ? $sponserdetails['amount'] : 0;
 
     // $newicome = getpercent($package, $roipercentage);
     $newicome = $package;
@@ -999,17 +1001,10 @@ function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userl
 
     else {
 
-        // $sqluser = "UPDATE user SET pending_geninc = pending_geninc + ? WHERE userid = ?";
-        // $stmt = $pdo->prepare($sqluser);
-
-        // if ($stmt->execute([$newicome, $sponserid])) {
         if (1==1) {
 
             $trasction_type = "Daily Profit Sharing Income";
             $cdtype = "Credit";
-
-            // $table = "tbl_roiinc";
-            // insert_transction($table, $sponserid, $newicome, $trasction_type, $time, $cdtype);
 
             $price = $newicome;
             $pinfinal = $sponserid;
@@ -1018,9 +1013,28 @@ function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userl
             $userid = $sponserid;
             $pinfinal = $userid;
 
+            // Prepare statements for idempotency check and insertion
+            $checkStmt = $pdo->prepare("
+                SELECT COUNT(*) FROM tbl_daily_levelinc 
+                WHERE source_investment_id = :source_id 
+                  AND closing_month = :closing_month 
+                  AND user_id = :recipient_id 
+                  AND level_num = :level_num
+            ");
+
+            $insTxnStmt = $pdo->prepare("
+                INSERT INTO tbl_daily_levelinc 
+                    (name, user_id, source_investment_id, closing_month, level_num, subject, type, amount, status, a_status, time, created_date, wallet_type, beneficiary_id, api_status, api_txn_no, api_bank_ref_no, api_message)
+                VALUES 
+                    ('', :user_id, :source_id, :closing_month, :level_num, :subject, 'Credit', :amount, 1, 0, :time, CURDATE(), '', '', '', '', '', '')
+            ");
+
             for ($i = 0; $i < 15; $i++) {
 
                 $mysponserid = getmysponserid($pinfinal);
+                if (empty($mysponserid)) {
+                    break;
+                }
                 $sponserdetails = getuserdatabysponserid($mysponserid);
 
                 if ($pinfinal !== '1290') {
@@ -1032,205 +1046,91 @@ function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userl
                     $directactive = getmydirectactive($spcode1);
 
                     if ($isidactive == 1) {
+                        $level_num = $i + 1;
+                        $transactionamount = 0;
+                        $eligible = false;
 
-                        if ($i == '0') {
-                            if ($directactive >= '0') {
-
-                                $transactionamount = (float)$price * (float)15 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-1.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
+                        if ($i == 0 && $directactive >= 0) {
+                            $transactionamount = (float)$price * 15.0 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 1 && $directactive >= 2) {
+                            $transactionamount = (float)$price * 7.0 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 2 && $directactive >= 3) {
+                            $transactionamount = (float)$price * 5.0 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 3 && $directactive >= 4) {
+                            $transactionamount = (float)$price * 3.0 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 4 && $directactive >= 5) {
+                            $transactionamount = (float)$price * 2.0 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 5 && $directactive >= 6) {
+                            $transactionamount = (float)$price * 1.0 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 6 && $directactive >= 7) {
+                            $transactionamount = (float)$price * 0.75 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 7 && $directactive >= 8) {
+                            $transactionamount = (float)$price * 0.50 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 8 && $directactive >= 9) {
+                            $transactionamount = (float)$price * 0.25 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 9 && $directactive >= 10) {
+                            $transactionamount = (float)$price * 0.25 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 10 && $directactive >= 11) {
+                            $transactionamount = (float)$price * 0.25 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 11 && $directactive >= 12) {
+                            $transactionamount = (float)$price * 0.25 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 12 && $directactive >= 13) {
+                            $transactionamount = (float)$price * 0.25 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 13 && $directactive >= 14) {
+                            $transactionamount = (float)$price * 0.25 / 100.0;
+                            $eligible = true;
+                        } else if ($i == 14 && $directactive >= 15) {
+                            $transactionamount = (float)$price * 0.25 / 100.0;
+                            $eligible = true;
                         }
 
-                        else if ($i == '1') {
-                            if ($directactive >= '2') {
+                        if ($eligible && $transactionamount > 0) {
+                            // Idempotency Check: Check if this exact payout already exists
+                            $checkStmt->execute([
+                                ':source_id' => $newid,
+                                ':closing_month' => $closing_month,
+                                ':recipient_id' => $spcode1,
+                                ':level_num' => $level_num
+                            ]);
+                            $exists = (int)$checkStmt->fetchColumn();
 
-                                $transactionamount = (float)$price * (float)7 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-2.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
+                            if ($exists === 0) {
+                                $messagenew = "Profit Sharing Income on Level-{$level_num}.of Id ({$userid})";
+                                
+                                // Credit dedicated Profit Sharing Wallet
                                 updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
+
+                                // Insert authoritative transaction record with composite unique keys
+                                try {
+                                    $insTxnStmt->execute([
+                                        ':user_id' => $spcode1,
+                                        ':source_id' => $newid,
+                                        ':closing_month' => $closing_month,
+                                        ':level_num' => $level_num,
+                                        ':subject' => $messagenew,
+                                        ':amount' => $transactionamount,
+                                        ':time' => $time
+                                    ]);
+                                } catch (PDOException $ex) {
+                                    // Duplicate key catch guard: If database unique index prevents duplicate, safely ignore
+                                    if ($ex->getCode() !== '23000') {
+                                        throw $ex;
+                                    }
+                                }
                             }
-                        }
-
-                        else if ($i == '2') {
-                            if ($directactive >= '3') {
-
-                                $transactionamount = (float)$price * (float)5 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-3.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '3') {
-                            if ($directactive >= '4') {
-
-                                $transactionamount = (float)$price * (float)3 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-4.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '4') {
-                            if ($directactive >= '5') {
-
-                                $transactionamount = (float)$price * (float)2 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-5.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '5') {
-                            if ($directactive >= '6') {
-
-                                $transactionamount = (float)$price * (float)1 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-6.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '6') {
-                            if ($directactive >= '7') {
-
-                                $transactionamount = (float)$price * (float)0.75 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-7.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '7') {
-                            if ($directactive >= '8') {
-
-                                $transactionamount = (float)$price * (float)0.50 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-8.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '8') {
-                            if ($directactive >= '9') {
-
-                                $transactionamount = (float)$price * (float)0.25 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-9.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '9') {
-                            if ($directactive >= '10') {
-
-                                $transactionamount = (float)$price * (float)0.25 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-10.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '10') {
-                            if ($directactive >= '11') {
-
-                                $transactionamount = (float)$price * (float)0.25 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-11.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '11') {
-                            if ($directactive >= '12') {
-
-                                $transactionamount = (float)$price * (float)0.25 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-12.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '12') {
-                            if ($directactive >= '13') {
-
-                                $transactionamount = (float)$price * (float)0.25 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-13.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '13') {
-                            if ($directactive >= '14') {
-
-                                $transactionamount = (float)$price * (float)0.25 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-14.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        else if ($i == '14') {
-                            if ($directactive >= '15') {
-
-                                $transactionamount = (float)$price * (float)0.25 / (float)100;
-
-                                $messagenew = "Profit Sharing Income on Level-15.of Id ($userid)";
-                                $table = "tbl_daily_levelinc";
-
-                                insert_transction($table, $spcode1, $transactionamount, $messagenew, $time, 'Credit');
-                                updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
-                            }
-                        }
-
-                        if (isset($transactionamount)) {
-                            $new = $i + 1;
-                            $level = $new;
                         }
                     }
 

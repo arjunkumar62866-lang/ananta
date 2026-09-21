@@ -73,7 +73,15 @@ Press `Ctrl + C` in your terminal window running the server.
 #### Commit & Push Code Updates to GitHub:
 ```bash
 git add .
-git commit -m "redesign about section and font style fix"
+git commit -m "feat: complete Requirements #1-#11 Profit Income, Monthly Closing, Profit Sharing & User Growth system"
 git push origin main
 ```
 *(Hostinger automatically deploys updates pushed to the `main` branch, and GitHub Actions automatically runs pending database migrations safely).*
+
+---
+
+## ⚖️ Compliance & Legal Review Note
+
+> [!IMPORTANT]
+> If this system is used for real-money investment/returns or referral-based income, applicable Indian financial, tax, KYC/AML, direct-selling/MLM and securities laws should be reviewed with qualified legal/compliance professionals before launch.
+

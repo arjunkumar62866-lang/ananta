@@ -51,6 +51,8 @@ $pin_wallet=$rowheader['pin_wallet'];
 $idactive=$rowheader['active'];
 $kyc=$rowheader['kyc'];
 $pending_geninc = $rowheader['pending_geninc'];
+$profit_income_wallet = $rowheader['profit_income_wallet'] ?? 0;
+$profit_sharing_wallet = $rowheader['profit_sharing_wallet'] ?? 0;
 
 
 

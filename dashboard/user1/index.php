@@ -98,6 +98,21 @@ $table="tbl_transaction";
 $reward_income = incometotalnew($pdo, $table,$userid,'Reward Income');
 $reward_income= round((float)($reward_income ?? 0), 2);
 
+// Total Income (Profit Income Wallet + Profit Sharing Wallet)
+$total_income = round((float)$profit_income_wallet + (float)$profit_sharing_wallet, 2);
+
+// User Growth Combined Total (7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor/Generation Income, VIP Club/Ranking Income, Company Turnover/Leadership, Rank Reward)
+$user_growth_total = round(
+    (float)$profit_income_wallet +
+    (float)$profit_sharing_income +
+    (float)$direct_bonus +
+    (float)$generation_income +
+    (float)$ranking_income +
+    (float)$leadership_income_income +
+    (float)$reward_income,
+    2
+);
+
 // Leadership Income
 $table="tbl_transaction";
 $leadership_income_income = incometotalnew($pdo, $table,$userid,'Leadership Income');
@@ -447,7 +462,47 @@ body.ananta-user-dashboard {
 
         <!--Start Dashboard Content-->  
 
-        <div class="row mt-4">
+        <!-- Unlock Access & Investment Eligibility Status Banner -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm p-3" style="border-radius: 16px; background: #ffffff;">
+                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center">
+                            <i class="zmdi zmdi-shield-check text-primary mr-3" style="font-size: 32px;"></i>
+                            <div>
+                                <h6 class="font-weight-bold mb-0 text-dark">Account Eligibility Status ($1 = ₹90)</h6>
+                                <small class="text-muted">Requires Unlock Access ($11 / ₹990) & Minimum Investment ($145 / ₹13,050)</small>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
+                            <span class="badge px-3 py-2 font-weight-bold <?php echo ($idactive == 1) ? 'badge-success' : 'badge-danger'; ?>" style="font-size: 13px;">
+                                <i class="fa <?php echo ($idactive == 1) ? 'fa-check-circle' : 'fa-times-circle'; ?> mr-1"></i> Unlock Access ($11): <?php echo ($idactive == 1) ? 'ACTIVE' : 'INACTIVE'; ?>
+                            </span>
+                            <span class="badge px-3 py-2 font-weight-bold <?php echo ((float)$roipackage >= 13050) ? 'badge-success' : 'badge-warning'; ?>" style="font-size: 13px;">
+                                <i class="fa <?php echo ((float)$roipackage >= 13050) ? 'fa-check-circle' : 'fa-clock-o'; ?> mr-1"></i> Investment ($145): <?php echo ((float)$roipackage >= 13050) ? '₹'.number_format((float)$roipackage, 2).' ACTIVE' : 'INACTIVE'; ?>
+                            </span>
+                            <span class="badge px-3 py-2 font-weight-bold <?php echo ($idactive == 1 && (float)$roipackage >= 13050) ? 'badge-primary' : 'badge-secondary'; ?>" style="font-size: 13px;">
+                                <i class="fa fa-star mr-1"></i> Income Eligibility: <?php echo ($idactive == 1 && (float)$roipackage >= 13050) ? 'ELIGIBLE' : 'NOT ELIGIBLE'; ?>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-12 col-md-6 col-lg-3 mb-4">
+                <div class="ananta-fintech-card p-4 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%), #ffffff; border: 1.5px solid rgba(99, 102, 241, 0.3) !important;">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(99, 102, 241, 0.15); border-radius: 16px; flex-shrink: 0;">
+                        <img src="images/income.png" width="30">
+                    </div>
+                    <div>
+                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">User Growth</span>
+                        <h4 class="font-weight-bold mb-0" style="color: #4f46e5; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$user_growth_total, 2); ?></h4>
+                    </div>
+                </div>
+            </div>
+
             <div class="col-12 col-md-6 col-lg-3 mb-4">
                 <div class="ananta-fintech-card p-4 d-flex align-items-center">
                     <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(2, 132, 199, 0.1); border-radius: 16px; flex-shrink: 0;">
@@ -484,6 +539,18 @@ body.ananta-user-dashboard {
                 </div>
             </div>
             
+            <div class="col-12 col-md-6 col-lg-3 mb-4">
+                <div class="ananta-fintech-card p-4 d-flex align-items-center">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(34, 197, 94, 0.1); border-radius: 16px; flex-shrink: 0;">
+                        <img src="images/income.png" width="30">
+                    </div>
+                    <div>
+                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Profit Income Wallet</span>
+                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$profit_income_wallet, 2); ?></h4>
+                    </div>
+                </div>
+            </div>
+
             <div class="col-12 col-md-6 col-lg-3 mb-4">
                 <div class="ananta-fintech-card p-4 d-flex align-items-center">
                     <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(234, 179, 8, 0.1); border-radius: 16px; flex-shrink: 0;">
@@ -538,8 +605,20 @@ body.ananta-user-dashboard {
                         <img src="images/income.png" width="30">
                     </div>
                     <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Profit Sharing Income</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$profit_sharing_income;?></h4>
+                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Profit Sharing Wallet</span>
+                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$profit_sharing_wallet, 2); ?></h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-4">
+                <div class="ananta-fintech-card p-4 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(22, 163, 74, 0.08) 100%), #ffffff; border: 1.5px solid rgba(2, 132, 199, 0.25) !important;">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(16, 185, 129, 0.15); border-radius: 16px; flex-shrink: 0;">
+                        <img src="images/income.png" width="30">
+                    </div>
+                    <div>
+                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Total Income</span>
+                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$total_income, 2); ?></h4>
                     </div>
                 </div>
             </div>
@@ -790,7 +869,51 @@ body.ananta-user-dashboard {
                         <div class="d-flex justify-content-between py-1">
                             <span class="text-muted">Joining Date</span>
                             <span class="font-weight-bold text-dark"><?php echo htmlspecialchars($dateofjoining);?></span>
+        </div>
+
+        <!-- Level-wise Profit Sharing Income Section -->
+        <?php
+            // Fetch aggregated actual Level 1 to 15 Profit Sharing totals for the logged-in user
+            $levelSharingSummary = array_fill(1, 15, 0.00);
+            try {
+                $stmtLvlSum = $pdo->prepare("
+                    SELECT level_num, SUM(CAST(amount AS DECIMAL(15,2))) AS total_level_amount
+                    FROM tbl_daily_levelinc
+                    WHERE user_id = :userid AND level_num IS NOT NULL AND level_num >= 1 AND level_num <= 15
+                    GROUP BY level_num
+                ");
+                $stmtLvlSum->execute([':userid' => $userid]);
+                $lvlRows = $stmtLvlSum->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($lvlRows as $lrow) {
+                    $ln = (int)$lrow['level_num'];
+                    if ($ln >= 1 && $ln <= 15) {
+                        $levelSharingSummary[$ln] = (float)$lrow['total_level_amount'];
+                    }
+                }
+            } catch (Exception $e) {
+                // Ignore error if column not queried
+            }
+        ?>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="ananta-fintech-card p-4 p-md-5">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                        <h5 class="font-weight-bold mb-0" style="color: #0f172a;">Level-Wise Profit Sharing Income Summary</h5>
+                        <a href="profit_sharing_income.php" class="btn btn-sm btn-outline-primary" style="border-radius: 8px; font-weight: 600;">View Transaction History</a>
+                    </div>
+                    <p class="text-muted small mb-4">Aggregated earnings per level from downline profit sharing activity.</p>
+
+                    <div class="row g-3">
+                        <?php for ($l = 1; $l <= 15; $l++): ?>
+                        <div class="col-6 col-md-4 col-lg-2.4 mb-3">
+                            <div class="p-3 bg-white rounded-lg border text-center shadow-sm" style="border-radius: 14px !important; background: #f8fafc !important;">
+                                <span class="badge mb-2" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; font-weight: 700; font-size: 11px;">LEVEL <?php echo $l; ?></span>
+                                <h6 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
+                                    <?php echo $hmcurrency . ' ' . number_format($levelSharingSummary[$l], 2); ?>
+                                </h6>
+                            </div>
                         </div>
+                        <?php endfor; ?>
                     </div>
                 </div>
             </div>
