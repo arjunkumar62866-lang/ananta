@@ -1,6 +1,6 @@
-# Ananta Multi Trade Private Limited - Local Development & Operations Guide
+# Ananta Multi Trade Private Limited - Developer & Operations Guide
 
-This repository contains the web application code and database migration system for **anantamtptl.com**.
+This repository contains the core application source code and database migration runner for **anantamtptl.com**.
 
 ---
 
@@ -54,10 +54,10 @@ php database/migration.php migrate
 
 ---
 
-### 3. Local PHP Server & Frontend Testing
+### 3. Local PHP Server & Testing
 
 #### Start Local Development Web Server:
-Run this command inside the `public_html/` folder to start the website locally:
+Run this command inside the `public_html/` directory:
 ```bash
 php -S localhost:8000
 ```
@@ -67,17 +67,50 @@ Then open [http://localhost:8000](http://localhost:8000) in your browser.
 Press `Ctrl + C` in your terminal window running the server.
 
 ---
-php -r "echo password_hash('Ananta@1290', PASSWORD_DEFAULT);"
 
 ### 4. Git Deployment Commands
 
 #### Commit & Push Code Updates to GitHub:
 ```bash
 git add .
-git commit -m "Remaining of admin role ui and function fixes"
+git commit -m "Your descriptive commit message"
 git push origin main
 ```
-*(Hostinger automatically deploys updates pushed to the `main` branch, and GitHub Actions automatically runs pending database migrations safely).*
+*(Hostinger automatically deploys code pushed to `main`, and GitHub Actions executes pending database migrations safely).*
+
+---
+
+### 5. Hostinger Production SSH & Migration Commands
+
+#### Step 1: Connect via SSH
+```bash
+ssh -p 65002 u914531711@145.79.211.243
+```
+
+#### Step 2: Navigate to Production Directory
+```bash
+cd /home/u914531711/domains/anantamtptl.com/public_html
+```
+
+#### Step 3: Check Production Migration Status
+```bash
+php database/migration.php status
+```
+
+#### Step 4: Execute Pending Migrations
+```bash
+php database/migration.php migrate
+```
+
+#### Step 5: Verify Migration Status
+```bash
+php database/migration.php status
+```
+
+#### Step 6: Exit SSH
+```bash
+exit
+```
 
 ---
 
@@ -85,4 +118,3 @@ git push origin main
 
 > [!IMPORTANT]
 > If this system is used for real-money investment/returns or referral-based income, applicable Indian financial, tax, KYC/AML, direct-selling/MLM and securities laws should be reviewed with qualified legal/compliance professionals before launch.
-

@@ -11,8 +11,22 @@ if (!isset($_SESSION["userid"])) {
 require_once 'common/connection.php';
 // require 'common/printmessage.php';
 require_once 'common/db_method.php';
-// require 'common/password.php';
-// require 'common/recharge_api.php';
+require_once 'common/login_reg_control_helper.php';
+
+// --- Login & Registration Access Control Check for Active User Session ---
+$lrcState = getLoginRegControlState($pdo);
+if ($lrcState['status'] === 'OFF') {
+    if ($lrcState['message_type'] === 'ERROR') {
+        // Immediately invalidate/logout logged-in user session
+        unset($_SESSION['userid']);
+        session_destroy();
+        header("Location: login.php");
+        exit();
+    } elseif ($lrcState['message_type'] === 'WARNING') {
+        // Set warning message to display on page load for authenticated users
+        $_SESSION['lrc_warning_message'] = $lrcState['message_text'];
+    }
+}
 
 // Set userid from GET or Session
 if (isset($_GET['uid'])) {
