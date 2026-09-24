@@ -35,6 +35,14 @@ $defaultSponsorFromURL = isset($_GET['uid']) ? $_GET['uid'] : '';
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    require_once 'common/login_reg_control_helper.php';
+    $lrcState = getLoginRegControlState($pdo);
+    if ($lrcState['status'] === 'OFF' && $lrcState['message_type'] === 'ERROR') {
+        $errMsg = urlencode($lrcState['message_text']);
+        header("Location: new_binary_registration_form.php?error={$errMsg}");
+        exit;
+    }
+
         // --- NEW SPONSOR LOGIC ---
     if (!empty($defaultSponsorFromURL)) {
         // sponsor id from URL
@@ -631,6 +639,12 @@ function findAvailableSlot(PDO $pdo, $currentId, $preferredSide, $newUserId) {
         <p>JOIN ANANTA TO START YOUR JOURNEY</p>
       </div>
 
+      <?php if (!empty($_GET['error'])): ?>
+        <div class="text-center" style="font-size: 13.5px; font-weight: 600; color: #dc2626; margin-bottom: 20px; line-height: 1.5; background: transparent; padding: 0;">
+          <i class="icon-exclamation" style="margin-right: 6px; color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+      <?php endif; ?>
+
       <form action="new_binary_registration_form.php" method="post" id="registration_form">
         <!-- Referrer ID -->
         <div class="form-group">
@@ -760,8 +774,13 @@ function findAvailableSlot(PDO $pdo, $currentId, $preferredSide, $newUserId) {
           Already have an account? <a href="login.php">Sign In</a>
         </div>
       </form>
+      <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #f1f5f9; font-size: 12px; color: #94a3b8;">
+        Copyright <button type="button" onclick="openLrcModal();" class="d-none d-lg-inline-block" title="Access Control" style="background: transparent; border: none; color: #64748b; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0 2px; outline: none; vertical-align: baseline;">©</button><span class="d-lg-none">©</span> <?php echo date('Y'); ?> Ananta. All Rights Reserved.
+      </div>
     </div>
   </div><!--wrapper-->
+
+  <?php include_once __DIR__ . '/common/login_reg_control_modal.php'; ?>
 
   <!-- Bootstrap core JavaScript-->
   <script src="assets/js/jquery.min.js"></script>

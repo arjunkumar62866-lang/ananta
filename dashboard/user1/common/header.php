@@ -285,6 +285,24 @@ $news = $newsdata['news'];
   </style>
 </head>
 
+<?php if (!empty($_SESSION['lrc_warning_message'])): 
+    $lrcWarnMsg = htmlspecialchars($_SESSION['lrc_warning_message'], ENT_QUOTES, 'UTF-8');
+    unset($_SESSION['lrc_warning_message']);
+?>
+<div id="lrcWarningToast" style="position: fixed; top: 20px; right: 20px; z-index: 999999; background: #fffbebf5; border: 1.5px solid #f59e0b; border-left: 6px solid #d97706; color: #92400e; padding: 14px 20px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(217, 119, 6, 0.25); display: flex; align-items: center; gap: 12px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; max-width: 420px; transition: opacity 0.4s ease;">
+  <i class="zmdi zmdi-alert-triangle" style="font-size: 24px; color: #d97706; flex-shrink: 0;"></i>
+  <div style="flex: 1; text-shadow: none; line-height: 1.4;">
+    <strong>Notice:</strong> <?php echo $lrcWarnMsg; ?>
+  </div>
+  <button type="button" onclick="$('#lrcWarningToast').fadeOut();" style="background: none; border: none; color: #92400e; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+</div>
+<script>
+setTimeout(function() {
+  $('#lrcWarningToast').fadeOut(400);
+}, 5000);
+</script>
+<?php endif; ?>
+
 <!--Start sidebar-wrapper-->
 <!--Start sidebar-wrapper-->
 <div id="sidebar-wrapper">

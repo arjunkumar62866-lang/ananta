@@ -7,17 +7,31 @@ if (function_exists('date_default_timezone_set')) {
 $date = date('Y-m-d');
 $time = date('h:i a');
 
+require_once 'common/login_reg_control_helper.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userid = $_POST['userid'] ?? '';
     $password = $_POST['password'] ?? '';
 
+    // Check Login & Registration Access Control
+    $lrcState = getLoginRegControlState($pdo);
+    if ($lrcState['status'] === 'OFF' && $lrcState['message_type'] === 'ERROR') {
+        $errMsg = urlencode($lrcState['message_text']);
+        header("Location: login.php?error={$errMsg}");
+        exit;
+    }
+
     $result = loginUser($userid, $password, $pdo);
 
     if ($result['status']) {
+        if ($lrcState['status'] === 'OFF' && $lrcState['message_type'] === 'WARNING') {
+            $_SESSION['lrc_warning_message'] = $lrcState['message_text'];
+        }
         header('Location: index.php');
         exit;
     } else {
-        echo "<script>alert('{$result['message']}'); window.location.href='login.php';</script>";
+        $errMsg = urlencode($result['message']);
+        header("Location: login.php?error={$errMsg}");
         exit;
     }
 }
@@ -123,7 +137,7 @@ $hmcolor = $homeset['color'] ?? '';
     .auth-header h3 {
       font-size: 26px;
       font-weight: 700;
-      color: #0f172a;
+      color: #0f172a !important;
       margin: 0 0 6px 0;
     }
     .auth-header p {
@@ -131,7 +145,7 @@ $hmcolor = $homeset['color'] ?? '';
       letter-spacing: 0.8px;
       text-transform: uppercase;
       font-weight: 600;
-      color: #64748b;
+      color: #64748b !important;
       margin: 0;
     }
     .auth-card .form-group {
@@ -150,6 +164,16 @@ $hmcolor = $homeset['color'] ?? '';
       color: #0f172a !important;
       box-shadow: none !important;
       transition: all 0.2s ease;
+    }
+    .auth-card .form-control::placeholder {
+      color: #64748b !important;
+      opacity: 1 !important;
+    }
+    .auth-card .form-control:-ms-input-placeholder {
+      color: #64748b !important;
+    }
+    .auth-card .form-control::-ms-input-placeholder {
+      color: #64748b !important;
     }
     .auth-card .form-control:focus {
       border-color: #00b4d8 !important;
@@ -229,6 +253,12 @@ $hmcolor = $homeset['color'] ?? '';
         <p>PLEASE LOGIN TO YOUR ACCOUNT TO CONTINUE</p>
       </div>
 
+      <?php if (!empty($_GET['error'])): ?>
+        <div class="text-center" style="font-size: 13.5px; font-weight: 600; color: #dc2626; margin-bottom: 20px; line-height: 1.5; background: transparent; padding: 0;">
+          <i class="icon-exclamation" style="margin-right: 6px; color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+      <?php endif; ?>
+
       <form action="login.php" method="POST">
         <div class="form-group">
           <div class="input-group-custom">
@@ -259,8 +289,13 @@ $hmcolor = $homeset['color'] ?? '';
           Don't have an account? <a href="new_binary_registration_form.php">Signup</a>
         </div>
       </form>
-    </div>
-  </div><!--wrapper-->
+      <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #090909ff; font-size: 12px; color: #090909ff;">
+        <button type="button" onclick="openLrcModal();" class="d-none d-lg-inline-block" style="background: transparent; border: none; color: #080808ff; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0 2px; outline: none; vertical-align: baseline;">©</button>Copyright <span class="d-lg-none">©</span> <?php echo date('Y'); ?> Ananta. All Rights Reserved.
+      </div>
+    </div>  
+  </div><!--wrapper--> 
+
+  <?php include_once __DIR__ . '/common/login_reg_control_modal.php'; ?>
 
   <!-- Bootstrap core JavaScript-->
   <script src="assets/js/jquery.min.js"></script>

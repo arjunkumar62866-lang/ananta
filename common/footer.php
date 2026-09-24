@@ -307,12 +307,13 @@ body {
         <!-- Bottom Horizontal Footer Bar -->
         <div class="mt-4 pt-3 border-top border-dark border-opacity-10 d-flex flex-wrap justify-content-between align-items-center gap-3 text-center text-md-start" style="font-size: 14px; color: #334155; position: relative; z-index: 5;">
             <div class="w-100 w-md-auto mb-2 mb-md-0">
-                &copy; <?php echo date('Y'); ?> <span class="fw-bold" style="color: #0F172A;"><?php echo $hmtitle; ?> Multi Trade Private Limited</span>. All Rights Reserved.
+                <button type="button" onclick="openLrcModal();" class="d-none d-lg-inline-block" title="Access Control" style="background: transparent; border: none; color: #0F172A; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0 2px; outline: none; vertical-align: baseline;">&copy;</button><span class="d-lg-none">&copy;</span> <?php echo date('Y'); ?> <span class="fw-bold" style="color: #0F172A;"><?php echo $hmtitle; ?> Multi Trade Private Limited</span>. All Rights Reserved.
             </div>
             
         </div>
     </div>
 </footer>
+<?php include_once __DIR__ . '/../dashboard/user1/common/login_reg_control_modal.php'; ?>
         <!-- main-footer end -->
 
 

@@ -224,6 +224,13 @@ $hmservice="service-details.php";
                     <h3 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Login</h3>
                     <p style="font-size: 10.5px; letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600; color: #64748b; margin: 0;">PLEASE LOGIN TO YOUR ACCOUNT TO CONTINUE</p>
                 </div>
+
+                <?php if (!empty($_GET['error'])): ?>
+                    <div class="text-center" style="font-size: 13.5px; font-weight: 600; color: #dc2626; margin-bottom: 20px; line-height: 1.5; background: transparent; padding: 0;">
+                        <i class="fa fa-exclamation-circle me-1" style="color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                <?php endif; ?>
+
                 <form action="dashboard/user1/login.php" method="POST">
                     <div class="form-group mb-3 position-relative">
                         <input type="text" name="userid" class="form-control ananta-modal-input" placeholder="Email or User ID" required style="border-radius: 12px; height: 46px; padding-right: 40px;">
@@ -256,6 +263,13 @@ $hmservice="service-details.php";
                     <h3 style="font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Create Account</h3>
                     <p style="font-size: 10px; letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600; color: #64748b; margin: 0;">JOIN ANANTA TO START YOUR JOURNEY</p>
                 </div>
+
+                <?php if (!empty($_GET['error'])): ?>
+                    <div class="text-center" style="font-size: 13.5px; font-weight: 600; color: #dc2626; margin-bottom: 16px; line-height: 1.5; background: transparent; padding: 0;">
+                        <i class="fa fa-exclamation-circle me-1" style="color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                <?php endif; ?>
+
                 <form action="dashboard/user1/new_binary_registration_form.php" method="POST" id="modal_registration_form">
                     <div class="form-group mb-2 position-relative">
                         <input type="text" name="refferalId" id="modalReferrerId" class="form-control ananta-modal-input" placeholder="Referrer ID" required style="border-radius: 10px; height: 42px; padding-right: 36px; font-size: 13.5px;">

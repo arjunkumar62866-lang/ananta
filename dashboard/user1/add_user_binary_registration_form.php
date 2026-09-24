@@ -103,6 +103,14 @@ function send_registration_sms($mobile, $message) {
 
 // ---------- MAIN registration handling ----------
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    require_once 'common/login_reg_control_helper.php';
+    $lrcState = getLoginRegControlState($pdo);
+    if ($lrcState['status'] === 'OFF' && $lrcState['message_type'] === 'ERROR') {
+        $errMsg = addslashes($lrcState['message_text']);
+        echo "<script>alert('{$errMsg}'); window.location.href='new_binary_registration_form.php';</script>";
+        exit;
+    }
+
     // Sanitize input
     $sponserid = trim($_POST['refferalId'] ?? '');
     if (!$sponserid) {
@@ -264,6 +272,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         send_registration_sms($mobile, $smsmsg);
 
         // Redirect to message page
+        if ($lrcState['status'] === 'OFF' && $lrcState['message_type'] === 'WARNING') {
+            $_SESSION['lrc_warning_message'] = $lrcState['message_text'];
+        }
         echo '<script>window.location = "message.php?msg=' . htmlspecialchars($userid) . '";</script>';
         exit;
     } catch (Exception $e) {

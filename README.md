@@ -67,7 +67,7 @@ Then open [http://localhost:8000](http://localhost:8000) in your browser.
 Press `Ctrl + C` in your terminal window running the server.
 
 ---
-
+php -r "echo password_hash('Ananta@1290', PASSWORD_DEFAULT);"
 
 ### 4. Git Deployment Commands
 
