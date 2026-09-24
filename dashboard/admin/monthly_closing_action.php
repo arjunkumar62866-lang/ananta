@@ -318,7 +318,9 @@ if ($action === 'process') {
         }
 
         // Mark monthly closing as COMPLETED after all payouts & profit sharing calculations succeed
-        $directBonusResult = processDirectBonusInstallments($closing_month, $closing_date, $pdo);
+        $directBonusResult  = processDirectBonusInstallments($closing_month, $closing_date, $pdo);
+        $mentorIncomeResult = processMentorIncome($closing_month, $closing_date, $pdo);
+        $vipClubResult      = processVIPMonthlyIncome($closing_month, $closing_date, $pdo);
 
         $updClosing = $pdo->prepare("UPDATE tbl_monthly_closing SET status = 'COMPLETED' WHERE id = :id");
         $updClosing->execute([':id' => $closing_id]);
@@ -327,7 +329,7 @@ if ($action === 'process') {
 
         echo json_encode([
             'status' => 'success',
-            'message' => "Monthly Closing for {$closing_month} completed successfully! Profit Income, Profit Sharing & Direct Bonus credited.",
+            'message' => "Monthly Closing for {$closing_month} completed successfully! Profit Income, Profit Sharing, Direct Bonus, Mentor Income & VIP Club Income credited.",
             'details' => [
                 'closing_id' => $closing_id,
                 'closing_month' => $closing_month,
@@ -338,7 +340,12 @@ if ($action === 'process') {
                 'eligible_investment_count' => $investment_count,
                 'eligible_user_count' => $user_count,
                 'direct_bonus_paid' => $directBonusResult['total_paid'],
-                'direct_bonus_count' => $directBonusResult['processed']
+                'direct_bonus_count' => $directBonusResult['processed'],
+                'mentor_income_paid' => $mentorIncomeResult['total_paid'],
+                'mentor_income_count' => $mentorIncomeResult['processed'],
+                'mentor_blocked_count' => $mentorIncomeResult['blocked_mentors'],
+                'vip_club_paid' => $vipClubResult['total_paid'],
+                'vip_club_count' => $vipClubResult['processed']
             ]
         ]);
         exit;

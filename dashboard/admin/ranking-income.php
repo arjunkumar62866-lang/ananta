@@ -266,9 +266,14 @@ table.dataTable.no-footer {
                                     <h4>Ranking Income Transactions</h4>
                                     <p>Live transaction logs & rank commissions</p>
                                 </div>
-                                <button id="customExportBtn" class="btn btn-export-excel">
-                                    <i class="fa fa-file-excel-o"></i> Export to Excel
-                                </button>
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="roi-three-pay.php" class="btn text-white font-weight-bold px-3 py-2" style="background: #16a34a; border-radius: 10px; font-size: 13.5px; text-decoration: none;" onclick="return confirm('Do you want to process Ranking Income Payout now?');">
+                                        <i class="fa fa-play mr-1"></i> Process Rank Payout
+                                    </a>
+                                    <button id="customExportBtn" class="btn btn-export-excel">
+                                        <i class="fa fa-file-excel-o"></i> Export to Excel
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body p-4">
 

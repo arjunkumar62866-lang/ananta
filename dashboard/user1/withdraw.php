@@ -1,428 +1,155 @@
-<?php ob_start(); ?>
-<!DOCTYPE html>
-<html lang="en">
+<?php
+ob_start();
+session_start();
+require_once 'common/header.php';
+require_once 'common/db_method.php';
 
-<?php 
-include("common/header.php"); 
-include("common/connection.php");
-
-getmydirectactive($userid);
-
-// Fetch user wallet
-$sql1 = "SELECT * FROM user WHERE userid = :userid";
-$stmt1 = $pdo->prepare($sql1);
-$stmt1->execute([':userid' => $userid]);
-$row1 = $stmt1->fetch(PDO::FETCH_ASSOC);
-if ($row1) {
-  $wallet_amount = $row1["amount"];
+if (!isset($_SESSION['userid'])) {
+    header("Location: login.php");
+    exit();
 }
 
-// Set timezone
-if (function_exists('date_default_timezone_set')) {
-  date_default_timezone_set("Asia/Kolkata");
-}
-$currentTime = date("H:i:s");
-$time = date('h:i a');
-$date = date('d');
-$ocday = date("l");
+$userid = $_SESSION['userid'];
+$msg = '';
+$msgType = '';
 
-// Set withdrawal availability
-$widhtrwal = "TRUE";
+// Handle Withdrawal Request Form
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'request_withdrawal') {
+    $method = trim($_POST['withdrawal_method'] ?? 'INR');
+    $amount = (float)($_POST['amount'] ?? 0);
 
-// Function to check withdrawal requests
-function GETWITHDREWAL($userid)
-{
-  global $pdo;
-  $sqlac = "SELECT COUNT(*) as alluser FROM tbl_transaction 
-            WHERE user_id = :userid 
-              AND created_date = CURDATE() 
-              AND subject = 'Withdrawal Request'";
-  $stmtac = $pdo->prepare($sqlac);
-  $stmtac->execute([':userid' => $userid]);
-  $rowac = $stmtac->fetch(PDO::FETCH_ASSOC);
-  return $rowac ? $rowac['alluser'] : 0;
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  if ($kyc==1) {
-    $amount = $_POST['amount'];
-
-    if ($widhtrwal === "TRUE") {
-      if (1==1) {
-        if (1==1) {
-          if ($useramount >= 10) {
-            if (1 == 1) {
-              if ($useramount >= $amount) {
-                if ($amount >= 10) {
-
-                    $otp = rand(100000, 999999);
-                
-                    $_SESSION['withdraw_otp'] = $otp;
-                    $_SESSION['withdraw_amount'] = $amount;
-                    $_SESSION['withdraw_time'] = $currentTime;
-                
-                    $to = $useremail;
-                    $subject = $hmtitle . " Confirm Withdraw Request ";
-                    $headers = "From: " . strip_tags($hmemailfrom) . "\r\n";
-                    $headers .= "MIME-Version: 1.0\r\n";
-                    $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
-                    $message = '<html><body>';
-                    $message .= '<table>';
-                    $message .= "<tr style='background: #eee;'><td><strong>Name:</strong> </td><td>" . strip_tags($username) . "</td></tr>";
-                    $message .= "<tr><td><strong>User id:</strong></td><td>" . htmlspecialchars($userid) . "</td></tr>";
-                    $message .= "<tr><td><strong>OTP:</strong></td><td>" . htmlspecialchars($otp) . "</td></tr>";
-                    $message .= "</table></body></html>";
-                    mail($to, $subject, $message, $headers);
-                    
-                    $stmt = $pdo->prepare("SELECT amount FROM user WHERE userid = :userid");
-                    $stmt->execute([':userid' => $userid]);
-                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $useramount = $row['amount'];
-            
-                    $shoppingamt = ($amount * 8) / 100;
-                    $useramountleft = $useramount - $amount;
-                    $leftamount = $amount - $shoppingamt;
-            
-                    $sql = "INSERT INTO tbl_transaction 
-                                (amount, act_amount, user_id, subject, type, status, a_status, created_date, time)
-                            VALUES 
-                                (:amount, :act_amount, :user_id, 'Withdrawal Request', 'Debit', '1', '0', CURDATE(), :time)";
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute([
-                        ':amount' => $leftamount,
-                        ':act_amount' => $amount,
-                        ':user_id' => $userid,
-                        ':time' => $currentTime
-                    ]);
-            
-                    $sql1 = "UPDATE user 
-                                SET amount = :useramountleft, 
-                                    shop_amount = shop_amount + :shoppingamt 
-                            WHERE userid = :userid AND status = '1' AND active = '1'";
-                    $stmt1 = $pdo->prepare($sql1);
-                    $stmt1->execute([
-                        ':useramountleft' => $useramountleft,
-                        ':shoppingamt' => $shoppingamt,
-                        ':userid' => $userid
-                    ]);
-            
-                    echo "<script>alert('Withdrawal Request Sent Successfully'); window.location='withdraw.php';</script>";
-                    exit();
-                }
-                else {
-                  echo "<script>alert('Minimum Withdrawal amount is Rs. 360');window.location.assign('withdraw.php');</script>";
-                }
-              } else {
-                $error = "Your Wallet Amount is Low. Please Try Again !!!";
-              }
-            } else {
-              echo "<script>alert('Please Do 2 Direct Id');window.location.assign('withdraw.php');</script>";
-            }
-          } else {
-            $error = "MINIMUM WITHDRAWAL LIMIT IS 360 ₹. YOUR WALLET BALANCE IS LOW !!!";
-          }
-        } else {
-          $error = "YOU CAN WITHDRAWAL DAILY BETWEEN 10:00 AM TO 05:00 PM";
-          echo "<script>alert('YOU CAN WITHDRAWAL DAILY BETWEEN 10:00 AM TO 05:00 PM');window.location.assign('withdraw.php');</script>";
-        }
-      } else {
-        echo "<script>alert('Withdrawal Day Only Monday');window.location.assign('withdraw.php');</script>";
-      }
+    $res = processUserWithdrawalRequest($userid, $method, $amount, $pdo);
+    if ($res['status'] === 'success') {
+        $msg = $res['message'];
+        $msgType = 'success';
+    } else {
+        $msg = $res['message'];
+        $msgType = 'danger';
     }
-  } else {
-     echo "<script>alert('Please! complete/Update your KYC first..');window.location.href = 'withdraw.php';</script>";
-  }
 }
+
+// Fetch user info for UI
+$stmtU = $pdo->prepare("SELECT amount, bep20_address, withdrawal_status, kyc FROM user WHERE userid = :uid");
+$stmtU->execute([':uid' => $userid]);
+$uData = $stmtU->fetch(PDO::FETCH_ASSOC) ?: [];
+$userBal = (float)($uData['amount'] ?? 0);
+$bep20Addr = $uData['bep20_address'] ?? '';
+
+// Check Global Withdrawal setting
+$stmtSys = $pdo->prepare("SELECT setting_value FROM tbl_system_control WHERE setting_key = 'withdrawal_enable' LIMIT 1");
+$stmtSys->execute();
+$globalWd = $stmtSys->fetchColumn();
+$isGlobalDisabled = ($globalWd !== false && (int)$globalWd === 0);
+$isUserDisabled = (isset($uData['withdrawal_status']) && (string)$uData['withdrawal_status'] === '0');
+$isWithdrawalDisabled = ($isGlobalDisabled || $isUserDisabled);
 ?>
 
-<style>
-/* =========================================================
-   ANANTA FINTECH THEME - WALLET WITHDRAWAL REDESIGN
-   Matches Dashboard (index.php) & Profile Styling
-========================================================= */
-
-html,
-body {
-    min-height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-body.ananta-user-dashboard,
-body.bg-theme,
-body.bg-theme1,
-body.ananta-user-dashboard.bg-theme,
-body.ananta-user-dashboard.bg-theme1 {
-    background: #f4f6f8 !important;
-    background-color: #f4f6f8 !important;
-    background-image: none !important;
-    color: #0f172a !important;
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
-}
-
-/* Remove old legacy dark overlays */
-html::before,
-html::after,
-body::before,
-body::after,
-#wrapper::before,
-#wrapper::after,
-.content-wrapper::before,
-.content-wrapper::after {
-    content: none !important;
-    display: none !important;
-    background: none !important;
-    background-color: transparent !important;
-}
-
-#wrapper {
-    background: #f4f6f8 !important;
-    min-height: 100vh !important;
-}
-
-.content-wrapper {
-    background-color: #f4f6f8 !important;
-    padding-top: 85px !important;
-    padding-bottom: 60px !important;
-}
-
-/* Header Banner */
-.income-header-card {
-    background: linear-gradient(135deg, rgba(2, 132, 199, 0.10) 0%, rgba(22, 163, 74, 0.10) 100%), #ffffff !important;
-    border-radius: 24px !important;
-    border: 1px solid rgba(2, 132, 199, 0.18) !important;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
-    margin-bottom: 24px;
-}
-
-.income-header-icon {
-    width: 58px;
-    height: 58px;
-    border-radius: 18px;
-    background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%);
-    color: #ffffff;
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
-    flex-shrink: 0;
-}
-
-/* Main Card Container */
-.ananta-fintech-card {
-    background: #ffffff !important;
-    border-radius: 22px !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.06) !important;
-    overflow: hidden;
-}
-
-.card-header-bar {
-    padding: 24px 28px;
-    border-bottom: 1px solid #f1f5f9;
-    background: linear-gradient(135deg, #ffffff 0%, #fbfdff 60%, #f8fafc 100%);
-}
-
-.card-header-title h4 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 800;
-    color: #0f172a;
-}
-
-.card-header-title p {
-    margin: 4px 0 0;
-    font-size: 13.5px;
-    color: #64748b;
-    font-weight: 500;
-}
-
-/* Form Controls Styling */
-label.form-label,
-label {
-    color: #334155 !important;
-    font-weight: 700 !important;
-    font-size: 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    margin-bottom: 8px !important;
-    display: block !important;
-}
-
-.form-control,
-input.form-control {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border: 1.5px solid #cbd5e1 !important;
-    border-radius: 12px !important;
-    font-size: 14.5px !important;
-    font-weight: 600 !important;
-    padding: 10px 16px !important;
-    transition: all 0.2s ease-in-out !important;
-    box-shadow: none !important;
-}
-
-.form-control:focus,
-input.form-control:focus {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border-color: #0284c7 !important;
-    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12) !important;
-    outline: none !important;
-}
-
-/* Submit Button */
-.btn-ananta-submit {
-    background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 12px !important;
-    height: 52px !important;
-    font-weight: 700 !important;
-    font-size: 16px !important;
-    box-shadow: 0 8px 25px rgba(2, 132, 199, 0.25) !important;
-    transition: all 0.3s ease !important;
-    cursor: pointer !important;
-    width: 100% !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 8px !important;
-}
-
-.btn-ananta-submit:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 12px 30px rgba(2, 132, 199, 0.35) !important;
-    color: #ffffff !important;
-}
-</style>
-
-<body class="ananta-user-dashboard">
-
-<!-- Loader -->
-<div id="pageloader-overlay" class="visible incoming">
-  <div class="loader-wrapper-outer">
-    <div class="loader-wrapper-inner"><div class="loader"></div></div>
-  </div>
-</div>
-<!-- End Loader -->
-
-<!-- Start wrapper-->
-<div id="wrapper">
-  <div class="clearfix"></div>
-  
-  <div class="content-wrapper">
+<div class="content-wrapper py-4" style="background-color: #faf9f6 !important;">
     <div class="container-fluid">
-
-      <!-- Header Welcome Banner -->
-      <div class="row mb-4">
-          <div class="col-12">
-              <div class="card income-header-card border-0 p-4">
-                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                      <div class="d-flex align-items-center gap-3">
-                          <div class="income-header-icon">
-                              <i class="fa fa-bank"></i>
-                          </div>
-                          <div>
-                              <div class="d-flex align-items-center gap-2 mb-1">
-                                  <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 700; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">WALLET WITHDRAWAL</span>
-                                  <span style="font-size: 12px; color: #64748b; font-weight: 600;">BANK TRANSFER</span>
-                              </div>
-                              <h4 class="mb-0" style="font-size: 22px; font-weight: 800; color: #0f172a;">
-                                  Wallet <span style="background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Withdrawal</span> 🏦
-                              </h4>
-                              <p class="mb-0 text-muted" style="font-size: 13.5px; margin-top: 3px;">
-                                  Withdraw your available wallet balance directly to your registered bank account.
-                              </p>
-                          </div>
-                      </div>
-                      <div class="d-flex align-items-center gap-2 flex-wrap">
-                          <div class="px-3 py-2" style="background: #ffffff; border-radius: 14px; border: 1px solid rgba(22, 163, 74, 0.25); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
-                              <span class="text-muted d-block" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Available Balance</span>
-                              <span class="font-weight-bold" style="font-size: 18px; color: #16a34a; font-weight: 800;">₹<?= number_format((float)$wallet_amount, 2); ?></span>
-                          </div>
-                          <a href="withdraw-history.php" class="btn btn-outline-primary font-weight-bold px-3 py-2" style="border-radius: 12px; font-size: 13px;">
-                              <i class="fa fa-history me-1"></i> History
-                          </a>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </div>
-
-      <!-- Form Section -->
-      <div class="row">
-        <div class="col-lg-8 offset-lg-2">
-          <div class="ananta-fintech-card">
-            
-            <div class="card-header-bar">
-                <div class="card-header-title">
-                    <h4><i class="fa fa-money text-success me-2"></i> Submit Withdrawal Request</h4>
-                    <p>Enter your requested amount below (Minimum limit: ₹360.00)</p>
-                </div>
+        <!-- Page Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 pb-2 border-bottom">
+            <div>
+                <h4 class="mb-1 font-weight-bold" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">INR & BEP20 Withdrawal</h4>
+                <p class="text-muted small mb-0">Request payout via INR Bank Transfer or BEP20 USDT Crypto Transfer</p>
             </div>
-
-            <div class="p-4 p-md-5">
-
-              <?php if (isset($success)) { ?>
-                <div class="alert alert-success border-0 mb-4" style="border-radius: 12px; background: #f0fdf4; color: #166534; font-weight: 600;"><?= $success ?></div>
-              <?php } ?>
-              <?php if (isset($error)) { ?>
-                <div class="alert alert-danger border-0 mb-4" style="border-radius: 12px; background: #fef2f2; color: #991b1b; font-weight: 600;"><?= $error ?></div>
-              <?php } ?>
-
-              <form method="POST" enctype="multipart/form-data">
-
-                <div class="row mb-4">
-                  <div class="col-md-6 mb-3 mb-md-0">
-                    <div class="p-3 bg-light" style="border-radius: 14px; border: 1px solid #e2e8f0;">
-                      <span class="text-muted small font-weight-bold d-block mb-1">TDS + ADMIN DEDUCTIONS</span>
-                      <span class="font-weight-bold text-dark" style="font-size: 15px;">5% TDS + 3% Admin Charge</span>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="p-3 bg-light" style="border-radius: 14px; border: 1px solid #e2e8f0;">
-                      <span class="text-muted small font-weight-bold d-block mb-1">MINIMUM WITHDRAWAL LIMIT</span>
-                      <span class="font-weight-bold text-danger" style="font-size: 15px;">₹360.00</span>
-                    </div>
-                  </div>
+            <nav aria-label="breadcrumb">
+                <div style="display: inline-flex; flex-direction: row; align-items: center; gap: 8px; padding: 6px 14px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13.5px; font-weight: 600; white-space: nowrap;">
+                    <a href="index.php" style="color: #9333ea; text-decoration: none; font-weight: 600;">Dashboard</a>
+                    <span style="color: #94a3b8; font-weight: 400;">/</span>
+                    <span style="color: #475569; font-weight: 600;">Withdrawal</span>
+                    <span style="color: #94a3b8; font-weight: 400;">/</span>
+                    <span style="color: #0f172a; font-weight: 700;">INR & BEP20 Withdrawal</span>
                 </div>
-
-                <div class="form-group mb-4">
-                  <label>Withdrawal Amount (₹)</label>
-                  <input type="hidden" id="qty" value="5">
-                  <input min="360" id="amt" name="amount" type="number" required placeholder="Enter amount (min ₹360)" class="form-control" style="height: 50px;">
-                </div>
-
-                <button type="submit" class="btn-ananta-submit mt-2">
-                  <i class="fa fa-paper-plane me-1"></i> Submit Withdrawal Request
-                </button>
-
-              </form>
-
-            </div>
-          </div>
+            </nav>
         </div>
-      </div><!--End Row-->
 
-      <div class="overlay toggle-menu"></div>
+        <?php if (!empty($msg)): ?>
+            <div class="alert alert-<?php echo $msgType; ?> alert-dismissible fade show border-0 shadow-sm rounded-lg mb-4" role="alert" style="border-radius: 12px;">
+                <i class="zmdi zmdi-info-outline mr-2"></i> <?php echo htmlspecialchars($msg); ?>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($isWithdrawalDisabled): ?>
+            <div class="alert alert-warning border-0 shadow-sm mb-4" style="border-radius: 12px; background: rgba(234, 179, 8, 0.12); color: #854d0e; border: 1px solid rgba(234, 179, 8, 0.3);">
+                <i class="zmdi zmdi-lock mr-2" style="font-size: 18px;"></i>
+                <strong>Withdrawal Suspended:</strong> 
+                <?php echo $isGlobalDisabled ? 'Global withdrawals are currently paused by System Admin.' : 'Withdrawal permission is disabled for your account.'; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Balance Stat Cards -->
+        <div class="row mb-4">
+            <div class="col-12 col-md-6 col-lg-4 mb-3">
+                <div class="card border-0 shadow-sm p-4" style="background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(2, 132, 199, 0.08) 100%), #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px;">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle p-3 mr-3" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3);">
+                            <i class="zmdi zmdi-balance-wallet zmdi-hc-2x"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase font-weight-bold">Available Wallet Balance</span>
+                            <h3 class="mb-0 font-weight-bold" style="color: #0f172a;">
+                                <?php echo formatCurrency($userBal, $selectedCurrency); ?>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Form Card -->
+        <div class="card border-0 shadow-sm" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px;">
+            <div class="card-header bg-white py-3" style="border-bottom: 1px solid #f1f5f9; border-radius: 18px 18px 0 0;">
+                <h6 class="m-0 font-weight-bold" style="color: #0f172a;">
+                    <i class="zmdi zmdi-money-off mr-2" style="color: #16a34a;"></i> Submit Withdrawal Request
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="withdraw.php">
+                    <input type="hidden" name="action" value="request_withdrawal">
+                    
+                    <div class="form-group mb-3">
+                        <label for="withdrawal_method" class="font-weight-bold small text-uppercase" style="color: #475569;">Withdrawal Method</label>
+                        <select class="form-control form-control-lg" id="withdrawal_method" name="withdrawal_method" required <?php echo $isWithdrawalDisabled ? 'disabled' : ''; ?> style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;">
+                            <option value="INR">1. INR Direct Bank Withdrawal (Bank Transfer)</option>
+                            <option value="BEP20">2. BEP20 Crypto Transfer (USDT / BEP20)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="amount" class="font-weight-bold small text-uppercase" style="color: #475569;">Withdrawal Amount ($ USD)</label>
+                        <input type="number" step="0.01" min="10" class="form-control form-control-lg" id="amount" name="amount" placeholder="Enter amount (Minimum $10)" required <?php echo $isWithdrawalDisabled ? 'disabled' : ''; ?> style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;">
+                    </div>
+
+                    <div class="form-group mb-4" id="bep20_info_box" style="display: none;">
+                        <label class="font-weight-bold small text-uppercase" style="color: #475569;">BEP20 Address Destination</label>
+                        <input type="text" class="form-control form-control-lg" value="<?php echo htmlspecialchars($bep20Addr); ?>" readonly style="border-radius: 10px; background: #f8fafc; border: 1px solid #cbd5e1; font-size: 14px; font-weight: 600;">
+                        <?php if (empty($bep20Addr)): ?>
+                            <small class="text-danger font-weight-semibold d-block mt-2"><i class="zmdi zmdi-alert-triangle mr-1"></i> BEP20 Address missing! Please update your BEP20 address in <a href="settings.php" class="text-primary font-weight-bold">Settings</a> first.</small>
+                        <?php endif; ?>
+                    </div>
+
+                    <button type="submit" class="btn px-4 py-3 font-weight-bold" <?php echo ($isWithdrawalDisabled) ? 'disabled' : ''; ?> style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; border-radius: 10px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
+                        <i class="zmdi zmdi-send mr-2"></i> Submit Withdrawal Request
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i></a>
-  <?php include 'common/footer.php' ?>
 </div>
 
-<script type="text/javascript">
-  $("#qty,#amt").on("change keyup", function(e){  
-    var quan = parseFloat($("#qty").val()); 
-    var rate = parseFloat($("#amt").val()); 
-    var result = rate - rate * quan / 100;  
-    if (!isNaN(result)) { 
-      $("#total").val(result); 
-    }  
-  });
+<script>
+document.getElementById('withdrawal_method').addEventListener('change', function() {
+    var bep20Box = document.getElementById('bep20_info_box');
+    if (this.value === 'BEP20') {
+        bep20Box.style.display = 'block';
+    } else {
+        bep20Box.style.display = 'none';
+    }
+});
 </script>
-</body>
-</html>
+
+<?php include 'common/footer.php'; ?>
+

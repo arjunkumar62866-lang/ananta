@@ -400,289 +400,411 @@ body.ananta-user-dashboard {
 
     <div class="clearfix"></div>
 
-        <div class="content-wrapper">
-            <!-- Premium Glass Welcome Banner -->
+        <div class="content-wrapper py-3 px-2 px-md-4" style="background-color: #f8fafc !important;">
+            <!-- Full-Screen Promo Ad Banner Modal Popup (Only once per Login Session) -->
+            <?php
+            if (isset($_SESSION['show_banner']) && $_SESSION['show_banner'] === true):
+                unset($_SESSION['show_banner']); // Display only once after login
+                
+                // Fetch active promo banners
+                $stmtBanner = $pdo->prepare("SELECT img FROM tbl_banner WHERE status = 1 ORDER BY id DESC");
+                $stmtBanner->execute();
+                $banners = $stmtBanner->fetchAll(PDO::FETCH_ASSOC);
+                if (!empty($banners)):
+            ?>
+            <div id="bannerModal" class="banner-modal-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 15px; transition: opacity 0.3s ease;">
+                <div class="banner-modal-content" style="background: #ffffff; border-radius: 24px; max-width: 600px; width: 100%; max-height: 90vh; overflow: hidden; position: relative; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2);">
+                    
+                    <!-- Close (Cut) Button -->
+                    <button type="button" class="btn-close-ad" onclick="closeBannerModal()" style="position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: #ffffff; color: #0f172a; border: none; font-size: 22px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; box-shadow: 0 4px 15px rgba(0,0,0,0.3); outline: none;">
+                        &times;
+                    </button>
+
+                    <!-- Ad Banner Header Badge -->
+                    <div style="background: linear-gradient(135deg, #0284c7 0%, #00b4d8 100%); padding: 12px 20px; color: #ffffff; font-weight: 700; font-size: 13.5px; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="zmdi zmdi-notifications-active mr-2"></i> Announcement / Promo Ad</span>
+                        <span class="badge badge-light text-dark font-weight-bold" style="font-size: 10.5px;">ANANTA SPECIAL</span>
+                    </div>
+
+                    <!-- Carousel Body -->
+                    <div class="banner-modal-body p-0" style="max-height: 65vh; overflow-y: auto; text-align: center; background: #0f172a;">
+                        <div id="bannerModalCarousel" class="carousel slide" data-ride="carousel" data-interval="3500">
+                            <div class="carousel-inner">
+                                <?php foreach ($banners as $idx => $b): ?>
+                                <div class="carousel-item <?php echo $idx === 0 ? 'active' : ''; ?>">
+                                    <img src="<?php echo htmlspecialchars($b['img']); ?>" class="d-block w-100" style="max-height: 60vh; object-fit: contain; background: #0f172a;" alt="Promo Banner">
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php if (count($banners) > 1): ?>
+                            <a class="carousel-control-prev" href="#bannerModalCarousel" role="button" data-slide="prev" style="width: 12%;">
+                                <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.6); padding: 16px; border-radius: 50%;"></span>
+                            </a>
+                            <a class="carousel-control-next" href="#bannerModalCarousel" role="button" data-slide="next" style="width: 12%;">
+                                <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.6); padding: 16px; border-radius: 50%;"></span>
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Footer Action -->
+                    <div class="p-3 bg-light d-flex justify-content-end align-items-center" style="border-top: 1px solid #e2e8f0;">
+                        <button type="button" class="btn font-weight-bold text-white px-4 py-2" onclick="closeBannerModal()" style="background: linear-gradient(135deg, #0284c7 0%, #00b4d8 100%); border-radius: 12px; font-size: 13.5px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3); border: none;">
+                            Continue to Dashboard &nbsp;&rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            function closeBannerModal() {
+                var modal = document.getElementById('bannerModal');
+                if (modal) {
+                    modal.style.opacity = '0';
+                    setTimeout(function() { modal.style.display = 'none'; }, 250);
+                }
+            }
+            </script>
+            <?php
+                endif; // end if (!empty($banners))
+            endif; // end if ($_SESSION['show_banner'])
+            ?>
+
+            <!-- 1. Welcome Header Bar Card (Prominent Welcome Box) -->
+            <div class="card border-0 shadow-sm mb-3" style="background: #eff6ff; border: 1px solid #dbeafe !important; border-radius: 20px; overflow: hidden;">
+                <div class="card-body p-4 p-md-5 d-flex align-items-center">
+                    <div style="width: 6px; height: 60px; background: linear-gradient(180deg, #0284c7 0%, #00b4d8 100%); border-radius: 4px; margin-right: 20px; flex-shrink: 0;"></div>
+                    <div>
+                        <span class="d-block text-muted font-weight-bold" style="font-size: 15px; text-transform: uppercase; letter-spacing: 0.8px;">Welcome Back,</span>
+                        <h1 class="mb-1 font-weight-bold" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 32px; letter-spacing: -0.5px;">
+                            <?php echo htmlspecialchars($username); ?>
+                        </h1>
+                        <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">
+                            Grow Together &nbsp;•&nbsp; Build Bigger
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Joined On & Package Info Boxes (Separate 2-Column Equal Width Row) -->
+            <div class="row g-2 mb-4">
+                <!-- Joined On Box -->
+                <div class="col-6">
+                    <div class="card border-0 shadow-sm p-3 h-100 d-flex flex-row align-items-center" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 16px;">
+                        <div class="rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #eff6ff; color: #0284c7; width: 44px; height: 44px; flex-shrink: 0;">
+                            <i class="zmdi zmdi-calendar" style="font-size: 20px;"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="d-block text-muted small font-weight-bold" style="font-size: 11px; text-transform: uppercase;">Joined On</span>
+                            <h6 class="mb-0 font-weight-bold text-truncate" style="color: #0f172a; font-size: 14px;">
+                                <?php echo date('d M Y', strtotime($dateofjoining ?? $date)); ?>
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Package Box -->
+                <div class="col-6">
+                    <a href="package_buy.php" class="card border-0 shadow-sm p-3 h-100 d-flex flex-row align-items-center justify-content-between text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 16px;">
+                        <div class="d-flex align-items-center min-w-0">
+                            <div class="rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #f0fdf4; color: #16a34a; width: 44px; height: 44px; flex-shrink: 0;">
+                                <i class="zmdi zmdi-trending-up" style="font-size: 20px;"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <span class="d-block text-muted small font-weight-bold" style="font-size: 11px; text-transform: uppercase;">Package</span>
+                                <h6 class="mb-0 font-weight-bold text-truncate" style="color: #0f172a; font-size: 14px;">
+                                    <?php echo (!empty($roipackage) && $roipackage > 0) ? formatCurrency($roipackage, $selectedCurrency) : 'Advance'; ?>
+                                </h6>
+                            </div>
+                        </div>
+                        <i class="zmdi zmdi-chevron-right text-muted ml-1" style="font-size: 18px;"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. Main "User Growth" Glowing Gradient Hero Banner Card -->
+            <div class="card user-growth-hero-card border-0 shadow-lg mb-4" style="background: linear-gradient(135deg, #0284c7 0%, #00b4d8 50%, #009688 100%) !important; border-radius: 24px; color: #ffffff; position: relative; overflow: hidden;">
+                
+                <!-- Decorative Bar Chart Graphic in Background -->
+                <div style="position: absolute; right: 0; bottom: 0; opacity: 0.18; pointer-events: none; padding-right: 15px;">
+                    <svg width="240" height="140" viewBox="0 0 240 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="20" y="90" width="24" height="50" rx="6" fill="white"/>
+                        <rect x="56" y="70" width="24" height="70" rx="6" fill="white"/>
+                        <rect x="92" y="50" width="24" height="90" rx="6" fill="white"/>
+                        <rect x="128" y="30" width="24" height="110" rx="6" fill="white"/>
+                        <rect x="164" y="10" width="24" height="130" rx="6" fill="white"/>
+                        <path d="M10 80 Q 90 40 210 10" stroke="white" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                </div>
+
+                <div class="card-body p-4 p-md-5 position-relative" style="z-index: 2;">
+                    <!-- Card Header Icon + Title -->
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle p-3 mr-3 d-flex align-items-center justify-content-center" style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); width: 50px; height: 50px; flex-shrink: 0;">
+                            <i class="zmdi zmdi-accounts-alt zmdi-hc-2x text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 font-weight-bold text-white" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px;">User Growth</h4>
+                            <span class="small" style="color: rgba(255, 255, 255, 0.85); font-weight: 500;">Total Earnings (All 7 Types)</span>
+                        </div>
+                    </div>
+
+                    <!-- Big Amount Display with Eye Hide/Show Toggle -->
+                    <div class="d-flex align-items-center my-3">
+                        <h1 class="mb-0 font-weight-bold text-white mr-3" id="userGrowthAmountText" style="font-size: 38px; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.5px;">
+                            <?php echo formatCurrency($user_growth_total, $selectedCurrency); ?>
+                        </h1>
+                        <button type="button" class="btn p-0 text-white opacity-80" id="toggleGrowthEyeBtn" onclick="toggleUserGrowthVisibility()" title="Toggle Balance Visibility" style="background: transparent; border: none; outline: none;">
+                            <i class="zmdi zmdi-eye zmdi-hc-lg" id="growthEyeIcon" style="font-size: 22px;"></i>
+                        </button>
+                    </div>
+
+                    <!-- Bottom Row: Percentage Pill & View Details Action -->
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4">
+                        <div class="d-flex align-items-center">
+                            <span class="badge mr-2" style="background: #22c55e; color: #ffffff; font-size: 13px; font-weight: 700; border-radius: 100px; padding: 6px 14px; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);">
+                                <i class="zmdi zmdi-trending-up mr-1"></i> +12.5%
+                            </span>
+                            <span class="small" style="color: rgba(255, 255, 255, 0.8); font-weight: 500;">vs last month</span>
+                        </div>
+
+                        <a href="user_growth.php" class="btn text-white font-weight-bold d-inline-flex align-items-center" style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 100px; padding: 8px 22px; font-size: 13.5px; transition: all 0.2s; text-decoration: none;">
+                            View Details <i class="zmdi zmdi-arrow-right ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            let isGrowthVisible = true;
+            function toggleUserGrowthVisibility() {
+                const textEl = document.getElementById('userGrowthAmountText');
+                const iconEl = document.getElementById('growthEyeIcon');
+                const fullAmount = "<?php echo formatCurrency($user_growth_total, $selectedCurrency); ?>";
+                if (isGrowthVisible) {
+                    textEl.textContent = "<?php echo getCurrencySymbol($selectedCurrency); ?> ••••••";
+                    iconEl.className = "zmdi zmdi-eye-off zmdi-hc-lg";
+                    isGrowthVisible = false;
+                } else {
+                    textEl.textContent = fullAmount;
+                    iconEl.className = "zmdi zmdi-eye zmdi-hc-lg";
+                    isGrowthVisible = true;
+                }
+            }
+            </script>
+
+            <!-- 3. Quick Wallet Access Cards (3 Horizontal Cards with responsive layout) -->
+            <div class="row g-2 mb-4">
+                <!-- Card 1: Main Wallet -->
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                    <a href="my_investments.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center min-w-0">
+                                <div class="rounded-xl p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #eff6ff; color: #0284c7; width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;">
+                                    <i class="zmdi zmdi-balance-wallet zmdi-hc-lg" style="font-size: 20px;"></i>
+                                </div>
+                                <div class="text-truncate">
+                                    <span class="d-block text-muted small font-weight-bold text-truncate" style="font-size: 11.5px;">Main Wallet</span>
+                                    <h5 class="mb-0 font-weight-bold text-truncate" style="color: #0f172a; font-size: 15px;">
+                                        <?php echo formatCurrency($useramount, $selectedCurrency); ?>
+                                    </h5>
+                                </div>
+                            </div>
+                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-2" style="font-size: 18px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Card 2: Active Investment -->
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                    <a href="package_buy.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center min-w-0">
+                                <div class="rounded-xl p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #f0fdf4; color: #16a34a; width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;">
+                                    <i class="zmdi zmdi-layers zmdi-hc-lg" style="font-size: 20px;"></i>
+                                </div>
+                                <div class="text-truncate">
+                                    <span class="d-block text-muted small font-weight-bold text-truncate" style="font-size: 11.5px;">Active Investment</span>
+                                    <h5 class="mb-0 font-weight-bold text-truncate" style="color: #0f172a; font-size: 15px;">
+                                        <?php echo formatCurrency($roipackage, $selectedCurrency); ?>
+                                    </h5>
+                                </div>
+                            </div>
+                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-2" style="font-size: 18px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Card 3: Total Withdrawal -->
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                    <a href="withdraw-history.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center min-w-0">
+                                <div class="rounded-xl p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #eff6ff; color: #0284c7; width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;">
+                                    <i class="zmdi zmdi-swap-vertical zmdi-hc-lg" style="font-size: 20px;"></i>
+                                </div>
+                                <div class="text-truncate">
+                                    <span class="d-block text-muted small font-weight-bold text-truncate" style="font-size: 11.5px;">Total Withdrawal</span>
+                                    <h5 class="mb-0 font-weight-bold text-truncate" style="color: #0f172a; font-size: 15px;">
+                                        <?php echo formatCurrency($withdrawaltotal, $selectedCurrency); ?>
+                                    </h5>
+                                </div>
+                            </div>
+                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-2" style="font-size: 18px;"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 4. "Income" Section Header -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="mb-0 font-weight-bold d-flex align-items-center" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
+                    <i class="zmdi zmdi-chart mr-2 text-primary"></i> Income
+                </h4>
+                <div class="dropdown">
+                    <button class="btn btn-sm bg-white border text-muted font-weight-bold rounded-pill px-3 py-1 shadow-sm dropdown-toggle" type="button">
+                        <i class="zmdi zmdi-calendar mr-1 text-primary"></i> This Month
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. Grid of 7 Income Stream Cards -->
             <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card border-0" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(22, 163, 74, 0.12) 100%), #ffffff; border-radius: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid rgba(2, 132, 199, 0.2) !important;">
-                        <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="welcome-avatar-glow" style="width: 58px; height: 58px; border-radius: 50%; overflow: hidden; border: 2.5px solid #0284c7; box-shadow: 0 8px 20px rgba(2, 132, 199, 0.35); flex-shrink: 0;">
-                                    <img src="images/<?php echo !empty($userimage) ? $userimage : 'usera.png'; ?>" alt="<?php echo htmlspecialchars($username); ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                <!-- 1. Profit Income -->
+                <div class="col-6 col-md-4 mb-3">
+                    <a href="profit_income.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="rounded-circle p-2 mr-2 d-flex align-items-center justify-content-center" style="background: #22c55e; color: #ffffff; width: 36px; height: 36px; flex-shrink: 0;">
+                                <i class="zmdi zmdi-trending-up"></i>
+                            </div>
+                            <span class="small font-weight-bold" style="color: #475569; font-size: 12.5px;">Profit Income</span>
+                        </div>
+                        <h4 class="font-weight-bold mb-1" style="color: #0f172a; font-size: 17px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <?php echo formatCurrency($profit_income_wallet, $selectedCurrency); ?>
+                        </h4>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                            <span class="small font-weight-bold" style="color: #16a34a; font-size: 11.5px;">+8.2%</span>
+                            <i class="zmdi zmdi-chevron-right text-muted" style="font-size: 14px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 2. Profit Sharing -->
+                <div class="col-6 col-md-4 mb-3">
+                    <a href="profit_sharing_income.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="rounded-circle p-2 mr-2 d-flex align-items-center justify-content-center" style="background: #0284c7; color: #ffffff; width: 36px; height: 36px; flex-shrink: 0;">
+                                <i class="zmdi zmdi-accounts-alt"></i>
+                            </div>
+                            <span class="small font-weight-bold" style="color: #475569; font-size: 12.5px;">Profit Sharing</span>
+                        </div>
+                        <h4 class="font-weight-bold mb-1" style="color: #0f172a; font-size: 17px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <?php echo formatCurrency($profit_sharing_income, $selectedCurrency); ?>
+                        </h4>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                            <span class="small font-weight-bold" style="color: #16a34a; font-size: 11.5px;">+6.7%</span>
+                            <i class="zmdi zmdi-chevron-right text-muted" style="font-size: 14px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 3. Direct Bonus -->
+                <div class="col-6 col-md-4 mb-3">
+                    <a href="direct_bonus.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="rounded-circle p-2 mr-2 d-flex align-items-center justify-content-center" style="background: #9333ea; color: #ffffff; width: 36px; height: 36px; flex-shrink: 0;">
+                                <i class="zmdi zmdi-account-add"></i>
+                            </div>
+                            <span class="small font-weight-bold" style="color: #475569; font-size: 12.5px;">Direct Bonus</span>
+                        </div>
+                        <h4 class="font-weight-bold mb-1" style="color: #0f172a; font-size: 17px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <?php echo formatCurrency($direct_bonus, $selectedCurrency); ?>
+                        </h4>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                            <span class="small font-weight-bold" style="color: #16a34a; font-size: 11.5px;">+5.4%</span>
+                            <i class="zmdi zmdi-chevron-right text-muted" style="font-size: 14px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 4. Mentor Income -->
+                <div class="col-6 col-md-4 mb-3">
+                    <a href="mentor_income.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="rounded-circle p-2 mr-2 d-flex align-items-center justify-content-center" style="background: #f59e0b; color: #ffffff; width: 36px; height: 36px; flex-shrink: 0;">
+                                <i class="zmdi zmdi-group"></i>
+                            </div>
+                            <span class="small font-weight-bold" style="color: #475569; font-size: 12.5px;">Mentor Income</span>
+                        </div>
+                        <h4 class="font-weight-bold mb-1" style="color: #0f172a; font-size: 17px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <?php echo formatCurrency($generation_income, $selectedCurrency); ?>
+                        </h4>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                            <span class="small font-weight-bold" style="color: #16a34a; font-size: 11.5px;">+4.9%</span>
+                            <i class="zmdi zmdi-chevron-right text-muted" style="font-size: 14px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 5. Rank Reward -->
+                <div class="col-6 col-md-4 mb-3">
+                    <a href="reward_income.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="rounded-circle p-2 mr-2 d-flex align-items-center justify-content-center" style="background: #e11d48; color: #ffffff; width: 36px; height: 36px; flex-shrink: 0;">
+                                <i class="zmdi zmdi-card-giftcard"></i>
+                            </div>
+                            <span class="small font-weight-bold" style="color: #475569; font-size: 12.5px;">Rank Reward</span>
+                        </div>
+                        <h4 class="font-weight-bold mb-1" style="color: #0f172a; font-size: 17px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <?php echo formatCurrency($reward_income, $selectedCurrency); ?>
+                        </h4>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                            <span class="small font-weight-bold" style="color: #16a34a; font-size: 11.5px;">+3.8%</span>
+                            <i class="zmdi zmdi-chevron-right text-muted" style="font-size: 14px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 6. VIP CLUB Income -->
+                <div class="col-6 col-md-4 mb-3">
+                    <a href="vip-club.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="rounded-circle p-2 mr-2 d-flex align-items-center justify-content-center" style="background: #6366f1; color: #ffffff; width: 36px; height: 36px; flex-shrink: 0;">
+                                <i class="zmdi zmdi-star"></i>
+                            </div>
+                            <span class="small font-weight-bold" style="color: #475569; font-size: 12.5px;">VIP CLUB Income</span>
+                        </div>
+                        <h4 class="font-weight-bold mb-1" style="color: #0f172a; font-size: 17px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <?php echo formatCurrency($ranking_income, $selectedCurrency); ?>
+                        </h4>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                            <span class="small font-weight-bold" style="color: #16a34a; font-size: 11.5px;">+2.6%</span>
+                            <i class="zmdi zmdi-chevron-right text-muted" style="font-size: 14px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 7. Company Turnover Income (Full width card) -->
+                <div class="col-12 mb-3">
+                    <a href="company_turnover_income.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #0d9488; color: #ffffff; width: 42px; height: 42px; flex-shrink: 0;">
+                                    <i class="zmdi zmdi-balance"></i>
                                 </div>
                                 <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="badge" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-size: 11px; font-weight: 700; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">ACCOUNT ACTIVE</span>
-                                        <span style="font-size: 12px; color: #64748b; font-weight: 600;">ID: <?php echo $hmpre.$userid; ?></span>
-                                    </div>
-                                    <h4 class="mb-0" style="font-size: 22px; font-weight: 800; color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
-                                        Welcome to the World of Ananta, <span style="background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><?php echo htmlspecialchars($username); ?></span>! ✨
+                                    <span class="small font-weight-bold d-block" style="color: #475569; font-size: 13px;">Company Turnover Income</span>
+                                    <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-size: 18px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                                        <?php echo formatCurrency(($leadership_income_income ?? 0), $selectedCurrency); ?>
+                                        <span class="small font-weight-bold ml-2" style="color: #16a34a; font-size: 12px;">+1.9%</span>
                                     </h4>
-                                    <p class="mb-0 text-muted" style="font-size: 13.5px; margin-top: 3px;">
-                                        Empowering your financial vision with seamless ecosystem tools.
-                                    </p>
                                 </div>
                             </div>
-                            <?php if ($idactive != 1) { ?>
-                            <div>
-                                <a href="activatefund.php" class="btn" style="background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); color: #fff; font-weight: 700; border-radius: 12px; padding: 10px 22px; box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);">
-                                    <i class="fa fa-bolt me-1"></i> Activate Account Now
-                                </a>
-                            </div>
-                            <?php } ?>
+                            <i class="zmdi zmdi-chevron-right text-muted"></i>
                         </div>
-            </div>
-                <section
-  style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 8px 0;"
->
-
-  
-  <div class="slider">
-    <?php
-   
-
-    // Fetch only active banners (status = 1)
-    $stmt = $pdo->prepare("SELECT img FROM tbl_banner WHERE status = 1 ORDER BY id DESC");
-    $stmt->execute();
-    $banners = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $isFirst = true;
-
-    foreach ($banners as $banner) {
-        ?>
-        <img src="<?php echo $banner['img']; ?>" class="slide <?php echo $isFirst ? 'active' : ''; ?>">
-        <?php
-        $isFirst = false; // only first image gets "active"
-    }
-    ?>
-</div>
-
-
-</section>
-
-        <!--Start Dashboard Content-->  
-
-        <!-- Unlock Access & Investment Eligibility Status Banner -->
-        <div class="row mb-3">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm p-3" style="border-radius: 16px; background: #ffffff;">
-                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                        <div class="d-flex align-items-center">
-                            <i class="zmdi zmdi-shield-check text-primary mr-3" style="font-size: 32px;"></i>
-                            <div>
-                                <h6 class="font-weight-bold mb-0 text-dark">Account Eligibility Status ($1 = ₹90)</h6>
-                                <small class="text-muted">Requires Unlock Access ($11 / ₹990) & Minimum Investment ($145 / ₹13,050)</small>
-                            </div>
-                        </div>
-                        <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
-                            <span class="badge px-3 py-2 font-weight-bold <?php echo ($idactive == 1) ? 'badge-success' : 'badge-danger'; ?>" style="font-size: 13px;">
-                                <i class="fa <?php echo ($idactive == 1) ? 'fa-check-circle' : 'fa-times-circle'; ?> mr-1"></i> Unlock Access ($11): <?php echo ($idactive == 1) ? 'ACTIVE' : 'INACTIVE'; ?>
-                            </span>
-                            <span class="badge px-3 py-2 font-weight-bold <?php echo ((float)$roipackage >= 13050) ? 'badge-success' : 'badge-warning'; ?>" style="font-size: 13px;">
-                                <i class="fa <?php echo ((float)$roipackage >= 13050) ? 'fa-check-circle' : 'fa-clock-o'; ?> mr-1"></i> Investment ($145): <?php echo ((float)$roipackage >= 13050) ? '₹'.number_format((float)$roipackage, 2).' ACTIVE' : 'INACTIVE'; ?>
-                            </span>
-                            <span class="badge px-3 py-2 font-weight-bold <?php echo ($idactive == 1 && (float)$roipackage >= 13050) ? 'badge-primary' : 'badge-secondary'; ?>" style="font-size: 13px;">
-                                <i class="fa fa-star mr-1"></i> Income Eligibility: <?php echo ($idactive == 1 && (float)$roipackage >= 13050) ? 'ELIGIBLE' : 'NOT ELIGIBLE'; ?>
-                            </span>
-                        </div>
-                    </div>
+                    </a>
                 </div>
             </div>
-        </div>
-
-        <div class="row mt-2">
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%), #ffffff; border: 1.5px solid rgba(99, 102, 241, 0.3) !important;">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(99, 102, 241, 0.15); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/income.png" width="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">User Growth</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #4f46e5; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$user_growth_total, 2); ?></h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(2, 132, 199, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/wallet.gif" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Wallet Balance</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$useramount;?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(22, 163, 74, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/withdrawal.png" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Total Withdrawal</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$withdrawaltotal;?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(2, 132, 199, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/fund-wallet.gif" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Fund Wallet</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$pin_wallet; ?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(34, 197, 94, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/income.png" width="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Profit Income Wallet</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$profit_income_wallet, 2); ?></h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(234, 179, 8, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/fund-wallet.gif" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Pending Gen Income</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".round((double)$pending_geninc, 2); ?></h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(2, 132, 199, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/income.png" width="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Generation Income</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$generation_income; ?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(22, 163, 74, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/income.png" width="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Direct Income</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$directincome;?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(168, 85, 247, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/direct-bonus.gif" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Direct Bonus 10M</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$direct_bonus;?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(2, 132, 199, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/income.png" width="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Profit Sharing Wallet</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$profit_sharing_wallet, 2); ?></h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(234, 88, 12, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/direct-bonus.gif" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Direct Bonus Wallet</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #ea580c; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$direct_bonus_wallet, 2); ?></h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(22, 163, 74, 0.08) 100%), #ffffff; border: 1.5px solid rgba(2, 132, 199, 0.25) !important;">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(16, 185, 129, 0.15); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/income.png" width="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Total Income</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".number_format((float)$total_income, 2); ?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(22, 163, 74, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/income.png" width="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Ranking Income</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$ranking_income;?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(249, 115, 22, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/leadership.gif" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Leadership Bonus</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$leadership_income_income;?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(2, 132, 199, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/ranking.png" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">My Rank</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo $rank;?></h4>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-6 col-lg-3 mb-4">
-                <div class="ananta-fintech-card p-4 d-flex align-items-center">
-                    <div class="wallet-icon d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px; background: rgba(22, 163, 74, 0.1); border-radius: 16px; flex-shrink: 0;">
-                        <img src="images/reward-income.gif" width="30" height="30">
-                    </div>
-                    <div>
-                        <span class="text-muted small font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px;">Rank & Rewards</span>
-                        <h4 class="font-weight-bold mb-0" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;"><?php echo "$hmcurrency ".$reward_income;?></h4>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- News Ticker Card -->
         

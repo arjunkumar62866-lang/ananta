@@ -300,6 +300,18 @@ table.ananta-custom-table tbody td {
 
         <div class="content-wrapper">
             <div class="container-fluid">
+                <!-- Breadcrumb Bar -->
+                <div class="mb-3">
+                    <nav aria-label="breadcrumb">
+                        <div style="display: inline-flex; flex-direction: row; align-items: center; gap: 8px; padding: 6px 14px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13.5px; font-weight: 600; white-space: nowrap;">
+                            <a href="index.php" style="color: #9333ea; text-decoration: none; font-weight: 600;">Dashboard</a>
+                            <span style="color: #94a3b8; font-weight: 400;">/</span>
+                            <span style="color: #475569; font-weight: 600;">User Growth</span>
+                            <span style="color: #94a3b8; font-weight: 400;">/</span>
+                            <span style="color: #0f172a; font-weight: 700;">3. Direct Bonus</span>
+                        </div>
+                    </nav>
+                </div>
 
                 <!-- Header Welcome Banner -->
                 <div class="row mb-4">

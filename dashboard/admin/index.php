@@ -130,6 +130,12 @@ $total_active = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
 
 $stmt = $pdo->query("SELECT COUNT(*) AS active FROM user WHERE status='1' AND active='0'");
 $total_pending = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
+
+// Company Revenue from $11 Unlock Access
+$unlockAccessRev = getAdminActivationRevenueTotal($pdo);
+$unlock_access_usd = $unlockAccessRev['total_usd'];
+$unlock_access_inr = $unlockAccessRev['total_inr'];
+$unlock_access_count = $unlockAccessRev['count'];
 ?>
 
 <body class="ananta-admin-dashboard">
@@ -210,6 +216,18 @@ $total_pending = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
                     <div class="ml-3">
                         <h6 class="wallet-title mb-1">Total Business</h6>
                         <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency ".getalluserpackage($pdo);?></h5>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="wallet-box d-flex align-items-center px-3 py-3">
+                    <div class="wallet-icon d-flex align-items-center justify-content-center" style="background: rgba(2, 132, 199, 0.1); border-color: rgba(2, 132, 199, 0.25);">
+                        <i class="fa fa-shield" style="font-size:22px; color:#0284c7;"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h6 class="wallet-title mb-1">$11 Unlock Revenue</h6>
+                        <h5 class="wallet-amount mb-1"><?php echo "$hmcurrency " . number_format($unlock_access_usd, 2); ?></h5>
                     </div>
                 </div>
             </div>
@@ -359,18 +377,32 @@ $total_pending = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
         </div>
 
 
-        <div class="row">
+        <!-- Quick Payout Action Control Bar -->
+        <div class="row mb-4">
             <div class="col-12">
-                <div class="card">
-                    <div class="card mb-3 text-white colorwhite p-3">
-        
-                        <div class="mt-3 d-flex flex-wrap gap-2">
-                            <a href="manual-roi-one-pay.php" class="btn btn-primary mr-2 mb-2">Pay Generation Income</a>
-                            <a href="roi-two-pay.php" class="btn btn-success mr-2 mb-2">Pay Direct Bonus</a>
-                            <a href="roi-three-pay.php" class="btn btn-primary mr-2 mb-2">Pay Ranking Income</a>
-                            <a href="royalty-user-pay.php" class="btn btn-success mr-2 mb-2">Pay Leadership Bonus</a>
+                <div class="card border-0" style="background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0 !important; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                            <div>
+                                <h5 class="mb-0 font-weight-bold" style="color: #0f172a; font-size: 16px;">Quick Financial Operations</h5>
+                                <p class="mb-0 text-muted small">Execute income settlements and system payouts</p>
+                            </div>
+                            <span class="badge" style="background: rgba(22, 163, 74, 0.1); color: #16a34a; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 100px;">SYSTEM CONTROL</span>
                         </div>
-        
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="generation-income.php" class="btn text-white font-weight-bold px-3 py-2 mr-2 mb-2" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 12px; font-size: 13.5px; border: none; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);">
+                                <i class="fa fa-sitemap mr-1"></i> Pay Generation Income
+                            </a>
+                            <a href="direct-bonus.php" class="btn text-white font-weight-bold px-3 py-2 mr-2 mb-2" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border-radius: 12px; font-size: 13.5px; border: none; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">
+                                <i class="fa fa-gift mr-1"></i> Pay Direct Bonus
+                            </a>
+                            <a href="ranking-income.php" class="btn text-white font-weight-bold px-3 py-2 mr-2 mb-2" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 12px; font-size: 13.5px; border: none; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);">
+                                <i class="fa fa-line-chart mr-1"></i> Pay Ranking Income
+                            </a>
+                            <a href="royalty-user-pay.php" class="btn text-white font-weight-bold px-3 py-2 mr-2 mb-2" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-radius: 12px; font-size: 13.5px; border: none; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+                                <i class="fa fa-trophy mr-1"></i> Pay Leadership Bonus
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

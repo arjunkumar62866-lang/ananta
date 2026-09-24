@@ -27,11 +27,17 @@ foreach ($users as $u) {
     $user_rank = $u['rank'];
     $ranking_percentage = $u['ranking_percentage'];
     
-    $query = $pdo->prepare("SELECT monthly_business from tbl_rewardlevel WHERE rank = :rank");
-    $query->execute(['rank'=>$user_rank]);
+    if (empty($user_rank) || $user_rank == 'NA' || $user_rank == '0') {
+        continue;
+    }
+
+    $query = $pdo->prepare("SELECT monthly_business FROM tbl_rewardlevel WHERE `rank` = :rank");
+    $query->execute([':rank' => $user_rank]);
     $requiredPV1 = $query->fetch(PDO::FETCH_ASSOC);
-    $requiredPV = $requiredPV1['monthly_business'];
-    // echo($requiredPV);
+    $requiredPV = isset($requiredPV1['monthly_business']) ? (float)$requiredPV1['monthly_business'] : 0;
+    if ($requiredPV <= 0) {
+        continue;
+    }
 
     // Calculate LEFT & RIGHT business dynamically
     $leftpv  = gettotallevelbusiness_left($user_id);

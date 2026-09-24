@@ -22,6 +22,10 @@ if (isset($_GET['uid'])) {
     $userid = $_SESSION['userid'];  
 }
 
+$selectedCurrency = getUserCurrency();
+$_SESSION['currency'] = $selectedCurrency;
+$_SESSION['selected_currency'] = $selectedCurrency;
+
 // error_reporting(E_ALL);
 // ini_set('display_errors', 1);
 
@@ -138,6 +142,7 @@ $news = $newsdata['news'];
   <!-- PWA Meta Tags & Manifest -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0a2540">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="<?php echo $hmtitle;?>">
@@ -148,9 +153,136 @@ $news = $newsdata['news'];
   <!-- Custom Style-->
   <link href="assets/css/app-style.css" rel="stylesheet" />
   <link href="/assets/css/app-pwa.css" rel="stylesheet" />
-  <link href="/assets/css/app-modern.css" rel="stylesheet" />
+  <style>
+    /* Global High-Contrast Non-Overlapping Breadcrumb Overrides */
+    ol.breadcrumb, ul.breadcrumb, .breadcrumb {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+      gap: 6px !important;
+      padding: 10px 16px !important;
+      margin: 0 0 16px 0 !important;
+      background-color: #f1f5f9 !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      list-style: none !important;
+    }
+    .breadcrumb-item {
+      display: inline-flex !important;
+      align-items: center !important;
+      float: none !important;
+      position: relative !important;
+      font-size: 13.5px !important;
+      font-weight: 600 !important;
+      color: #475569 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      white-space: normal !important;
+    }
+    .breadcrumb-item a {
+      display: inline-block !important;
+      color: #9333ea !important;
+      font-weight: 600 !important;
+      text-decoration: none !important;
+      position: relative !important;
+    }
+    .breadcrumb-item a:hover {
+      color: #7e22ce !important;
+      text-decoration: underline !important;
+    }
+    .breadcrumb-item.active {
+      display: inline-block !important;
+      color: #0f172a !important;
+      font-weight: 700 !important;
+      position: relative !important;
+    }
+    .breadcrumb-item + .breadcrumb-item {
+      padding-left: 0 !important;
+      margin-left: 0 !important;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+      display: inline-block !important;
+      float: none !important;
+      position: relative !important;
+      padding-right: 6px !important;
+      padding-left: 2px !important;
+      color: #94a3b8 !important;
+      content: "/" !important;
+    }
 
+    /* Global Nav-Tabs & Nav-Pills Fix for Text Overlap */
+    ul.nav-tabs, ul.nav-pills {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      padding-left: 0 !important;
+      list-style: none !important;
+    }
+    ul.nav-tabs li.nav-item, ul.nav-pills li.nav-item {
+      display: block !important;
+      float: none !important;
+      position: relative !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: auto !important;
+    }
+    ul.nav-tabs li.nav-item a.nav-link, ul.nav-pills li.nav-item a.nav-link {
+      display: inline-block !important;
+      float: none !important;
+      position: relative !important;
+      margin: 0 !important;
+      white-space: nowrap !important;
+    }
 
+    /* Global High-Contrast Inputs & Placeholders */
+    .form-control,
+    input.form-control,
+    select.form-control,
+    textarea.form-control,
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    select {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border: 1.5px solid #cbd5e1 !important;
+      border-radius: 10px !important;
+      padding: 10px 14px !important;
+      font-size: 14px !important;
+      font-weight: 600 !important;
+      outline: none !important;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .form-control:focus,
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    select:focus {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #9333ea !important;
+      box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.15) !important;
+    }
+
+    .form-control::placeholder,
+    input::placeholder,
+    textarea::placeholder {
+      color: #64748b !important;
+      font-weight: 500 !important;
+      opacity: 1 !important;
+    }
+
+    label, .form-label {
+      color: #0f172a !important;
+      font-weight: 600 !important;
+      font-size: 13.5px !important;
+      margin-bottom: 6px !important;
+    }
+  </style>
 </head>
 
 <!--Start sidebar-wrapper-->
@@ -169,157 +301,100 @@ $news = $newsdata['news'];
       </a>
     </li>
 
-    <!-- Profile Tools with Submenu -->
-    <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-edit"></i> Profile Tools</span>
-        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
-      <ul class="submenu">
-        <li><a href="profile.php"><i class="zmdi zmdi-circle-o"></i> Update Profile</a></li>
-        <li><a href="kyc.php"><i class="zmdi zmdi-circle-o"></i> Update KYC</a></li>
-        <li><a href="update-password.php"><i class="zmdi zmdi-circle-o"></i> Change Password</a></li>
-        <!--<li><a href="#"><i class="zmdi zmdi-circle-o"></i> Wallet Address</a></li>-->
-        <li><a href="profile.php"><i class="zmdi zmdi-circle-o"></i> View Profile</a></li>
-        <!--<li><a href="#"><i class="zmdi zmdi-circle-o"></i> Welcome Letter</a></li>-->
-      </ul>
-    </li>
-    
     <li>
-      <a href="without_guarantee.php">
-        <i class="zmdi zmdi-alert-circle-o"></i> <span>Activate Without Guarantee Program</span>
+      <a href="activate_account.php">
+        <i class="zmdi zmdi-shield-check"></i> <span>Activate Account</span>
       </a>
     </li>
-      <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi zmdi-accounts"></i> My Team</span>
-        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+
+    <li>
+      <a href="direct_plan.php">
+        <i class="zmdi zmdi-flash"></i> <span>Direct Plan</span>
       </a>
-      <ul class="submenu">
-        <li><a href="left_team.php"><i class="zmdi zmdi-circle-o"></i> Left Team </a></li>
-        <li><a href="right_team.php"><i class="zmdi zmdi-circle-o"></i> Right Team </a></li>
-        <!--<li><a href="tree.php"><i class="zmdi zmdi-circle-o"></i> Tree View </a></li>-->
-      </ul>
     </li>
-    
+
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-trending-up"></i><span> Incomes</span></span>
+        <span><i class="zmdi zmdi-accounts"></i><span> My Team</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="generation_income.php"><i class="zmdi zmdi-circle-o"></i> Generation Income</a></li>
-        <li><a href="direct_income.php"><i class="zmdi zmdi-circle-o"></i> Direct Income</a></li>
-        <!--<li><a href="kyc.php"><i class="zmdi zmdi-circle-o"></i> Daily Profit Sharing Income</a></li>-->
-        <li><a href="direct_bonus.php"><i class="zmdi zmdi-circle-o"></i> Direct Bonus 10M</a></li>
-        <li><a href="profit_sharing_income.php"><i class="zmdi zmdi-circle-o"></i> Profit Sharing Income</a></li>
-        <li><a href="ranking_income.php"><i class="zmdi zmdi-circle-o"></i> Ranking Income</a></li>
-        <li><a href="leadership_income.php"><i class="zmdi zmdi-circle-o"></i> Leadership Bonus</a></li>
-        <li><a href="reward_income.php"><i class="zmdi zmdi-circle-o"></i> Rank and Rewards</a></li>
-        <!--<li><a href="#"><i class="zmdi zmdi-circle-o"></i> Reward Income</a></li>-->
+        <li><a href="my_direct.php"><i class="zmdi zmdi-circle-o"></i> My Direct</a></li>
+        <li><a href="left_team.php"><i class="zmdi zmdi-circle-o"></i> Left Team</a></li>
+        <li><a href="right_team.php"><i class="zmdi zmdi-circle-o"></i> Right Team</a></li>
       </ul>
     </li>
-    
-    
-    
-<!--    <li class="has-sub">-->
-<!--    <a href="javascript:void(0)" class="menu-toggle">-->
-<!--        <span><i class="zmdi zmdi-shopping-cart"></i><span>Our Shopping Portal</span></span>-->
-<!--        <i class="zmdi zmdi-chevron-down arrow-icon"></i>-->
-<!--    </a>-->
-<!--    <ul class="sidebar-submenu">-->
-<!--        
-        
-<!--            $sel = "SELECT * FROM tbl_category WHERE status = :status ORDER BY id ASC";-->
-<!--            $stmt = $pdo->prepare($sel);-->
-<!--            $stmt->execute([':status' => 1]);-->
-<!--            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);-->
 
-<!--            if ($categories) {-->
-<!--                foreach ($categories as $rowp) {-->
-<!--                    ?>-->
-<!--                    <li>-->
-<!--                        <a target="_blank" href="all-product.php?slug=<?php echo htmlspecialchars($rowp['slug']); ?>">-->
-<!--                            <i class="fa fa-circle-o"></i> <?php echo htmlspecialchars($rowp['name']); ?>-->
-<!--                        </a>-->
-<!--                    </li>-->
-<!--                    
-<!--                }-->
-<!--            }-->
-        
-<!--        ?>-->
-<!--    </ul>-->
-<!--</li>-->
-
-<!--<li class="has-sub">-->
-<!--      <a href="javascript:void(0)" class="menu-toggle">-->
-<!--        <span><i class="zmdi zmdi-shopping-basket"></i><span> Order form</span></span>-->
-<!--        <i class="zmdi zmdi-chevron-down arrow-icon"></i>-->
-<!--      </a>-->
-<!--      <ul class="submenu">-->
-<!--        <li><a href="all-order.php"><i class="zmdi zmdi-circle-o"></i> Orders </a></li>-->
-       
-<!--      </ul>-->
-<!--    </li>-->
-
-    
-    
-    <!--<li>-->
-    <!--  <a href="#">-->
-    <!--    <i class="zmdi zmdi-accounts"></i> <span>My Team</span>-->
-    <!--  </a>-->
-    <!--</li>-->
-    
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-balance-wallet"></i><span> Fund Deposit</span></span>
+        <span><i class="zmdi zmdi-swap"></i><span> P2P</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="fund-request.php"><i class="zmdi zmdi-circle-o"></i> Request Fund</a></li>
-        <li><a href="request-history.php"><i class="zmdi zmdi-circle-o"></i> Request Summary</a></li>
+        <li><a href="p2p.php?tab=transfer"><i class="zmdi zmdi-circle-o"></i> Transfer History</a></li>
+        <li><a href="p2p.php?tab=received"><i class="zmdi zmdi-circle-o"></i> Received Report</a></li>
       </ul>
     </li>
-    
+
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-trending-up"></i><span> User Growth</span></span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="profit_income.php"><i class="zmdi zmdi-circle-o"></i> 1. Profit Income</a></li>
+        <li><a href="profit_sharing_income.php"><i class="zmdi zmdi-circle-o"></i> 2. Profit Sharing Income</a></li>
+        <li><a href="direct_bonus.php"><i class="zmdi zmdi-circle-o"></i> 3. Direct Bonus</a></li>
+        <li><a href="mentor_income.php"><i class="zmdi zmdi-circle-o"></i> 4. Mentor Income</a></li>
+        <li><a href="reward_income.php"><i class="zmdi zmdi-circle-o"></i> 5. Rank Reward</a></li>
+        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> 6. VIP Club Income</a></li>
+        <li><a href="company_turnover_income.php"><i class="zmdi zmdi-circle-o"></i> 7. Company Turnover Income</a></li>
+      </ul>
+    </li>
+
+    <li>
+      <a href="fund_statement.php">
+        <i class="zmdi zmdi-assignment"></i> <span>Fund Statement</span>
+      </a>
+    </li>
+
+    <li>
+      <a href="business_plan.php">
+        <i class="zmdi zmdi-file-text"></i> <span>Business Plan</span>
+      </a>
+    </li>
+
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-settings"></i><span> Settings</span></span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="settings.php"><i class="zmdi zmdi-circle-o"></i> BEP20 Address</a></li>
+        <li><a href="kyc.php"><i class="zmdi zmdi-circle-o"></i> Bank KYC</a></li>
+        <li><a href="profile.php"><i class="zmdi zmdi-circle-o"></i> View Profile</a></li>
+      </ul>
+    </li>
+
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
         <span><i class="zmdi zmdi-money"></i><span> Withdrawal</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="withdraw.php"><i class="zmdi zmdi-circle-o"></i> Wallet Withdrawal</a></li>
-        <li><a href="nonworking1-withdraw1.php"><i class="zmdi zmdi-circle-o"></i> Investment Withdrawal</a></li>
+        <li><a href="withdraw.php"><i class="zmdi zmdi-circle-o"></i> INR & BEP20 Withdrawal</a></li>
         <li><a href="withdraw-history.php"><i class="zmdi zmdi-circle-o"></i> Withdraw History</a></li>
       </ul>
     </li>
-    <li>
-      <a href="user-activatebyfund.php">
-        <i class="zmdi zmdi-account-add"></i> <span>Activate Other User ID</span>
-      </a>
-    </li>
 
-   <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-account-box"></i><span> My Account</span></span>
-        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
-      <ul class="submenu">
-        <!--<li><a href="user-activatebyfund.php"><i class="zmdi zmdi-circle-o"></i> Activate Other User ID</a></li>-->
-        <li><a href="package_buy.php"><i class="zmdi zmdi-circle-o"></i> Investment</a></li>
-        <li><a href="my_investments.php"><i class="zmdi zmdi-circle-o"></i> My Investments</a></li>
-      </ul>
-    </li>
-    
-    
-   <li class="has-sub">
+    <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
         <span><i class="zmdi zmdi-help"></i><span> Help & Support</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="enquery.php"><i class="zmdi zmdi-circle-o"></i> Send Enquery</a></li>
-        <li><a href="enquery-history.php"><i class="zmdi zmdi-circle-o"></i> Enquery History</a></li>
-        <!--<li><a href="enquery-history.php"><i class="zmdi zmdi-circle-o"></i> Enquery History</a></li>-->
+        <li><a href="enquery.php"><i class="zmdi zmdi-circle-o"></i> Send Query</a></li>
+        <li><a href="enquery-history.php"><i class="zmdi zmdi-circle-o"></i> Query History</a></li>
       </ul>
     </li>
 
@@ -348,9 +423,16 @@ $news = $newsdata['news'];
 /* SUBMENU & SIDEBAR MENU REDESIGN STYLING */
 .sidebar-menu {
     padding: 15px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    list-style: none !important;
+    margin: 0 !important;
 }
 .sidebar-menu > li {
-    margin-bottom: 4px;
+    margin-bottom: 4px !important;
+    display: block !important;
+    width: 100% !important;
+    float: none !important;
 }
 .sidebar-menu > li > a {
     display: flex !important;
@@ -364,6 +446,7 @@ $news = $newsdata['news'];
     text-decoration: none !important;
     transition: all 0.25s ease !important;
     border-left: none !important;
+    width: 100% !important;
 }
 .sidebar-menu > li > a i {
     font-size: 17px !important;
@@ -371,20 +454,32 @@ $news = $newsdata['news'];
     transition: color 0.25s ease;
 }
 .sidebar-menu > li:hover > a,
-.sidebar-menu > li.active > a {
-    background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(22, 163, 74, 0.08) 100%) !important;
-    color: #0284c7 !important;
+.sidebar-menu > li.active > a,
+.sidebar-menu > li.has-sub.active > a {
+    background: rgba(22, 163, 74, 0.1) !important;
+    color: #16a34a !important;
+    border-left: 3px solid #16a34a !important;
 }
 .sidebar-menu > li:hover > a i,
-.sidebar-menu > li.active > a i {
-    color: #0284c7 !important;
+.sidebar-menu > li.active > a i,
+.sidebar-menu > li.has-sub.active > a i,
+.sidebar-menu > li.has-sub.active > a .arrow-icon {
+    color: #16a34a !important;
 }
 .submenu {
     display: none;
-    list-style: none;
-    padding-left: 28px !important;
-    margin-top: 2px;
-    margin-bottom: 6px;
+    list-style: none !important;
+    padding-left: 20px !important;
+    margin-top: 2px !important;
+    margin-bottom: 6px !important;
+    flex-direction: column !important;
+    width: 100% !important;
+}
+.submenu li {
+    display: block !important;
+    width: 100% !important;
+    float: none !important;
+    margin-bottom: 2px !important;
 }
 .submenu li a {
     display: flex !important;
@@ -397,10 +492,13 @@ $news = $newsdata['news'];
     border-radius: 8px !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
+    width: 100% !important;
 }
-.submenu li a:hover {
+.submenu li a:hover,
+.submenu li.active a {
     color: #16a34a !important;
-    background: rgba(22, 163, 74, 0.06) !important;
+    background: rgba(22, 163, 74, 0.1) !important;
+    font-weight: 700 !important;
 }
 .has-sub > .menu-toggle {
     display: flex !important;
@@ -418,8 +516,78 @@ $news = $newsdata['news'];
     color: #0284c7;
 }
 .has-sub.active > .submenu {
-    display: block;
+    display: flex !important;
 }
+
+/* Global Page & Dashboard Layout Styles */
+body, body.ananta-user-dashboard {
+    background-color: #faf9f6 !important;
+    background-image: none !important;
+    color: #0f172a !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+#wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    background-color: #faf9f6 !important;
+}
+
+.content-wrapper {
+    flex: 1 0 auto;
+    background-color: #faf9f6 !important;
+    min-height: calc(100vh - 140px);
+}
+
+.footer {
+    flex-shrink: 0;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #64748b !important;
+    border-top: 1px solid #e2e8f0 !important;
+    font-size: 13.5px;
+    font-weight: 500;
+    margin-top: auto !important;
+    position: relative !important;
+    bottom: 0 !important;
+}
+
+@media (min-width: 992px) {
+    .footer {
+        padding-left: 260px !important;
+    }
+}
+
+/* Card & High-Contrast Text Overrides for White/Cream Background */
+.card:not(.user-growth-hero-card) {
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.04) !important;
+}
+
+.card-header {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.table {
+    color: #0f172a !important;
+}
+
+.table thead th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+
 
 /* ======================================================
    FIXED — Sidebar Responsive + Content Wrapper Offset
@@ -439,79 +607,18 @@ $news = $newsdata['news'];
     border-right: 1px solid #e2e8f0;
 }
 
-/* Desktop View (>= 992px): Fixed left sidebar & offset content */
 @media (min-width: 992px) {
+    #wrapper.toggled #sidebar-wrapper,
     #sidebar-wrapper {
         margin-left: 0 !important;
+        left: 0 !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
+    #wrapper.toggled .content-wrapper,
     .content-wrapper {
         margin-left: 260px !important;
-        padding-top: 100px !important; /* Guaranteed zero topbar overlap */
-        padding-left: 28px !important;
-        padding-right: 28px !important;
-        transition: margin-left 0.3s ease;
-    }
-    .topbar-nav {
-        left: 260px !important;
-        width: calc(100% - 260px) !important;
-        position: fixed !important;
-        top: 0 !important;
-        z-index: 9998 !important;
-    }
-    .topbar-nav .navbar {
-        left: 260px !important;
-        width: calc(100% - 260px) !important;
-    }
-    .toggle-menu {
-        display: none !important; /* Hide hamburger toggle on laptop/desktop */
-    }
-}
-
-/* Mobile & Tablet View (< 992px): Drawer sidebar with toggle & Mobile Header layout */
-@media (max-width: 991px) {
-    #sidebar-wrapper {
-        margin-left: -260px;
-    }
-    #sidebar-wrapper.toggled {
-        margin-left: 0 !important;
-    }
-    .content-wrapper {
-        margin-left: 0 !important;
-        padding-top: 90px !important;
-        padding-left: 15px !important;
-        padding-right: 15px !important;
-    }
-    .topbar-nav {
-        left: 0 !important;
-        width: 100% !important;
-        position: fixed !important;
-        top: 0 !important;
-        z-index: 9998 !important;
-    }
-    .topbar-nav .navbar {
-        left: 0 !important;
-        width: 100% !important;
-        padding: 8px 14px !important;
-    }
-    .toggle-menu {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        height: 42px;
-        background: #f1f5f9;
-        border-radius: 12px;
-        color: #0f172a !important;
-        font-size: 22px !important;
-    }
-    .mobile-header-logo {
-        display: block !important;
-    }
-}
-
-@media (min-width: 992px) {
-    .mobile-header-logo {
-        display: none !important;
     }
 }
 
@@ -526,26 +633,40 @@ $news = $newsdata['news'];
 #sidebar-wrapper::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
-
-/* Ensure navbar stays above sidebar */
-.topbar-nav {
-    position: relative;
-    z-index: 9998;
-}
-.toggle-menu {
-    z-index: 10001;
-    position: relative;
-}
-
 </style>
 
 <script>
-document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
-    item.addEventListener('click', function () {
-        this.parentElement.classList.toggle('active');
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Accordion toggle for submenus
+    document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
+        item.addEventListener('click', function (e) {
+            e.preventDefault();
+            this.parentElement.classList.toggle('active');
+        });
+    });
+
+    // 2. Auto-detect current active page URL & highlight parent/child menu items in green
+    var currentPath = window.location.pathname.split('/').pop() || 'index.php';
+    var currentSearch = window.location.search;
+    var fullUrl = currentPath + currentSearch;
+
+    document.querySelectorAll('#sidebar-wrapper a').forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (!href || href === 'javascript:void(0)') return;
+
+        if (href === fullUrl || href === currentPath) {
+            var li = link.closest('li');
+            if (li) {
+                li.classList.add('active');
+            }
+            // If inside a submenu, expand parent menu and highlight parent link as well
+            var parentSub = link.closest('.has-sub');
+            if (parentSub) {
+                parentSub.classList.add('active');
+            }
+        }
     });
 });
-
 </script>
 
 <!--End sidebar-wrapper-->
@@ -579,6 +700,20 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
             <span></span>
         </button>
 
+        <!-- =================================================
+             MOBILE ONLY — LOGO (BIGGER & CENTER-LEFT)
+        ================================================== -->
+        <a
+            href="index.php"
+            class="ananta-mobile-logo"
+            aria-label="Ananta Home"
+        >
+            <img
+                src="/assets/images/logo.png"
+                alt="Ananta Logo"
+            >
+        </a>
+
 
         <!-- =================================================
              DESKTOP/TABLET NEWS AREA
@@ -605,26 +740,26 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
 
 
         <!-- =================================================
-             MOBILE ONLY — CENTER LOGO
-        ================================================== -->
-        <a
-            href="index.php"
-            class="ananta-mobile-logo"
-            aria-label="Ananta Home"
-        >
-            <img
-                src="/assets/images/logo.png"
-                alt="Ananta Logo"
-            >
-        </a>
-
-
-        <!-- =================================================
              RIGHT SIDE
              DESKTOP = PROFILE
-             MOBILE = PROFILE ONLY
+             MOBILE = CURRENCY TOGGLE + PROFILE
         ================================================== -->
-        <div class="ananta-topbar-right">
+        <div class="ananta-topbar-right" style="display:flex; align-items:center;">
+
+            <!-- =============================================
+                 CURRENCY SELECTOR
+            ============================================== -->
+            <?php $activeCurrency = getUserCurrency(); ?>
+            <div class="ananta-currency-selector mr-2" style="display: inline-flex; align-items: center;">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Currency Selector" style="box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); border-radius: 20px; padding: 2px; background: #ffffff; border: 1.5px solid #cbd5e1; display: inline-flex; align-items: center;">
+                    <a href="set_currency.php?curr=USD" class="btn" style="font-weight: 800; border-radius: 18px 0 0 18px; padding: 4px 10px; font-size: 11px; text-decoration: none; transition: all 0.2s ease; <?php echo ($activeCurrency === 'USD') ? 'background: #16a34a !important; color: #ffffff !important; border: none !important;' : 'background: #ffffff !important; color: #0f172a !important; border: none !important;'; ?>">
+                        $ USD
+                    </a>
+                    <a href="set_currency.php?curr=INR" class="btn" style="font-weight: 800; border-radius: 0 18px 18px 0; padding: 4px 10px; font-size: 11px; text-decoration: none; transition: all 0.2s ease; <?php echo ($activeCurrency === 'INR') ? 'background: #16a34a !important; color: #ffffff !important; border: none !important;' : 'background: #ffffff !important; color: #0f172a !important; border: none !important;'; ?>">
+                        ₹ INR
+                    </a>
+                </div>
+            </div>
 
             <!-- =============================================
                  MOBILE PROFILE CIRCLE
@@ -1094,41 +1229,22 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
 
 
     .ananta-topbar {
-
         position: fixed !important;
-
         top: 0 !important;
-
         left: 0 !important;
-
         right: 0 !important;
-
         width: 100% !important;
-
         height: 68px !important;
-
         padding: 8px 12px !important;
-
         margin: 0 !important;
-
-        display: grid !important;
-
-        grid-template-columns: 1fr auto 1fr !important;
-
+        display: flex !important;
         align-items: center !important;
-
-        justify-content: initial !important;
-
+        justify-content: space-between !important;
         background: rgba(255,255,255,0.94) !important;
-
         backdrop-filter: blur(16px) !important;
-
         -webkit-backdrop-filter: blur(16px) !important;
-
         border-bottom: 1px solid #edf2f7 !important;
-
-        box-shadow:
-            0 4px 18px rgba(15,23,42,0.04) !important;
+        box-shadow: 0 4px 18px rgba(15,23,42,0.04) !important;
     }
 
 
@@ -1137,7 +1253,6 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
     ================================================ */
 
     .ananta-desktop-news {
-
         display: none !important;
     }
 
@@ -1148,44 +1263,23 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
     ================================================ */
 
     .ananta-mobile-menu-btn {
-
         display: flex !important;
-
-        grid-column: 1 !important;
-
-        justify-self: start !important;
-
+        flex-shrink: 0 !important;
         align-items: center !important;
-
         justify-content: center !important;
-
         flex-direction: column !important;
-
         width: 42px !important;
-
         height: 42px !important;
-
         padding: 0 !important;
-
         margin: 0 !important;
-
         border: 1px solid rgba(15,23,42,0.08) !important;
-
         outline: none !important;
-
         border-radius: 50% !important;
-
         background: rgba(241,245,249,0.72) !important;
-
-        box-shadow:
-            0 4px 14px rgba(15,23,42,0.06) !important;
-
+        box-shadow: 0 4px 14px rgba(15,23,42,0.06) !important;
         cursor: pointer !important;
-
         -webkit-appearance: none !important;
-
         appearance: none !important;
-
         z-index: 10005 !important;
     }
 
@@ -1193,120 +1287,75 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
     /* Hamburger lines */
 
     .ananta-mobile-menu-btn span {
-
         display: block !important;
-
         width: 18px !important;
-
         height: 2px !important;
-
         margin: 2.5px 0 !important;
-
         border-radius: 10px !important;
-
         background: #0f172a !important;
-
-        transition:
-            transform 0.25s ease,
-            opacity 0.25s ease !important;
+        transition: transform 0.25s ease, opacity 0.25s ease !important;
     }
 
 
     /* Hamburger active animation */
 
     .ananta-mobile-menu-btn.active span:nth-child(1) {
-
-        transform:
-            translateY(7px)
-            rotate(45deg) !important;
+        transform: translateY(7px) rotate(45deg) !important;
     }
 
 
     .ananta-mobile-menu-btn.active span:nth-child(2) {
-
         opacity: 0 !important;
     }
 
 
     .ananta-mobile-menu-btn.active span:nth-child(3) {
-
-        transform:
-            translateY(-7px)
-            rotate(-45deg) !important;
+        transform: translateY(-7px) rotate(-45deg) !important;
     }
 
 
     /* ================================================
-       CENTER LOGO
-       SEPARATE ROUND BUTTON
+       CENTER LOGO (BALANCED BETWEEN HAMBURGER & USD/INR)
     ================================================ */
 
     .ananta-mobile-logo {
-
         display: flex !important;
-
-        grid-column: 2 !important;
-
-        justify-self: center !important;
-
         align-items: center !important;
-
         justify-content: center !important;
-
-        width: 48px !important;
-
-        height: 48px !important;
-
-        padding: 6px !important;
-
-        margin: 0 !important;
-
-        border-radius: 50% !important;
-
-        background: rgba(255,255,255,0.70) !important;
-
-        border: 1px solid rgba(2,132,199,0.12) !important;
-
-        box-shadow:
-            0 4px 16px rgba(2,132,199,0.08) !important;
-
+        width: auto !important;
+        max-width: 120px !important;
+        height: 44px !important;
+        padding: 0 6px !important;
+        margin: 0 auto !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
         text-decoration: none !important;
-
         box-sizing: border-box !important;
     }
 
 
     .ananta-mobile-logo img {
-
         display: block !important;
-
-        width: 100% !important;
-
+        width: auto !important;
+        max-width: 100% !important;
         height: 100% !important;
-
+        max-height: 38px !important;
         object-fit: contain !important;
     }
 
 
     /* ================================================
-       RIGHT PROFILE AREA
+       RIGHT PROFILE & CURRENCY AREA
     ================================================ */
 
     .ananta-topbar-right {
-
-        grid-column: 3 !important;
-
-        justify-self: end !important;
-
         margin: 0 !important;
-
         padding: 0 !important;
-
         display: flex !important;
-
         align-items: center !important;
-
         justify-content: flex-end !important;
+        flex-shrink: 0 !important;
     }
 
 
@@ -1539,31 +1588,21 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
        MOBILE SIDEBAR
     ================================================ */
 
-    #sidebar-wrapper {
+    @media (max-width: 991px) {
+        #sidebar-wrapper {
+            width: 260px !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            height: 100vh !important;
+            margin-left: -260px !important;
+            z-index: 10004 !important;
+            transition: margin-left 0.3s cubic-bezier(0.16,1,0.3,1) !important;
+        }
 
-        width: 260px !important;
-
-        position: fixed !important;
-
-        top: 0 !important;
-
-        left: 0 !important;
-
-        height: 100vh !important;
-
-        margin-left: -260px !important;
-
-        z-index: 10004 !important;
-
-        transition:
-            margin-left 0.3s
-            cubic-bezier(0.16,1,0.3,1) !important;
-    }
-
-
-    #sidebar-wrapper.toggled {
-
-        margin-left: 0 !important;
+        #sidebar-wrapper.toggled {
+            margin-left: 0 !important;
+        }
     }
 
 
@@ -1699,6 +1738,23 @@ document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
 ========================================================= */
 
 @media (min-width: 992px) {
+
+    #sidebar-wrapper {
+        margin-left: 0 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 260px !important;
+        height: 100vh !important;
+        z-index: 9999 !important;
+    }
+
+    .content-wrapper {
+        margin-left: 260px !important;
+        padding-top: 92px !important;
+        padding-left: 28px !important;
+        padding-right: 28px !important;
+    }
 
     .ananta-mobile-menu-btn,
     .ananta-mobile-logo,
