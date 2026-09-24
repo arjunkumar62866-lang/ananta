@@ -1,9 +1,11 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 header('Content-Type: application/json');
 
-require_once '../../config/config.php';
-require_once 'common/db_method.php';
+require_once __DIR__ . '/common/connection.php';
+require_once __DIR__ . '/common/db_method.php';
 
 // Ensure user is logged in as admin using project-standard session variable
 if (!isset($_SESSION['auserid'])) {

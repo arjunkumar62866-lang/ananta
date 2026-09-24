@@ -68,12 +68,13 @@ Press `Ctrl + C` in your terminal window running the server.
 
 ---
 
+
 ### 4. Git Deployment Commands
 
 #### Commit & Push Code Updates to GitHub:
 ```bash
 git add .
-git commit -m "Admin role ui and function fixes"
+git commit -m "Remaining of admin role ui and function fixes"
 git push origin main
 ```
 *(Hostinger automatically deploys updates pushed to the `main` branch, and GitHub Actions automatically runs pending database migrations safely).*

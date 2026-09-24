@@ -643,16 +643,16 @@ function getuserdatabyid($userid)
         $rowuser = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $userdata = array(
-            "signup_id"     => $rowuser['signup_id'],
-            "name"          => $rowuser["name"],
-            "mobile"        => $rowuser["mobile"],
-            "type"          => $rowuser["type"],
-            "password"      => $rowuser["password"],
-            "wallet_amount" => $rowuser["wallet_amount"],
-            "sponsor_code"  => $rowuser["sponsor_code"],
-            "status"        => $rowuser["status"],
-            "active_date"   => $rowuser["active_date"],
-            "created_date"  => $rowuser["created_date"],
+            "signup_id"     => $rowuser['signup_id'] ?? ($rowuser['userid'] ?? ''),
+            "name"          => $rowuser["name"] ?? '',
+            "mobile"        => $rowuser["mobile"] ?? '',
+            "type"          => $rowuser["type"] ?? 'user',
+            "password"      => $rowuser["password"] ?? ($rowuser['pass'] ?? ''),
+            "wallet_amount" => $rowuser["wallet_amount"] ?? ($rowuser['amount'] ?? 0.00),
+            "sponsor_code"  => $rowuser["sponsor_code"] ?? ($rowuser['sponserid'] ?? ''),
+            "status"        => $rowuser["status"] ?? 1,
+            "active_date"   => $rowuser["active_date"] ?? ($rowuser['upgrade_date'] ?? ''),
+            "created_date"  => $rowuser["created_date"] ?? ($rowuser['joining_date'] ?? ''),
         );
 
         return $userdata;
@@ -2498,6 +2498,24 @@ function getSystemControls($pdoConnection = null) {
 }
 
 /**
+ * Check if a specific system control setting is enabled ('1').
+ */
+function isSystemControlEnabled($setting_key, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || empty($setting_key)) return true;
+    try {
+        $stmt = $db->prepare("SELECT setting_value FROM tbl_system_control WHERE setting_key = :key LIMIT 1");
+        $stmt->execute([':key' => $setting_key]);
+        $val = $stmt->fetchColumn();
+        return ($val === false || $val === '1' || $val === 1);
+    } catch (Exception $e) {
+        return true;
+    }
+}
+
+
+/**
  * Update system control setting.
  */
 function setSystemControl($setting_key, $setting_value, $admin_id, $pdoConnection = null) {
@@ -3322,6 +3340,41 @@ if (!function_exists('getAdminActivationHistory')) {
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
+if (!function_exists('getVIPClubReportStats')) {
+    function getVIPClubReportStats($pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        
+        $totalQualified = 0;
+        $totalPayout = 0.00;
+        $activeLevels = 0;
+
+        try {
+            $totalQualified = (int)($db->query("SELECT COUNT(*) FROM tbl_vip_user_qualifications WHERE is_qualified = 1")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $totalQualified = 0;
+        }
+
+        try {
+            $totalPayout = (float)($db->query("SELECT COALESCE(SUM(credited_amount), 0) FROM tbl_vip_closing_schedule WHERE status = 'COMPLETED'")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $totalPayout = 0.00;
+        }
+
+        try {
+            $activeLevels = (int)($db->query("SELECT COUNT(*) FROM tbl_vip_level_config")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $activeLevels = 0;
+        }
+
+        return [
+            'total_qualified_users' => $totalQualified,
+            'total_payout_distributed' => $totalPayout,
+            'active_vip_levels' => $activeLevels
+        ];
     }
 }
 

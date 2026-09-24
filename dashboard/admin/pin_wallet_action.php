@@ -17,57 +17,71 @@ if (!empty($errors)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $user_id = $_POST['userid'] ?? '';
-    $amount  = $_POST['amount'] ?? '';
+    $raw_user_id = $_POST['userid'] ?? '';
+    $amount  = (float)($_POST['amount'] ?? 0);
+    $admin_id = $_SESSION['auserid'] ?? 'AN1290';
 
-    // Remove first 2 chars
-    $user_id = substr($user_id, 2);
+    $clean_uid = preg_replace('/^(AN|ANANTA)/i', '', $raw_user_id);
+
+    if ($amount <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Transfer amount must be greater than 0']);
+        exit;
+    }
 
     // Validate user
-    if (checkuserid($pdo, $user_id) > 0) {
+    $stmtUser = $pdo->prepare("SELECT userid, name, pin_wallet FROM user WHERE userid = :uid OR userid = :clean LIMIT 1");
+    $stmtUser->execute([':uid' => $raw_user_id, ':clean' => $clean_uid]);
+    $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
-        $stmt = $pdo->prepare("SELECT name, pin_wallet FROM user WHERE userid = :userid");
-        $stmt->execute([':userid' => $user_id]);
-        $user = $stmt->fetch();
+    if (!$user) {
+        echo json_encode(['status' => 'error', 'message' => 'User ID not found']);
+        exit;
+    }
 
-        if (!$user) {
-            echo json_encode(['status' => 'error', 'message' => 'User not found']);
-            exit;
-        }
+    $target_userid = $user['userid'];
+    $prev_bal = (float)$user['pin_wallet'];
+    $new_bal  = round($prev_bal + $amount, 2);
 
-        // Insert transaction
-        $stmt = $pdo->prepare("
-            INSERT INTO tbl_transaction 
-            (amount, user_id, subject, type, status, a_status, created_date, time)
-            VALUES (:amount, :user_id, :subject, 'Credit', '1', '0', NOW(), NOW())
-        ");
+    // Insert transaction
+    $stmtTxn = $pdo->prepare("
+        INSERT INTO tbl_transaction 
+        (amount, user_id, subject, type, status, a_status, created_date, time)
+        VALUES (:amount, :user_id, :subject, 'Credit', '1', '0', CURDATE(), NOW())
+    ");
 
-        $success = $stmt->execute([
+    $success = $stmtTxn->execute([
+        ':amount'  => $amount,
+        ':user_id' => $target_userid,
+        ':subject' => "Admin Fund Transfer ($amount Add To Main/Pin Wallet)"
+    ]);
+
+    if ($success) {
+        $txn_id = $pdo->lastInsertId();
+
+        $stmtUpd = $pdo->prepare("UPDATE user SET pin_wallet = pin_wallet + :amount WHERE userid = :userid");
+        $stmtUpd->execute([
             ':amount' => $amount,
-            ':user_id' => $user_id,
-            ':subject' => "$amount Amount Add To Wallet"
+            ':userid' => $target_userid
         ]);
 
-        if ($success) {
+        // Complete 8-field Audit Record
+        logAdminAuditAction(
+            $admin_id,
+            'CREDIT',
+            $target_userid,
+            $amount,
+            'pin_wallet',
+            $prev_bal,
+            $new_bal,
+            "Admin Fund Transfer ($amount Added)",
+            (string)$txn_id,
+            $pdo
+        );
 
-            $stmt = $pdo->prepare("UPDATE user 
-                                   SET pin_wallet = pin_wallet + :amount 
-                                   WHERE userid = :userid AND status = '1'");
-            $stmt->execute([
-                ':amount' => $amount,
-                ':userid' => $user_id
-            ]);
-
-            echo json_encode(['status' => 'success', 'message' => 'Amount transferred successfully']);
-            exit;
-
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Something went wrong']);
-            exit;
-        }
-
+        echo json_encode(['status' => 'success', 'message' => "Amount ₹" . number_format($amount, 2) . " transferred successfully to user " . $target_userid]);
+        exit;
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid User ID']);
+        echo json_encode(['status' => 'error', 'message' => 'Database transaction failed']);
         exit;
     }
 }

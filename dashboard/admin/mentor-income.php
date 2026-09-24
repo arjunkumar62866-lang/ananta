@@ -249,7 +249,7 @@ table.dataTable.no-footer {
                                 <i class="fa fa-handshake-o"></i>
                             </div>
                             <div>
-                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">Mentor Income Management (Requirements #14 & #15)</h3>
+                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">Mentor Income Management </h3>
                                 <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">2% Mentor Income distribution & financial adjustment admin control portal.</p>
                             </div>
                         </div>

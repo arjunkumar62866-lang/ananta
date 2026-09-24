@@ -277,7 +277,7 @@ table.dataTable.no-footer {
                                 <i class="fa fa-gift"></i>
                             </div>
                             <div>
-                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">Direct Bonus Management (Requirement #13)</h3>
+                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">Direct Bonus Management </h3>
                                 <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">Monitor 10-month schedules, inspect qualified directs & manage admin wallet adjustments.</p>
                             </div>
                         </div>

@@ -14,9 +14,9 @@ if ($current_session_user === '1290' || $current_session_user === 'AN1290') {
 }
 
 
-require_once 'common/connection.php';
+require_once __DIR__ . '/connection.php';
 // require 'common/printmessage.php';
-require_once 'common/db_method.php';
+require_once __DIR__ . '/db_method.php';
 // require 'common/password.php';
 // require 'common/recharge_api.php';
 
@@ -143,7 +143,6 @@ $news = $newsdata['news'];
 </head>
 
 <!--Start sidebar-wrapper-->
-<!--Start sidebar-wrapper-->
 <div id="sidebar-wrapper">
   <div class="brand-logo" style="padding: 15px; text-align: center;">
     <a href="index.php">
@@ -152,118 +151,223 @@ $news = $newsdata['news'];
   </div>
   <ul class="sidebar-menu do-nicescrol">
 
+    <!-- 1. Dashboard -->
     <li>
       <a href="index.php">
-        <i class="zmdi zmdi-home"></i> <span>Dashboard</span>
+        <i class="zmdi zmdi-home"></i> <span>1. Dashboard</span>
       </a>
     </li>
-    
+
+    <!-- Profile Submenu -->
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi zmdi-account"></i> Profile</span>
+        <span><i class="zmdi zmdi-account"></i> Admin Profile</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="password.php"><i class="zmdi zmdi-circle-o"></i> Update Password </a></li>
-       
+        <li><a href="user_profile.php?uid=1290"><i class="zmdi zmdi-circle-o"></i> Admin Details</a></li>
+        <li><a href="password.php"><i class="zmdi zmdi-circle-o"></i> Update Password</a></li>
       </ul>
     </li>
 
-    <!-- User Management Submenu -->
+    <!-- 2. User Management -->
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-accounts-list"></i> User Management</span>
+        <span><i class="zmdi zmdi-accounts-list"></i> 2. User Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="all_user.php"><i class="zmdi zmdi-circle-o"></i> All Users</a></li>
+        <li><a href="all_user.php"><i class="zmdi zmdi-circle-o"></i> All Users & Profiles</a></li>
         <li><a href="active_all_user.php"><i class="zmdi zmdi-circle-o"></i> Active Users</a></li>
         <li><a href="inactive_all_user.php"><i class="zmdi zmdi-circle-o"></i> Inactive Users</a></li>
-        <li><a href="activation_history.php"><i class="zmdi zmdi-circle-o"></i> Activation History</a></li>
         <li><a href="deactive_user.php"><i class="zmdi zmdi-circle-o"></i> Blocked / Suspended</a></li>
-        <li><a href="pending_all_user.php"><i class="zmdi zmdi-circle-o"></i> Pending Users</a></li>
-        <li><a href="news.php"><i class="zmdi zmdi-circle-o"></i> Update News</a></li>
+        <li><a href="activation_history.php"><i class="zmdi zmdi-circle-o"></i> Activation History ($11)</a></li>
+        <li><a href="user_timeline.php"><i class="zmdi zmdi-circle-o"></i> Complete User Timeline</a></li>
+        <li><a href="pin_wallet_amount.php"><i class="zmdi zmdi-circle-o"></i> Admin Wallet Control</a></li>
       </ul>
     </li>
 
-    <!-- KYC Management Submenu -->
+    <!-- 3. Wallet Management -->
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-card"></i> KYC Details</span>
+        <span><i class="zmdi zmdi-balance-wallet"></i> 3. Wallet Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="pending_kyc.php"><i class="zmdi zmdi-circle-o"></i> Pending KYC</a></li>
-        <li><a href="completed_kyc.php"><i class="zmdi zmdi-circle-o"></i> Completed KYC</a></li>
+        <li><a href="growth_wallet.php"><i class="zmdi zmdi-circle-o"></i> Growth Wallet & Income</a></li>
+        <li><a href="main_wallet.php"><i class="zmdi zmdi-circle-o"></i> Main Wallet & Transfers</a></li>
+        <li><a href="income_wallets.php"><i class="zmdi zmdi-circle-o"></i> All Income Wallets</a></li>
+        <li><a href="pin_wallet_amount.php"><i class="zmdi zmdi-circle-o"></i> Wallet Credit / Debit</a></li>
+        <li><a href="pin_wallet_amount_history.php"><i class="zmdi zmdi-circle-o"></i> Permanent Wallet History</a></li>
       </ul>
     </li>
 
-    <!-- Financial Income Management Submenu -->
+    <!-- 4. Deposit Management -->
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-trending-up"></i><span> Income Systems</span></span>
+        <span><i class="zmdi zmdi-money-box"></i> 4. Deposit Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
+        <li><a href="pending-fund-request.php"><i class="zmdi zmdi-circle-o"></i> Pending Fund Requests</a></li>
+        <li><a href="fund-request.php?status=1"><i class="zmdi zmdi-circle-o"></i> Approved / Success Deposits</a></li>
+        <li><a href="fund-request.php?status=2"><i class="zmdi zmdi-circle-o"></i> Rejected Deposits</a></li>
+        <li><a href="fund-request.php"><i class="zmdi zmdi-circle-o"></i> Full Deposit History</a></li>
+      </ul>
+    </li>
+
+    <!-- 5. P2P Management -->
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-swap"></i> 5. P2P Management</span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="p2p_management.php"><i class="zmdi zmdi-circle-o"></i> P2P Control & Investments</a></li>
+        <li><a href="p2p_management.php?tab=history"><i class="zmdi zmdi-circle-o"></i> P2P Transaction History</a></li>
+      </ul>
+    </li>
+
+    <!-- 6. Withdrawal Management -->
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-card-off"></i> 6. Withdrawal Management</span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="withdraw-history.php?type=0"><i class="zmdi zmdi-circle-o"></i> Pending Withdrawals</a></li>
+        <li><a href="withdraw-history.php?type=hold"><i class="zmdi zmdi-circle-o"></i> Hold Withdrawals</a></li>
+        <li><a href="withdraw-history.php?type=1"><i class="zmdi zmdi-circle-o"></i> Approved & Paid</a></li>
+        <li><a href="withdraw-history.php?type=2"><i class="zmdi zmdi-circle-o"></i> Rejected Withdrawals</a></li>
+        <li><a href="investment-withdraw-history.php"><i class="zmdi zmdi-circle-o"></i> Investment Withdrawals</a></li>
+        <li><a href="withdraw-history.php"><i class="zmdi zmdi-circle-o"></i> Full Withdrawal History</a></li>
+      </ul>
+    </li>
+
+    <!-- 7. Income Management -->
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-trending-up"></i> 7. Income Management</span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="income_management.php"><i class="zmdi zmdi-circle-o"></i> Income Dashboard & Overview</a></li>
         <li><a href="monthly-profit-closing.php"><i class="zmdi zmdi-circle-o"></i> Profit Income Closing</a></li>
-        <li><a href="daily-level-income.php"><i class="zmdi zmdi-circle-o"></i> Level 1-15 Profit Sharing</a></li>
+        <li><a href="daily-level-income.php"><i class="zmdi zmdi-circle-o"></i> Profit Sharing (L1-15)</a></li>
         <li><a href="direct-bonus.php"><i class="zmdi zmdi-circle-o"></i> Direct Bonus 6% (10M)</a></li>
         <li><a href="mentor-income.php"><i class="zmdi zmdi-circle-o"></i> Mentor Income (2%)</a></li>
-        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> VIP Club & Reward System</a></li>
+        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> Rank Rewards & VIP Club</a></li>
         <li><a href="generation-income.php"><i class="zmdi zmdi-circle-o"></i> Generation Income</a></li>
         <li><a href="level-income.php"><i class="zmdi zmdi-circle-o"></i> Direct Income</a></li>
       </ul>
     </li>
 
-    <!-- Withdrawal Management Submenu -->
+    <!-- 8. Rank & VIP Club -->
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-balance-wallet"></i><span> Withdrawal</span></span>
+        <span><i class="zmdi zmdi-star"></i> 8. Rank & VIP Club</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="withdraw-history.php?type=0"><i class="zmdi zmdi-circle-o"></i> Withdraw Pending</a></li>
-        <li><a href="investment-withdraw-history.php?type=3"><i class="zmdi zmdi-circle-o"></i> Investment Withdraw Pending</a></li>
-        <li><a href="withdraw-history.php?type=1"><i class="zmdi zmdi-circle-o"></i> Withdraw Approved</a></li>
-        <li><a href="withdraw-history.php?type=2"><i class="zmdi zmdi-circle-o"></i> Withdraw Cancelled</a></li>
+        <li><a href="rank_settings.php"><i class="zmdi zmdi-circle-o"></i> Rank Settings & Matrix</a></li>
+        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> VIP Qualifications & Income</a></li>
+        <li><a href="vip-club.php?tab=history"><i class="zmdi zmdi-circle-o"></i> VIP History & Closing</a></li>
       </ul>
     </li>
 
-    <!-- Deposit & Fund Management Submenu -->
+    <!-- 9. Referral / Team Management -->
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-money-box"></i><span> Deposit & Funds</span></span>
+        <span><i class="zmdi zmdi-sitemap"></i> 9. Team Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="pending-fund-request.php"><i class="zmdi zmdi-circle-o"></i> Pending Fund Request</a></li>
-        <li><a href="fund-request.php"><i class="zmdi zmdi-circle-o"></i> Fund Request History</a></li>
-        <li><a href="pin_wallet_amount.php"><i class="zmdi zmdi-circle-o"></i> Universal Wallet Adjustment</a></li>
-        <li><a href="pin_wallet_amount_history.php"><i class="zmdi zmdi-circle-o"></i> Manage Fund History</a></li>
+        <li><a href="team_management.php"><i class="zmdi zmdi-circle-o"></i> Direct & Binary Team Tree</a></li>
+        <li><a href="team_management.php?tab=business"><i class="zmdi zmdi-circle-o"></i> Team Business & History</a></li>
       </ul>
     </li>
 
-    <!-- Enquiries & Support Submenu -->
+    <!-- 10. KYC Management -->
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-help-outline"></i><span> Support & Enquiry</span></span>
+        <span><i class="zmdi zmdi-card"></i> 10. KYC Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="user_enquiry.php?title=Pending Enquiry"><i class="zmdi zmdi-circle-o"></i> Pending Enquiry</a></li>
-        <li><a href="user_enquiry.php?title=Viewed Enquiry"><i class="zmdi zmdi-circle-o"></i> Viewed Enquiry</a></li>
+        <li><a href="pending_kyc.php"><i class="zmdi zmdi-circle-o"></i> Pending KYC Applications</a></li>
+        <li><a href="completed_kyc.php"><i class="zmdi zmdi-circle-o"></i> Approved KYC Records</a></li>
+        <li><a href="kyc.php"><i class="zmdi zmdi-circle-o"></i> Full KYC History & Review</a></li>
       </ul>
     </li>
 
-    <!-- System Settings & Controls Submenu -->
+    <!-- 11. Ticket Support -->
     <li class="has-sub">
       <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-settings"></i><span> System Controls</span></span>
+        <span><i class="zmdi zmdi-help-outline"></i> 11. Ticket Support</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
+        <li><a href="support_tickets.php?status=OPEN"><i class="zmdi zmdi-circle-o"></i> Open Support Tickets</a></li>
+        <li><a href="support_tickets.php?status=PENDING"><i class="zmdi zmdi-circle-o"></i> Pending Support Tickets</a></li>
+        <li><a href="support_tickets.php?status=RESOLVED"><i class="zmdi zmdi-circle-o"></i> Resolved Tickets</a></li>
+        <li><a href="support_tickets.php"><i class="zmdi zmdi-circle-o"></i> Ticket History & Replies</a></li>
+        <li><a href="user_enquiry.php"><i class="zmdi zmdi-circle-o"></i> Website Enquiries</a></li>
+      </ul>
+    </li>
+
+    <!-- 12. Notification Centre -->
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-notifications"></i> 12. Notification Centre</span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="notification_centre.php"><i class="zmdi zmdi-circle-o"></i> Global Broadcast Notification</a></li>
+        <li><a href="notification_centre.php?tab=user"><i class="zmdi zmdi-circle-o"></i> User-wise Targeted Notice</a></li>
+      </ul>
+    </li>
+
+    <!-- 13. Offer / Popup / Banner -->
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-image"></i> 13. Offer / Popup / Banner</span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="offer_update.php"><i class="zmdi zmdi-circle-o"></i> Offer Popup & ON/OFF</a></li>
+        <li><a href="manage_banner.php"><i class="zmdi zmdi-circle-o"></i> Website Banners</a></li>
+      </ul>
+    </li>
+
+    <!-- 14. Reports -->
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-chart"></i> 14. Financial Reports</span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="reports.php?type=daily"><i class="zmdi zmdi-circle-o"></i> Daily Financial Summary</a></li>
+        <li><a href="reports.php?type=monthly"><i class="zmdi zmdi-circle-o"></i> Monthly Financial Summary</a></li>
+        <li><a href="reports.php?type=yearly"><i class="zmdi zmdi-circle-o"></i> Yearly Financial Summary</a></li>
+        <li><a href="reports.php?type=user"><i class="zmdi zmdi-circle-o"></i> User-wise Reports</a></li>
+        <li><a href="reports.php?type=investment"><i class="zmdi zmdi-circle-o"></i> Investment Reports</a></li>
+        <li><a href="reports.php?type=withdrawal"><i class="zmdi zmdi-circle-o"></i> Withdrawal Reports</a></li>
+        <li><a href="reports.php?type=income"><i class="zmdi zmdi-circle-o"></i> Income Reports</a></li>
+        <li><a href="reports.php?type=business"><i class="zmdi zmdi-circle-o"></i> Business Reports</a></li>
+        <li><a href="reports.php?type=company"><i class="zmdi zmdi-circle-o"></i> Company Revenue Reports</a></li>
+      </ul>
+    </li>
+
+    <!-- 15. Admin Audit & Website Controls -->
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-settings"></i> 15. Audit & Controls</span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="admin_audit_controls.php"><i class="zmdi zmdi-circle-o"></i> Admin Audit Log</a></li>
+        <li><a href="admin_audit_controls.php?tab=controls"><i class="zmdi zmdi-circle-o"></i> Website Controls (ON/OFF)</a></li>
         <li><a href="roi-update.php"><i class="zmdi zmdi-circle-o"></i> Set Profit Percentage</a></li>
-        <li><a href="manage_banner.php"><i class="zmdi zmdi-circle-o"></i> Banner & Offer Updates</a></li>
       </ul>
     </li>
 
@@ -271,9 +375,6 @@ $news = $newsdata['news'];
       <a href="logout.php">
         <i class="zmdi zmdi-power"></i> <span>Logout</span>
       </a>
-    </li>
-    
-    
     </li>
   </ul>
 </div>
@@ -656,4 +757,104 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 </script>
 <!--End topbar header-->
+
+<style>
+/* Global High-Contrast Form Controls & Export Buttons Fix for Admin Panel */
+.form-control, 
+select.form-control, 
+textarea.form-control, 
+input[type="text"].form-control, 
+input[type="number"].form-control, 
+input[type="email"].form-control, 
+input[type="password"].form-control, 
+input[type="date"].form-control,
+.search-bar input.form-control {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+}
+
+.form-control:focus, 
+select.form-control:focus, 
+textarea.form-control:focus, 
+input[type="text"].form-control:focus, 
+input[type="number"].form-control:focus, 
+input[type="date"].form-control:focus {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
+}
+
+.form-control[readonly], 
+.form-control:disabled, 
+select.form-control:disabled {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border-color: #cbd5e1 !important;
+}
+
+select.form-control option,
+select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    padding: 8px !important;
+}
+
+.form-control::placeholder, 
+textarea.form-control::placeholder,
+input::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+label {
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin-bottom: 6px !important;
+}
+
+/* High-Contrast Export & Header Buttons */
+.btn-export-excel,
+a[href*="export.php?"][href*="format=csv"],
+a[href*="format=excel"],
+.btn-export-csv {
+    background-color: #ffffff !important;
+    color: #15803d !important;
+    border: 1.5px solid #16a34a !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+    border-radius: 10px !important;
+}
+
+.btn-export-excel:hover,
+a[href*="export.php?"][href*="format=csv"]:hover {
+    background-color: #f0fdf4 !important;
+    color: #166534 !important;
+    border-color: #15803d !important;
+}
+
+.btn-export-pdf,
+a[href*="export.php?"][href*="format=pdf"] {
+    background-color: #ffffff !important;
+    color: #b91c1c !important;
+    border: 1.5px solid #dc2626 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+    border-radius: 10px !important;
+}
+
+.btn-export-pdf:hover,
+a[href*="export.php?"][href*="format=pdf"]:hover {
+    background-color: #fef2f2 !important;
+    color: #991b1b !important;
+    border-color: #b91c1c !important;
+}
+</style>
 

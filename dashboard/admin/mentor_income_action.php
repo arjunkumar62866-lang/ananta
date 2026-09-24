@@ -1,9 +1,11 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 header('Content-Type: application/json');
 
-require_once '../../config/config.php';
-require_once 'common/db_method.php';
+require_once __DIR__ . '/common/connection.php';
+require_once __DIR__ . '/common/db_method.php';
 
 // Ensure user is logged in as admin using project-standard session variable
 if (!isset($_SESSION['auserid'])) {
@@ -170,8 +172,8 @@ switch ($action) {
 
         $query = "SELECT a.*, u.auserid as admin_name, target.name as target_username 
                   FROM tbl_mentor_income_admin_audit a
-                  LEFT JOIN admin u ON (a.admin_id = u.auserid OR a.admin_id = CAST(u.id AS CHAR))
-                  LEFT JOIN user target ON a.user_id = target.userid";
+                  LEFT JOIN admin u ON (CONVERT(a.admin_id USING utf8mb4) = CONVERT(u.auserid USING utf8mb4) OR CONVERT(a.admin_id USING utf8mb4) = CONVERT(u.id USING utf8mb4))
+                  LEFT JOIN user target ON CONVERT(a.user_id USING utf8mb4) = CONVERT(target.userid USING utf8mb4)";
 
         $params = [];
         if (!empty($user_id)) {

@@ -249,7 +249,7 @@ table.dataTable.no-footer {
                                 <i class="fa fa-trophy"></i>
                             </div>
                             <div>
-                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">VIP Club & Reward System (Requirement #16)</h3>
+                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">VIP Club & Reward System </h3>
                                 <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">10 VIP Levels with Left/Right ID & Business criteria, Rewards & Monthly Repeat Income.</p>
                             </div>
                         </div>
