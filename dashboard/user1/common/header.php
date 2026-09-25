@@ -148,9 +148,15 @@ $news = $newsdata['news'];
   <meta name="description" content="" />
   <meta name="author" content="" />
   <title><?php echo $hmtitle;?></title>
-  <!-- loader-->
-  <link href="assets/css/pace.min.css" rel="stylesheet" />
-  <script src="assets/js/pace.min.js"></script>
+  <!-- Instant Page Display Overrides -->
+  <style>
+    #pageloader-overlay, .loader-wrapper-outer, .loader-wrapper-inner, .loader-wrap, .preloader, #handle-preloader, .pace, .pace-progress {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+  </style>
   <!--favicon-->
   <link rel="icon" href="<?php echo $hmfavicon;?>" type="image/x-icon">
   <!-- Vector CSS -->
