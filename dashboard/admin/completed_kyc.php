@@ -394,7 +394,12 @@ table.dataTable.no-footer {
                             return `<a class="user-link" href="update_wallet.php?uid=${data}"><i class="fa fa-credit-card me-1"></i>Wallet Address</a>`;
                         }
                     },
-                    { data: 'holder_name' },
+                    {
+                        data: 'holder_name',
+                        render: function (data) {
+                            return `<span style="color:#0f172a !important; font-weight:700;">${data ? data : 'N/A'}</span>`;
+                        }
+                    },
                     {
                         data: null,
                         render: function () {

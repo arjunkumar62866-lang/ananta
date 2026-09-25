@@ -41,11 +41,11 @@ switch ($type) {
         break;
         
     case 'pending_kyc':
-        $stmt = $pdo->prepare("SELECT userid,holder_name FROM kyc WHERE status ='0' ORDER BY id DESC");
+        $stmt = $pdo->prepare("SELECT k.userid, COALESCE(NULLIF(TRIM(k.holder_name), ''), u.name, 'N/A') AS holder_name FROM kyc k LEFT JOIN user u ON (k.userid = u.userid OR k.userid = u.id) WHERE k.status = '0' ORDER BY k.id DESC");
         break;
         
     case 'completed_kyc':
-        $stmt = $pdo->prepare("SELECT userid,holder_name FROM kyc WHERE status ='1' ORDER BY id DESC");
+        $stmt = $pdo->prepare("SELECT k.userid, COALESCE(NULLIF(TRIM(k.holder_name), ''), u.name, 'N/A') AS holder_name FROM kyc k LEFT JOIN user u ON (k.userid = u.userid OR k.userid = u.id) WHERE k.status = '1' ORDER BY k.id DESC");
         break;
         
     case 'active':
