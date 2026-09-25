@@ -220,7 +220,7 @@ $hmservice="service-details.php";
             <div id="loginModal" class="ananta-auth-modal-card">
                 <button type="button" class="ananta-modal-close">&times;</button>
                 <div class="auth-logo text-center mb-3">
-                    <img src="assets/images/logo-stacked.png" alt="Ananta Logo" style="max-height: 95px; width: auto;">
+                    <img src="assets/images/pwa-icon.png" alt="Ananta Logo" style="max-height: 95px; width: auto;">
                 </div>
                 <div class="auth-header text-center mb-4">
                     <h3 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Login</h3>
@@ -258,8 +258,8 @@ $hmservice="service-details.php";
             <!-- 2. REGISTER POPUP MODAL -->
             <div id="registerModal" class="ananta-auth-modal-card">
                 <button type="button" class="ananta-modal-close">&times;</button>
-                <div class="auth-logo text-center mb-3">
-                    <img src="assets/images/logo-stacked.png" alt="Ananta Logo" style="max-height: 85px; width: auto;">
+                <div class="auth-logo text-center mb-7">
+                    <img src="assets/images/pwa-icon.png" alt="Ananta Logo" style="max-height: 100px; width: auto;">
                 </div>
                 <div class="auth-header text-center mb-3">
                     <h3 style="font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Create Account</h3>
