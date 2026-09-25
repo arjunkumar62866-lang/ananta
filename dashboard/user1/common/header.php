@@ -823,6 +823,20 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
 
             <!-- =============================================
+                 NOTIFICATION BELL ICON (DESKTOP & MOBILE)
+            ============================================== -->
+            <div class="ananta-notification-header-item mr-2" style="position: relative; display: inline-flex; align-items: center;">
+                <a href="notifications.php" class="ananta-notif-btn" aria-label="Notifications" title="View Notifications" style="position: relative; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 50%; color: #0f172a; text-decoration: none; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); transition: all 0.2s ease;">
+                    <i class="zmdi zmdi-notifications" style="font-size: 19px; color: #0f172a;"></i>
+                    <?php if (!empty($unreadNotificationCount) && $unreadNotificationCount > 0): ?>
+                        <span class="badge badge-pill" style="position: absolute; top: -4px; right: -4px; font-size: 9.5px; font-weight: 800; padding: 2px 5px; background: #ef4444; color: #ffffff; border: 2px solid #ffffff; border-radius: 100px; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);">
+                            <?php echo ($unreadNotificationCount > 99) ? '99+' : $unreadNotificationCount; ?>
+                        </span>
+                    <?php endif; ?>
+                </a>
+            </div>
+
+            <!-- =============================================
                  MOBILE PROFILE CIRCLE
             ============================================== -->
             <div class="ananta-mobile-profile">
