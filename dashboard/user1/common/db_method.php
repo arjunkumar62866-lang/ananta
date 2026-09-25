@@ -1830,6 +1830,8 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
     $senderId = trim($senderId);
     $receiverId = trim($receiverId);
 
+    ensureP2PTableExists($db);
+
     $inLocalTxn = false;
     if (!$db->inTransaction()) {
         $db->beginTransaction();
@@ -1957,6 +1959,36 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
 }
 
 /**
+ * Auto-provision tbl_p2p_transfer database table if missing on production/Hostinger.
+ */
+function ensureP2PTableExists($dbConnection = null) {
+    global $pdo;
+    $conn = $dbConnection ?: $pdo;
+    if (!$conn) return;
+    try {
+        $conn->exec("
+            CREATE TABLE IF NOT EXISTS `tbl_p2p_transfer` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `transfer_ref` varchar(100) DEFAULT NULL,
+              `from_wallet` varchar(50) DEFAULT 'Main Wallet',
+              `to_wallet` varchar(50) DEFAULT 'Net Balance',
+              `sender_id` varchar(100) NOT NULL,
+              `receiver_id` varchar(100) NOT NULL,
+              `amount` decimal(15,2) NOT NULL DEFAULT '0.00',
+              `status` varchar(20) DEFAULT 'COMPLETED',
+              `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id`),
+              KEY `idx_p2p_sender` (`sender_id`),
+              KEY `idx_p2p_receiver` (`receiver_id`),
+              KEY `idx_p2p_ref` (`transfer_ref`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ");
+    } catch (PDOException $e) {
+        // Fallback
+    }
+}
+
+/**
  * Requirement #21: Fetch P2P Transfer History (Sent).
  */
 function getUserP2PTransferHistory($userid, $pdoConnection = null) {
@@ -1964,26 +1996,32 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$userid) return [];
 
-    $sql = "
-        SELECT 
-            p.id,
-            p.transfer_ref,
-            COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
-            COALESCE(p.to_wallet, 'Net Balance') as to_wallet,
-            p.sender_id,
-            p.receiver_id,
-            u.name as receiver_name,
-            p.amount,
-            p.status,
-            p.created_at
-        FROM tbl_p2p_transfer p
-        LEFT JOIN user u ON u.userid = p.receiver_id
-        WHERE p.sender_id = :userid
-        ORDER BY p.id DESC
-    ";
-    $stmt = $db->prepare($sql);
-    $stmt->execute([':userid' => $userid]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    ensureP2PTableExists($db);
+
+    try {
+        $sql = "
+            SELECT 
+                p.id,
+                p.transfer_ref,
+                COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
+                COALESCE(p.to_wallet, 'Net Balance') as to_wallet,
+                p.sender_id,
+                p.receiver_id,
+                u.name as receiver_name,
+                p.amount,
+                p.status,
+                p.created_at
+            FROM tbl_p2p_transfer p
+            LEFT JOIN user u ON u.userid = p.receiver_id
+            WHERE p.sender_id = :userid
+            ORDER BY p.id DESC
+        ";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([':userid' => $userid]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    } catch (PDOException $e) {
+        return [];
+    }
 }
 
 /**
@@ -1994,26 +2032,32 @@ function getUserP2PReceivedReport($userid, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$userid) return [];
 
-    $sql = "
-        SELECT 
-            p.id,
-            p.transfer_ref,
-            COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
-            COALESCE(p.to_wallet, 'Net Balance') as to_wallet,
-            p.sender_id,
-            u.name as sender_name,
-            p.receiver_id,
-            p.amount,
-            p.status,
-            p.created_at
-        FROM tbl_p2p_transfer p
-        LEFT JOIN user u ON u.userid = p.sender_id
-        WHERE p.receiver_id = :userid
-        ORDER BY p.id DESC
-    ";
-    $stmt = $db->prepare($sql);
-    $stmt->execute([':userid' => $userid]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    ensureP2PTableExists($db);
+
+    try {
+        $sql = "
+            SELECT 
+                p.id,
+                p.transfer_ref,
+                COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
+                COALESCE(p.to_wallet, 'Net Balance') as to_wallet,
+                p.sender_id,
+                u.name as sender_name,
+                p.receiver_id,
+                p.amount,
+                p.status,
+                p.created_at
+            FROM tbl_p2p_transfer p
+            LEFT JOIN user u ON u.userid = p.sender_id
+            WHERE p.receiver_id = :userid
+            ORDER BY p.id DESC
+        ";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([':userid' => $userid]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    } catch (PDOException $e) {
+        return [];
+    }
 }
 
 /**

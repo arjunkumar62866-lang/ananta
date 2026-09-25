@@ -5,6 +5,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once 'common/connection.php';
+require_once 'common/db_method.php';
+
+ensureP2PTableExists($pdo);
 
 // AJAX Live User Verification Handler
 if (isset($_GET['action']) && $_GET['action'] === 'get_user_name') {
