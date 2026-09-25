@@ -435,11 +435,13 @@ function loginUser($userid, $password, $pdo)
 //     }
 // }
 
-function insertSponsor($pdo, $sponsorId, $referralId, $createdDate) 
-{
-    $sql = "INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
-    return $stmt->execute([$sponsorId, $referralId, $createdDate]);
+if (!function_exists('insertSponsor')) {
+    function insertSponsor($pdo, $sponsorId, $referralId, $createdDate) 
+    {
+        $sql = "INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([$sponsorId, $referralId, $createdDate]);
+    }
 }
 
 function insertUser($pdo, $data) 
@@ -1549,7 +1551,161 @@ if (!function_exists('getQualifiedDirectDetails')) {
 }
 
 /**
- * Requirement #21: Detailed Team Member Fetcher (MY_DIRECT, LEFT, RIGHT).
+ * Returns all descendant user IDs in the binary tree below $userId.
+ */
+if (!function_exists('getSubtreeDescendantIds')) {
+    function getSubtreeDescendantIds($userId, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($userId)) return [];
+
+        $descendants = [];
+        $queue = [$userId];
+
+        while (!empty($queue)) {
+            $curr = array_shift($queue);
+            $stmt = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+            $stmt->execute([':uid' => $curr]);
+            $t = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($t) {
+                if (!empty($t['left_id']) && !in_array($t['left_id'], $descendants)) {
+                    $descendants[] = $t['left_id'];
+                    $queue[] = $t['left_id'];
+                }
+                if (!empty($t['right_id']) && !in_array($t['right_id'], $descendants)) {
+                    $descendants[] = $t['right_id'];
+                    $queue[] = $t['right_id'];
+                }
+            }
+        }
+
+        return $descendants;
+    }
+}
+
+/**
+ * Helper to fetch complete root-based subtree with node level, parent ID, relative position, business, and counts.
+ */
+if (!function_exists('getRootBranchTreeDetailed')) {
+    function getRootBranchTreeDetailed($startChildId, $pdoConnection = null, $initialPosition = 'LEFT') {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($startChildId)) return [];
+
+        $results = [];
+        $queue = [
+            [
+                'userid'    => $startChildId,
+                'parent_id' => '',
+                'position'  => strtoupper($initialPosition),
+                'level'     => 1
+            ]
+        ];
+        $visited = [];
+
+        while (!empty($queue)) {
+            $curr = array_shift($queue);
+            $uid = $curr['userid'];
+            if (in_array($uid, $visited)) continue;
+            $visited[] = $uid;
+
+            $stmtU = $db->prepare("
+                SELECT 
+                    u.userid,
+                    u.name,
+                    COALESCE(u.`rank`, 'Member') as `rank`,
+                    u.joining_date,
+                    u.active,
+                    COALESCE(SUM(r.package), 0) as total_investment_inr,
+                    COALESCE(SUM(r.real_fund_usd), 0) as total_investment_usd,
+                    MAX(r.date) as latest_investment_date,
+                    (SELECT r2.package_code FROM tbl_roi_one r2 WHERE r2.user_id = u.userid ORDER BY r2.id DESC LIMIT 1) as latest_package
+                FROM user u
+                LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
+                WHERE u.userid = :uid
+                GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active
+                LIMIT 1
+            ");
+            $stmtU->execute([':uid' => $uid]);
+            $uData = $stmtU->fetch(PDO::FETCH_ASSOC);
+
+            if ($uData) {
+                $invInr = (float)($uData['total_investment_inr'] ?? 0);
+                $invUsd = (float)($uData['total_investment_usd'] ?? 0);
+                if ($invUsd <= 0 && $invInr > 0) {
+                    $invUsd = parseInputToUSD($invInr, 'INR', $db);
+                }
+
+                $stmtDir = $db->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :uid");
+                $stmtDir->execute([':uid' => $uid]);
+                $directCount = (int)$stmtDir->fetchColumn();
+
+                $downlineIds = getSubtreeDescendantIds($uid, $db);
+                $downlineCount = count($downlineIds);
+
+                $stmtT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+                $stmtT->execute([':uid' => $uid]);
+                $tData = $stmtT->fetch(PDO::FETCH_ASSOC);
+
+                $nodePos = $curr['position'];
+                if (!empty($curr['parent_id'])) {
+                    $stmtPT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :pid LIMIT 1");
+                    $stmtPT->execute([':pid' => $curr['parent_id']]);
+                    $pTree = $stmtPT->fetch(PDO::FETCH_ASSOC);
+                    if ($pTree) {
+                        if ($pTree['left_id'] === $uid) {
+                            $nodePos = 'LEFT';
+                        } elseif ($pTree['right_id'] === $uid) {
+                            $nodePos = 'RIGHT';
+                        }
+                    }
+                }
+
+                $results[] = [
+                    'userid'           => $uid,
+                    'name'             => $uData['name'],
+                    'rank'             => $uData['rank'],
+                    'level'            => $curr['level'],
+                    'parent_id'        => $curr['parent_id'],
+                    'position'         => strtoupper($nodePos),
+                    'joining_date'     => $uData['joining_date'],
+                    'investment_date'  => $uData['latest_investment_date'] ?: 'N/A',
+                    'investment_inr'   => $invInr,
+                    'investment_usd'   => $invUsd,
+                    'status'           => ($uData['active'] == 1) ? 'Active' : 'Inactive',
+                    'package'          => $uData['latest_package'] ?: ($invUsd > 0 ? 'ANANTA' : 'N/A'),
+                    'direct_count'     => $directCount,
+                    'downline_count'   => $downlineCount
+                ];
+
+                if ($tData) {
+                    if (!empty($tData['left_id'])) {
+                        $queue[] = [
+                            'userid'    => $tData['left_id'],
+                            'parent_id' => $uid,
+                            'position'  => 'LEFT',
+                            'level'     => $curr['level'] + 1
+                        ];
+                    }
+                    if (!empty($tData['right_id'])) {
+                        $queue[] = [
+                            'userid'    => $tData['right_id'],
+                            'parent_id' => $uid,
+                            'position'  => 'RIGHT',
+                            'level'     => $curr['level'] + 1
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $results;
+    }
+}
+
+/**
+ * Detailed Team Member Fetcher (MY_DIRECT, LEFT, RIGHT).
  */
 function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
     global $pdo;
@@ -1572,10 +1728,10 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 COALESCE(SUM(r.real_fund_usd), 0) as total_investment_usd,
                 MAX(r.date) as latest_investment_date,
                 (SELECT r2.package_code FROM tbl_roi_one r2 WHERE r2.user_id = u.userid ORDER BY r2.id DESC LIMIT 1) as latest_package
-            FROM tbl_sponsor s
-            INNER JOIN user u ON u.userid = s.referral_id
+            FROM user u
             LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
-            WHERE s.sponsor_id = :userid
+            WHERE u.sponserid = :userid 
+               OR u.userid IN (SELECT referral_id FROM tbl_sponsor WHERE sponsor_id = :userid)
             GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active, u.join_side
             ORDER BY u.joining_date DESC
         ";
@@ -1585,6 +1741,19 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
 
         $sr = 1;
         foreach ($rows as $r) {
+            $invInr = (float)($r['total_investment_inr'] ?? 0);
+            $invUsd = (float)($r['total_investment_usd'] ?? 0);
+            if ($invUsd <= 0 && $invInr > 0) {
+                $invUsd = parseInputToUSD($invInr, 'INR', $db);
+            }
+
+            // Direct count and downline count for direct member
+            $stmtDir = $db->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :uid");
+            $stmtDir->execute([':uid' => $r['userid']]);
+            $directCount = (int)$stmtDir->fetchColumn();
+
+            $downlineIds = getSubtreeDescendantIds($r['userid'], $db);
+
             $members[] = [
                 'sr'               => $sr++,
                 'userid'           => $r['userid'],
@@ -1592,55 +1761,24 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 'rank'             => $r['rank'],
                 'joining_date'     => $r['joining_date'],
                 'investment_date'  => $r['latest_investment_date'] ?: 'N/A',
-                'investment_inr'   => (float)$r['total_investment_inr'],
-                'investment_usd'   => (float)$r['total_investment_usd'],
+                'investment_inr'   => $invInr,
+                'investment_usd'   => $invUsd,
                 'status'           => ($r['active'] == 1) ? 'Active' : 'Inactive',
-                'package'          => $r['latest_package'] ?: ($r['total_investment_usd'] > 0 ? 'ANANTA' : 'N/A'),
-                'position'         => strtoupper($r['join_side'] ?: 'L')
+                'package'          => $r['latest_package'] ?: ($invUsd > 0 ? 'ANANTA' : 'N/A'),
+                'position'         => strtoupper($r['join_side'] ?: 'LEFT'),
+                'direct_count'     => $directCount,
+                'downline_count'   => count($downlineIds)
             ];
         }
     } elseif ($teamType === 'LEFT' || $teamType === 'RIGHT') {
-        $table = ($teamType === 'LEFT') ? 'tbl_userlevel_a' : 'tbl_userlevel_b';
-        $sql = "
-            SELECT 
-                u.userid,
-                u.name,
-                COALESCE(u.`rank`, 'Member') as `rank`,
-                u.joining_date,
-                u.active,
-                u.join_side,
-                t.level,
-                COALESCE(SUM(r.package), 0) as total_investment_inr,
-                COALESCE(SUM(r.real_fund_usd), 0) as total_investment_usd,
-                MAX(r.date) as latest_investment_date,
-                (SELECT r2.package_code FROM tbl_roi_one r2 WHERE r2.user_id = u.userid ORDER BY r2.id DESC LIMIT 1) as latest_package
-            FROM {$table} t
-            INNER JOIN user u ON u.userid = t.downline_id
-            LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
-            WHERE t.sponser_id = :userid
-            GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active, u.join_side, t.level
-            ORDER BY t.level ASC, u.joining_date DESC
-        ";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([':userid' => $userid]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Fetch user's direct root child from tree table
+        $stmtRoot = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+        $stmtRoot->execute([':uid' => $userid]);
+        $tRoot = $stmtRoot->fetch(PDO::FETCH_ASSOC);
 
-        $sr = 1;
-        foreach ($rows as $r) {
-            $members[] = [
-                'sr'               => $sr++,
-                'userid'           => $r['userid'],
-                'name'             => $r['name'],
-                'rank'             => $r['rank'],
-                'level'            => (int)$r['level'],
-                'joining_date'     => $r['joining_date'],
-                'investment_date'  => $r['latest_investment_date'] ?: 'N/A',
-                'investment_inr'   => (float)$r['total_investment_inr'],
-                'investment_usd'   => (float)$r['total_investment_usd'],
-                'status'           => ($r['active'] == 1) ? 'Active' : 'Inactive',
-                'package'          => $r['latest_package'] ?: ($r['total_investment_usd'] > 0 ? 'ANANTA' : 'N/A'),
-                'position'         => ($teamType === 'LEFT') ? 'L' : 'R'
-            ];
+        $rootChildId = ($teamType === 'LEFT') ? ($tRoot['left_id'] ?? '') : ($tRoot['right_id'] ?? '');
+        if (!empty($rootChildId)) {
+            $members = getRootBranchTreeDetailed($rootChildId, $db, $teamType);
         }
     }
 
@@ -1650,32 +1788,47 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
 /**
  * Requirement #21: Process P2P Fund Transfer.
  */
-function processP2PTransfer($senderId, $receiverId, $amount, $txnKey = null, $pdoConnection = null) {
+function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $pdoConnection = null) {
     global $pdo;
-    if ($txnKey instanceof PDO && $pdoConnection === null) {
-        $pdoConnection = $txnKey;
-        $txnKey = null;
-    }
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$senderId || !$receiverId) {
-        return ['status' => 'error', 'message' => 'Sender and receiver IDs are required.'];
+        return ['status' => 'error', 'message' => 'Sender and Receiver User IDs are required.'];
     }
 
-    if ($txnKey !== null) {
-        $verKey = verifyTransactionKey($senderId, $txnKey, $db);
-        if ($verKey['status'] !== 'success') {
-            return ['status' => 'error', 'message' => 'P2P Transfer failed: ' . $verKey['message']];
-        }
+    // 1. Mandatory Transaction Key Verification
+    if (empty($txnKey)) {
+        return ['status' => 'error', 'message' => 'Transaction Key is mandatory for P2P transfer.'];
     }
 
+    $verKey = verifyTransactionKey($senderId, $txnKey, $db);
+    if ($verKey['status'] !== 'success') {
+        return ['status' => 'error', 'message' => 'P2P Transfer rejected: ' . $verKey['message']];
+    }
+
+    // 2. Validate Allowed Wallets (Only Main Wallet and Net Balance allowed)
+    $allowedWallets = ['Main Wallet', 'Net Balance'];
+    $fromWallet = trim($fromWallet ?? '');
+    $toWallet = trim($toWallet ?? '');
+
+    if (!in_array($fromWallet, $allowedWallets, true) || !in_array($toWallet, $allowedWallets, true)) {
+        return ['status' => 'error', 'message' => 'Invalid wallet selection. Only Main Wallet and Net Balance are allowed for P2P transfer.'];
+    }
+
+    // Source and Destination wallets must be different
+    if ($fromWallet === $toWallet) {
+        return ['status' => 'error', 'message' => 'Source wallet and destination wallet must be different.'];
+    }
+
+    // 3. Amount Validation
     $amount = (float)$amount;
-    if ($amount <= 0) {
-        return ['status' => 'error', 'message' => 'Transfer amount must be a positive number greater than 0.'];
+    if ($amount <= 0 || is_nan($amount) || is_infinite($amount)) {
+        return ['status' => 'error', 'message' => 'Transfer amount must be a valid positive number greater than 0.'];
     }
 
-    if (strtoupper(trim($senderId)) === strtoupper(trim($receiverId))) {
-        return ['status' => 'error', 'message' => 'Cannot transfer funds to yourself.'];
-    }
+    $amount = round($amount, 2);
+
+    $senderId = trim($senderId);
+    $receiverId = trim($receiverId);
 
     $inLocalTxn = false;
     if (!$db->inTransaction()) {
@@ -1684,8 +1837,13 @@ function processP2PTransfer($senderId, $receiverId, $amount, $txnKey = null, $pd
     }
 
     try {
-        // Lock sender
-        $stmtSender = $db->prepare("SELECT userid, amount FROM user WHERE userid = :uid FOR UPDATE");
+        // Map wallet name to database column
+        // Main Wallet => pin_wallet, Net Balance => amount
+        $fromCol = ($fromWallet === 'Main Wallet') ? 'pin_wallet' : 'amount';
+        $toCol   = ($toWallet === 'Main Wallet')   ? 'pin_wallet' : 'amount';
+
+        // Lock Sender Row FOR UPDATE
+        $stmtSender = $db->prepare("SELECT userid, name, pin_wallet, amount FROM user WHERE userid = :uid FOR UPDATE");
         $stmtSender->execute([':uid' => $senderId]);
         $sender = $stmtSender->fetch(PDO::FETCH_ASSOC);
 
@@ -1694,58 +1852,91 @@ function processP2PTransfer($senderId, $receiverId, $amount, $txnKey = null, $pd
             return ['status' => 'error', 'message' => "Sender account {$senderId} not found."];
         }
 
-        $senderBal = (float)$sender['amount'];
-        if ($senderBal < $amount) {
+        $senderPrevBal = (float)($sender[$fromCol] ?? 0);
+        if ($senderPrevBal < $amount) {
             if ($inLocalTxn) $db->rollBack();
-            return ['status' => 'error', 'message' => "Insufficient main wallet balance ($" . number_format($senderBal, 2) . "). Required: $" . number_format($amount, 2)];
+            return ['status' => 'error', 'message' => "Insufficient {$fromWallet} balance ($" . number_format($senderPrevBal, 2) . "). Requested: $" . number_format($amount, 2)];
         }
 
-        // Lock receiver
-        $stmtRec = $db->prepare("SELECT userid, name FROM user WHERE userid = :uid FOR UPDATE");
-        $stmtRec->execute([':uid' => $receiverId]);
+        // Lock Receiver Row FOR UPDATE
+        $cleanRecId = $receiverId;
+        if (strripos($cleanRecId, 'AN') === 0) {
+            $cleanRecId = substr($cleanRecId, 2);
+        }
+
+        $stmtRec = $db->prepare("SELECT userid, name, pin_wallet, amount FROM user WHERE userid = :uid OR userid = :cid FOR UPDATE");
+        $stmtRec->execute([':uid' => $receiverId, ':cid' => $cleanRecId]);
         $receiver = $stmtRec->fetch(PDO::FETCH_ASSOC);
 
         if (!$receiver) {
             if ($inLocalTxn) $db->rollBack();
-            return ['status' => 'error', 'message' => "Receiver account {$receiverId} not found."];
+            return ['status' => 'error', 'message' => "Receiver User ID '{$receiverId}' not found."];
         }
 
-        // Execute transfer
-        $db->prepare("UPDATE user SET amount = amount - :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $senderId]);
-        $db->prepare("UPDATE user SET amount = amount + :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $receiverId]);
+        $receiverId = $receiver['userid']; // Use exact database userid for operations
 
-        $refNo = 'P2P-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
+        $receiverPrevBal = (float)($receiver[$toCol] ?? 0);
 
-        // Insert into tbl_p2p_transfer
+        // Perform Atomic Debit & Credit
+        $db->prepare("UPDATE user SET {$fromCol} = {$fromCol} - :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $senderId]);
+        $db->prepare("UPDATE user SET {$toCol} = {$toCol} + :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $receiverId]);
+
+        // Generate Server-Side Unique Transaction ID
+        $txRef = 'P2P-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
+
+        // Save complete P2P transfer record
         $insP2p = $db->prepare("
-            INSERT INTO tbl_p2p_transfer (transfer_ref, sender_id, receiver_id, amount, status, created_at)
-            VALUES (:ref, :sender, :receiver, :amt, 'COMPLETED', NOW())
+            INSERT INTO tbl_p2p_transfer (transfer_ref, from_wallet, to_wallet, sender_id, receiver_id, amount, status, created_at)
+            VALUES (:ref, :from_w, :to_w, :sender, :receiver, :amt, 'COMPLETED', NOW())
         ");
         $insP2p->execute([
-            ':ref'      => $refNo,
+            ':ref'      => $txRef,
+            ':from_w'   => $fromWallet,
+            ':to_w'     => $toWallet,
             ':sender'   => $senderId,
             ':receiver' => $receiverId,
             ':amt'      => $amount
         ]);
 
-        // Insert transactions
+        // Record Sender Transaction Log
         $db->prepare("
             INSERT INTO tbl_transaction (user_id, amount, type, subject, time, created_date, status)
             VALUES (:uid, :amt, 'Debit', :sub, CURTIME(), CURDATE(), '1')
         ")->execute([
             ':uid' => $senderId,
             ':amt' => $amount,
-            ':sub' => "P2P Transfer Sent to {$receiverId} ({$receiver['name']}) [Ref: {$refNo}]"
+            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) to {$receiverId} ({$receiver['name']}) [Ref: {$txRef}]"
         ]);
 
+        // Record Receiver Transaction Log
         $db->prepare("
             INSERT INTO tbl_transaction (user_id, amount, type, subject, time, created_date, status)
             VALUES (:uid, :amt, 'Credit', :sub, CURTIME(), CURDATE(), '1')
         ")->execute([
             ':uid' => $receiverId,
             ':amt' => $amount,
-            ':sub' => "P2P Transfer Received from {$senderId} [Ref: {$refNo}]"
+            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) received from {$senderId} ({$sender['name']}) [Ref: {$txRef}]"
         ]);
+
+        // Trigger Notifications for Sender and Receiver
+        if (function_exists('createUserNotification')) {
+            createUserNotification(
+                $senderId,
+                'P2P',
+                'P2P Transfer Sent',
+                "You have successfully sent $" . number_format($amount, 2) . " from {$fromWallet} to {$receiver['name']} ({$receiverId}).",
+                $txRef,
+                $db
+            );
+            createUserNotification(
+                $receiverId,
+                'P2P',
+                'P2P Transfer Received',
+                "You have received $" . number_format($amount, 2) . " into {$toWallet} from {$sender['name']} ({$senderId}).",
+                $txRef,
+                $db
+            );
+        }
 
         if ($inLocalTxn) {
             $db->commit();
@@ -1753,8 +1944,8 @@ function processP2PTransfer($senderId, $receiverId, $amount, $txnKey = null, $pd
 
         return [
             'status'       => 'success',
-            'message'      => "P2P transfer of $" . number_format($amount, 2) . " to {$receiverId} completed successfully.",
-            'transfer_ref' => $refNo
+            'message'      => "P2P Transfer of $" . number_format($amount, 2) . " from {$fromWallet} to {$toWallet} ({$receiverId}) completed successfully.",
+            'transfer_ref' => $txRef
         ];
 
     } catch (Exception $e) {
@@ -1777,6 +1968,8 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
         SELECT 
             p.id,
             p.transfer_ref,
+            COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
+            COALESCE(p.to_wallet, 'Net Balance') as to_wallet,
             p.sender_id,
             p.receiver_id,
             u.name as receiver_name,
@@ -1805,6 +1998,8 @@ function getUserP2PReceivedReport($userid, $pdoConnection = null) {
         SELECT 
             p.id,
             p.transfer_ref,
+            COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
+            COALESCE(p.to_wallet, 'Net Balance') as to_wallet,
             p.sender_id,
             u.name as sender_name,
             p.receiver_id,
@@ -2002,11 +2197,13 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
         return ['status' => 'error', 'message' => 'User session required.'];
     }
 
-    if ($txnKey !== null) {
-        $verKey = verifyTransactionKey($userid, $txnKey, $db);
-        if ($verKey['status'] !== 'success') {
-            return ['status' => 'error', 'message' => 'Withdrawal request failed: ' . $verKey['message']];
-        }
+    if (empty($txnKey)) {
+        return ['status' => 'error', 'message' => 'Transaction Key is compulsory to process withdrawal.'];
+    }
+
+    $verKey = verifyTransactionKey($userid, $txnKey, $db);
+    if ($verKey['status'] !== 'success') {
+        return ['status' => 'error', 'message' => 'Withdrawal request failed: ' . $verKey['message']];
     }
 
     $method = strtoupper(trim($withdrawalMethod));
@@ -2083,6 +2280,18 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
         ]);
 
         $wdId = $db->lastInsertId();
+
+        // Trigger Withdrawal Submitted Notification
+        if (function_exists('createUserNotification')) {
+            createUserNotification(
+                $userid,
+                'WITHDRAWAL',
+                'Withdrawal Request Submitted',
+                "Your {$method} withdrawal request of $" . number_format($amount, 2) . " has been submitted successfully and is pending approval.",
+                $wdId,
+                $db
+            );
+        }
 
         if ($inLocalTxn) {
             $db->commit();
@@ -2223,37 +2432,367 @@ if (!function_exists('formatCurrency')) {
     }
 }
 
+if (!function_exists('getAnantaPackageConfigs')) {
+    function getAnantaPackageConfigs($only_active = true, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db) return [];
+        $sql = "SELECT * FROM tbl_ananta_package_config";
+        if ($only_active) {
+            $sql .= " WHERE status = 1";
+        }
+        $sql .= " ORDER BY id ASC";
+        return $db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
 if (!function_exists('validatePackageInvestment')) {
     function validatePackageInvestment($package_id, $amount_usd, $pdoConnection = null) {
         global $pdo;
         $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($package_id)) {
+            return ['status' => false, 'message' => 'Package ID is required.'];
+        }
         $package_id = strtoupper(trim($package_id));
         $amount_usd = (float)$amount_usd;
 
         if ($amount_usd <= 0) {
-            return ['valid' => false, 'message' => 'Investment amount must be a positive number.'];
+            return ['status' => false, 'message' => 'Investment amount must be a positive number.'];
         }
 
-        $stmt = $db->prepare("SELECT * FROM tbl_ananta_package_config WHERE package_id = :code AND status = 1 LIMIT 1");
+        $stmt = $db->prepare("SELECT * FROM tbl_ananta_package_config WHERE package_id = :code LIMIT 1");
         $stmt->execute([':code' => $package_id]);
         $pkg = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$pkg) {
-            return ['valid' => false, 'message' => "Selected package '{$package_id}' does not exist or is currently inactive."];
+            return ['status' => false, 'message' => "Selected package '{$package_id}' does not exist."];
+        }
+
+        if ((int)$pkg['status'] !== 1) {
+            return ['status' => false, 'message' => "Package '{$pkg['package_name']}' is currently inactive for new investments."];
         }
 
         $minLimit = (float)$pkg['min_investment_usd'];
         $maxLimit = isset($pkg['max_investment_usd']) && $pkg['max_investment_usd'] !== null ? (float)$pkg['max_investment_usd'] : null;
 
         if ($amount_usd < $minLimit) {
-            return ['valid' => false, 'message' => "Investment amount $" . number_format($amount_usd, 2) . " is below minimum limit $" . number_format($minLimit, 2) . " for {$pkg['package_name']}."];
+            return ['status' => false, 'message' => "Investment amount $" . number_format($amount_usd, 2) . " is below minimum limit $" . number_format($minLimit, 2) . " for {$pkg['package_name']}."];
         }
 
         if ($maxLimit !== null && $amount_usd > $maxLimit) {
-            return ['valid' => false, 'message' => "Investment amount $" . number_format($amount_usd, 2) . " exceeds maximum limit $" . number_format($maxLimit, 2) . " for {$pkg['package_name']}."];
+            return ['status' => false, 'message' => "Investment amount $" . number_format($amount_usd, 2) . " exceeds maximum limit $" . number_format($maxLimit, 2) . " for {$pkg['package_name']}."];
         }
 
-        return ['valid' => true, 'package' => $pkg];
+        return ['status' => true, 'valid' => true, 'message' => 'Validation successful.', 'package' => $pkg];
+    }
+}
+
+if (!function_exists('processAnantaPackageInvestment')) {
+    function processAnantaPackageInvestment($user_id, $package_id, $amount_usd, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$user_id) {
+            return ['status' => 'error', 'message' => 'User authentication required.'];
+        }
+
+        $val = validatePackageInvestment($package_id, $amount_usd, $db);
+        if (!$val['status']) {
+            return ['status' => 'error', 'message' => $val['message']];
+        }
+
+        $pkg = $val['package'];
+        $realFundUsd = (float)$amount_usd;
+        $bonusPct    = (float)$pkg['bonus_percentage'];
+        $bonusAmtUsd = ($bonusPct > 0) ? round($realFundUsd * ($bonusPct / 100.0), 2) : 0.00;
+        $lockMonths  = (int)$pkg['lock_period_months'];
+        $deductPct   = (float)$pkg['withdrawal_deduction_percent'];
+
+        $inrAmount   = round($realFundUsd * 90.0, 2); // $1 = ₹90 conversion factor
+        $cDate       = date('Y-m-d');
+        $cTime       = date('H:i:s');
+        $maturityDate= date('Y-m-d', strtotime("+{$lockMonths} months"));
+
+        $inLocalTxn = false;
+        if (!$db->inTransaction()) {
+            $db->beginTransaction();
+            $inLocalTxn = true;
+        }
+
+        try {
+            // Lock user row FOR UPDATE
+            $stmtUser = $db->prepare("SELECT userid, pin_wallet, bonus_30_wallet, total_package FROM user WHERE userid = :uid FOR UPDATE");
+            $stmtUser->execute([':uid' => $user_id]);
+            $uRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+            if (!$uRow) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "User {$user_id} not found."];
+            }
+
+            $pinWalletBal = (float)$uRow['pin_wallet'];
+            if ($pinWalletBal < $inrAmount) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Insufficient Fund Wallet balance. Required: ₹" . number_format($inrAmount, 2) . " ($" . number_format($realFundUsd, 2) . "), Available: ₹" . number_format($pinWalletBal, 2)];
+            }
+
+            // 1. Update user pin_wallet & total_package
+            $updUser = $db->prepare("
+                UPDATE user SET
+                    pin_wallet = pin_wallet - :inr_amt,
+                    total_package = total_package + :inr_amt,
+                    bonus_30_wallet = bonus_30_wallet + :bonus_usd,
+                    upgrade_date = :cdate,
+                    atime = :ctime
+                WHERE userid = :uid
+            ");
+            $updUser->execute([
+                ':inr_amt'   => $inrAmount,
+                ':bonus_usd' => $bonusAmtUsd,
+                ':cdate'     => $cDate,
+                ':ctime'     => $cTime,
+                ':uid'       => $user_id
+            ]);
+
+            // 2. Insert Investment Record into tbl_roi_one with Immutable Snapshot
+            $insRoi = $db->prepare("
+                INSERT INTO tbl_roi_one (
+                    user_id, name, package_code, real_fund_usd, bonus_percent_snapshot, bonus_amount_usd,
+                    lock_period_months, maturity_date, deduction_percent_snapshot, capital_withdrawal_status,
+                    package, percentage, date, closingdate, time, status, lock_day, capping, level, amount, totalincome, count
+                ) VALUES (
+                    :uid, :pkg_name, :pkg_code, :real_fund_usd, :bonus_pct, :bonus_amt,
+                    :lock_months, :maturity_date, :deduct_pct, 'LOCKED',
+                    :inr_pkg, 3.00, :cdate, :cdate, :ctime, '0', :lock_days, :capping, 1, 0, 0, 0
+                )
+            ");
+            $incLimitCapping = round($inrAmount * 2.0, 2);
+            $insRoi->execute([
+                ':uid'           => $user_id,
+                ':pkg_name'      => substr($pkg['package_name'], 0, 20),
+                ':pkg_code'      => $pkg['package_id'],
+                ':real_fund_usd' => $realFundUsd,
+                ':bonus_pct'     => $bonusPct,
+                ':bonus_amt'     => $bonusAmtUsd,
+                ':lock_months'   => $lockMonths,
+                ':maturity_date' => $maturityDate,
+                ':deduct_pct'    => $deductPct,
+                ':inr_pkg'       => $inrAmount,
+                ':cdate'         => $cDate,
+                ':ctime'         => $cTime,
+                ':lock_days'     => round($lockMonths * 30.4),
+                ':capping'       => $incLimitCapping
+            ]);
+
+            $invId = $db->lastInsertId();
+
+            // 3. Record Investment Transaction in tbl_transaction
+            $insTxn = $db->prepare("
+                INSERT INTO tbl_transaction
+                (user_id, amount, type, subject, time, created_date, status)
+                VALUES
+                (:uid, :inr_amt, 'Credit', :subject, :ctime, :cdate, '1')
+            ");
+            $subject = "Ananta Package Investment - {$pkg['package_name']} ($ " . number_format($realFundUsd, 2) . ")";
+            $insTxn->execute([
+                ':uid'     => $user_id,
+                ':inr_amt' => $inrAmount,
+                ':subject' => $subject,
+                ':ctime'   => $cTime,
+                ':cdate'   => $cDate
+            ]);
+
+            // 4. Record Bonus Wallet Transaction if applicable
+            if ($bonusAmtUsd > 0) {
+                $insBonusTxn = $db->prepare("
+                    INSERT INTO tbl_transaction
+                    (user_id, amount, type, subject, time, created_date, status)
+                    VALUES
+                    (:uid, :bonus_usd, 'Credit', :subject, :ctime, :cdate, '1')
+                ");
+                $bonusSubject = "30% Bonus Package Credit ($ " . number_format($bonusAmtUsd, 2) . ") to 30% Bonus Wallet";
+                $insBonusTxn->execute([
+                    ':uid'       => $user_id,
+                    ':bonus_usd' => $bonusAmtUsd,
+                    ':subject'   => $bonusSubject,
+                    ':ctime'     => $cTime,
+                    ':cdate'     => $cDate
+                ]);
+            }
+
+            // 5. Generate Direct Bonus Schedule if helper exists
+            if (function_exists('generateDirectBonusSchedule') && $invId) {
+                generateDirectBonusSchedule($invId, $user_id, $inrAmount, $cDate, $db);
+            }
+
+            if ($inLocalTxn) {
+                $db->commit();
+            }
+
+            return [
+                'status'            => 'success',
+                'message'           => "Investment of $" . number_format($realFundUsd, 2) . " in {$pkg['package_name']} completed successfully!",
+                'investment_id'     => $invId,
+                'real_fund_usd'     => $realFundUsd,
+                'bonus_amount_usd'  => $bonusAmtUsd,
+                'lock_period_months'=> $lockMonths,
+                'maturity_date'     => $maturityDate,
+                'inr_amount'        => $inrAmount
+            ];
+
+        } catch (Exception $e) {
+            if ($inLocalTxn && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            return ['status' => 'error', 'message' => "Investment failed: " . $e->getMessage()];
+        }
+    }
+}
+
+if (!function_exists('processCapitalWithdrawal')) {
+    function processCapitalWithdrawal($user_id, $investment_id, $txnKey = null, $pdoConnection = null) {
+        global $pdo;
+        if ($txnKey instanceof PDO && $pdoConnection === null) {
+            $pdoConnection = $txnKey;
+            $txnKey = null;
+        }
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$user_id || !$investment_id) {
+            return ['status' => 'error', 'message' => 'User session & valid investment ID required.'];
+        }
+
+        // Compulsory Transaction Key verification when calling from user context
+        if ($txnKey !== null || function_exists('verifyTransactionKey')) {
+            if (empty($txnKey)) {
+                return ['status' => 'error', 'message' => 'Transaction Key is compulsory to process capital withdrawal.'];
+            }
+            $verKey = verifyTransactionKey($user_id, $txnKey, $db);
+            if ($verKey['status'] !== 'success') {
+                return ['status' => 'error', 'message' => 'Capital withdrawal failed: ' . $verKey['message']];
+            }
+        }
+
+        $inLocalTxn = false;
+        if (!$db->inTransaction()) {
+            $db->beginTransaction();
+            $inLocalTxn = true;
+        }
+
+        try {
+            // Lock investment row FOR UPDATE
+            $stmtInv = $db->prepare("SELECT * FROM tbl_roi_one WHERE id = :id AND user_id = :uid FOR UPDATE");
+            $stmtInv->execute([':id' => $investment_id, ':uid' => $user_id]);
+            $inv = $stmtInv->fetch(PDO::FETCH_ASSOC);
+
+            if (!$inv) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Investment #{$investment_id} not found for user {$user_id}."];
+            }
+
+            if ($inv['capital_withdrawal_status'] === 'WITHDRAWN') {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Capital for investment #{$investment_id} has ALREADY been withdrawn."];
+            }
+
+            $cDate = date('Y-m-d');
+            $maturityDate = $inv['maturity_date'];
+            $lockMonths   = (int)$inv['lock_period_months'];
+            $invDate      = $inv['date'];
+
+            // Strict Server-Side Lock Check: Calculate if lock period / maturity date has passed
+            $computedMaturity = $maturityDate ?: date('Y-m-d', strtotime("+{$lockMonths} months", strtotime($invDate)));
+            if ($cDate < $computedMaturity) {
+                if ($inLocalTxn) $db->rollBack();
+                return [
+                    'status'  => 'error',
+                    'message' => "Capital is locked for {$lockMonths} months. Maturity date is {$computedMaturity}. Early capital withdrawal is blocked."
+                ];
+            }
+
+            $realFundUsd  = (float)($inv['real_fund_usd'] > 0 ? $inv['real_fund_usd'] : round(((float)$inv['package']) / 90.0, 2));
+            $deductPct    = (float)($inv['deduction_percent_snapshot'] > 0 ? $inv['deduction_percent_snapshot'] : 15.00);
+            $deductAmtUsd = round($realFundUsd * ($deductPct / 100.0), 2);
+            $netWdUsd     = round($realFundUsd - $deductAmtUsd, 2);
+            $netWdInr     = round($netWdUsd * 90.0, 2);
+            $bonusAmtUsd  = (float)$inv['bonus_amount_usd'];
+
+            // 1. Mark investment capital withdrawal status as WITHDRAWN
+            $updInv = $db->prepare("UPDATE tbl_roi_one SET capital_withdrawal_status = 'WITHDRAWN', status = '1' WHERE id = :id");
+            $updInv->execute([':id' => $investment_id]);
+
+            // 2. Reconcile Bonus Wallet if 30% Bonus Package
+            if ($bonusAmtUsd > 0) {
+                $stmtUser = $db->prepare("SELECT bonus_30_wallet FROM user WHERE userid = :uid FOR UPDATE");
+                $stmtUser->execute([':uid' => $user_id]);
+                $userBonusBal = (float)$stmtUser->fetchColumn();
+
+                $reconciledBonus = min($userBonusBal, $bonusAmtUsd);
+                if ($reconciledBonus > 0) {
+                    $db->prepare("UPDATE user SET bonus_30_wallet = bonus_30_wallet - :b_amt WHERE userid = :uid")->execute([':b_amt' => $reconciledBonus, ':uid' => $user_id]);
+
+                    // Bonus reconciliation transaction log
+                    $db->prepare("
+                        INSERT INTO tbl_transaction (user_id, amount, type, subject, time, created_date, status)
+                        VALUES (:uid, :b_amt, 'Debit', :sub, CURTIME(), CURDATE(), '1')
+                    ")->execute([
+                        ':uid'   => $user_id,
+                        ':b_amt' => $reconciledBonus,
+                        ':sub'   => "30% Bonus Wallet Reconciled/Deducted on Capital Withdrawal (Inv #{$investment_id})"
+                    ]);
+                }
+            }
+
+            // 3. Credit Net Withdrawal Amount to Main Amount / Wallet
+            $db->prepare("UPDATE user SET amount = amount + :net_inr WHERE userid = :uid")->execute([':net_inr' => $netWdInr, ':uid' => $user_id]);
+
+            // 4. Record Capital Withdrawal Transaction
+            $subject = "Capital Withdrawal Paid - Inv #{$investment_id} (Real Fund: $" . number_format($realFundUsd, 2) . " - 15% Deduction: $" . number_format($deductAmtUsd, 2) . " = Net: $" . number_format($netWdUsd, 2) . ")";
+            $db->prepare("
+                INSERT INTO tbl_transaction (user_id, amount, type, subject, time, created_date, status)
+                VALUES (:uid, :net_usd, 'Credit', :sub, CURTIME(), CURDATE(), '1')
+            ")->execute([
+                ':uid'     => $user_id,
+                ':net_usd' => $netWdUsd,
+                ':sub'     => $subject
+            ]);
+
+            // 5. Also record capital withdrawal request entry in tbl_capital_withdrawal_request
+            $db->prepare("
+                INSERT INTO tbl_capital_withdrawal_request (
+                    user_id, investment_id, package_code, real_fund_usd, deduction_percent, deduction_amount_usd,
+                    net_withdrawal_usd, bonus_reconciled_usd, status, requested_at, processed_at
+                ) VALUES (
+                    :uid, :inv_id, :pkg_code, :real_fund, :deduct_pct, :deduct_amt, :net_wd, :bonus_rec, 'PAID', NOW(), NOW()
+                )
+            ")->execute([
+                ':uid'        => $user_id,
+                ':inv_id'     => $investment_id,
+                ':pkg_code'   => $inv['package_code'] ?: 'ANANTA',
+                ':real_fund'  => $realFundUsd,
+                ':deduct_pct' => $deductPct,
+                ':deduct_amt' => $deductAmtUsd,
+                ':net_wd'     => $netWdUsd,
+                ':bonus_rec'  => $bonusAmtUsd
+            ]);
+
+            if ($inLocalTxn) {
+                $db->commit();
+            }
+
+            return [
+                'status'              => 'success',
+                'message'             => "Capital withdrawal of $" . number_format($netWdUsd, 2) . " processed successfully after 15% deduction.",
+                'investment_id'       => $investment_id,
+                'real_fund_usd'       => $realFundUsd,
+                'deduction_amount_usd'=> $deductAmtUsd,
+                'net_withdrawal_usd'  => $netWdUsd
+            ];
+
+        } catch (Exception $e) {
+            if ($inLocalTxn && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            return ['status' => 'error', 'message' => "Capital Withdrawal Error: " . $e->getMessage()];
+        }
     }
 }
 
@@ -2882,10 +3421,10 @@ if (!function_exists('processAccountActivation')) {
                 $actType = $isRenewal ? 'OTHER_USER_RENEWAL' : 'OTHER_USER_ACTIVATION';
             }
 
-            // Calculate Dates (1 Year validity: current time + 1 year)
+            // Calculate Dates (4 Years validity: current time + 4 years)
             $startDtObj = new DateTime();
             $expiryDtObj = clone $startDtObj;
-            $expiryDtObj->modify('+1 year');
+            $expiryDtObj->modify('+4 years');
 
             $startDtStr  = $startDtObj->format('Y-m-d H:i:s');
             $expiryDtStr = $expiryDtObj->format('Y-m-d H:i:s');
@@ -2947,6 +3486,8 @@ if (!function_exists('processAccountActivation')) {
 
             if ($inLocalTxn) $db->commit();
 
+            $remDays = (int)ceil((strtotime($expiryDtStr) - strtotime($startDtStr)) / 86400);
+
             return [
                 'status'         => 'success',
                 'transaction_id' => $txnRef,
@@ -2958,8 +3499,8 @@ if (!function_exists('processAccountActivation')) {
                 'amount_inr'     => $activationAmountINR,
                 'start_date'     => $startDtStr,
                 'expiry_date'    => $expiryDtStr,
-                'remaining_days' => 365,
-                'message'        => "Account Activation Successful! User {$target['name']} ({$targetId}) is now ACTIVE for 1 Year (until " . date('d-M-Y', strtotime($expiryDtStr)) . ")."
+                'remaining_days' => $remDays,
+                'message'        => "Account Activation Successful! User {$target['name']} ({$targetId}) is now ACTIVE for 4 Years (until " . date('d-M-Y', strtotime($expiryDtStr)) . ")."
             ];
 
         } catch (Exception $e) {
@@ -3141,6 +3682,527 @@ if (!function_exists('getUserWalletBalance')) {
         $stmt = $db->prepare("SELECT amount FROM user WHERE userid = :uid");
         $stmt->execute([':uid' => $userid]);
         return round((float)($stmt->fetchColumn() ?: 0), 2);
+    }
+}
+
+if (!function_exists('getUserMainWalletTransactions')) {
+    function getUserMainWalletTransactions($userid, $fromDate = null, $toDate = null, $typeFilter = null, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userid) return [];
+
+        $where = ["user_id = :uid"];
+        $params = [':uid' => $userid];
+
+        if (!empty($fromDate) && !empty($toDate)) {
+            $where[] = "created_date >= :from_date AND created_date <= :to_date";
+            $params[':from_date'] = $fromDate;
+            $params[':to_date']   = $toDate;
+        }
+
+        if (!empty($typeFilter)) {
+            $tf = strtoupper(trim($typeFilter));
+            if ($tf === 'CREDIT' || $tf === 'DEBIT') {
+                $where[] = "UPPER(type) = :type_filter";
+                $params[':type_filter'] = $tf;
+            }
+        }
+
+        $whereSql = implode(' AND ', $where);
+
+        $sql = "
+            SELECT 
+                id,
+                user_id,
+                amount,
+                act_amount,
+                type,
+                subject,
+                withdrawal_method,
+                status,
+                created_date,
+                time
+            FROM tbl_transaction
+            WHERE {$whereSql}
+            ORDER BY id DESC
+        ";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
+if (!function_exists('getUserIncomeWalletSummary')) {
+    function getUserIncomeWalletSummary($userid, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userid) {
+            return [
+                'total_income_balance' => 0.0,
+                'profit_income'        => 0.0,
+                'profit_sharing'       => 0.0,
+                'direct_bonus'         => 0.0,
+                'mentor_income'        => 0.0,
+                'rank_reward'          => 0.0,
+                'vip_club'             => 0.0,
+                'company_turnover'     => 0.0
+            ];
+        }
+
+        $growth = getUserGrowthBreakdown($userid, $db);
+
+        $profitInc   = (float)($growth['profit_income']['total_balance'] ?? 0);
+        $profitShare = (float)($growth['profit_sharing']['total_balance'] ?? 0);
+        $directBon   = (float)($growth['direct_bonus']['total_balance'] ?? 0);
+        $mentorInc   = (float)($growth['mentor_income']['total_balance'] ?? 0);
+        $vipClub     = (float)($growth['vip_club']['total_balance'] ?? 0);
+
+        // Rank reward total
+        $rankRew = 0.0;
+        if (!empty($growth['rank_reward']['history'])) {
+            foreach ($growth['rank_reward']['history'] as $r) {
+                $rankRew += (float)($r['amount'] ?? 0);
+            }
+        }
+
+        // Company turnover total
+        $turnover = 0.0;
+        if (!empty($growth['company_turnover']['history'])) {
+            foreach ($growth['company_turnover']['history'] as $r) {
+                $turnover += (float)($r['amount'] ?? 0);
+            }
+        }
+
+        $totalIncBal = round($profitInc + $profitShare + $directBon + $mentorInc + $rankRew + $vipClub + $turnover, 2);
+
+        return [
+            'total_income_balance' => $totalIncBal,
+            'profit_income'        => round($profitInc, 2),
+            'profit_sharing'       => round($profitShare, 2),
+            'direct_bonus'         => round($directBon, 2),
+            'mentor_income'        => round($mentorInc, 2),
+            'rank_reward'          => round($rankRew, 2),
+            'vip_club'             => round($vipClub, 2),
+            'company_turnover'     => round($turnover, 2)
+        ];
+    }
+}
+
+if (!function_exists('getUserIncomeWalletHistory')) {
+    function getUserIncomeWalletHistory($userid, $incomeType = null, $fromDate = null, $toDate = null, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userid) return [];
+
+        $allHistory = [];
+
+        // 1. Profit Income from tbl_transaction
+        if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'PROFIT_INCOME') {
+            $sql = "SELECT id, 'Profit Income' as income_type, amount, created_date, time, subject, '1' as status FROM tbl_transaction WHERE user_id = :uid AND (type = 'Profit Income' OR subject LIKE '%Profit Income%')";
+            $params = [':uid' => $userid];
+            if (!empty($fromDate) && !empty($toDate)) {
+                $sql .= " AND created_date >= :from_date AND created_date <= :to_date";
+                $params[':from_date'] = $fromDate;
+                $params[':to_date']   = $toDate;
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $allHistory[] = [
+                    'id'           => $row['id'],
+                    'income_type'  => 'Profit Income',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $row['created_date'],
+                    'time'         => $row['time'],
+                    'subject'      => $row['subject'],
+                    'status'       => 'Credited',
+                    'sort_date'    => $row['created_date'] . ' ' . $row['time']
+                ];
+            }
+        }
+
+        // 2. Profit Sharing from tbl_transaction
+        if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'PROFIT_SHARING') {
+            $sql = "SELECT id, 'Profit Sharing' as income_type, amount, created_date, time, subject, '1' as status FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Profit Sharing%'";
+            $params = [':uid' => $userid];
+            if (!empty($fromDate) && !empty($toDate)) {
+                $sql .= " AND created_date >= :from_date AND created_date <= :to_date";
+                $params[':from_date'] = $fromDate;
+                $params[':to_date']   = $toDate;
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $allHistory[] = [
+                    'id'           => $row['id'],
+                    'income_type'  => 'Profit Sharing',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $row['created_date'],
+                    'time'         => $row['time'],
+                    'subject'      => $row['subject'],
+                    'status'       => 'Credited',
+                    'sort_date'    => $row['created_date'] . ' ' . $row['time']
+                ];
+            }
+        }
+
+        // 3. Direct Bonus from tbl_direct_bonus_schedule
+        if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'DIRECT_BONUS') {
+            $sql = "SELECT id, 'Direct Bonus' as income_type, installment_amount as amount, installment_month, source_user_id, installment_number, status, credited_at FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid";
+            $params = [':uid' => $userid];
+            if (!empty($fromDate) && !empty($toDate)) {
+                $sql .= " AND credited_at >= :from_date AND credited_at <= :to_date_end";
+                $params[':from_date'] = $fromDate . ' 00:00:00';
+                $params[':to_date_end'] = $toDate . ' 23:59:59';
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $dtStr = $row['credited_at'] ?: ($row['installment_month'] . '-01 00:00:00');
+                $dParts = explode(' ', $dtStr);
+                $allHistory[] = [
+                    'id'           => $row['id'],
+                    'income_type'  => 'Direct Bonus',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $dParts[0],
+                    'time'         => $dParts[1] ?? '00:00:00',
+                    'subject'      => "Direct Bonus Installment #" . $row['installment_number'] . " from User " . $row['source_user_id'] . " (" . $row['installment_month'] . ")",
+                    'status'       => $row['status'],
+                    'sort_date'    => $dtStr
+                ];
+            }
+        }
+
+        // 4. Mentor Income from tbl_mentor_income_schedule
+        if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'MENTOR_INCOME') {
+            $sql = "SELECT id, 'Mentor Income' as income_type, payout_amount as amount, closing_month, direct_user_id, contribution_percentage, status, credited_at FROM tbl_mentor_income_schedule WHERE mentor_id = :uid";
+            $params = [':uid' => $userid];
+            if (!empty($fromDate) && !empty($toDate)) {
+                $sql .= " AND credited_at >= :from_date AND credited_at <= :to_date_end";
+                $params[':from_date'] = $fromDate . ' 00:00:00';
+                $params[':to_date_end'] = $toDate . ' 23:59:59';
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $dtStr = $row['credited_at'] ?: ($row['closing_month'] . '-01 00:00:00');
+                $dParts = explode(' ', $dtStr);
+                $allHistory[] = [
+                    'id'           => $row['id'],
+                    'income_type'  => 'Mentor Income',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $dParts[0],
+                    'time'         => $dParts[1] ?? '00:00:00',
+                    'subject'      => "Mentor Income (" . $row['contribution_percentage'] . "%) from Direct User " . $row['direct_user_id'] . " (" . $row['closing_month'] . ")",
+                    'status'       => $row['status'],
+                    'sort_date'    => $dtStr
+                ];
+            }
+        }
+
+        // 5. Rank Reward from tbl_rewardinc
+        if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'RANK_REWARD') {
+            $sql = "SELECT id, 'Rank Reward' as income_type, amount, created_date, time, subject, status FROM tbl_rewardinc WHERE user_id = :uid";
+            $params = [':uid' => $userid];
+            if (!empty($fromDate) && !empty($toDate)) {
+                $sql .= " AND created_date >= :from_date AND created_date <= :to_date";
+                $params[':from_date'] = $fromDate;
+                $params[':to_date']   = $toDate;
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $allHistory[] = [
+                    'id'           => $row['id'],
+                    'income_type'  => 'Rank Reward',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $row['created_date'],
+                    'time'         => $row['time'],
+                    'subject'      => $row['subject'],
+                    'status'       => ($row['status'] == 1) ? 'Achieved' : 'Pending',
+                    'sort_date'    => $row['created_date'] . ' ' . $row['time']
+                ];
+            }
+        }
+
+        // 6. VIP Club from tbl_vip_user_qualification
+        if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'VIP_CLUB') {
+            $sql = "SELECT id, 'VIP Club' as income_type, reward_amount as amount, qualified_at, vip_level, reward_status FROM tbl_vip_user_qualification WHERE user_id = :uid";
+            $params = [':uid' => $userid];
+            if (!empty($fromDate) && !empty($toDate)) {
+                $sql .= " AND qualified_at >= :from_date AND qualified_at <= :to_date_end";
+                $params[':from_date'] = $fromDate . ' 00:00:00';
+                $params[':to_date_end'] = $toDate . ' 23:59:59';
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $dtStr = $row['qualified_at'] ?: date('Y-m-d H:i:s');
+                $dParts = explode(' ', $dtStr);
+                $allHistory[] = [
+                    'id'           => $row['id'],
+                    'income_type'  => 'VIP Club',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $dParts[0],
+                    'time'         => $dParts[1] ?? '00:00:00',
+                    'subject'      => "VIP Club Level #" . $row['vip_level'] . " Reward Qualified",
+                    'status'       => $row['reward_status'],
+                    'sort_date'    => $dtStr
+                ];
+            }
+        }
+
+        // 7. Company Turnover from tbl_transaction
+        if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'COMPANY_TURNOVER') {
+            $sql = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject, status FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Turnover%'";
+            $params = [':uid' => $userid];
+            if (!empty($fromDate) && !empty($toDate)) {
+                $sql .= " AND created_date >= :from_date AND created_date <= :to_date";
+                $params[':from_date'] = $fromDate;
+                $params[':to_date']   = $toDate;
+            }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $allHistory[] = [
+                    'id'           => $row['id'],
+                    'income_type'  => 'Company Turnover',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $row['created_date'],
+                    'time'         => $row['time'],
+                    'subject'      => $row['subject'],
+                    'status'       => 'Credited',
+                    'sort_date'    => $row['created_date'] . ' ' . $row['time']
+                ];
+            }
+        }
+
+        // Sort descending by sort_date / id
+        usort($allHistory, function($a, $b) {
+            $tA = strtotime($a['sort_date'] ?? '1970-01-01');
+            $tB = strtotime($b['sort_date'] ?? '1970-01-01');
+            if ($tA === $tB) {
+                return $b['id'] - $a['id'];
+            }
+            return $tB - $tA;
+        });
+
+        return $allHistory;
+    }
+}
+
+/**
+ * OTP Security & Transaction Key Reset Helpers
+ */
+if (!function_exists('sendTransactionKeyOTP')) {
+    function sendTransactionKeyOTP($userid, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userid) {
+            return ['status' => 'error', 'message' => 'User authentication required.'];
+        }
+
+        // Fetch user email & name
+        $stmtUser = $db->prepare("SELECT email, name FROM user WHERE userid = :uid LIMIT 1");
+        $stmtUser->execute([':uid' => $userid]);
+        $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+        if (!$userRow || empty($userRow['email'])) {
+            return ['status' => 'error', 'message' => 'Registered user email not found.'];
+        }
+
+        $email = $userRow['email'];
+        $name = $userRow['name'] ?: 'User';
+
+        // Check Rate Limiting: Max 3 OTPs within 5 minutes
+        $stmtLimit = $db->prepare("SELECT COUNT(*) FROM tbl_otp WHERE userid = :uid AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
+        $stmtLimit->execute([':uid' => $userid]);
+        if ((int)$stmtLimit->fetchColumn() >= 3) {
+            return ['status' => 'error', 'message' => 'Rate limit exceeded. Please wait 5 minutes before requesting a new OTP.'];
+        }
+
+        // Invalidate any previous active unused OTPs for this user & request type
+        $stmtInvalidate = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE userid = :uid AND type = 'TXN_KEY_RESET' AND is_used = 0");
+        $stmtInvalidate->execute([':uid' => $userid]);
+
+        // Generate 6-digit secure OTP
+        $otp = sprintf("%06d", mt_rand(100000, 999999));
+
+        // Insert OTP record with 10 minute expiry
+        $stmtInsert = $db->prepare("INSERT INTO tbl_otp (userid, email, otp, type, is_used, created_at, expires_at) VALUES (:uid, :email, :otp, 'TXN_KEY_RESET', 0, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))");
+        $stmtInsert->execute([
+            ':uid' => $userid,
+            ':email' => $email,
+            ':otp' => $otp
+        ]);
+
+        // Fetch home email settings
+        $homeset = function_exists('getHomeSettings') ? getHomeSettings($db) : [];
+        $fromEmail = !empty($homeset['emailfrom']) ? $homeset['emailfrom'] : (!empty($homeset['email']) ? $homeset['email'] : 'no-reply@ananta.com');
+
+        // Send Email via mail()
+        $to = $email;
+        $subject = "ANANTA — OTP for Transaction Key Reset";
+        $headers = "From: ANANTA Security <" . strip_tags($fromEmail) . ">\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+
+        $message = '
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: Arial, sans-serif; background: #f4f6f8; padding: 30px 15px;">
+            <div style="max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 8px 25px rgba(0,0,0,0.05);">
+                <h2 style="color: #0f172a; margin-top: 0;">ANANTA Security OTP</h2>
+                <p style="color: #475569; font-size: 14px;">Hello <strong>' . htmlspecialchars($name) . '</strong>,</p>
+                <p style="color: #475569; font-size: 14px;">Use the following One Time Password (OTP) to reset your Transaction Key:</p>
+                <div style="text-align: center; margin: 25px 0;">
+                    <span style="font-size: 32px; font-weight: 800; font-family: monospace; letter-spacing: 6px; color: #0284c7; background: #f0f9ff; padding: 12px 24px; border-radius: 12px; border: 1px solid #bae6fd;">' . $otp . '</span>
+                </div>
+                <p style="color: #ef4444; font-size: 12.5px; font-weight: 600;">⏱️ This OTP is valid for 10 minutes and can only be used once.</p>
+                <p style="color: #64748b; font-size: 12px; margin-bottom: 0;">If you did not request this OTP, please secure your account immediately.</p>
+            </div>
+        </body>
+        </html>
+        ';
+
+        @mail($to, $subject, $message, $headers);
+
+        return ['status' => 'success', 'message' => 'OTP has been sent to your registered email: ' . htmlspecialchars($email)];
+    }
+}
+
+if (!function_exists('verifyTransactionKeyOTP')) {
+    function verifyTransactionKeyOTP($userid, $otpInput, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userid) {
+            return ['status' => 'error', 'message' => 'User authentication required.'];
+        }
+
+        $otpInput = trim((string)$otpInput);
+        if ($otpInput === '') {
+            return ['status' => 'error', 'message' => 'Please enter the OTP.'];
+        }
+
+        // Check for valid unexpired OTP
+        $stmtCheck = $db->prepare("SELECT id FROM tbl_otp WHERE userid = :uid AND otp = :otp AND type = 'TXN_KEY_RESET' AND is_used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1");
+        $stmtCheck->execute([
+            ':uid' => $userid,
+            ':otp' => $otpInput
+        ]);
+        $otpRow = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+        if (!$otpRow) {
+            return ['status' => 'error', 'message' => 'Invalid or expired OTP. Please enter a valid OTP or request a new one.'];
+        }
+
+        // Mark OTP as single-use (is_used = 1)
+        $stmtMark = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE id = :id");
+    }
+}
+
+/**
+ * Requirement #22: User Notification System Helpers
+ */
+if (!function_exists('createUserNotification')) {
+    function createUserNotification($userId, $type, $title, $message, $refId = null, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userId || !$title || !$message) return false;
+
+        $type = strtoupper(trim($type));
+        $validTypes = ['DEPOSIT', 'WITHDRAWAL', 'P2P', 'KYC', 'ADMIN', 'GENERAL'];
+        if (!in_array($type, $validTypes, true)) {
+            $type = 'GENERAL';
+        }
+
+        try {
+            $stmt = $db->prepare("
+                INSERT INTO tbl_user_notifications (user_id, type, title, message, ref_id, is_read, created_at)
+                VALUES (:uid, :type, :title, :msg, :ref, 0, NOW())
+            ");
+            return $stmt->execute([
+                ':uid'   => $userId,
+                ':type'  => $type,
+                ':title' => $title,
+                ':msg'   => $message,
+                ':ref'   => $refId
+            ]);
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('getUserNotifications')) {
+    function getUserNotifications($userId, $limit = 50, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userId) return [];
+
+        try {
+            $stmt = $db->prepare("
+                SELECT id, type, title, message, ref_id, is_read, created_at
+                FROM tbl_user_notifications
+                WHERE user_id = :uid
+                ORDER BY id DESC
+                LIMIT :lim
+            ");
+            $stmt->bindValue(':uid', $userId, PDO::PARAM_STR);
+            $stmt->bindValue(':lim', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+}
+
+if (!function_exists('getUnreadNotificationCount')) {
+    function getUnreadNotificationCount($userId, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userId) return 0;
+
+        try {
+            $stmt = $db->prepare("SELECT COUNT(*) FROM tbl_user_notifications WHERE user_id = :uid AND is_read = 0");
+            $stmt->execute([':uid' => $userId]);
+            return (int)$stmt->fetchColumn();
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+}
+
+if (!function_exists('markNotificationAsRead')) {
+    function markNotificationAsRead($userId, $notificationId, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userId || !$notificationId) return false;
+
+        try {
+            $stmt = $db->prepare("UPDATE tbl_user_notifications SET is_read = 1 WHERE id = :nid AND user_id = :uid");
+            $stmt->execute([':nid' => $notificationId, ':uid' => $userId]);
+            return ($stmt->rowCount() > 0);
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('markAllNotificationsAsRead')) {
+    function markAllNotificationsAsRead($userId, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userId) return false;
+
+        try {
+            $stmt = $db->prepare("UPDATE tbl_user_notifications SET is_read = 1 WHERE user_id = :uid AND is_read = 0");
+            return $stmt->execute([':uid' => $userId]);
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }
 

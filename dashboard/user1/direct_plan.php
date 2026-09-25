@@ -1,16 +1,11 @@
 <?php
 ob_start();
 session_start();
-require_once 'common/header.php';
-require_once 'common/db_method.php';
 
-if (!isset($_SESSION['userid'])) {
-    header("Location: login.php");
-    exit();
-}
-
-$userid = $_SESSION['userid'];
-$directDetails = getQualifiedDirectDetails($userid, $pdo);
+// Direct Plan user route has been disabled on the user side.
+header("Location: index.php");
+exit();
+?>
 
 // Calculate scheduled direct bonus summary
 $stmt_db = $pdo->prepare("

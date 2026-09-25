@@ -204,8 +204,8 @@ $auditLogs = $logStmt->fetchAll(PDO::FETCH_ASSOC);
                       <?php endif; ?>
                     </td>
                     <td><code><?php echo htmlspecialchars($l['wallet_type'] ?? 'N/A'); ?></code></td>
-                    <td class="font-weight-bold text-primary">₹<?php echo number_format((float)$l['amount'], 2); ?></td>
-                    <td class="small">₹<?php echo number_format((float)$l['previous_balance'], 2); ?> → <strong>₹<?php echo number_format((float)$l['new_balance'], 2); ?></strong></td>
+                    <td class="font-weight-bold text-primary"><?php echo formatCurrency((float)$l['amount']); ?></td>
+                    <td class="small"><?php echo formatCurrency((float)$l['previous_balance']); ?> → <strong><?php echo formatCurrency((float)$l['new_balance']); ?></strong></td>
                     <td style="max-width:250px;" class="small text-muted">
                       <div><?php echo htmlspecialchars($l['reason'] ?? ''); ?></div>
                       <?php if ($l['reference_id']): ?><div class="badge badge-light">Ref: <?php echo htmlspecialchars($l['reference_id']); ?></div><?php endif; ?>

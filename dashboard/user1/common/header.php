@@ -50,7 +50,15 @@ $stmt = $pdo->prepare("SELECT * FROM user WHERE userid = :userid");
 $stmt->execute(['userid' => $userid]);
 $rowheader = $stmt->fetch(PDO::FETCH_ASSOC);
 
+if (!$rowheader) {
+    unset($_SESSION['userid']);
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
+
 $userimage       = $rowheader['user_image'];
+
 $userid          = $rowheader['userid'];
 $username        = $rowheader['name'];
 $useremail       = $rowheader['email'];
@@ -97,23 +105,27 @@ $right_sp = $treedata['rightsp'];
 
 
 
+// Fetch unread notification count
+$unreadNotificationCount = getUnreadNotificationCount($userid, $pdo);
+
 // Fetch home settings
-$homeset = getHomeSettings($pdo);
-$hmmobile    = $homeset['mobile'];
-$hmemail     = $homeset['email'];
-$hmaddress   = $homeset['address'];
-$hmtitle     = $homeset['title'];
-$hmurl       = $homeset['url'];
-$hmpackage   = $homeset['package'];
-$hmpre       = $homeset['pre'];
-$hmbitly     = $homeset['bitly'];
-$hmemailfrom = $homeset['emailfrom'];
-$hmbg        = $homeset['background'];
-$hmlogo      = $homeset['logo'];
-$hmfavicon   = $homeset['favicon'];
-$hmcolor     = $homeset['color'];
-$hmcurrency =  $homeset['currency'];
-$hmmatching_amount = $homeset['matching_amount'];
+$homeset = function_exists('getHomeSettings') ? getHomeSettings($pdo) : [];
+
+$hmmobile    = $homeset['mobile'] ?? '';
+$hmemail     = $homeset['email'] ?? '';
+$hmaddress   = $homeset['address'] ?? '';
+$hmtitle     = $homeset['title'] ?? 'ANANTA';
+$hmurl       = $homeset['url'] ?? '';
+$hmpackage   = $homeset['package'] ?? '';
+$hmpre       = $homeset['pre'] ?? '';
+$hmbitly     = $homeset['bitly'] ?? '';
+$hmemailfrom = $homeset['emailfrom'] ?? '';
+$hmbg        = $homeset['background'] ?? '';
+$hmlogo      = $homeset['logo'] ?? '';
+$hmfavicon   = $homeset['favicon'] ?? '';
+$hmcolor     = $homeset['color'] ?? '';
+$hmcurrency =  $homeset['currency'] ?? 'INR';
+$hmmatching_amount = $homeset['matching_amount'] ?? 0;
 
 if (function_exists('date_default_timezone_set')) {
     date_default_timezone_set("Asia/Kolkata");
@@ -155,11 +167,12 @@ $news = $newsdata['news'];
   <link href="assets/css/sidebar-menu.css" rel="stylesheet" />
   <!-- PWA Meta Tags & Manifest -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0a2540">
+  <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="<?php echo $hmtitle;?>">
+  <link rel="apple-touch-icon" href="/assets/images/pwa-icon.png">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -334,15 +347,35 @@ setTimeout(function() {
     </li>
 
     <li>
-      <a href="activate_account.php">
-        <i class="zmdi zmdi-shield-check"></i> <span>Activate Account</span>
+      <a href="package_buy.php">
+        <i class="zmdi zmdi-layers"></i> <span>Package</span>
       </a>
     </li>
 
     <li>
-      <a href="direct_plan.php">
-        <i class="zmdi zmdi-flash"></i> <span>Direct Plan</span>
+      <a href="activate_account.php">
+        <i class="zmdi zmdi-shield-check"></i> <span>Unlock Access</span>
       </a>
+    </li>
+
+    <li>
+      <a href="notifications.php" class="d-flex align-items-center justify-content-between">
+        <span><i class="zmdi zmdi-notifications"></i> <span>Notification</span></span>
+        <?php if (!empty($unreadNotificationCount) && $unreadNotificationCount > 0): ?>
+          <span class="badge badge-pill badge-danger font-weight-bold ml-auto px-2 py-1" style="background: #ef4444; color: #ffffff; font-size: 11px;"><?php echo $unreadNotificationCount; ?></span>
+        <?php endif; ?>
+      </a>
+    </li>
+
+    <li class="has-sub">
+      <a href="javascript:void(0)" class="menu-toggle">
+        <span><i class="zmdi zmdi-balance-wallet"></i><span> Wallet</span></span>
+        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+      </a>
+      <ul class="submenu">
+        <li><a href="main_wallet.php"><i class="zmdi zmdi-circle-o"></i> Main Wallet</a></li>
+        <li><a href="income_wallet.php"><i class="zmdi zmdi-circle-o"></i> Income Wallet</a></li>
+      </ul>
     </li>
 
     <li class="has-sub">
@@ -351,21 +384,17 @@ setTimeout(function() {
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
+        <li><a href="my_team.php"><i class="zmdi zmdi-circle-o"></i> My Team Structure</a></li>
         <li><a href="my_direct.php"><i class="zmdi zmdi-circle-o"></i> My Direct</a></li>
         <li><a href="left_team.php"><i class="zmdi zmdi-circle-o"></i> Left Team</a></li>
         <li><a href="right_team.php"><i class="zmdi zmdi-circle-o"></i> Right Team</a></li>
       </ul>
     </li>
 
-    <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+    <li>
+      <a href="p2p.php">
         <span><i class="zmdi zmdi-swap"></i><span> P2P</span></span>
-        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
-      <ul class="submenu">
-        <li><a href="p2p.php?tab=transfer"><i class="zmdi zmdi-circle-o"></i> Transfer History</a></li>
-        <li><a href="p2p.php?tab=received"><i class="zmdi zmdi-circle-o"></i> Received Report</a></li>
-      </ul>
     </li>
 
     <li class="has-sub">
@@ -1295,24 +1324,7 @@ document.addEventListener("DOMContentLoaded", function() {
     ================================================ */
 
     .ananta-mobile-menu-btn {
-        display: flex !important;
-        flex-shrink: 0 !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-direction: column !important;
-        width: 42px !important;
-        height: 42px !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: 1px solid rgba(15,23,42,0.08) !important;
-        outline: none !important;
-        border-radius: 50% !important;
-        background: rgba(241,245,249,0.72) !important;
-        box-shadow: 0 4px 14px rgba(15,23,42,0.06) !important;
-        cursor: pointer !important;
-        -webkit-appearance: none !important;
-        appearance: none !important;
-        z-index: 10005 !important;
+        display: none !important;
     }
 
 

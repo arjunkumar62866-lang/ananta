@@ -85,7 +85,7 @@ try {
 
     $stA2 = getUserAccountActivationStatus($userA, $pdo);
     assertTest($stA2['is_active'] && $stA2['status'] === 'ACTIVE', "5. Account becomes active", "Status: {$stA2['status']}");
-    assertTest($stA2['remaining_days'] >= 364 && $stA2['remaining_days'] <= 366, "6. One-year expiry calculated correctly", "Remaining Days: {$stA2['remaining_days']}");
+    assertTest($stA2['remaining_days'] >= 1460 && $stA2['remaining_days'] <= 1462, "6. Four-year expiry calculated correctly", "Remaining Days: {$stA2['remaining_days']}");
     assertTest($stA2['remaining_days'] > 0, "7. Remaining days calculated correctly", "Remaining: {$stA2['remaining_days']}");
 
     // ---------------------------------------------------------

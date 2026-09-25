@@ -1,15 +1,20 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+ob_start();
+session_start();
 
-include 'common/connection.php'; // provides $pdo (PDO instance)
-include 'common/db_method.php';  // keep your helper functions if any
-
-// --- Helper: ensure $pdo exists
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    die("PDO connection (\$pdo) not available. Check common/connection.php");
+// Forward sponsorid / type to refferalId / position query parameters for register.php
+$getParams = $_GET;
+if (!empty($getParams['sponsorid']) && empty($getParams['refferalId'])) {
+    $getParams['refferalId'] = $getParams['sponsorid'];
 }
+if (!empty($getParams['type']) && empty($getParams['position'])) {
+    $getParams['position'] = $getParams['type'];
+}
+
+$queryString = !empty($getParams) ? '?' . http_build_query($getParams) : '';
+header("Location: register.php" . $queryString);
+exit();
+?>
 
 // Load home settings (your existing function)
 $home = getHomeSettings($pdo);

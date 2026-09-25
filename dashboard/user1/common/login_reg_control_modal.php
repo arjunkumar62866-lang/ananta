@@ -4,14 +4,55 @@
     <div class="modal-content" style="background: #ffffff; color: #0f172a; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
       
       <!-- Modal Header -->
-      <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 16px 24px; align-items: center;">
-        <h5 class="modal-title" style="font-weight: 700; font-size: 16px; color: #0f172a; display: flex; align-items: center; gap: 8px; margin: 0;">
-          <i class="icon-lock" style="color: #0284c7;"></i> LOGIN & REGISTRATION CONTROL
-        </h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #64748b; opacity: 0.8; outline: none;">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
+      <div class="modal-header"
+     style="
+        border-bottom: 1px solid #f1f5f9;
+        padding: 16px 24px;
+        align-items: center;
+     ">
+
+    <div style="flex: 1;">
+
+        <!-- Main Header -->
+        <div style="
+            font-weight: 700;
+            font-size: 16px;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        ">
+            <i class="icon-lock" style="color: #0284c7;"></i>
+            Don't add any ID PASS.
+        </div>
+
+        <!-- Secure Line -->
+        <div style="
+            font-weight: 600;
+            font-size: 14px;
+            color: #64748b;
+            margin-left: 24px;
+        ">
+            This is secure line.
+        </div>
+
+    </div>
+
+    <button type="button"
+            class="close"
+            data-dismiss="modal"
+            aria-label="Close"
+            style="
+                color: #64748b;
+                opacity: 0.8;
+                outline: none;
+            ">
+        <span aria-hidden="true">&times;</span>
+    </button>
+
+</div>
+
 
       <!-- Auth Form View -->
       <div id="lrcAuthSection" class="modal-body" style="padding: 24px;">

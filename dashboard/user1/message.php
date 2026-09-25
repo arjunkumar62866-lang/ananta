@@ -81,40 +81,58 @@ $hmcolor = $homeset['color'];
         <div></div>
       </div>
     </div>
-    <div class="card card-authentication1 mx-auto my-5">
-      <div class="card-body">
-        <div class="card-content p-2">
-          <div class="text-center">
-            <img src="<?php echo $hmlogo;?>" alt="logo icon" height="80px">
+    <div class="card mx-auto my-5" style="max-width: 520px; border-radius: 22px; border: 1px solid #cbd5e1; background: #ffffff; box-shadow: 0 15px 35px rgba(0,0,0,0.15); overflow: hidden;">
+      <div class="card-body p-4 p-md-5">
+        <div class="text-center mb-4">
+          <?php if (!empty($hmlogo)): ?>
+            <img src="<?php echo $hmlogo;?>" alt="ANANTA Logo" height="70px" style="max-width: 220px; object-fit: contain;">
+          <?php else: ?>
+            <h2 style="font-weight: 800; color: #0284c7; letter-spacing: -0.5px; margin: 0;">ANANTA</h2>
+          <?php endif; ?>
+          <h4 class="mt-3 mb-1" style="font-size: 22px; font-weight: 800; color: #0f172a;">Welcome to ANANTA</h4>
+          <p class="text-muted mb-0" style="font-size: 14px; font-weight: 600;">Hello, <span style="color: #0284c7;"><?php echo htmlspecialchars($userdata['name']); ?></span>!</p>
+          <div class="badge mt-2" style="background: rgba(22, 163, 74, 0.12); color: #16a34a; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px;">
+            🎉 Account Successfully Created
           </div>
-          <div class="card-title text-uppercase text-center py-3">Thanks For Registration</div>
-          <div style="text-align: left; font-family: Arial, sans-serif; font-size: 15px; color: #444;">
-      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; color:white">
-        <strong>User ID</strong> <span><?php echo $hmpre . $userdata['userid']; ?></span>
-      </div>
-      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; color:white">
-        <strong>Password</strong> <span><?php echo $userdata['pass']; ?></span>
-      </div>
-      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; color:white">
-        <strong>User Name</strong> <span><?php echo $userdata['name']; ?></span>
-      </div>
-      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; color:white">
-        <strong>Mobile</strong> <span><?php echo $userdata['mobile']; ?></span>
-      </div>
-      <!--<div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; color:white">-->
-      <!--  <strong>Sponsor Name</strong> <span><php echo $userdata['sponsername']; ?></span>-->
-      <!--</div>-->
-      <div style="display: flex; justify-content: space-between; padding: 10px 0; color:white">
-        <strong>Sponsor ID</strong> <span><?php echo $hmpre . $userdata['sponserid']; ?></span>
-      </div>
-    </div>
-
-    <!-- Login Button -->
-    <a href="login.php" 
-       style="display: block; margin-top: 20px; padding: 12px; background: linear-gradient(to right, #4caf05, #3e8e00); color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: Arial, sans-serif;">
-      Login
-    </a>
         </div>
+
+        <div style="background: #f8fafc; border-radius: 16px; border: 1.5px solid #cbd5e1; padding: 18px; margin-bottom: 24px;">
+          <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <span style="font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase;">Login ID / Username</span>
+            <span style="font-size: 15px; font-weight: 800; color: #0284c7; font-family: monospace;" id="msgUserId"><?php echo $hmpre . $userdata['userid']; ?></span>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <span style="font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase;">Login Password</span>
+            <span style="font-size: 15px; font-weight: 800; color: #0f172a; font-family: monospace;"><?php echo htmlspecialchars($userdata['pass']); ?></span>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <span style="font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase;">Transaction Key</span>
+            <span style="font-size: 15px; font-weight: 800; color: #16a34a; font-family: monospace;"><?php echo htmlspecialchars($userdata['txn_pass']); ?></span>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <span style="font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase;">Mobile Number</span>
+            <span style="font-size: 14px; font-weight: 700; color: #334155;"><?php echo htmlspecialchars($userdata['mobile']); ?></span>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between py-2">
+            <span style="font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase;">Sponsor ID</span>
+            <span style="font-size: 14px; font-weight: 700; color: #334155;"><?php echo $hmpre . $userdata['sponserid']; ?></span>
+          </div>
+        </div>
+
+        <div style="background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 10px; padding: 12px 14px; margin-bottom: 24px;">
+          <p style="color: #991b1b; margin: 0; font-size: 12.5px; font-weight: 600;">
+            🔒 <strong>Security Warning:</strong> Please keep these details secure. Do not share your password or Transaction Key with anyone.
+          </p>
+        </div>
+
+        <!-- Continue / Login Button -->
+        <a href="login.php" class="btn text-white font-weight-bold w-100 d-inline-flex align-items-center justify-content-center gap-2" style="height: 50px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); border-radius: 12px; font-size: 16px; text-decoration: none; box-shadow: 0 8px 25px rgba(2, 132, 199, 0.25);">
+          Continue to Login <i class="fa fa-arrow-right"></i>
+        </a>
       </div>
     </div>
 

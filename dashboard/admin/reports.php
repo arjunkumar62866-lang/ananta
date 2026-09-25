@@ -355,7 +355,7 @@ label.form-label-custom {
       <div class="col-md-6 mb-3">
         <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">TOTAL REPORT VOLUME / REVENUE</span>
-          <h3 class="mb-0 font-weight-bold text-success">₹<?php echo number_format($totalSum, 2); ?></h3>
+          <h3 class="mb-0 font-weight-bold text-success"><?php echo formatCurrency($totalSum); ?></h3>
         </div>
       </div>
       <div class="col-md-6 mb-3">
@@ -383,9 +383,9 @@ label.form-label-custom {
                 <tr>
                   <th class="py-3 px-4"><?php echo ucfirst($type); ?> Period</th>
                   <th class="py-3">Active Transacting Members</th>
-                  <th class="py-3">Total Investment (₹)</th>
-                  <th class="py-3">Total Income Distributed (₹)</th>
-                  <th class="py-3">Total Withdrawals Paid (₹)</th>
+                  <th class="py-3">Total Investment</th>
+                  <th class="py-3">Total Income Distributed</th>
+                  <th class="py-3">Total Withdrawals Paid</th>
                   <th class="py-3 px-4">Transaction Count</th>
                 </tr>
               </thead>
@@ -398,9 +398,9 @@ label.form-label-custom {
                       <?php echo htmlspecialchars($row['report_date'] ?? $row['report_month'] ?? $row['report_year'] ?? ''); ?>
                     </td>
                     <td><span class="badge badge-secondary px-2 py-1"><?php echo number_format($row['total_users']); ?> Users</span></td>
-                    <td class="font-weight-bold text-success">₹<?php echo number_format((float)$row['total_investment'], 2); ?></td>
-                    <td class="font-weight-bold text-info">₹<?php echo number_format((float)$row['total_income'], 2); ?></td>
-                    <td class="font-weight-bold text-danger">₹<?php echo number_format((float)$row['total_withdrawals'], 2); ?></td>
+                    <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$row['total_investment']); ?></td>
+                    <td class="font-weight-bold text-info"><?php echo formatCurrency((float)$row['total_income']); ?></td>
+                    <td class="font-weight-bold text-danger"><?php echo formatCurrency((float)$row['total_withdrawals']); ?></td>
                     <td class="px-4 font-weight-bold"><?php echo number_format($row['total_txns']); ?> Txns</td>
                   </tr>
                 <?php endforeach; endif; ?>
@@ -413,9 +413,9 @@ label.form-label-custom {
                   <th class="py-3">User ID</th>
                   <th class="py-3">Member Name</th>
                   <th class="py-3">Mobile Number</th>
-                  <th class="py-3">Self Investment (₹)</th>
-                  <th class="py-3">Total Income (₹)</th>
-                  <th class="py-3">Total Withdrawn (₹)</th>
+                  <th class="py-3">Self Investment</th>
+                  <th class="py-3">Total Income</th>
+                  <th class="py-3">Total Withdrawn</th>
                   <th class="py-3 px-4">Joining Date</th>
                 </tr>
               </thead>
@@ -428,9 +428,9 @@ label.form-label-custom {
                     <td><strong><?php echo htmlspecialchars($row['userid']); ?></strong></td>
                     <td><?php echo htmlspecialchars($row['name']); ?></td>
                     <td><?php echo htmlspecialchars($row['mobile']); ?></td>
-                    <td class="font-weight-bold text-success">₹<?php echo number_format((float)$row['investment'], 2); ?></td>
-                    <td class="font-weight-bold text-info">₹<?php echo number_format((float)$row['total_income'], 2); ?></td>
-                    <td class="font-weight-bold text-danger">₹<?php echo number_format((float)$row['total_withdrawal'], 2); ?></td>
+                    <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$row['investment']); ?></td>
+                    <td class="font-weight-bold text-info"><?php echo formatCurrency((float)$row['total_income']); ?></td>
+                    <td class="font-weight-bold text-danger"><?php echo formatCurrency((float)$row['total_withdrawal']); ?></td>
                     <td class="px-4 small text-muted"><?php echo htmlspecialchars($row['joining_date']); ?></td>
                   </tr>
                 <?php endforeach; endif; ?>
@@ -442,10 +442,10 @@ label.form-label-custom {
                   <th class="py-3 px-4">ID</th>
                   <th class="py-3">User ID</th>
                   <th class="py-3">Member Name</th>
-                  <th class="py-3">Self Investment (₹)</th>
+                  <th class="py-3">Self Investment</th>
                   <th class="py-3">Left Subtree User</th>
                   <th class="py-3">Right Subtree User</th>
-                  <th class="py-3">Direct Sponsor Volume (₹)</th>
+                  <th class="py-3">Direct Sponsor Volume</th>
                   <th class="py-3 px-4">Joining Date</th>
                 </tr>
               </thead>
@@ -457,10 +457,10 @@ label.form-label-custom {
                     <td class="px-4 font-weight-bold">#<?php echo $row['id']; ?></td>
                     <td><strong><?php echo htmlspecialchars($row['user_id']); ?></strong></td>
                     <td><?php echo htmlspecialchars($row['name']); ?></td>
-                    <td class="font-weight-bold text-dark">₹<?php echo number_format((float)$row['self_investment'], 2); ?></td>
+                    <td class="font-weight-bold text-dark"><?php echo formatCurrency((float)$row['self_investment']); ?></td>
                     <td><span class="badge badge-info px-2 py-1"><?php echo htmlspecialchars($row['left_volume']); ?></span></td>
                     <td><span class="badge badge-warning px-2 py-1"><?php echo htmlspecialchars($row['right_volume']); ?></span></td>
-                    <td class="font-weight-bold text-success">₹<?php echo number_format((float)$row['total_team_volume'], 2); ?></td>
+                    <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$row['total_team_volume']); ?></td>
                     <td class="px-4 small text-muted"><?php echo htmlspecialchars($row['created_at']); ?></td>
                   </tr>
                 <?php endforeach; endif; ?>
@@ -473,7 +473,7 @@ label.form-label-custom {
                   <th class="py-3 px-4">Record ID</th>
                   <th class="py-3">User ID</th>
                   <th class="py-3">Member Name</th>
-                  <th class="py-3">Amount (₹ / $)</th>
+                  <th class="py-3">Amount</th>
                   <th class="py-3">Description / Details</th>
                   <th class="py-3 px-4">Date & Time</th>
                 </tr>
@@ -486,7 +486,7 @@ label.form-label-custom {
                     <td class="px-4 font-weight-bold">#<?php echo $row['id']; ?></td>
                     <td><strong><?php echo htmlspecialchars($row['user_id']); ?></strong></td>
                     <td><?php echo htmlspecialchars($row['name'] ?? 'Member'); ?></td>
-                    <td class="font-weight-bold text-success">₹<?php echo number_format((float)$row['amount'], 2); ?></td>
+                    <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$row['amount']); ?></td>
                     <td class="small text-muted"><?php echo htmlspecialchars($row['subject'] ?? 'Transaction Record'); ?></td>
                     <td class="px-4 small text-muted"><?php echo htmlspecialchars($row['created_at']); ?></td>
                   </tr>

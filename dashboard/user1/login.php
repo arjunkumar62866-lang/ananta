@@ -58,17 +58,10 @@ $hmcolor = $homeset['color'] ?? '';
 
 <!DOCTYPE html>
 <html lang="en">
-
-<!-- Mirrored from themewagon.github.io/dashtreme/login.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 05 Aug 2025 06:01:59 GMT -->
-<!-- Added by HTTrack -->
-<meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
-
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  <meta name="description" content="" />
-  <meta name="author" content="" />
   <title><?php echo $hmtitle;?></title>
   <!-- loader-->
   <link href="assets/css/pace.min.css" rel="stylesheet" />
@@ -77,34 +70,29 @@ $hmcolor = $homeset['color'] ?? '';
   <link rel="icon" href="<?php echo $hmfavicon;?>" type="image/x-icon">
   <!-- Bootstrap core CSS-->
   <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
-  <!-- animate CSS-->
-  <link href="assets/css/animate.css" rel="stylesheet" type="text/css" />
-  <!-- Icons CSS-->
+  <!-- FontAwesome / Icons CSS-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="assets/css/icons.css" rel="stylesheet" type="text/css" />
-  <!-- Custom Style-->
-  <link href="assets/css/app-style.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-</head>
-
-  <!-- Custom CSS for Modern Floating White Card Login -->
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body.ananta-auth-page {
-      background: radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.75)), url('assets/images/bg-1.jpg') center/cover no-repeat fixed !important;
+      background: rgba(15, 23, 42, 0.75) url('assets/images/bg-1.jpg') center/cover no-repeat fixed !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       margin: 0;
       padding: 20px 15px;
-    }
-    #particles-js {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
     }
     .auth-wrapper {
       position: relative;
@@ -113,86 +101,65 @@ $hmcolor = $homeset['color'] ?? '';
       max-width: 440px;
       margin: 0 auto;
     }
-    .auth-card {
+    .ananta-auth-modal-card {
       background: #ffffff !important;
       border-radius: 24px !important;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
       border: none !important;
-      padding: 35px 30px;
+      padding: 32px 28px;
       color: #1e293b !important;
+      position: relative;
     }
     .auth-logo {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     .auth-logo img {
-      max-height: 110px;
+      max-height: 95px;
       width: auto;
       object-fit: contain;
     }
     .auth-header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
     .auth-header h3 {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 700;
       color: #0f172a !important;
-      margin: 0 0 6px 0;
+      margin: 0 0 4px 0;
     }
     .auth-header p {
-      font-size: 11px;
+      font-size: 10.5px;
       letter-spacing: 0.8px;
       text-transform: uppercase;
       font-weight: 600;
       color: #64748b !important;
       margin: 0;
     }
-    .auth-card .form-group {
-      margin-bottom: 18px;
-    }
-    .auth-card .input-group-custom {
-      position: relative;
-    }
-    .auth-card .form-control {
+    .ananta-modal-input {
       background-color: #ffffff !important;
       border: 1px solid #cbd5e1 !important;
       border-radius: 12px !important;
-      height: 48px;
-      padding: 10px 42px 10px 18px;
+      height: 46px !important;
+      padding-right: 40px !important;
       font-size: 14px;
       color: #0f172a !important;
       box-shadow: none !important;
       transition: all 0.2s ease;
     }
-    .auth-card .form-control::placeholder {
-      color: #64748b !important;
-      opacity: 1 !important;
+    .ananta-modal-input::placeholder {
+      color: #94a3b8 !important;
     }
-    .auth-card .form-control:-ms-input-placeholder {
-      color: #64748b !important;
-    }
-    .auth-card .form-control::-ms-input-placeholder {
-      color: #64748b !important;
-    }
-    .auth-card .form-control:focus {
+    .ananta-modal-input:focus {
       border-color: #00b4d8 !important;
       box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.15) !important;
     }
-    .auth-card .input-icon {
-      position: absolute;
-      right: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #94a3b8;
-      font-size: 16px;
-      pointer-events: none;
-    }
-    .auth-card .btn-primary-action {
+    .btn-ananta-primary {
       background: linear-gradient(135deg, #00b4d8 0%, #10b981 100%) !important;
       border: none !important;
       border-radius: 12px !important;
-      height: 48px;
+      height: 46px;
       font-size: 15px;
       font-weight: 700;
       letter-spacing: 0.5px;
@@ -203,50 +170,20 @@ $hmcolor = $homeset['color'] ?? '';
       transition: all 0.25s ease;
       cursor: pointer;
     }
-    .auth-card .btn-primary-action:hover {
+    .btn-ananta-primary:hover {
       transform: translateY(-1px);
       box-shadow: 0 14px 24px -5px rgba(16, 185, 129, 0.5);
       opacity: 0.96;
-    }
-    .auth-card .forgot-link {
-      display: inline-block;
-      color: #00b4d8;
-      font-weight: 600;
-      font-size: 13px;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .auth-card .forgot-link:hover {
-      color: #0284c7;
-      text-decoration: underline;
-    }
-    .auth-card .signup-text {
-      text-align: center;
-      font-size: 13px;
-      color: #64748b;
-      margin-top: 22px;
-      font-weight: 500;
-    }
-    .auth-card .signup-text a {
-      color: #10b981;
-      font-weight: 700;
-      text-decoration: none;
-      margin-left: 4px;
-    }
-    .auth-card .signup-text a:hover {
-      text-decoration: underline;
     }
   </style>
 </head>
 
 <body class="ananta-auth-page">
-  <div id="particles-js"></div>
 
-  <!-- Start wrapper-->
   <div class="auth-wrapper">
-    <div class="auth-card">
+    <div class="ananta-auth-modal-card">
       <div class="auth-logo">
-        <img src="/assets/images/logo-stacked.png" alt="Ananta Logo">
+        <img src="/assets/images/pwa-icon.png" alt="Ananta Logo">
       </div>
       <div class="auth-header">
         <h3>Login</h3>
@@ -255,59 +192,50 @@ $hmcolor = $homeset['color'] ?? '';
 
       <?php if (!empty($_GET['error'])): ?>
         <div class="text-center" style="font-size: 13.5px; font-weight: 600; color: #dc2626; margin-bottom: 20px; line-height: 1.5; background: transparent; padding: 0;">
-          <i class="icon-exclamation" style="margin-right: 6px; color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8'); ?>
+          <i class="fa fa-exclamation-circle me-1" style="color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8'); ?>
         </div>
       <?php endif; ?>
 
       <form action="login.php" method="POST">
-        <div class="form-group">
-          <div class="input-group-custom">
-            <input type="text" name="userid" id="exampleInputUsername" class="form-control" placeholder="Email or User ID" required>
-            <i class="icon-user input-icon"></i>
-          </div>
+        <div class="form-group mb-3 position-relative">
+          <input type="text" name="userid" class="form-control ananta-modal-input" placeholder="Email or User ID" required>
+          <i class="fa fa-user" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
         </div>
-        <div class="form-group">
-          <div class="input-group-custom">
-            <input type="password" name="password" id="exampleInputPassword" class="form-control" placeholder="Password" required>
-            <i class="icon-lock input-icon"></i>
-          </div>
+        <div class="form-group mb-3 position-relative">
+          <input type="password" name="password" class="form-control ananta-modal-input" placeholder="Password" required>
+          <i class="fa fa-lock" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div class="custom-control custom-checkbox" style="padding-left: 1.5rem;">
-            <input type="checkbox" class="custom-control-input" id="user-checkbox" checked>
-            <label class="custom-control-label" for="user-checkbox" style="color: #64748b; font-size: 13px; font-weight: 500;">Remember me</label>
-          </div>
-          <div>
-            <a href="reset-password.php" class="forgot-link">Forgot Password?</a>
-          </div>
+        <div class="d-flex justify-content-between align-items-center mb-4" style="font-size: 13px;">
+          <label class="mb-0 d-flex align-items-center gap-1" style="color: #64748b; cursor: pointer;">
+            <input type="checkbox" checked style="accent-color: #10b981;"> Remember me
+          </label>
+          <a href="reset-password.php" style="color: #00b4d8; font-weight: 600; text-decoration: none;">Forgot Password?</a>
         </div>
 
-        <button type="submit" class="btn btn-primary-action">LOGIN</button>
+        <button type="submit" class="btn btn-ananta-primary w-100">LOGIN</button>
 
-        <div class="signup-text">
-          Don't have an account? <a href="new_binary_registration_form.php">Signup</a>
+        <?php
+        $regUrl = 'register.php';
+        if (!empty($_GET)) {
+            $regUrl .= '?' . http_build_query($_GET);
+        }
+        ?>
+        <div class="text-center mt-3" style="font-size: 13px; color: #64748b;">
+          Don't have an account? <a href="<?php echo htmlspecialchars($regUrl, ENT_QUOTES, 'UTF-8'); ?>" style="color: #10b981; font-weight: 700; text-decoration: none;">Signup</a>
         </div>
       </form>
-      <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #090909ff; font-size: 12px; color: #090909ff;">
-        <button type="button" onclick="openLrcModal();" class="d-none d-lg-inline-block" style="background: transparent; border: none; color: #080808ff; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0 2px; outline: none; vertical-align: baseline;">©</button>Copyright <span class="d-lg-none">©</span> <?php echo date('Y'); ?> Ananta. All Rights Reserved.
+      <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
+        <button type="button" onclick="openLrcModal();" class="d-none d-lg-inline-block" style="background: transparent; border: none; color: #64748b; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0 2px; outline: none; vertical-align: baseline;">©</button>Copyright <span class="d-lg-none">©</span> <?php echo date('Y'); ?> Ananta. All Rights Reserved.
       </div>
     </div>  
-  </div><!--wrapper--> 
+  </div>
 
   <?php include_once __DIR__ . '/common/login_reg_control_modal.php'; ?>
 
-  <!-- Bootstrap core JavaScript-->
+  <!-- JavaScript-->
   <script src="assets/js/jquery.min.js"></script>
   <script src="assets/js/popper.min.js"></script>
   <script src="assets/js/bootstrap.min.js"></script>
-
-  <!-- Custom scripts -->
-  <script src="particles.js"></script>
-  <script src="app.js"></script>
 </body>
-
-
-<!-- Mirrored from themewagon.github.io/dashtreme/login.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 05 Aug 2025 06:02:00 GMT -->
-
 </html>

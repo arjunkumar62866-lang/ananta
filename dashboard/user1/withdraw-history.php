@@ -245,7 +245,8 @@ table.dataTable.no-footer {
     <div id="wrapper">
         <div class="clearfix"></div>
 
-            <div class="container-fluid">
+        <div class="content-wrapper">
+            <div class="container-fluid pt-3 px-4">
                 <!-- Breadcrumb Bar -->
                 <div class="mb-3">
                     <nav aria-label="breadcrumb">

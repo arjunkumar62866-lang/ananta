@@ -1,4 +1,33 @@
-<?php include "common/header.php"; ?>
+<?php
+$refCode = '';
+if (!empty($_GET['refferalId'])) {
+    $refCode = trim($_GET['refferalId']);
+} elseif (!empty($_GET['ref'])) {
+    $refCode = trim($_GET['ref']);
+} elseif (!empty($_GET['referral'])) {
+    $refCode = trim($_GET['referral']);
+} elseif (!empty($_GET['sponsor'])) {
+    $refCode = trim($_GET['sponsor']);
+} elseif (!empty($_GET['sponsorid'])) {
+    $refCode = trim($_GET['sponsorid']);
+} elseif (!empty($_GET['sponsor_id'])) {
+    $refCode = trim($_GET['sponsor_id']);
+} elseif (!empty($_GET['referral_code'])) {
+    $refCode = trim($_GET['referral_code']);
+} elseif (!empty($_GET['uid'])) {
+    $refCode = trim($_GET['uid']);
+}
+
+if (!empty($refCode)) {
+    $getParams = $_GET;
+    $getParams['refferalId'] = $refCode;
+    $queryString = '?' . http_build_query($getParams);
+    header("Location: dashboard/user1/register.php" . $queryString);
+    exit();
+}
+
+include "common/header.php"; 
+?>
 <style>
     #about .mb-3.d-flex > div {
         width: 44px !important;

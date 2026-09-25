@@ -327,11 +327,13 @@ table.ananta-custom-table tbody td {
                                         <tr>
                                             <th>Sno</th>
                                             <th>User ID</th>
-                                            <th>Txn ID</th>
-                                            <th>Transaction</th>
+                                            <th>UTR / Txn ID</th>
+                                            <th>Method</th>
                                             <th>Amount</th>
+                                            <th>Proof</th>
                                             <th>Status</th>
-                                            <th>Date</th>
+                                            <th>Date & Time</th>
+                                            <th>Remarks</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -393,25 +395,41 @@ table.ananta-custom-table tbody td {
                     },
                     { 
                         data: 'tr_id',
-                        render: (data) => '<span style="font-weight: 600; color: #1e293b;">' + (data || 'N/A') + '</span>'
+                        render: (data) => '<span style="font-weight: 700; color: #0f172a; font-family: monospace;">' + (data || 'N/A') + '</span>'
                     },
                     { 
-                        data: 'subject',
-                        render: (data) => '<span style="color: #475569;">' + (data || 'Deposit Request') + '</span>'
+                        data: 'mode',
+                        render: function (data) {
+                            var modeName = (data || 'INR').toUpperCase();
+                            if (modeName === 'BEP20') {
+                                return '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 700; padding: 4px 10px; border-radius: 6px;"><i class="fa fa-btc me-1"></i>BEP20</span>';
+                            }
+                            return '<span class="badge" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; font-weight: 700; padding: 4px 10px; border-radius: 6px;"><i class="fa fa-inr me-1"></i>INR</span>';
+                        }
                     },
                     {
                         data: 'amount',
+                        render: function (data, type, row) {
+                            var prefix = (row.mode === 'BEP20') ? '$ ' : '₹ ';
+                            return '<span class="amount-badge">' + prefix + parseFloat(data || 0).toFixed(2) + '</span>';
+                        }
+                    },
+                    {
+                        data: 'image',
                         render: function (data) {
-                            return '<span class="amount-badge">₹ ' + parseFloat(data || 0).toFixed(2) + '</span>';
+                            if (data) {
+                                return '<a href="../img/' + data + '" target="_blank" style="font-weight: 700; color: #0284c7; text-decoration: underline;"><i class="fa fa-image me-1"></i>View Slip</a>';
+                            }
+                            return '<span class="text-muted">N/A</span>';
                         }
                     },
                     {
                         data: 'status',
                         render: function (data) {
                             if (data == "1") {
-                                return '<span class="badge-status approved"><i class="fa fa-check-circle me-1"></i>Approved</span>';
+                                return '<span class="badge-status approved"><i class="fa fa-check-circle me-1"></i>Success</span>';
                             } else if (data == "2") {
-                                return '<span class="badge-status cancelled"><i class="fa fa-times-circle me-1"></i>Cancelled</span>';
+                                return '<span class="badge-status cancelled"><i class="fa fa-times-circle me-1"></i>Rejected</span>';
                             } else {
                                 return '<span class="badge-status pending"><i class="fa fa-clock-o me-1"></i>Pending</span>';
                             }
@@ -419,7 +437,15 @@ table.ananta-custom-table tbody td {
                     },
                     {
                         data: 'date',
-                        render: (data) => '<span style="color: #64748b; font-size: 13px;"><i class="fa fa-calendar-o me-1 text-primary"></i>' + (data || 'N/A') + '</span>'
+                        render: function (data, type, row) {
+                            var dt = data || 'N/A';
+                            if (row.time) dt += ' ' + row.time;
+                            return '<span style="color: #64748b; font-size: 13px;"><i class="fa fa-calendar-o me-1 text-primary"></i>' + dt + '</span>';
+                        }
+                    },
+                    {
+                        data: 'remark',
+                        render: (data) => '<span style="color: #475569; font-size: 13px;">' + (data || '-') + '</span>'
                     }
                 ],
                 pageLength: 10,

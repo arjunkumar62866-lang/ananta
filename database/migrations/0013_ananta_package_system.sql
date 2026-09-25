@@ -25,7 +25,7 @@ INSERT IGNORE INTO `tbl_ananta_package_config`
 (`package_id`, `package_name`, `package_type`, `min_investment_usd`, `max_investment_usd`, `bonus_percentage`, `lock_period_months`, `withdrawal_deduction_percent`, `status`)
 VALUES
 ('BASIC',      'Basic Package',        'ANANTA_NIVESH', 145.00,    1000.00,  0.00,  48, 15.00, 1),
-('ADVANCE',    'Advance Package',      'ANANTA_NIVESH', 1001.00,   12500.00, 0.00,  48, 15.00, 1),
+('ADVANCE',    'Advance Package',      'ANANTA_NIVESH', 1001.00,   NULL,     0.00,  48, 15.00, 1),
 ('PREMIUM',    'Premium Package',      'ANANTA_NIVESH', 12501.00,  NULL,     0.00,  48, 15.00, 1),
 ('BONUS_30',   '30% Bonus Package',    'BONUS_30',      145.00,    NULL,     30.00, 6,  15.00, 1),
 ('TOUR',       'Tour Package',         'TOUR',          145.00,    NULL,     0.00,  48, 15.00, 1);

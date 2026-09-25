@@ -3,7 +3,7 @@ $hmlogo="assets/images/logo.png";
 $hmfavicon="assets/images/logo.png";
 $hmtitle="Ananta";
 $hmlogin="dashboard/user1/login.php";
-$hmregister="dashboard/user1/new_binary_registration_form.php";
+$hmregister="dashboard/user1/register.php";
 
 $hmmobile="";
 $hmemail="anantamultitread@gmail.com";
@@ -34,10 +34,12 @@ $hmservice="service-details.php";
 
 <!-- PWA Meta Tags & Manifest -->
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0a2540">
+<meta name="theme-color" content="#ffffff">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="<?php echo $hmtitle; ?>">
+<link rel="apple-touch-icon" href="/assets/images/pwa-icon.png">
 
 <!-- Stylesheets -->
 <link href="assets/css/font-awesome-all.css" rel="stylesheet">
@@ -270,7 +272,7 @@ $hmservice="service-details.php";
                     </div>
                 <?php endif; ?>
 
-                <form action="dashboard/user1/new_binary_registration_form.php" method="POST" id="modal_registration_form">
+                <form action="dashboard/user1/register.php" method="POST" id="modal_registration_form">
                     <div class="form-group mb-2 position-relative">
                         <input type="text" name="refferalId" id="modalReferrerId" class="form-control ananta-modal-input" placeholder="Referrer ID" required style="border-radius: 10px; height: 42px; padding-right: 36px; font-size: 13.5px;">
                         <i class="fa fa-link" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>

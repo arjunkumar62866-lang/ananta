@@ -19,273 +19,178 @@ if($kyc==0){
 	$color='red';
 }
 if(isset($_POST['update'])){
-    // echo "<script>alert('$uid');</script>";
-   
-	$holder_name=$_POST['holder_name'];
-	$ac_number=$_POST['ac_number'];
-	$bank=$_POST['bank'];
-	$branch=$_POST['branch'];
-	$ifsc=$_POST['ifsc'];
-	$paytm=$_POST['paytm'];
-	$phone_pe=$_POST['phone_pe'];
-	$g_pay=$_POST['g_pay'];
-	$bit_coin=$_POST['bit_coin'];
-	$bhim=$_POST['bhim'];
-	$idproof=$_POST['idproof'];
-	$card_no=$_POST['card_no'];
-	$pan=$_POST['pan'];  
-	$nominee=$_POST['nominee'];
-	$mimo=$_POST['mimo'];
+	$holder_name   = trim($_POST['holder_name'] ?? '');
+	$ac_number     = trim($_POST['ac_number'] ?? '');
+	$bank          = trim($_POST['bank'] ?? '');
+	$branch        = trim($_POST['branch'] ?? '');
+	$ifsc          = strtoupper(trim($_POST['ifsc'] ?? ''));
+	$upi_id        = trim($_POST['upi_id'] ?? '');
+	$bep20_address = trim($_POST['bep20_address'] ?? '');
+	$pan           = strtoupper(trim($_POST['pan'] ?? ''));
+	$mimo          = trim($_POST['mimo'] ?? '');
 	
-// $adhar_front_img_name=$_FILES['adhar_front_img']['name'];
-// 		$adhar_front_img_size  =$_FILES['adhar_front_img']['size'];
-// 		$adhar_front_img_type  =$_FILES['adhar_front_img']['type'];
-// 		if($adhar_front_img_name !=''){
-// 		  $upload=move_uploaded_file($_FILES['adhar_front_img']['tmp_name'],'images/'.$_FILES['adhar_front_img']['name']);
-// 		  mysqli_query($con,"update kyc set adhar_front_img='$adhar_front_img_name' where userid='$userid'");
-// 		}
-
-// 			$adhar_back_img_name=$_FILES['adhar_back_img']['name'];
-// 		$adhar_back_img_size  =$_FILES['adhar_back_img']['size'];
-// 		$adhar_back_img_type  =$_FILES['adhar_back_img']['type'];
-// 		if($adhar_back_img_name !=''){
-// 		  $upload=move_uploaded_file($_FILES['adhar_back_img']['tmp_name'],'images/'.$_FILES['adhar_back_img']['name']);
-// 		  mysqli_query($con,"update kyc set adhar_back_img='$adhar_back_img_name' where userid='$userid'");
-// 		}
-
-// 			$pan_img_name=$_FILES['pan_img']['name'];
-// 		$pan_img_size  =$_FILES['pan_img']['size'];
-// 		$pan_img_type  =$_FILES['pan_img']['type'];
-// 		if($pan_img_name !=''){
-// 		  $upload=move_uploaded_file($_FILES['pan_img']['tmp_name'],'images/'.$_FILES['pan_img']['name']);
-// 		  mysqli_query($con,"update kyc set pan_img='$pan_img_name' where userid='$userid'");
-// 		}
- 
-// 		$bank_img_name=$_FILES['bank_img']['name'];
-// 		$bank_img_size  =$_FILES['bank_img']['size'];
-// 		$bank_img_type  =$_FILES['bank_img']['type'];
-// 		if($bank_img_name !=''){
-// 		  $upload=move_uploaded_file($_FILES['bank_img']['tmp_name'],'images/'.$_FILES['bank_img']['name']);
-// 		  mysqli_query($con,"update kyc set bank_img='$bank_img_name' where userid='$userid'");
-// 		}
-		
-// 	$update="UPDATE `kyc` SET `bit_coin`='$bit_coin',`holder_name`='$holder_name',`ac_number`='$ac_number',`bank`='$bank',`branch`='$branch', 
-// 	`ifsc`='$ifsc',`paytm`='',`phone_pe`='', `bhim`='',`idproof`='$idproof',`card_no`='$card_no',`pan`='$pan',`paytm`='$paytm',
-// 	`phone_pe`='$phone_pe',`g_pay`='$g_pay',`bhim`='$bhim',`nominee`='$nominee',mimo='$mimo' WHERE userid='$uid'";
-	$updateKyc=$pdo->prepare("UPDATE kyc SET bit_coin=:bit_coin, holder_name=:holder_name, ac_number=:ac_number, 
-	bank=:bank, branch=:branch, ifsc=:ifsc, paytm=:paytm, phone_pe=:phone_pe, bhim=:bhim, idproof=:idproof, 
-	card_no=:card_no, pan=:pan, paytm=:paytm, phone_pe=:phone_pe, g_pay=:g_pay, bhim=:bhim, nominee=:nominee, mimo=:mimo WHERE userid=:userid");
+	$updateKyc=$pdo->prepare("UPDATE kyc SET holder_name=:holder_name, ac_number=:ac_number, 
+	bank=:bank, branch=:branch, ifsc=:ifsc, bhim=:bhim, pan=:pan, mimo=:mimo WHERE userid=:userid");
 	$updateKyc->execute([
-	        ':bit_coin'=>$bit_coin,
 	        ':holder_name'=>$holder_name,
 	        ':ac_number'=>$ac_number,
 	        ':bank'=>$bank,
 	        ':branch'=>$branch,
 	        ':ifsc'=>$ifsc,
-	        ':paytm'=>'',
-	        ':phone_pe'=>'',
-	        ':bhim'=>'',
-	        ':idproof'=>$idproof,
-	        ':card_no'=>$card_no,
+	        ':bhim'=>$upi_id,
 	        ':pan'=>$pan,
-	        ':paytm'=>$paytm,
-	        ':phone_pe'=>$phone_pe,
-	        ':g_pay'=>$g_pay,
-	        ':bhim'=>$bhim,
-	        ':nominee'=>$nominee,
 	        ':mimo'=>$mimo,
 	        ':userid'=>$uid
 	    ]);
-// 	$query_update=mysqli_query($pdo,$update);
-// 	mysqli_query($pdo,"update user set kyc='1' where userid='$uid'");
-	$updateStatus=$pdo->prepare("UPDATE user SET kyc='1' WHERE userid=:userid");
-	$updateStatus->execute([':userid'=>$uid]);
+
+	$updateStatus=$pdo->prepare("UPDATE user SET kyc='1', bep20_address=:bep20 WHERE userid=:userid");
+	$updateStatus->execute([':bep20'=>$bep20_address, ':userid'=>$uid]);
 }
 	 
-// $query1=mysqli_query($con,"select * from kyc where userid='$uid'");
-// $row1=mysqli_fetch_array($query1);
-
 $kycData=$pdo->prepare("SELECT * FROM kyc WHERE userid='$uid'");
 $kycData->execute();
 $row1=$kycData->fetch(PDO::FETCH_ASSOC);
+
+$userBepData=$pdo->prepare("SELECT bep20_address FROM user WHERE userid='$uid'");
+$userBepData->execute();
+$adminBep20=$userBepData->fetchColumn() ?: '';
 ?>
 
 <body class="bg-theme bg-theme1">
 
-<!-- start loader -->
+   <!-- start loader -->
    <div id="pageloader-overlay" class="visible incoming"><div class="loader-wrapper-outer"><div class="loader-wrapper-inner" ><div class="loader"></div></div></div></div>
    <!-- end loader -->
 
-<!-- Start wrapper-->
+ <!-- Start wrapper-->
  <div id="wrapper">
 
- <!--Start sidebar-wrapper-->
-
-   <!--End sidebar-wrapper-->
-  
-
-<!--Start topbar header-->
-
-<!--End topbar header-->
 <div class="clearfix"></div>
 	
   <div class="content-wrapper">
     <div class="container-fluid">
         
-                <script>
+        <script>
 function Validatepancard(thisField) {  
-          if (thisField.value != "") {
-			thisFieldVal = thisField.value;
-            var panPat = /^([a-zA-Z]{5})(\d{4})([a-zA-Z]{1})$/;
-            if (thisFieldVal.search(panPat) == -1) {
-                alert("Invalid Pan No");
-                
-                return false;
-            }
-        }else{
+    if (thisField.value != "") {
+		thisFieldVal = thisField.value;
+        var panPat = /^([a-zA-Z]{5})(\d{4})([a-zA-Z]{1})$/;
+        if (thisFieldVal.search(panPat) == -1) {
+            alert("Invalid Pan No");
+            return false;
+        }
+    } else {
 		alert("Enter Pan No..");
-		}
-  }  
+	}
+}  
 </script>
         <div class="row mt-3">
             <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="card-title text-center"><h3>Update KYC</h3></div>
-                        <hr>
-                        <div class="row">
-                 
-                    <div class="col-md-6">
-          <div class="tile">
-            <!--<h3 class="tile-title text-center">Edit Profile</h3>-->
-            <div class="tile-body">
-             <form method="post" enctype="multipart/form-data">
-                 <div class="form-group">
-                  <label class="control-label">Tron Wallet Address</label>
-                  <input type="text" name="bit_coin" value="<?php echo $row1['bit_coin']; ?>" class="form-control" >
-                </div>
-                <div class="form-group">
-                  <label class="control-label">A/C HOLDER NAME</label>
-                  <input type="text" name="holder_name" value="<?php echo $row1['holder_name']; ?>" class="form-control" >
-                </div>
-                <div class="form-group">
-                  <label class="control-label">A/C NUMBER</label>
-                  <input type="text" name="ac_number" value="<?php echo $row1['ac_number']; ?>" class="form-control" >
-                </div>
-                 <div class="form-group">
-                  <label class="control-label">BANK NAME</label>
-                  <input type="text" name="bank" value="<?php echo $row1['bank']; ?>"  class="form-control" >
-                </div>
-                  <div class="form-group">
-                  <label class="control-label">GOOGLE PAY</label>
-                  <input type="text" name="g_pay" value="<?php echo $row1['g_pay']; ?>" class="form-control" >
-                </div>
-                  <div class="form-group">
-                  <label class="control-label">UPI BHIM</label>
-                  <input type="text" name="bhim" value="<?php echo $row1['bhim']; ?>" class="form-control" >
-                </div>
-                 <div class="form-group">
-    <label for="exampleFormControlSelect2">ID Proof</label>
-    
-    <select class="form-control" id="exampleFormControlSelect2"  name="idproof" >
-<?php if($row1['idproof']==''){ ?>
-	  <option value="" class="form-control">--SELECT--</option>
-	<?php }else{ ?>
-	<option  value="<?php echo $row1['idproof']; ?>" class="form-control"><?php echo $row1['idproof']; ?></option>
-	<?php } ?>
-	  <option value="Adhaar Card" class="form-control">Adhaar card</option>
-	  <option value="Voter Id" class="form-control">Voter Id</option>
-	  <option value="Passport" class="form-control">Passport</option>
-                </select>
-  </div>
-               
-                     </div>
-                
-              
-            </div>
-        </div>
-          <div class="col-md-6">
-          <div class="tile">
-            <!--<h3 class="tile-title text-center">Edit Profile</h3>-->
-            <div class="tile-body">
-             
-                <div class="form-group">
-                  <label class="control-label">BRANCH NAME</label>
-                  <input type="text" name="branch" value="<?php echo $row1['branch']; ?>" class="form-control" >
-                </div>
-                <div class="form-group">
-                  <label class="control-label">IFSC CODE</label>
-                  <input type="text" name="ifsc" value="<?php echo $row1['ifsc']; ?>"  class="form-control" >
-                </div>
-                 <div class="form-group">
-                  <label class="control-label">ID CARD NUMBER</label>
-                  <input type="text" name="card_no" value="<?php echo $row1['card_no']; ?>" class="form-control" >
-                </div>
-           
-                 <div class="form-group">
-                  <label class="control-label">PHONE PAY</label>
-                  <input type="text" name="phone_pe" value="<?php echo $row1['phone_pe']; ?>" class="form-control" >
-                </div>
-                     </div>
-                <div class="form-group">
-                  <label class="control-label">PAYTM</label>
-                  <input type="text" name="paytm" value="<?php echo $row1['paytm']; ?>" class="form-control" >
-                </div>
-                  <div class="form-group">
-                  <label class="control-label">PAN CARD NUMBER</label>
-                  <input type="text" name="pan" onblur="Validatepancard(this);" value="<?php echo $row1['pan']; ?>" class="form-control" >
-                </div>
-                 <div class="form-group">
-                  <label class="control-label"> NOMINEE</label>
-                  <input type="text" name="nominee" onblur="Validatepancard(this);" value="<?php echo $row1['nominee']; ?>" class="form-control" >
-                </div>
-                
-                 <div class="form-group">
-                  <label class="control-label"> Aadhar Number</label>
-                  <input type="text" name="mimo" value="<?php echo $row1['mimo']; ?>" class="form-control" >
-                </div>
-               
-              
-            </div>
-            
-          </div>
-        </div>
-        <div class="tile text-center">
-                     <div class="form-group">
-                  
-                   <div class="tile-footer">
-              <button class="btn btn-primary" type="submit" value="submit" name="update">Submit</button>
-            </div>
-                </div>
-              </div>
-                 </form> 
-                    </div>
-                </div>
-            </div>
-        </div><!--End Row-->
+                <div class="card border-0" style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                    <div class="card-body p-4">
+                        <div class="card-title text-center mb-3">
+                            <h3 class="font-weight-bold text-dark">Update User KYC</h3>
+                            <span class="badge px-3 py-2" style="background-color: <?php echo $color; ?>; color: #000; font-size: 13px; border-radius: 20px;">
+                                Status: <?php echo htmlspecialchars($k_status); ?>
+                            </span>
+                        </div>
+                        <hr style="border-top: 1px solid #e2e8f0;">
 
-        <!--start overlay-->
-        <div class="overlay toggle-menu"></div>
-        <!--end overlay-->
+                        <?php if ($kyc == 1 || $kyc == 0 || $kyc == 3) { ?>
+                            <form method="post" enctype="multipart/form-data">
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="form-group mb-3">
+                                            <label>1. Account Holder Name</label>
+                                            <input type="text" name="holder_name" value="<?php echo htmlspecialchars($row1['holder_name'] ?? ''); ?>" class="form-control" placeholder="Enter Account Holder Name">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>2. Account Number</label>
+                                            <input type="text" name="ac_number" value="<?php echo htmlspecialchars($row1['ac_number'] ?? ''); ?>" class="form-control" placeholder="Enter Bank Account Number">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>4. Bank Name</label>
+                                            <input type="text" name="bank" value="<?php echo htmlspecialchars($row1['bank'] ?? ''); ?>" class="form-control" placeholder="Enter Bank Name">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>5. Branch Name</label>
+                                            <input type="text" name="branch" value="<?php echo htmlspecialchars($row1['branch'] ?? ''); ?>" class="form-control" placeholder="Enter Branch Name">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>6. IFSC Code</label>
+                                            <input type="text" name="ifsc" value="<?php echo htmlspecialchars($row1['ifsc'] ?? ''); ?>" class="form-control" placeholder="Enter IFSC Code">
+                                        </div>
+                                    </div>
 
-    </div>
-    <!-- End container-fluid-->
-</div>
-<!--End content-wrapper-->
-   <!--Start Back To Top Button-->
-    <a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i> </a>
-    <!--End Back To Top Button-->
-	
-	<!--Start footer-->
-	<?php include 'common/footer.php' ?>
-	<!--End footer-->
-	
-	
-   
-  </div><!--End wrapper-->
+                                    <div class="col-lg-6">
+                                        <div class="form-group mb-3">
+                                            <label>7. UPI ID</label>
+                                            <input type="text" name="upi_id" value="<?php echo htmlspecialchars($row1['bhim'] ?? ''); ?>" class="form-control" placeholder="Enter UPI ID">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>8. BEP20 Wallet Address</label>
+                                            <input type="text" name="bep20_address" value="<?php echo htmlspecialchars($adminBep20); ?>" class="form-control" placeholder="Enter BEP20 Wallet Address">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>9. PAN Card Number</label>
+                                            <input type="text" name="pan" onblur="Validatepancard(this);" value="<?php echo htmlspecialchars($row1['pan'] ?? ''); ?>" class="form-control" placeholder="Enter PAN Card Number">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>10. Aadhaar Number</label>
+                                            <input type="text" name="mimo" value="<?php echo htmlspecialchars($row1['mimo'] ?? ''); ?>" class="form-control" placeholder="Enter Aadhaar Number">
+                                        </div>
+                                    </div>
+                                </div>
 
-	
-</body>
+                                <div class="form-group text-center mt-4">
+                                    <button type="submit" class="btn btn-primary px-5 py-2" name="update" style="border-radius: 8px; font-weight: 600; background: #0284c7; border: none;">Submit</button>
+                                </div>
+                            </form>
 
-<!-- Mirrored from themewagon.github.io/dashtreme/forms.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 05 Aug 2025 06:01:55 GMT -->
-</html>
+                        <?php } else { ?>
+                            <form>
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="form-group mb-3">
+                                            <label>Account Holder Name</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($row1['holder_name'] ?? ''); ?>" class="form-control">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>Account Number</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($row1['ac_number'] ?? ''); ?>" class="form-control">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>Bank Name</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($row1['bank'] ?? ''); ?>" class="form-control">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>Branch Name</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($row1['branch'] ?? ''); ?>" class="form-control">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>IFSC Code</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($row1['ifsc'] ?? ''); ?>" class="form-control">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6">
+                                        <div class="form-group mb-3">
+                                            <label>UPI ID</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($row1['bhim'] ?? ''); ?>" class="form-control">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>BEP20 Wallet Address</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($adminBep20); ?>" class="form-control">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>PAN Card Number</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($row1['pan'] ?? ''); ?>" class="form-control">
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label>Aadhaar Number</label>
+                                            <input type="text" readonly value="<?php echo htmlspecialchars($row1['mimo'] ?? ''); ?>" class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        <?php } ?>

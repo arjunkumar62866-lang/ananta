@@ -4,121 +4,262 @@
 
 <?php include 'common/header.php' ?>
 <?php
-if($kyc==0){
-	$k_status="Not Submitted";
-	$color="#FF6C60";
-}else if($kyc==1){
-	$k_status="Pending";
-	$color='#FEFC95';
-}else if($kyc==2){
-	$k_status="Clear";
-	$color='#C4FBC7';
-}else if($kyc==3){
-	$k_status="Rejected";
-	$color='red';
+// Ensure $userid is strictly derived from session
+$sessionUserId = $_SESSION['userid'] ?? '';
+if (empty($sessionUserId)) {
+    header("Location: login.php");
+    exit();
+}
+$userid = $sessionUserId;
+
+// Fetch current user KYC status & BEP20 address
+$stmtUser = $pdo->prepare("SELECT kyc, bep20_address FROM user WHERE userid = :userid");
+$stmtUser->execute([':userid' => $userid]);
+$userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+$kycStatusVal = isset($userRow['kyc']) ? (int)$userRow['kyc'] : 0;
+$userBep20    = $userRow['bep20_address'] ?? '';
+
+if ($kycStatusVal === 0) {
+    $k_status = "Not Submitted";
+    $color    = "#FF6C60";
+} else if ($kycStatusVal === 1) {
+    $k_status = "Pending";
+    $color    = '#FEFC95';
+} else if ($kycStatusVal === 2) {
+    $k_status = "Clear";
+    $color    = '#C4FBC7';
+} else if ($kycStatusVal === 3) {
+    $k_status = "Rejected";
+    $color    = 'red';
+} else {
+    $k_status = "Not Submitted";
+    $color    = "#FF6C60";
 }
 
+$errorMsg   = '';
+$successMsg = '';
 
-if (isset($_POST['update'])) {
-    $bit_coin    = $_POST['bit_coin'];
-    $holder_name = $_POST['holder_name'];
-    $ac_number   = $_POST['ac_number'];
-    $bank        = $_POST['bank'];
-    $branch      = $_POST['branch'];
-    $ifsc        = $_POST['ifsc'];
-    $paytm       = $_POST['paytm'];
-    $phone_pe    = $_POST['phone_pe'];
-    $g_pay       = $_POST['g_pay'];
-    $mimo        = $_POST['mimo'];
-    $bhim        = $_POST['bhim'];
-    $idproof     = $_POST['idproof'];
-    $card_no     = $_POST['card_no'];
-    $pan         = $_POST['pan'];  
-    $nominee     = $_POST['nominee'];  
+// Helper for file uploads
+if (!function_exists('secureUploadKycDoc')) {
+    function secureUploadKycDoc($fileKey, $allowedExts = ['jpg', 'jpeg', 'png', 'pdf']) {
+        if (!isset($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] === UPLOAD_ERR_NO_FILE) {
+            return ['status' => 'empty'];
+        }
+        $file = $_FILES[$fileKey];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return ['status' => 'error', 'message' => 'File upload error occurred code: ' . $file['error']];
+        }
+        // Size limit: 5MB
+        if ($file['size'] > 5 * 1024 * 1024) {
+            return ['status' => 'error', 'message' => 'File size exceeds 5MB limit.'];
+        }
 
-    // Update kyc table
-    $update = "UPDATE kyc 
-               SET bit_coin = :bit_coin,
-                   holder_name = :holder_name,
-                   ac_number = :ac_number,
-                   bank = :bank,
-                   branch = :branch,
-                   ifsc = :ifsc,
-                   paytm = :paytm,
-                   phone_pe = :phone_pe,
-                   g_pay = :g_pay,
-                   mimo = :mimo,
-                   bhim = :bhim,
-                   idproof = :idproof,
-                   card_no = :card_no,
-                   pan = :pan,
-                   nominee = :nominee
-               WHERE userid = :userid";
+        $origExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($origExt, $allowedExts)) {
+            return ['status' => 'error', 'message' => 'Invalid file extension. Permitted: JPG, JPEG, PNG, PDF.'];
+        }
 
-    $stmt = $pdo->prepare($update);
-    $stmt->execute([
-        ':bit_coin'    => $bit_coin,
-        ':holder_name' => $holder_name,
-        ':ac_number'   => $ac_number,
-        ':bank'        => $bank,
-        ':branch'      => $branch,
-        ':ifsc'        => $ifsc,
-        ':paytm'       => $paytm,
-        ':phone_pe'    => $phone_pe,
-        ':g_pay'       => $g_pay,
-        ':mimo'        => $mimo,
-        ':bhim'        => $bhim,
-        ':idproof'     => $idproof,
-        ':card_no'     => $card_no,
-        ':pan'         => $pan,
-        ':nominee'     => $nominee,
-        ':userid'      => $userid
-    ]);
+        // MIME validation
+        $fileMime = '';
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $fileMime = strtolower(finfo_file($finfo, $file['tmp_name']) ?: '');
+            finfo_close($finfo);
+        } elseif (function_exists('mime_content_type')) {
+            $fileMime = strtolower(@mime_content_type($file['tmp_name']) ?: '');
+        }
 
-    // Update user table
-    $stmt2 = $pdo->prepare("UPDATE user SET kyc = '1' WHERE userid = :userid");
-    $stmt2->execute([':userid' => $userid]);
-echo "<script>alert('Kyc updated');window.location.href = 'kyc.php';</script>";
-}
+        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'image/pjpeg', 'image/x-png'];
+        if (!empty($fileMime) && !in_array($fileMime, $allowedMimes)) {
+            return ['status' => 'error', 'message' => 'Invalid file MIME type (' . htmlspecialchars($fileMime) . '). Permitted: JPG, PNG, PDF.'];
+        }
 
+        // Random filename
+        $newFilename = 'kyc_' . bin2hex(random_bytes(16)) . '.' . $origExt;
+        $uploadDir   = __DIR__ . '/uploads';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0755, true);
+        }
 
-$stmt = $pdo->prepare("SELECT * FROM kyc WHERE userid = :userid");
-$stmt->execute([':userid' => $userid]);
-$row1 = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Ensure .htaccess inside uploads prevents script execution
+        $htaccessPath = $uploadDir . '/.htaccess';
+        if (!file_exists($htaccessPath)) {
+            $htaccessContent = "<FilesMatch \"\\.(php|phtml|php3|php4|php5|phps|phar|exe|pl|py|cgi|sh|js|htm|html)$\">\n";
+            $htaccessContent .= "    Order allow,deny\n";
+            $htaccessContent .= "    Deny from all\n";
+            $htaccessContent .= "</FilesMatch>\n";
+            $htaccessContent .= "RemoveHandler .php .phtml .php3 .php4 .php5 .phps .phar\n";
+            $htaccessContent .= "RemoveType .php .phtml .php3 .php4 .php5 .phps .phar\n";
+            @file_put_contents($htaccessPath, $htaccessContent);
+        }
 
-
-?>
-<script>
-function Validatepancard(thisField) {  
-          if (thisField.value != "") {
-			thisFieldVal = thisField.value;
-            var panPat = /^([a-zA-Z]{5})(\d{4})([a-zA-Z]{1})$/;
-            if (thisFieldVal.search(panPat) == -1) {
-                alert("Invalid Pan No");
-                
-                return false;
+        $destPath = $uploadDir . '/' . $newFilename;
+        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+            if (!@copy($file['tmp_name'], $destPath)) {
+                return ['status' => 'error', 'message' => 'Failed to save uploaded file.'];
             }
-        }else{
-		alert("Enter Pan No..");
-		}
-  }  
-</script><style>
-
-/* =========================================================
-   KYC PAGE — PREMIUM CLEAN UI
-========================================================= */
-
-html,
-body {
-    min-height: 100%;
+        }
+        return ['status' => 'success', 'filename' => $newFilename];
+    }
 }
 
+// Handle Form Submission
+if (isset($_POST['update'])) {
+    $holder_name   = trim($_POST['holder_name'] ?? '');
+    $ac_number1    = trim($_POST['ac_number1'] ?? '');
+    $ac_number2    = trim($_POST['ac_number2'] ?? '');
+    $bank          = trim($_POST['bank'] ?? '');
+    $branch        = trim($_POST['branch'] ?? '');
+    $ifsc          = strtoupper(trim($_POST['ifsc'] ?? ''));
+    $upi_id        = trim($_POST['upi_id'] ?? '');
+    $bep20_address = trim($_POST['bep20_address'] ?? '');
+    $pan           = strtoupper(trim($_POST['pan'] ?? ''));
+    $mimo          = trim($_POST['mimo'] ?? ''); // Aadhaar Number
+
+    // Validation checks
+    if ($ac_number1 !== $ac_number2) {
+        $errorMsg = "Account Number and Confirm Account Number do not match.";
+    } elseif (!empty($ifsc) && !preg_match('/^[A-Z]{4}0[A-Z0-9]{6}$/', $ifsc)) {
+        $errorMsg = "Invalid IFSC Code format. Example: SBIN0001234";
+    } elseif (!empty($pan) && !preg_match('/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/', $pan)) {
+        $errorMsg = "Invalid PAN Card Number format. Example: ABCDE1234F";
+    } elseif (!empty($mimo) && !preg_match('/^[0-9]{12}$/', $mimo)) {
+        $errorMsg = "Aadhaar Number must be exactly 12 digits.";
+    } else {
+        // Fetch existing KYC row to retain old uploaded images if new files aren't provided
+        $stmtChk = $pdo->prepare("SELECT * FROM kyc WHERE userid = :userid");
+        $stmtChk->execute([':userid' => $userid]);
+        $existKyc = $stmtChk->fetch(PDO::FETCH_ASSOC);
+
+        $adhar_front_img = $existKyc['adhar_front_img'] ?? '';
+        $adhar_back_img  = $existKyc['adhar_back_img'] ?? '';
+        $pan_img         = $existKyc['pan_img'] ?? '';
+
+        // Handle Aadhaar Card Upload (Front)
+        $upAdhar = secureUploadKycDoc('adhar_front_img');
+        if ($upAdhar['status'] === 'error') {
+            $errorMsg = "Aadhaar Card Upload Error: " . $upAdhar['message'];
+        } elseif ($upAdhar['status'] === 'success') {
+            $adhar_front_img = $upAdhar['filename'];
+        }
+
+        // Handle Aadhaar Card Upload (Back if provided)
+        if (empty($errorMsg)) {
+            $upAdharBack = secureUploadKycDoc('adhar_back_img');
+            if ($upAdharBack['status'] === 'error') {
+                $errorMsg = "Aadhaar Back Image Error: " . $upAdharBack['message'];
+            } elseif ($upAdharBack['status'] === 'success') {
+                $adhar_back_img = $upAdharBack['filename'];
+            }
+        }
+
+        // Handle PAN Card Upload
+        if (empty($errorMsg)) {
+            $upPan = secureUploadKycDoc('pan_img');
+            if ($upPan['status'] === 'error') {
+                $errorMsg = "PAN Card Upload Error: " . $upPan['message'];
+            } elseif ($upPan['status'] === 'success') {
+                $pan_img = $upPan['filename'];
+            }
+        }
+
+        if (empty($errorMsg)) {
+            if ($existKyc) {
+                // UPDATE kyc record
+                $stmtUpd = $pdo->prepare("UPDATE kyc SET 
+                    holder_name = :holder_name,
+                    ac_number   = :ac_number,
+                    bank        = :bank,
+                    branch      = :branch,
+                    ifsc        = :ifsc,
+                    bhim        = :bhim,
+                    pan         = :pan,
+                    mimo        = :mimo,
+                    adhar_front_img = :adhar_front_img,
+                    adhar_back_img  = :adhar_back_img,
+                    pan_img         = :pan_img,
+                    status      = '0'
+                    WHERE userid = :userid");
+                $stmtUpd->execute([
+                    ':holder_name'     => $holder_name,
+                    ':ac_number'       => $ac_number1,
+                    ':bank'            => $bank,
+                    ':branch'          => $branch,
+                    ':ifsc'            => $ifsc,
+                    ':bhim'            => $upi_id,
+                    ':pan'             => $pan,
+                    ':mimo'            => $mimo,
+                    ':adhar_front_img' => $adhar_front_img,
+                    ':adhar_back_img'  => $adhar_back_img,
+                    ':pan_img'         => $pan_img,
+                    ':userid'          => $userid
+                ]);
+            } else {
+                // INSERT kyc record
+                $stmtIns = $pdo->prepare("INSERT INTO kyc (
+                    userid, holder_name, ac_number, bank, branch, ifsc, bhim, pan, mimo, adhar_front_img, adhar_back_img, pan_img, status
+                ) VALUES (
+                    :userid, :holder_name, :ac_number, :bank, :branch, :ifsc, :bhim, :pan, :mimo, :adhar_front_img, :adhar_back_img, :pan_img, '0'
+                )");
+                $stmtIns->execute([
+                    ':userid'          => $userid,
+                    ':holder_name'     => $holder_name,
+                    ':ac_number'       => $ac_number1,
+                    ':bank'            => $bank,
+                    ':branch'          => $branch,
+                    ':ifsc'            => $ifsc,
+                    ':bhim'            => $upi_id,
+                    ':pan'             => $pan,
+                    ':mimo'            => $mimo,
+                    ':adhar_front_img' => $adhar_front_img,
+                    ':adhar_back_img'  => $adhar_back_img,
+                    ':pan_img'         => $pan_img
+                ]);
+            }
+
+            // Update user table (kyc = 1 for pending, bep20_address)
+            $stmtUserUpd = $pdo->prepare("UPDATE user SET kyc = '1', bep20_address = :bep20 WHERE userid = :userid");
+            $stmtUserUpd->execute([
+                ':bep20'  => $bep20_address,
+                ':userid' => $userid
+            ]);
+
+            echo "<script>alert('KYC updated successfully!'); window.location.href = 'kyc.php';</script>";
+            exit();
+        }
+    }
+}
+
+// Select active KYC record for display
+$stmtFetch = $pdo->prepare("SELECT * FROM kyc WHERE userid = :userid");
+$stmtFetch->execute([':userid' => $userid]);
+$row1 = $stmtFetch->fetch(PDO::FETCH_ASSOC);
+
+if (!$row1 || !is_array($row1)) {
+    $row1 = [
+        'holder_name'     => '',
+        'ac_number'       => '',
+        'bank'            => '',
+        'branch'          => '',
+        'ifsc'            => '',
+        'bhim'            => '',
+        'pan'             => '',
+        'mimo'            => '',
+        'adhar_front_img' => '',
+        'adhar_back_img'  => '',
+        'pan_img'         => ''
+    ];
+}
+?>
+
+<style>
+/* KYC Clean UI */
 body.ananta-user-dashboard {
     background: #f6f8fb !important;
     color: #111827 !important;
 }
 
-/* Main content */
 .kyc-page {
     width: 100%;
     min-height: calc(100vh - 80px);
@@ -126,502 +267,204 @@ body.ananta-user-dashboard {
     padding: 22px 24px 100px;
 }
 
-/* Main Card */
 .kyc-card {
     width: 100%;
-    max-width: none;
-
-    margin: 0;
-
     background: #ffffff;
-
     border: 1px solid #e2e8f0;
-
     border-radius: 22px;
-
-    box-shadow:
-        0 10px 35px rgba(15, 23, 42, 0.07),
-        0 2px 8px rgba(15, 23, 42, 0.03);
-
+    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.07);
     overflow: hidden;
 }
-
-/* =========================================================
-   HEADER
-========================================================= */
 
 .kyc-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     gap: 20px;
-
     padding: 25px 30px;
-
     border-bottom: 1px solid #e5eaf0;
-
-    background: linear-gradient(
-        135deg,
-        #ffffff 0%,
-        #fbfdff 65%,
-        #f4fbf7 100%
-    );
+    background: linear-gradient(135deg, #ffffff 0%, #fbfdff 65%, #f4fbf7 100%);
 }
 
 .kyc-title-wrapper {
     display: flex;
     align-items: center;
-
     gap: 15px;
 }
 
 .kyc-header-icon {
     width: 52px;
     height: 52px;
-
-    min-width: 52px;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     border-radius: 15px;
-
-    background: linear-gradient(
-        135deg,
-        rgba(11, 94, 215, 0.10),
-        rgba(34, 164, 71, 0.12)
-    );
-
+    background: linear-gradient(135deg, rgba(11, 94, 215, 0.10), rgba(34, 164, 71, 0.12));
     border: 1px solid rgba(11, 94, 215, 0.10);
-
     color: #0B5ED7;
-
     font-size: 21px;
 }
 
 .kyc-title {
     margin: 0;
-
     color: #111827 !important;
-
     font-size: 22px;
-
     font-weight: 800;
-
-    letter-spacing: -0.3px;
 }
 
 .kyc-subtitle {
     margin: 4px 0 0;
-
     color: #64748b !important;
-
     font-size: 13px;
-
     font-weight: 500;
 }
 
-/* Status */
 .kyc-status {
     display: inline-flex;
-
     align-items: center;
-
     padding: 8px 14px;
-
     border-radius: 999px;
-
     background: #eff6ff;
-
     color: #0B5ED7 !important;
-
     border: 1px solid #dbeafe;
-
     font-size: 11px;
-
     font-weight: 800;
-
-    white-space: nowrap;
 }
-
-/* =========================================================
-   FORM
-========================================================= */
 
 .kyc-form-area {
     padding: 30px;
 }
 
-.kyc-grid {
-    display: grid;
-
-    grid-template-columns:
-        minmax(0, 1fr)
-        minmax(0, 1fr);
-
-    gap: 20px 26px;
+.section-title-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: #f8fafc;
+    border-left: 4px solid #0B5ED7;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    margin-top: 10px;
 }
 
-/* Form group */
+.section-title-box h5 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kyc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 26px;
+    margin-bottom: 25px;
+}
+
 .kyc-field {
     width: 100%;
 }
 
-/* IMPORTANT:
-   Force labels BLACK so inherited white text
-   doesn't make them invisible.
-*/
-
 .kyc-field label {
     display: block;
-
     margin-bottom: 8px;
-
     color: #111827 !important;
-
     font-size: 11px;
-
     font-weight: 800;
-
     letter-spacing: 0.55px;
-
     text-transform: uppercase;
 }
 
-/* Inputs */
-.kyc-field .form-control,
-.kyc-field select.form-control {
-
+.kyc-field .form-control {
     width: 100%;
-
     height: 49px;
-
     padding: 0 14px;
-
     border-radius: 11px !important;
-
     border: 1px solid #d7dee8 !important;
-
     background: #ffffff !important;
-
     color: #111827 !important;
-
     font-size: 14px;
-
     font-weight: 600;
-
-    box-shadow: none !important;
-
-    outline: none;
-
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        background 0.2s ease;
 }
 
-.kyc-field .form-control:focus,
-.kyc-field select.form-control:focus {
+.kyc-field input[type="file"].form-control {
+    padding: 10px 14px;
+    height: auto;
+}
 
+.kyc-field .form-control:focus {
     border-color: #0B5ED7 !important;
-
-    background: #ffffff !important;
-
-    color: #111827 !important;
-
-    box-shadow:
-        0 0 0 3px rgba(11, 94, 215, 0.08) !important;
+    box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.08) !important;
 }
-
-/* Placeholder */
-.kyc-field .form-control::placeholder {
-    color: #94a3b8 !important;
-}
-
-/* Select */
-.kyc-field select.form-control {
-    cursor: pointer;
-}
-
-/* Readonly */
-.kyc-field .form-control[readonly] {
-
-    background: #f8fafc !important;
-
-    color: #334155 !important;
-}
-
-/* =========================================================
-   ACCOUNT NUMBER WARNING
-========================================================= */
 
 #passwordWarning {
-
     display: block;
-
     margin-top: 6px;
-
     color: #dc2626 !important;
-
     font-size: 11px !important;
-
     font-weight: 700;
 }
 
-/* =========================================================
-   SUBMIT BUTTON
-========================================================= */
-
 .kyc-submit-area {
-
-    grid-column: 1 / -1;
-
     display: flex;
-
     justify-content: center;
-
-    padding-top: 10px;
+    padding-top: 20px;
 }
 
 .kyc-submit-btn {
-
-    min-width: 210px;
-
-    height: 48px;
-
-    padding: 0 28px;
-
+    min-width: 220px;
+    height: 50px;
+    padding: 0 30px;
     border: none !important;
-
     border-radius: 12px !important;
-
-    background: linear-gradient(
-        135deg,
-        #0B5ED7 0%,
-        #0788c9 50%,
-        #22A447 100%
-    ) !important;
-
+    background: linear-gradient(135deg, #0B5ED7 0%, #0788c9 50%, #22A447 100%) !important;
     color: #ffffff !important;
-
-    font-size: 13px;
-
+    font-size: 14px;
     font-weight: 800;
-
     letter-spacing: 0.3px;
-
-    box-shadow:
-        0 8px 20px rgba(11, 94, 215, 0.20);
-
+    box-shadow: 0 8px 20px rgba(11, 94, 215, 0.20);
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .kyc-submit-btn:hover {
-
-    color: #ffffff !important;
-
     transform: translateY(-2px);
-
-    box-shadow:
-        0 12px 26px rgba(11, 94, 215, 0.28);
+    box-shadow: 0 12px 26px rgba(11, 94, 215, 0.28);
 }
 
 .kyc-submit-btn:disabled {
-
     opacity: 0.55;
-
-    transform: none;
-
     cursor: not-allowed !important;
+    transform: none;
 }
 
-/* =========================================================
-   FORCE ALL KYC TEXT VISIBILITY
-========================================================= */
-
-.kyc-card h1,
-.kyc-card h2,
-.kyc-card h3,
-.kyc-card h4,
-.kyc-card h5,
-.kyc-card h6,
-.kyc-card p,
-.kyc-card label,
-.kyc-card span,
-.kyc-card input,
-.kyc-card select,
-.kyc-card option {
-
-    /* Inputs/button override their own styles below */
-    color: #111827;
+.doc-preview-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 10px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 6px;
+    text-decoration: none;
 }
-
-.kyc-card .kyc-subtitle {
-    color: #64748b !important;
-}
-
-.kyc-card .kyc-status {
-    color: #0B5ED7 !important;
-}
-
-.kyc-card .kyc-submit-btn {
-    color: #ffffff !important;
-}
-
-/* =========================================================
-   REMOVE OLD COLORFUL BACKGROUND
-========================================================= */
-
-.content-wrapper:has(.kyc-page),
-.content-wrapper:has(.kyc-page) .container-fluid {
-    background: #f6f8fb !important;
-}
-
-/* =========================================================
-   TABLET
-========================================================= */
-
-@media (max-width: 991px) {
-
-    .kyc-page {
-        padding: 18px 18px 95px;
-    }
-
-    .kyc-header {
-        padding: 22px;
-    }
-
-    .kyc-form-area {
-        padding: 22px;
-    }
-
-    .kyc-grid {
-        gap: 18px;
-    }
-}
-
-/* =========================================================
-   MOBILE
-========================================================= */
 
 @media (max-width: 767px) {
-
+    .kyc-grid {
+        grid-template-columns: 1fr;
+    }
     .kyc-page {
         padding: 12px 10px 90px;
     }
-
-    .kyc-card {
-        border-radius: 17px;
-    }
-
-    .kyc-header {
-
-        align-items: flex-start;
-
-        padding: 18px;
-
-        flex-direction: column;
-    }
-
-    .kyc-title-wrapper {
-        width: 100%;
-    }
-
-    .kyc-header-icon {
-
-        width: 45px;
-        height: 45px;
-
-        min-width: 45px;
-
-        border-radius: 13px;
-
-        font-size: 18px;
-    }
-
-    .kyc-title {
-        font-size: 18px;
-    }
-
-    .kyc-subtitle {
-        font-size: 11px;
-    }
-
-    .kyc-status {
-        font-size: 10px;
-
-        padding: 7px 12px;
-    }
-
-    .kyc-form-area {
-        padding: 18px;
-    }
-
-    .kyc-grid {
-
-        grid-template-columns: 1fr;
-
-        gap: 16px;
-    }
-
-    .kyc-submit-area {
-        grid-column: 1;
-    }
-
-    .kyc-submit-btn {
-        width: 100%;
-    }
 }
-
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
-
-@media (max-width: 480px) {
-
-    .kyc-page {
-        padding: 8px 7px 85px;
-    }
-
-    .kyc-header {
-        padding: 16px;
-    }
-
-    .kyc-form-area {
-        padding: 14px;
-    }
-
-    .kyc-title {
-        font-size: 17px;
-    }
-
-    .kyc-field .form-control,
-    .kyc-field select.form-control {
-        height: 47px;
-
-        font-size: 13px;
-    }
-
-    .kyc-field label {
-        font-size: 10px;
-    }
-}
-
 </style>
 
-
 <body class="ananta-user-dashboard">
-
 <div id="wrapper">
-
     <div class="clearfix"></div>
-
-
-    <!-- =====================================================
-         KYC CONTENT
-    ====================================================== -->
 
     <div class="content-wrapper">
         <div class="container-fluid pt-3 px-4">
@@ -631,659 +474,195 @@ body.ananta-user-dashboard {
                     <span style="color: #94a3b8; font-weight: 400;">/</span>
                     <span style="color: #475569; font-weight: 600;">Settings</span>
                     <span style="color: #94a3b8; font-weight: 400;">/</span>
-                    <span style="color: #0f172a; font-weight: 700;">Bank KYC</span>
+                    <span style="color: #0f172a; font-weight: 700;">Update KYC</span>
                 </div>
             </nav>
         </div>
 
         <div class="kyc-page">
-
             <div class="kyc-card">
-
-
-                <!-- =================================================
-                     KYC HEADER
-                ================================================== -->
-
+                <!-- Header -->
                 <div class="kyc-header">
-
                     <div class="kyc-title-wrapper">
-
                         <div class="kyc-header-icon">
                             <i class="fa fa-id-card"></i>
                         </div>
-
                         <div>
-
-                            <h3 class="kyc-title">
-                                Update KYC Details
-                            </h3>
-
-                            <p class="kyc-subtitle">
-                                Bank account &amp; verification documents
-                            </p>
-
+                            <h3 class="kyc-title">Update KYC Details</h3>
+                            <p class="kyc-subtitle">Bank account &amp; identity verification documents</p>
                         </div>
-
                     </div>
-
-
                     <div>
-
-                        <span class="kyc-status">
-
-                            STATUS:
-                            <?php echo $k_status; ?>
-
+                        <span class="kyc-status" style="background-color: <?php echo $color; ?>; color: #000 !important;">
+                            STATUS: <?php echo htmlspecialchars($k_status); ?>
                         </span>
-
                     </div>
-
                 </div>
-
-
-                <!-- =================================================
-                     KYC FORM
-                ================================================== -->
 
                 <div class="kyc-form-area">
+                    <?php if (!empty($errorMsg)): ?>
+                        <div class="alert alert-danger font-weight-bold mb-4" style="border-radius: 10px;">
+                            <i class="fa fa-exclamation-triangle mr-2"></i><?php echo htmlspecialchars($errorMsg); ?>
+                        </div>
+                    <?php endif; ?>
 
-                    <?php if (1 == 1) { ?>
-
-                    <form
-                        method="post"
-                        enctype="multipart/form-data"
-                        id="registration_form"
-                    >
+                    <form method="post" enctype="multipart/form-data" id="registration_form">
+                        
+                        <!-- SECTION 1: BANK DETAILS -->
+                        <div class="section-title-box">
+                            <i class="fa fa-university text-primary"></i>
+                            <h5>1. Bank Details</h5>
+                        </div>
 
                         <div class="kyc-grid">
-
-
-                            <!-- =====================================
-                                 LEFT COLUMN
-                            ====================================== -->
-
+                            <!-- 1. Account Holder Name -->
                             <div class="kyc-field">
-
-                                <label>
-                                    Tron Wallet Address
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="bit_coin"
-                                    value="<?php echo $row1['bit_coin']; ?>"
-                                    class="form-control"
-                                >
-
+                                <label>1. Account Holder Name</label>
+                                <input type="text" name="holder_name" value="<?php echo htmlspecialchars($row1['holder_name'] ?? ''); ?>" class="form-control" placeholder="Enter Account Holder Name" required>
                             </div>
 
-
+                            <!-- 4. Bank Name -->
                             <div class="kyc-field">
-
-                                <label>
-                                    A/C Holder Name
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="holder_name"
-                                    value="<?php echo $row1['holder_name']; ?>"
-                                    class="form-control"
-                                >
-
+                                <label>4. Bank Name</label>
+                                <input type="text" name="bank" value="<?php echo htmlspecialchars($row1['bank'] ?? ''); ?>" class="form-control" placeholder="Enter Bank Name" required>
                             </div>
 
-
+                            <!-- 2. Account Number -->
                             <div class="kyc-field">
-
-                                <label>
-                                    A/C Number
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="ac_number"
-                                    id="ac_number1"
-                                    value="<?php echo $row1['ac_number']; ?>"
-                                    class="form-control"
-                                >
-
+                                <label>2. Account Number</label>
+                                <input type="text" name="ac_number1" id="ac_number1" value="<?php echo htmlspecialchars($row1['ac_number'] ?? ''); ?>" class="form-control" placeholder="Enter Bank Account Number" required>
                             </div>
 
-
+                            <!-- 3. Confirm Account Number -->
                             <div class="kyc-field">
-
-                                <label>
-                                    Confirm A/C Number
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="ac_number"
-                                    id="ac_number2"
-                                    value="<?php echo $row1['ac_number']; ?>"
-                                    class="form-control"
-                                >
-
+                                <label>3. Confirm Account Number</label>
+                                <input type="text" name="ac_number2" id="ac_number2" value="<?php echo htmlspecialchars($row1['ac_number'] ?? ''); ?>" class="form-control" placeholder="Re-enter Bank Account Number" required>
                                 <span id="passwordWarning"></span>
-
                             </div>
 
-
+                            <!-- 5. Branch Name -->
                             <div class="kyc-field">
-
-                                <label>
-                                    Bank Name
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="bank"
-                                    value="<?php echo $row1['bank']; ?>"
-                                    class="form-control"
-                                >
-
+                                <label>5. Branch Name</label>
+                                <input type="text" name="branch" value="<?php echo htmlspecialchars($row1['branch'] ?? ''); ?>" class="form-control" placeholder="Enter Branch Name" required>
                             </div>
 
-
+                            <!-- 6. IFSC Code -->
                             <div class="kyc-field">
-
-                                <label>
-                                    Google Pay
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="g_pay"
-                                    value="<?php echo $row1['g_pay']; ?>"
-                                    class="form-control"
-                                >
-
+                                <label>6. IFSC Code</label>
+                                <input type="text" name="ifsc" value="<?php echo htmlspecialchars($row1['ifsc'] ?? ''); ?>" class="form-control" placeholder="Enter IFSC Code (e.g. SBIN0001234)" required>
                             </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    UPI BHIM
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="bhim"
-                                    value="<?php echo $row1['bhim']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    ID Proof
-                                </label>
-
-                                <select
-                                    class="form-control"
-                                    name="idproof"
-                                >
-
-                                    <?php if ($row1['idproof'] == '') { ?>
-
-                                        <option value="">
-                                            -SELECT-
-                                        </option>
-
-                                    <?php } else { ?>
-
-                                        <option value="<?php echo $row1['idproof']; ?>">
-                                            <?php echo $row1['idproof']; ?>
-                                        </option>
-
-                                    <?php } ?>
-
-                                    <option value="Adhaar Card">
-                                        Adhaar Card
-                                    </option>
-
-                                    <option value="Voter Id">
-                                        Voter Id
-                                    </option>
-
-                                    <option value="Passport">
-                                        Passport
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-
-                            <!-- =====================================
-                                 RIGHT COLUMN
-                            ====================================== -->
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    Branch Name
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="branch"
-                                    value="<?php echo $row1['branch']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    IFSC Code
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="ifsc"
-                                    value="<?php echo $row1['ifsc']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    ID Card Number
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="card_no"
-                                    value="<?php echo $row1['card_no']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    Phone Pay
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="phone_pe"
-                                    value="<?php echo $row1['phone_pe']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    Paytm
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="paytm"
-                                    value="<?php echo $row1['paytm']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    PAN Card Number
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="pan"
-                                    onblur="Validatepancard(this);"
-                                    value="<?php echo $row1['pan']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    Nominee
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="nominee"
-                                    value="<?php echo $row1['nominee']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <div class="kyc-field">
-
-                                <label>
-                                    Aadhar Number
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="mimo"
-                                    value="<?php echo $row1['mimo']; ?>"
-                                    class="form-control"
-                                >
-
-                            </div>
-
-
-                            <!-- =====================================
-                                 SUBMIT
-                            ====================================== -->
-
-                            <div class="kyc-submit-area">
-
-                                <button
-                                    type="submit"
-                                    id="submitBtn"
-                                    class="kyc-submit-btn"
-                                    name="update"
-                                >
-
-                                    <i class="fa fa-check-circle me-1"></i>
-
-                                    UPDATE KYC DETAILS
-
-                                </button>
-
-                            </div>
-
                         </div>
 
-                    </form>
-
-
-                    <?php } else { ?>
-
-                    <!-- READ ONLY KYC STATE -->
-
-                    <form>
+                        <!-- SECTION 2: PAYMENT / WALLET -->
+                        <div class="section-title-box">
+                            <i class="fa fa-credit-card text-primary"></i>
+                            <h5>2. Payment / Wallet</h5>
+                        </div>
 
                         <div class="kyc-grid">
-
+                            <!-- 7. UPI ID -->
                             <div class="kyc-field">
-                                <label>Tron Wallet Address</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['bit_coin']; ?>"
-                                    class="form-control"
-                                >
+                                <label>7. UPI ID</label>
+                                <input type="text" name="upi_id" value="<?php echo htmlspecialchars($row1['bhim'] ?? ''); ?>" class="form-control" placeholder="Enter UPI ID (e.g. user@upi)">
                             </div>
 
+                            <!-- 8. BEP20 Wallet Address -->
                             <div class="kyc-field">
-                                <label>A/C Holder Name</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['holder_name']; ?>"
-                                    class="form-control"
-                                >
+                                <label>8. BEP20 Wallet Address</label>
+                                <input type="text" name="bep20_address" value="<?php echo htmlspecialchars($userBep20); ?>" class="form-control" placeholder="Enter BEP20 Wallet Address (0x...)">
                             </div>
-
-                            <div class="kyc-field">
-                                <label>A/C Number</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['ac_number']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>Bank Name</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['bank']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>Google Pay</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['g_pay']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>UPI BHIM</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['bhim']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>ID Proof</label>
-
-                                <select
-                                    class="form-control"
-                                    disabled
-                                >
-
-                                    <?php if ($row1['idproof'] == '') { ?>
-
-                                        <option value="">
-                                            -SELECT-
-                                        </option>
-
-                                    <?php } else { ?>
-
-                                        <option value="<?php echo $row1['idproof']; ?>">
-                                            <?php echo $row1['idproof']; ?>
-                                        </option>
-
-                                    <?php } ?>
-
-                                    <option value="Adhaar Card">
-                                        Adhaar Card
-                                    </option>
-
-                                    <option value="Voter Id">
-                                        Voter Id
-                                    </option>
-
-                                    <option value="Passport">
-                                        Passport
-                                    </option>
-
-                                </select>
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>Branch Name</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['branch']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>IFSC Code</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['ifsc']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>ID Card Number</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['card_no']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>Phone Pay</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['phone_pe']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>Paytm</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['paytm']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>PAN Card Number</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['pan']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>Nominee</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['nominee']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="kyc-field">
-                                <label>Aadhar Number</label>
-                                <input
-                                    type="text"
-                                    readonly
-                                    value="<?php echo $row1['mimo']; ?>"
-                                    class="form-control"
-                                >
-                            </div>
-
                         </div>
 
+                        <!-- SECTION 3: IDENTITY -->
+                        <div class="section-title-box">
+                            <i class="fa fa-address-card text-primary"></i>
+                            <h5>3. Identity</h5>
+                        </div>
+
+                        <div class="kyc-grid">
+                            <!-- 9. PAN Card Number -->
+                            <div class="kyc-field">
+                                <label>9. PAN Card Number</label>
+                                <input type="text" name="pan" value="<?php echo htmlspecialchars($row1['pan'] ?? ''); ?>" class="form-control" placeholder="Enter PAN Number (e.g. ABCDE1234F)">
+                            </div>
+
+                            <!-- 10. Aadhaar Number -->
+                            <div class="kyc-field">
+                                <label>10. Aadhaar Number</label>
+                                <input type="text" name="mimo" value="<?php echo htmlspecialchars($row1['mimo'] ?? ''); ?>" class="form-control" placeholder="Enter 12-digit Aadhaar Number">
+                            </div>
+                        </div>
+
+                        <!-- SECTION 4: DOCUMENTS -->
+                        <div class="section-title-box">
+                            <i class="fa fa-upload text-primary"></i>
+                            <h5>4. Upload ID Proof</h5>
+                        </div>
+
+                        <div class="kyc-grid">
+                            <!-- Aadhaar Card Upload (Front) -->
+                            <div class="kyc-field">
+                                <label>Aadhaar Card Upload (Front Image / PDF)</label>
+                                <input type="file" name="adhar_front_img" class="form-control" accept="image/*,.pdf">
+                                <?php if (!empty($row1['adhar_front_img'])): ?>
+                                    <a href="uploads/<?php echo htmlspecialchars($row1['adhar_front_img']); ?>" target="_blank" class="doc-preview-badge">
+                                        <i class="fa fa-file-image-o mr-1"></i> View Existing Aadhaar Front
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- PAN Card Upload -->
+                            <div class="kyc-field">
+                                <label>PAN Card Upload (Image / PDF)</label>
+                                <input type="file" name="pan_img" class="form-control" accept="image/*,.pdf">
+                                <?php if (!empty($row1['pan_img'])): ?>
+                                    <a href="uploads/<?php echo htmlspecialchars($row1['pan_img']); ?>" target="_blank" class="doc-preview-badge">
+                                        <i class="fa fa-file-image-o mr-1"></i> View Existing PAN Card
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="kyc-submit-area">
+                            <button type="submit" id="submitBtn" class="kyc-submit-btn" name="update">
+                                <i class="fa fa-check-circle mr-2"></i> UPDATE KYC DETAILS
+                            </button>
+                        </div>
                     </form>
-
-                    <?php } ?>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
-
-    <!-- Back To Top -->
-    <a
-        href="javaScript:void();"
-        class="back-to-top"
-    >
-        <i class="fa fa-angle-double-up"></i>
-    </a>
-
 
     <!-- Footer -->
     <?php include 'common/footer.php' ?>
-
-
 </div>
-
-
-<!-- =========================================================
-     JAVASCRIPT
-========================================================= -->
 
 <script src="assets/js/jquery.min.js"></script>
 <script src="assets/js/popper.min.js"></script>
 <script src="assets/js/bootstrap.min.js"></script>
-
 <script src="assets/js/sidebar-menu.js"></script>
-
 <script src="assets/js/app-script.js"></script>
 
-
 <script>
-
 $(document).ready(function () {
+    $('#registration_form').on('submit keyup change', function (e) {
+        const pass1 = $('#ac_number1').val().trim();
+        const pass2 = $('#ac_number2').val().trim();
 
-    $('#registration_form').on('submit keyup', function (e) {
-
-        const pass1 = $('#ac_number1').val();
-        const pass2 = $('#ac_number2').val();
-
-        if (pass1 !== pass2) {
-
-            $('#passwordWarning')
-                .text('A/C no. not match');
-
-            $('#submitBtn')
-                .attr('disabled', true)
-                .css('cursor', 'not-allowed');
-
+        if (pass1 !== "" && pass2 !== "" && pass1 !== pass2) {
+            $('#passwordWarning').text('Account Number & Confirm Account Number do not match.');
+            $('#submitBtn').attr('disabled', true).css('cursor', 'not-allowed');
             if (e.type === 'submit') {
                 e.preventDefault();
             }
-
             return;
         }
 
         $('#passwordWarning').text('');
-
-        $('#submitBtn')
-            .removeAttr('disabled')
-            .css('cursor', 'pointer');
-
+        $('#submitBtn').removeAttr('disabled').css('cursor', 'pointer');
     });
-
 });
-
 </script>
 
 </body>

@@ -297,24 +297,50 @@ table.dataTable.no-footer {
                             </div>
 
                             <div class="p-4">
+                                <div class="row mb-3 align-items-center">
+                                    <div class="col-md-3 mb-2">
+                                        <label class="form-label font-weight-bold text-muted small uppercase">Account Status Filter</label>
+                                        <select id="statusFilter" class="form-control" style="border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 600;">
+                                            <option value="">All Statuses</option>
+                                            <option value="Active">Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                            <option value="Blocked">Blocked</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="form-label font-weight-bold text-muted small uppercase">KYC Status Filter</label>
+                                        <select id="kycFilter" class="form-control" style="border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 600;">
+                                            <option value="">All KYC Statuses</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Not Submitted">Not Submitted</option>
+                                            <option value="Rejected">Rejected</option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="table-responsive" id="tblData">
                                     <table class="table table-hover align-middle" id="usersTable">
                                         <thead>
                                             <tr>
                                                 <th>#</th>
+                                                <th>User Name</th>
                                                 <th>User ID</th>
-                                                <th>Name</th>
-                                                <th>Mobile</th>
                                                 <th>Sponsor ID</th>
-                                                <th>Sponsor Name</th>
-                                                <th>Joining Date</th>
-                                                <th>Login</th>
+                                                <th>Email</th>
+                                                <th>Mobile</th>
                                                 <th>Status</th>
+                                                <th>KYC</th>
+                                                <th>Reg. Date</th>
+                                                <th>Main Wallet</th>
+                                                <th>Net Balance</th>
+                                                <th>Active Inv.</th>
+                                                <th>Total Wd.</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <!-- DataTables will load this directly -->
+                                            <!-- DataTables loads dynamically -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -365,27 +391,25 @@ table.dataTable.no-footer {
                 columns: [
                     { data: null, render: (data, type, row, meta) => meta.row + 1 },
                     {
+                        data: 'name',
+                        render: function (data, type, row) {
+                            return `<a href="user_profile.php?uid=${row.userid}" class="font-weight-bold text-dark text-decoration-none">${data || 'N/A'}</a>`;
+                        }
+                    },
+                    {
                         data: 'userid',
                         render: function (data) {
                             return `<a href="user_profile.php?uid=${data}" class="font-weight-bold text-primary"><?php echo $hmpre; ?>${data}</a>`;
                         }
                     },
-                    { data: 'name' },
-                    { data: 'mobile' },
                     {
                         data: 'sponserid',
                         render: function (data) {
-                            return `<?php echo $hmpre; ?>${data}`;
+                            return `<?php echo $hmpre; ?>${data || 'SYSTEM'}`;
                         }
                     },
-                    { data: 'sponsername' },
-                    { data: 'joining_date' },
-                    {
-                        data: 'userid',
-                        render: function (data) {
-                            return `<a target="_blank" href="../user/index.php?uid=${data}" class="btn btn-sm btn-outline-info font-weight-bold" style="border-radius: 8px;"><i class="fa fa-sign-in me-1"></i>Login</a>`;
-                        }
-                    },
+                    { data: 'email', defaultContent: 'N/A' },
+                    { data: 'mobile', defaultContent: 'N/A' },
                     {
                         data: null,
                         render: function (data) {
@@ -399,26 +423,53 @@ table.dataTable.no-footer {
                         }
                     },
                     {
+                        data: 'kyc',
+                        render: function (data) {
+                            if (data == '2' || data == '1') {
+                                return '<span class="badge badge-success px-2 py-1" style="border-radius:100px;">Approved</span>';
+                            } else if (data == '3') {
+                                return '<span class="badge badge-danger px-2 py-1" style="border-radius:100px;">Rejected</span>';
+                            } else {
+                                return '<span class="badge badge-warning px-2 py-1 text-dark" style="border-radius:100px;">Not Submitted</span>';
+                            }
+                        }
+                    },
+                    { data: 'joining_date', defaultContent: 'N/A' },
+                    {
+                        data: 'amount',
+                        render: (data) => formatAdminCurrency(parseFloat(data || 0))
+                    },
+                    {
+                        data: 'net_balance',
+                        render: (data) => formatAdminCurrency(parseFloat(data || 0))
+                    },
+                    {
+                        data: 'active_investment',
+                        render: (data) => formatAdminCurrency(parseFloat(data || 0))
+                    },
+                    {
+                        data: 'total_withdrawal',
+                        render: (data) => formatAdminCurrency(parseFloat(data || 0))
+                    },
+                    {
                         data: null,
                         render: function (data) {
-                            let btnClass = (data.status == '1') 
-                                ? 'btn btn-danger btn-sm font-weight-bold' 
-                                : 'btn btn-success btn-sm font-weight-bold';
-                    
-                            let text = (data.status == '1') 
-                                ? 'Block' 
-                                : 'Unblock';
-                    
-                            let type = (data.status == '1') 
-                                ? 'deact' 
-                                : 'act';
-                    
+                            let btnClass = (data.status == '1') ? 'btn btn-danger btn-sm font-weight-bold' : 'btn btn-success btn-sm font-weight-bold';
+                            let text = (data.status == '1') ? 'Block' : 'Unblock';
+                            let type = (data.status == '1') ? 'deact' : 'act';
+
                             return `
-                                <a href="action.php?uid=${data.userid}&type=${type}" 
-                                   class="${btnClass}" 
-                                   style="padding: 6px 14px; border-radius: 8px; color:#fff;">
-                                   ${text}
-                                </a>
+                                <div class="d-flex gap-1">
+                                    <a href="user_profile.php?uid=${data.userid}" class="btn btn-sm btn-primary font-weight-bold" style="padding: 4px 10px; border-radius: 8px;">
+                                        <i class="fa fa-eye me-1"></i>View
+                                    </a>
+                                    <a href="move_team.php?user_id=${data.userid}" class="btn btn-sm font-weight-bold text-dark" style="padding: 4px 10px; border-radius: 8px; background:#f59e0b; border:none;">
+                                        <i class="fa fa-sitemap me-1"></i>Move
+                                    </a>
+                                    <a href="action.php?uid=${data.userid}&type=${type}" class="${btnClass}" style="padding: 4px 10px; border-radius: 8px; color:#fff;">
+                                        ${text}
+                                    </a>
+                                </div>
                             `;
                         }
                     }
@@ -429,9 +480,23 @@ table.dataTable.no-footer {
                 buttons: [
                     {
                         extend: 'excelHtml5',
-                        title: 'All_Users_Directory'
+                        title: 'ANANTA_Members_Directory'
                     }
                 ]
+            });
+
+            function numberFormat(val) {
+                return val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            // Status Filter Change
+            $('#statusFilter').on('change', function () {
+                table.column(6).search(this.value).draw();
+            });
+
+            // KYC Filter Change
+            $('#kycFilter').on('change', function () {
+                table.column(7).search(this.value).draw();
             });
 
             // Custom export button

@@ -1,11 +1,8 @@
-const CACHE_NAME = 'ananta-pwa-v1';
+const CACHE_NAME = 'ananta-pwa-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.php',
-  '/assets/css/bootstrap.css',
-  '/assets/css/style.css',
-  '/assets/css/color.css',
-  '/assets/images/logo.png',
+  '/assets/images/pwa-icon.png',
   '/manifest.json'
 ];
 
@@ -35,34 +32,41 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - Network first strategy for dynamic/API/PHP requests to prevent stale data
+// Fetch event - Network-only for PHP / API dynamic requests to prevent stale session/user data
 self.addEventListener('fetch', (event) => {
-  const requestUrl = new URL(event.request.url);
+  const request = event.request;
+  const url = new URL(request.url);
 
-  // Skip caching non-GET requests or sensitive PHP dashboard/POST operations
-  if (event.request.method !== 'GET' || requestUrl.pathname.endsWith('.php')) {
-    return;
+  // Skip caching non-GET requests, PHP files, dashboard URLs, or API requests
+  if (
+    request.method !== 'GET' ||
+    url.pathname.endsWith('.php') ||
+    url.pathname.includes('/dashboard/') ||
+    url.pathname.includes('/api/')
+  ) {
+    return; // Pass through to network directly without SW caching
   }
 
+  // Stale-while-revalidate for static assets (CSS, JS, Images, Fonts, Manifest)
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Cache static CSS, JS, images safely
-        if (
-          networkResponse &&
-          networkResponse.status === 200 &&
-          (requestUrl.pathname.startsWith('/assets/') || requestUrl.pathname.endsWith('.json'))
-        ) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        // Fallback to cache if network fails (offline static asset)
-        return caches.match(event.request);
-      })
+    caches.match(request).then((cachedResponse) => {
+      const fetchPromise = fetch(request)
+        .then((networkResponse) => {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            (url.pathname.startsWith('/assets/') || url.pathname.endsWith('.json'))
+          ) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => cachedResponse);
+
+      return cachedResponse || fetchPromise;
+    })
   );
 });

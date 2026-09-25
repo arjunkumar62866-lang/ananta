@@ -129,7 +129,48 @@ switch ($action) {
         echo json_encode(['status' => 'success', 'data' => $logs]);
         break;
 
+    case 'delete_user_account_permanent':
+        $target_user_id = trim($_POST['user_id'] ?? '');
+
+        if (empty($target_user_id)) {
+            echo json_encode(['status' => 'error', 'message' => 'User ID is required.']);
+            exit;
+        }
+
+        $res = processPermanentUserAccountDeletion($admin_id, $target_user_id, $pdo);
+        echo json_encode($res);
+        break;
+
+    case 'get_user_tree_details':
+        $user_id = trim($_POST['user_id'] ?? $_GET['user_id'] ?? '');
+        $data = getTreeUserDetails($user_id, $pdo);
+        if ($data) {
+            echo json_encode(['status' => 'success', 'data' => $data]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => "User {$user_id} not found."]);
+        }
+        break;
+
+    case 'get_new_parent_availability':
+        $target_user_id = trim($_POST['target_user_id'] ?? $_GET['target_user_id'] ?? '');
+        $new_parent_id  = trim($_POST['new_parent_id'] ?? $_GET['new_parent_id'] ?? '');
+
+        $res = getNewParentAvailability($target_user_id, $new_parent_id, $pdo);
+        echo json_encode($res);
+        break;
+
+    case 'move_team_in_tree':
+        $target_user_id  = trim($_POST['target_user_id'] ?? '');
+        $new_parent_id   = trim($_POST['new_parent_id'] ?? '');
+        $target_position = trim($_POST['target_position'] ?? '');
+        $reason          = trim($_POST['reason'] ?? '');
+
+        $res = processAdminMoveTeamInTree($admin_id, $target_user_id, $new_parent_id, $target_position, $reason, $pdo);
+        echo json_encode($res);
+        break;
+
     default:
         echo json_encode(['status' => 'error', 'message' => 'Invalid action requested.']);
         break;
 }
+

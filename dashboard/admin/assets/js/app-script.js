@@ -57,13 +57,16 @@ $(document).ready(function(){
 	    
    
 $(function () {
-  $('[data-toggle="popover"]').popover()
-})
-
+  if (typeof $.fn.popover === 'function') {
+    $('[data-toggle="popover"]').popover();
+  }
+});
 
 $(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-})
+  if (typeof $.fn.tooltip === 'function') {
+    $('[data-toggle="tooltip"]').tooltip();
+  }
+});
 
 
 	 // theme setting

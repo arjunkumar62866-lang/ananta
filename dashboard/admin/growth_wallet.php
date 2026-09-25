@@ -58,19 +58,19 @@ $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <div class="col-md-4 mb-3">
         <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">TOTAL GROWTH WALLET BALANCES</span>
-          <h3 class="mb-0 font-weight-bold text-success">₹<?php echo number_format($totGrowthBalance, 2); ?></h3>
+          <h3 class="mb-0 font-weight-bold text-success"><?php echo formatCurrency($totGrowthBalance); ?></h3>
         </div>
       </div>
       <div class="col-md-4 mb-3">
         <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">TOTAL ROI PROFIT PAID</span>
-          <h3 class="mb-0 font-weight-bold text-primary">₹<?php echo number_format($totGrowthPaid, 2); ?></h3>
+          <h3 class="mb-0 font-weight-bold text-primary"><?php echo formatCurrency($totGrowthPaid); ?></h3>
         </div>
       </div>
       <div class="col-md-4 mb-3">
         <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">TOTAL ACTIVE GROWTH PACKAGES</span>
-          <h3 class="mb-0 font-weight-bold text-dark">₹<?php echo number_format($totActiveInvest, 2); ?></h3>
+          <h3 class="mb-0 font-weight-bold text-dark"><?php echo formatCurrency($totActiveInvest); ?></h3>
         </div>
       </div>
     </div>
@@ -121,9 +121,9 @@ $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   <td class="px-4 font-weight-bold">#PKG-<?php echo $pkg['id']; ?></td>
                   <td><strong><?php echo htmlspecialchars($pkg['user_id']); ?></strong></td>
                   <td><?php echo htmlspecialchars($pkg['name'] ?? 'N/A'); ?></td>
-                  <td class="font-weight-bold text-primary">₹<?php echo number_format((float)$pkg['package'], 2); ?></td>
+                  <td class="font-weight-bold text-primary"><?php echo formatCurrency((float)$pkg['package']); ?></td>
                   <td><span class="badge badge-info px-2 py-1"><?php echo htmlspecialchars($pkg['percentage']); ?>% Monthly</span></td>
-                  <td class="font-weight-bold text-success">₹<?php echo number_format((float)($pkg['profit_income_wallet'] ?? 0), 2); ?></td>
+                  <td class="font-weight-bold text-success"><?php echo formatCurrency((float)($pkg['profit_income_wallet'] ?? 0)); ?></td>
                   <td class="px-4 small text-muted"><?php echo htmlspecialchars($pkg['date']); ?></td>
                 </tr>
               <?php endforeach; endif; ?>

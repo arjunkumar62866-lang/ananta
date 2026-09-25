@@ -5,51 +5,145 @@
 <?php include 'common/header.php'; ?>
 
 <?php
-if($_SERVER["REQUEST_METHOD"]=="POST")
-{
-    $title=$_POST["title"];
-    $tr_id=$_POST["tr_id"];
-    $order_id=$_POST["order_id"];
-    $mode=$_POST["mode"];
-    $amount=$_POST["amount"];
-    $tr_date=$_POST["tr_date"];
-    $remark=$_POST["remark"];
-    $subject=$title." ".$userid;
-    date_default_timezone_set('Asia/Kolkata');
-    
-    $time=date('h i:a');
-    $date=date('Y-m-d');
-    
-    $selectCheckTxnId=$pdo->prepare("SELECT * FROM tbl_payment WHERE tr_id=:tr_id");
-    $selectCheckTxnId->execute([':tr_id'=>$tr_id]);
-    if($selectCheckTxnId->fetch())
-    {
-        echo "<script>alert('This Transaction Id Is Already Exist');window.location.assign('fund-request.php');</script>"; 
+// Fetch Company Deposit Settings from tbl_system_control or default fallbacks
+$company_upi_id = 'ananta@upi';
+$company_bep20_address = '0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7';
+
+try {
+    $stmtConfig = $pdo->prepare("SELECT setting_key, setting_value FROM tbl_system_control WHERE setting_key IN ('company_upi_id', 'company_bep20_address')");
+    $stmtConfig->execute();
+    $configRows = $stmtConfig->fetchAll(PDO::FETCH_KEY_PAIR);
+    if (!empty($configRows['company_upi_id'])) {
+        $company_upi_id = $configRows['company_upi_id'];
     }
-    else
-    {
-        $insertRequestPayment=$pdo->prepare("INSERT INTO tbl_payment(userid,tr_id,mode,subject,image,amount,remark,plantype,date,time,status)
-        VALUES(:userid,:tr_id,:mode,:subject,:image,:amount,:remark,:plantype,:date,:time,:status)");
-        $insertRequestPayment->execute([
-                ':userid'=>$userid,
-                ':tr_id'=>$tr_id,
-                ':mode'=>$mode,
-                ':subject'=>$subject,
-                ':image'=>'',
-                ':amount'=>$amount,
-                ':remark'=>$remark,
-                ':plantype'=>'',
-                ':date'=>$date,
-                ':time'=>$time,
-                ':status'=>0
-            ]);
-        if($insertRequestPayment)
-        {
-            echo "<script>alert('Fund Request Generated Successfully Done.');window.location.assign('request-history.php');</script>";
-        }
-        else
-        {
-            echo "<script>alert('Fund Request Not Generated Successfully.');</script>";
+    if (!empty($configRows['company_bep20_address'])) {
+        $company_bep20_address = $configRows['company_bep20_address'];
+    }
+} catch (Exception $e) {
+    // fallback defaults remain intact
+}
+
+$error_msg = '';
+$success_msg = '';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $deposit_type = $_POST["deposit_type"] ?? 'INR'; // INR or BEP20
+    $amount = floatval($_POST["amount"] ?? 0);
+    $tr_id = trim($_POST["tr_id"] ?? '');
+    $remark = trim($_POST["remark"] ?? '');
+    
+    date_default_timezone_set('Asia/Kolkata');
+    $time = date('h:i a');
+    $date = date('Y-m-d');
+    
+    if ($amount <= 0) {
+        $error_msg = "Please enter a valid deposit amount greater than zero.";
+    } elseif ($deposit_type === 'INR' && empty($tr_id)) {
+        $error_msg = "UTR Number / Transaction Reference ID is compulsory for INR Deposit.";
+    } elseif (!isset($_FILES['proof_image']) || $_FILES['proof_image']['error'] !== UPLOAD_ERR_OK) {
+        $error_msg = "Payment Slip / Screenshot proof upload is compulsory.";
+    } else {
+        // Handle File Upload safely
+        $file = $_FILES['proof_image'];
+        $origExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+        
+        if (!in_array($origExt, $allowedExts)) {
+            $error_msg = "Invalid image file type. Permitted formats: JPG, JPEG, PNG, WEBP.";
+        } else {
+            // Check MIME type if possible
+            $fileMime = '';
+            if (function_exists('finfo_open')) {
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $fileMime = strtolower(finfo_file($finfo, $file['tmp_name']) ?: '');
+                finfo_close($finfo);
+            } elseif (function_exists('mime_content_type')) {
+                $fileMime = strtolower(@mime_content_type($file['tmp_name']) ?: '');
+            }
+            
+            $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/pjpeg', 'image/x-png'];
+            if (!empty($fileMime) && !in_array($fileMime, $allowedMimes)) {
+                $error_msg = "Invalid image file MIME type (" . htmlspecialchars($fileMime) . "). Permitted: JPG, PNG, WEBP.";
+            } else {
+                // If UTR provided, check uniqueness in tbl_payment
+                if (!empty($tr_id)) {
+                    $selectCheckTxnId = $pdo->prepare("SELECT id FROM tbl_payment WHERE tr_id = :tr_id");
+                    $selectCheckTxnId->execute([':tr_id' => $tr_id]);
+                    if ($selectCheckTxnId->fetch()) {
+                        $error_msg = "This UTR / Transaction ID already exists. Please check your transaction record.";
+                    }
+                } else {
+                    // For BEP20 if tr_id empty, auto-generate unique reference
+                    $tr_id = 'BEP20-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
+                }
+                
+                if (empty($error_msg)) {
+                    // Save uploaded proof image into dashboard/img directory
+                    $uploadDir = __DIR__ . '/../img';
+                    if (!is_dir($uploadDir)) {
+                        @mkdir($uploadDir, 0755, true);
+                    }
+                    
+                    // Add .htaccess inside img dir if missing
+                    $htaccessPath = $uploadDir . '/.htaccess';
+                    if (!file_exists($htaccessPath)) {
+                        $htaccessContent = "<FilesMatch \"\\.(php|phtml|php3|php4|php5|phps|phar|exe|pl|py|cgi|sh|js|htm|html)$\">\n";
+                        $htaccessContent .= "    Order allow,deny\n";
+                        $htaccessContent .= "    Deny from all\n";
+                        $htaccessContent .= "</FilesMatch>\n";
+                        @file_put_contents($htaccessPath, $htaccessContent);
+                    }
+                    
+                    $newFilename = 'proof_' . strtolower($deposit_type) . '_' . $userid . '_' . time() . '_' . rand(100, 999) . '.' . $origExt;
+                    $destPath = $uploadDir . '/' . $newFilename;
+                    
+                    $uploadOk = move_uploaded_file($file['tmp_name'], $destPath);
+                    if (!$uploadOk) {
+                        $uploadOk = @copy($file['tmp_name'], $destPath);
+                    }
+                    
+                    if (!$uploadOk) {
+                        $error_msg = "Failed to upload payment proof screenshot. Please check file permissions.";
+                    } else {
+                        $subject = ($deposit_type === 'INR') ? 'INR Deposit Request' : 'BEP20 Deposit Request';
+                        $mode = $deposit_type;
+                        
+                        $insertRequestPayment = $pdo->prepare("INSERT INTO tbl_payment(userid, tr_id, mode, subject, image, amount, remark, plantype, date, time, status)
+                            VALUES(:userid, :tr_id, :mode, :subject, :image, :amount, :remark, :plantype, :date, :time, :status)");
+                        $saved = $insertRequestPayment->execute([
+                            ':userid' => $userid,
+                            ':tr_id' => $tr_id,
+                            ':mode' => $mode,
+                            ':subject' => $subject,
+                            ':image' => $newFilename,
+                            ':amount' => $amount,
+                            ':remark' => $remark,
+                            ':plantype' => 'DEPOSIT',
+                            ':date' => $date,
+                            ':time' => $time,
+                            ':status' => 0 // PENDING
+                        ]);
+                        
+                        if ($saved) {
+                            $depReqId = $pdo->lastInsertId();
+                            if (function_exists('createUserNotification')) {
+                                createUserNotification(
+                                    $userid,
+                                    'DEPOSIT',
+                                    'Deposit Request Submitted',
+                                    "Your {$deposit_type} deposit request of $" . number_format($amount, 2) . " [Ref/UTR: {$tr_id}] has been submitted successfully and is pending approval.",
+                                    $tr_id,
+                                    $pdo
+                                );
+                            }
+                            echo "<script>alert('Deposit Request submitted successfully! Status: PENDING.');window.location.assign('request-history.php');</script>";
+                            exit;
+                        } else {
+                            $error_msg = "Failed to submit deposit request. Please try again.";
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -57,12 +151,11 @@ if($_SERVER["REQUEST_METHOD"]=="POST")
 
 <style>
 /* =========================================================
-   ANANTA FINTECH THEME - FUND REQUEST REDESIGN
-   Matches Dashboard (index.php) & Profile Styling
+   ANANTA FINTECH THEME - DEPOSIT FUND PAGE REDESIGN
+   Matches Dashboard (index.php), Profile & Withdrawal Styling
 ========================================================= */
 
-html,
-body {
+html, body {
     min-height: 100%;
     margin: 0;
     padding: 0;
@@ -81,14 +174,7 @@ body.ananta-user-dashboard.bg-theme1 {
 }
 
 /* Remove old legacy dark overlays */
-html::before,
-html::after,
-body::before,
-body::after,
-#wrapper::before,
-#wrapper::after,
-.content-wrapper::before,
-.content-wrapper::after {
+html::before, html::after, body::before, body::after, #wrapper::before, #wrapper::after, .content-wrapper::before, .content-wrapper::after {
     content: none !important;
     display: none !important;
     background: none !important;
@@ -129,7 +215,42 @@ body::after,
     flex-shrink: 0;
 }
 
-/* Main Card Container */
+/* Tab Navigation */
+.deposit-nav-tabs {
+    display: flex;
+    gap: 12px;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 28px;
+}
+
+.deposit-nav-tab {
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #64748b;
+    border: none;
+    background: transparent;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: -2px;
+}
+
+.deposit-nav-tab:hover {
+    color: #0284c7;
+}
+
+.deposit-nav-tab.active {
+    color: #0284c7;
+    border-bottom-color: #0284c7;
+    background: #ffffff;
+    border-radius: 12px 12px 0 0;
+}
+
+/* Deposit Card Container */
 .ananta-fintech-card {
     background: #ffffff !important;
     border-radius: 22px !important;
@@ -158,9 +279,48 @@ body::after,
     font-weight: 500;
 }
 
+/* Payment Info Box */
+.payment-info-box {
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.qr-code-img {
+    width: 140px;
+    height: 140px;
+    border-radius: 14px;
+    border: 2px solid #e2e8f0;
+    padding: 6px;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.copy-badge-btn {
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.copy-badge-btn:hover {
+    background: #0284c7;
+    color: #ffffff;
+}
+
 /* Form Controls Styling */
-label.form-label,
-label {
+label.form-label, label {
     color: #334155 !important;
     font-weight: 700 !important;
     font-size: 12px !important;
@@ -170,10 +330,7 @@ label {
     display: block !important;
 }
 
-.form-control,
-input.form-control,
-select.form-control,
-textarea.form-control {
+.form-control, input.form-control, select.form-control, textarea.form-control {
     background-color: #ffffff !important;
     color: #0f172a !important;
     border: 1.5px solid #cbd5e1 !important;
@@ -185,10 +342,7 @@ textarea.form-control {
     box-shadow: none !important;
 }
 
-.form-control:focus,
-input.form-control:focus,
-select.form-control:focus,
-textarea.form-control:focus {
+.form-control:focus, input.form-control:focus, select.form-control:focus, textarea.form-control:focus {
     background-color: #ffffff !important;
     color: #0f172a !important;
     border-color: #0284c7 !important;
@@ -196,25 +350,6 @@ textarea.form-control:focus {
     outline: none !important;
 }
 
-.form-control[readonly],
-.form-control:disabled {
-    background-color: #f8fafc !important;
-    color: #475569 !important;
-    border-color: #e2e8f0 !important;
-}
-
-.form-control::placeholder {
-    color: #94a3b8 !important;
-    font-weight: 500 !important;
-}
-
-select.form-control option {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    font-weight: 600 !important;
-}
-
-/* Submit Button */
 .btn-ananta-submit {
     background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%) !important;
     color: #ffffff !important;
@@ -237,41 +372,6 @@ select.form-control option {
     transform: translateY(-2px) !important;
     box-shadow: 0 12px 30px rgba(2, 132, 199, 0.35) !important;
     color: #ffffff !important;
-}
-
-/* DataTables Controls Fix */
-.dataTables_wrapper,
-.dataTables_wrapper .dataTables_length,
-.dataTables_wrapper .dataTables_length label,
-.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper .dataTables_filter label,
-.dataTables_wrapper .dataTables_info,
-.dataTables_wrapper .dataTables_paginate {
-    color: #0f172a !important;
-    font-weight: 600 !important;
-    font-size: 13.5px !important;
-}
-
-.dataTables_wrapper .dataTables_length select {
-    color: #0f172a !important;
-    font-weight: 700 !important;
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 10px !important;
-    padding: 6px 12px !important;
-    font-size: 13px !important;
-    background: #ffffff !important;
-    outline: none !important;
-}
-
-.dataTables_wrapper .dataTables_filter input {
-    color: #0f172a !important;
-    font-weight: 600 !important;
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 10px !important;
-    padding: 7px 14px !important;
-    font-size: 13px !important;
-    background: #ffffff !important;
-    outline: none !important;
 }
 </style>
 
@@ -305,20 +405,20 @@ select.form-control option {
                                     </div>
                                     <div>
                                         <div class="d-flex align-items-center gap-2 mb-1">
-                                            <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 700; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">FUND DEPOSIT</span>
-                                            <span style="font-size: 12px; color: #64748b; font-weight: 600;">PAYMENT REQUEST</span>
+                                            <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 700; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">DEPOSIT FUND</span>
+                                            <span style="font-size: 12px; color: #64748b; font-weight: 600;">INR & BEP20 CRYPTO</span>
                                         </div>
                                         <h4 class="mb-0" style="font-size: 22px; font-weight: 800; color: #0f172a;">
-                                            Request Fund <span style="background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Deposit</span> 💳
+                                            Deposit <span style="background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Fund</span> 💳
                                         </h4>
                                         <p class="mb-0 text-muted" style="font-size: 13.5px; margin-top: 3px;">
-                                            Submit transaction details and payment proof for instant wallet credit approval.
+                                            Make payment via Company UPI or BEP20 Wallet & upload proof for Admin Approval.
                                         </p>
                                     </div>
                                 </div>
                                 <div>
                                     <a href="request-history.php" class="btn btn-outline-primary font-weight-bold px-3 py-2" style="border-radius: 12px; font-size: 13px;">
-                                        <i class="fa fa-history me-1"></i> View Request History
+                                        <i class="fa fa-history me-1"></i> View Deposit History
                                     </a>
                                 </div>
                             </div>
@@ -326,90 +426,154 @@ select.form-control option {
                     </div>
                 </div>
 
+                <?php if (!empty($error_msg)): ?>
+                    <div class="row">
+                        <div class="col-lg-10 offset-lg-1">
+                            <div class="alert alert-danger border-0 mb-4" style="border-radius: 12px; background: #fef2f2; color: #991b1b; font-weight: 600;">
+                                <i class="fa fa-exclamation-circle me-2"></i> <?php echo htmlspecialchars($error_msg); ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Form Card Section -->
                 <div class="row">
                     <div class="col-lg-10 offset-lg-1">
                         <div class="ananta-fintech-card">
-                            <div class="card-header-bar">
-                                <div class="card-header-title">
-                                    <h4><i class="fa fa-credit-card text-primary me-2"></i> Deposit Request Form</h4>
-                                    <p>Fill out the payment details accurately as per your payment receipt</p>
+                            
+                            <!-- Deposit Tabs -->
+                            <div class="px-4 pt-4">
+                                <div class="deposit-nav-tabs">
+                                    <button class="deposit-nav-tab active" id="tab-inr-btn" onclick="switchDepositTab('INR')">
+                                        <i class="fa fa-inr text-primary"></i> 1. INR Deposit
+                                    </button>
+                                    <button class="deposit-nav-tab" id="tab-bep20-btn" onclick="switchDepositTab('BEP20')">
+                                        <i class="fa fa-btc text-warning"></i> 2. BEP20 Deposit
+                                    </button>
                                 </div>
                             </div>
 
-                            <div class="p-4 p-md-5">
+                            <!-- Tab Content: INR DEPOSIT -->
+                            <div id="deposit-inr-section" class="p-4 p-md-5 pt-0">
+                                
+                                <div class="payment-info-box">
+                                    <?php 
+                                    $inrQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" . urlencode("upi://pay?pa=" . $company_upi_id . "&pn=Ananta%20Fintech");
+                                    ?>
+                                    <img src="<?php echo $inrQrUrl; ?>" alt="Company UPI QR Code" class="qr-code-img">
+                                    <div style="flex: 1;">
+                                        <span class="badge mb-2" style="background: rgba(22, 163, 74, 0.12); color: #16a34a; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 4px 8px;">OFFICIAL COMPANY UPI</span>
+                                        <h5 style="font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Company UPI Details</h5>
+                                        <p style="font-size: 13.5px; color: #475569; margin-bottom: 10px;">Scan QR Code using Google Pay, PhonePe, Paytm, or BHIM UPI.</p>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: #0284c7; background: #ffffff; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 8px;">
+                                                <i class="fa fa-qrcode me-1 text-muted"></i> <span id="upiIdText"><?php echo htmlspecialchars($company_upi_id); ?></span>
+                                            </div>
+                                            <button type="button" class="copy-badge-btn" onclick="copyToClipboard('upiIdText', 'UPI ID')">
+                                                <i class="fa fa-copy me-1"></i> Copy UPI ID
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <form method="POST" enctype="multipart/form-data">
-                                    <?php if(isset($_GET['responce'])) { ?>
-                                        <div class="alert alert-info border-0 mb-4" style="border-radius: 12px;">
-                                            <?php echo ($_GET['responce'] =="SUCCESS") ? "Withdrawal/Fund Request Sent Successfully" : "Something went wrong. Please contact admin!"; ?>
-                                        </div>
-                                    <?php } ?>
-                                    <?php if(isset($error)){ ?>
-                                        <div class="alert alert-danger border-0 mb-4" style="border-radius: 12px; background: #fef2f2; color: #991b1b;">
-                                            <?php echo $error; ?>
-                                        </div>
-                                    <?php } ?>
+                                    <input type="hidden" name="deposit_type" value="INR">
 
                                     <div class="row">
-                                        <!-- Left Column -->
                                         <div class="col-md-6">
                                             <div class="form-group mb-4">
-                                                <label>Payment Request For</label>
-                                                <input type="text" name="title" class="form-control" id="price" value="Fund Request" readonly style="height: 48px;">
-                                            </div>
-                                            
-                                            <div class="form-group mb-4">
-                                                <label>Transaction ID</label>
-                                                <input type="text" name="tr_id" class="form-control" placeholder="Enter Transaction Txn ID" required style="height: 48px;">
+                                                <label>Deposit Amount (₹) <span class="text-danger">*</span></label>
+                                                <input type="number" step="any" min="1" name="amount" class="form-control" placeholder="Enter Deposit Amount in INR" required style="height: 48px;">
                                             </div>
 
                                             <div class="form-group mb-4">
-                                                <label>Order ID</label>
-                                                <input type="text" name="order_id" class="form-control" placeholder="Enter Reference Order ID" required style="height: 48px;">
-                                            </div>
-
-                                            <div class="form-group mb-4">
-                                                <label>Select Mode Of Transaction</label>
-                                                <select class="form-control" required="" name="mode" style="height: 48px;">
-                                                   <option value="">-- Select Mode --</option>
-                                                   <option value="Cash">Cash</option>
-                                                   <option value="Google Pay">Google Pay</option>
-                                                   <option value="Phone Pay">Phone Pay</option>
-                                                   <option value="UPI">UPI</option>
-                                                   <option value="Paytm">Paytm</option>
-                                                   <option value="IMPS">IMPS</option>
-                                                   <option value="NEFT">NEFT</option>
-                                                </select>   
+                                                <label>UTR Number / Txn Ref ID <span class="text-danger">*</span></label>
+                                                <input type="text" name="tr_id" class="form-control" placeholder="12-digit UTR or Txn Reference ID" required style="height: 48px;">
+                                                <small class="text-muted" style="font-size: 11.5px;">Compulsory 12-digit UTR from your UPI payment app.</small>
                                             </div>
                                         </div>
-                                        
-                                        <!-- Right Column -->
+
                                         <div class="col-md-6">
                                             <div class="form-group mb-4">
-                                                <label>Amount ($ / ₹)</label>
-                                                <input type="number" step="any" name="amount" class="form-control" placeholder="Enter Amount" required style="height: 48px;">
+                                                <label>Payment Slip / Screenshot <span class="text-danger">*</span></label>
+                                                <input type="file" name="proof_image" class="form-control" accept="image/*" required style="height: 48px; padding-top: 8px;">
+                                                <small class="text-muted" style="font-size: 11.5px;">Upload payment receipt screenshot (JPG, PNG, WEBP).</small>
                                             </div>
 
                                             <div class="form-group mb-4">
-                                                <label>Transaction Date</label>
-                                                <input type="date" name="tr_date" class="form-control" required style="height: 48px;">
-                                            </div>
-
-                                            <div class="form-group mb-4">
-                                                <label>Remark</label>
-                                                <textarea name="remark" rows="4" class="form-control" placeholder="Enter any notes or remarks..." required style="min-height: 120px;"></textarea>
+                                                <label>Remark / Notes (Optional)</label>
+                                                <input type="text" name="remark" class="form-control" placeholder="Optional notes (e.g. PhonePe / GPay)" style="height: 48px;">
                                             </div>
                                         </div>
                                     </div>
 
-                                    <button type="submit" name="submit" class="btn-ananta-submit mt-3">
-                                        <i class="fa fa-paper-plane me-1"></i> Submit Payment Request
+                                    <button type="submit" name="submit" class="btn-ananta-submit mt-2">
+                                        <i class="fa fa-paper-plane me-1"></i> Submit INR Deposit Request
                                     </button>
-
                                 </form>
 
                             </div>
+
+                            <!-- Tab Content: BEP20 DEPOSIT -->
+                            <div id="deposit-bep20-section" class="p-4 p-md-5 pt-0" style="display: none;">
+                                
+                                <div class="payment-info-box">
+                                    <?php 
+                                    $bep20QrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" . urlencode($company_bep20_address);
+                                    ?>
+                                    <img src="<?php echo $bep20QrUrl; ?>" alt="Company BEP20 QR Code" class="qr-code-img">
+                                    <div style="flex: 1;">
+                                        <span class="badge mb-2" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 4px 8px;">COMPANY BEP20 WALLET</span>
+                                        <h5 style="font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Company BEP20 (USDT / BNB) Address</h5>
+                                        <p style="font-size: 13.5px; color: #475569; margin-bottom: 10px;">Send BEP20 USDT / Crypto to the official wallet address below.</p>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <div style="font-family: monospace; font-size: 13.5px; font-weight: 800; color: #0284c7; background: #ffffff; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 8px; word-break: break-all;">
+                                                <i class="fa fa-btc me-1 text-warning"></i> <span id="bep20AddressText"><?php echo htmlspecialchars($company_bep20_address); ?></span>
+                                            </div>
+                                            <button type="button" class="copy-badge-btn" onclick="copyToClipboard('bep20AddressText', 'BEP20 Address')">
+                                                <i class="fa fa-copy me-1"></i> Copy Address
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <form method="POST" enctype="multipart/form-data">
+                                    <input type="hidden" name="deposit_type" value="BEP20">
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-4">
+                                                <label>Deposit Amount ($) <span class="text-danger">*</span></label>
+                                                <input type="number" step="any" min="1" name="amount" class="form-control" placeholder="Enter Deposit Amount in USD / USDT" required style="height: 48px;">
+                                            </div>
+
+                                            <div class="form-group mb-4">
+                                                <label>Txn Hash / Reference (Optional)</label>
+                                                <input type="text" name="tr_id" class="form-control" placeholder="Enter Blockchain Transaction Hash / Txn ID" style="height: 48px;">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-4">
+                                                <label>Payment Slip / Screenshot <span class="text-danger">*</span></label>
+                                                <input type="file" name="proof_image" class="form-control" accept="image/*" required style="height: 48px; padding-top: 8px;">
+                                                <small class="text-muted" style="font-size: 11.5px;">Upload wallet transfer screenshot (JPG, PNG, WEBP).</small>
+                                            </div>
+
+                                            <div class="form-group mb-4">
+                                                <label>Remark / Notes (Optional)</label>
+                                                <input type="text" name="remark" class="form-control" placeholder="Optional notes (e.g. Trust Wallet / Binance)" style="height: 48px;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" name="submit" class="btn-ananta-submit mt-2">
+                                        <i class="fa fa-paper-plane me-1"></i> Submit BEP20 Deposit Request
+                                    </button>
+                                </form>
+
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -427,6 +591,37 @@ select.form-control option {
         <?php include 'common/footer.php' ?>
 
     </div>
+
+    <script>
+    function switchDepositTab(type) {
+        if (type === 'INR') {
+            document.getElementById('deposit-inr-section').style.display = 'block';
+            document.getElementById('deposit-bep20-section').style.display = 'none';
+            document.getElementById('tab-inr-btn').classList.add('active');
+            document.getElementById('tab-bep20-btn').classList.remove('active');
+        } else {
+            document.getElementById('deposit-inr-section').style.display = 'none';
+            document.getElementById('deposit-bep20-section').style.display = 'block';
+            document.getElementById('tab-inr-btn').classList.remove('active');
+            document.getElementById('tab-bep20-btn').classList.add('active');
+        }
+    }
+
+    function copyToClipboard(elementId, labelText) {
+        var text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text).then(function() {
+            alert(labelText + ' copied to clipboard: ' + text);
+        }).catch(function() {
+            var input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            alert(labelText + ' copied to clipboard!');
+        });
+    }
+    </script>
 
 </body>
 </html>

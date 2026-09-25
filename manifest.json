@@ -1,21 +1,21 @@
 {
-  "name": "Ananta Multi Trade",
-  "short_name": "Ananta",
-  "description": "Ananta Multi Trade Private Limited Official Application",
+  "name": "ANANTA",
+  "short_name": "ANANTA",
+  "description": "ANANTA Official Progressive Web Application",
   "start_url": "/index.php",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#0a2540",
-  "theme_color": "#0a2540",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/assets/images/logo.png",
+      "src": "/assets/images/pwa-icon.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/assets/images/logo.png",
+      "src": "/assets/images/pwa-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

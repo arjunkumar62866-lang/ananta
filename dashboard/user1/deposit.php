@@ -94,7 +94,10 @@ $bep20Address = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"; // Configured proj
                                 <input type="file" name="proof_file" class="form-control-file text-white" accept="image/jpeg,image/png,image/webp,application/pdf" required>
                             </div>
                             <div class="form-group">
-                                <label>Transaction Key (PIN)</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="mb-0">Transaction Key (PIN)</label>
+                                    <a href="profile.php#security_section" class="small font-weight-bold text-primary text-decoration-none"><i class="zmdi zmdi-lock-outline mr-1"></i>Forgot Key?</a>
+                                </div>
                                 <input type="password" name="txn_key" class="form-control" placeholder="Enter Transaction Key" required>
                             </div>
                             <button type="submit" class="btn btn-success btn-block">Submit INR Deposit Request</button>

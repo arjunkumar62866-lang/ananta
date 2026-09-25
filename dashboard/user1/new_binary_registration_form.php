@@ -1,14 +1,12 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+ob_start();
+session_start();
 
-include 'common/connection.php';
-include 'common/db_method.php';
-// include("common/password.php");
+$queryString = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
+header("Location: register.php" . $queryString);
+exit();
 
-$home = getHomeSettings($pdo);
-$hmtitle = $home['title'];
+$hmtitle = $home['title'] ?? 'Ananta';
 $hm_mobile = $home['mobile'];
 $hm_email = $home['email'];
 $hmemailfrom = $hm_email;
@@ -269,6 +267,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </script>
                         <?php
                     }
+                  
                 }
             } else {
                 echo '<script>alert("Your sponsor ID does not exist");window.location = "new_binary_registration_form.php";</script>';
@@ -847,4 +846,4 @@ function findAvailableSlot(PDO $pdo, $currentId, $preferredSide, $newUserId) {
   <script src="particles.js"></script>
   <script src="app.js"></script>
 </body>
-</html>
+</html>

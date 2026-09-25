@@ -1,99 +1,256 @@
-/* Ananta PWA Install Banner & Standalone Optimizations */
+/* ANANTA Progressive Web App (PWA) Styles */
 
-/* PWA Install Banner Container */
-.ananta-pwa-banner {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 999999;
-  width: 90%;
-  max-width: 440px;
-  background: var(--bg-gradient-dark, #0a2540);
-  color: #ffffff;
-  padding: 16px 20px;
-  border-radius: 16px;
-  box-shadow: 0 16px 32px rgba(10, 37, 64, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: slideUpPwa 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+:root {
+  --ananta-purple: #7c3aed;
+  --ananta-purple-dark: #6d28d9;
+  --ananta-green: #10b981;
+  --ananta-green-dark: #059669;
+  --ananta-dark-text: #0f172a;
+  --ananta-muted-text: #64748b;
+  --ananta-card-bg: #ffffff;
 }
 
-@keyframes slideUpPwa {
+/* ==================================================
+   1. PWA SPLASH SCREEN (PURE WHITE + CENTERED LOGO)
+   ================================================== */
+#ananta-pwa-splash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #ffffff !important;
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s ease-out, visibility 0.35s ease-out;
+  margin: 0;
+  padding: 0;
+}
+
+#ananta-pwa-splash.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#ananta-pwa-splash .splash-logo {
+  width: 120px;
+  max-width: 70vw;
+  height: auto;
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+
+@media (min-width: 768px) {
+  #ananta-pwa-splash .splash-logo {
+    width: 160px;
+  }
+}
+
+/* Ensure no scrollbars or flash during splash screen display */
+body.pwa-splash-active {
+  overflow: hidden !important;
+}
+
+/* ==================================================
+   2. PWA INSTALL PROMPT UI (WHITE, PURPLE, GREEN, DARK TEXT)
+   ================================================== */
+.ananta-pwa-prompt-container {
+  position: fixed;
+  z-index: 999998;
+  pointer-events: none;
+}
+
+/* Mobile Bottom Sheet Layout */
+@media (max-width: 767px) {
+  .ananta-pwa-prompt-container {
+    bottom: 16px;
+    left: 12px;
+    right: 12px;
+  }
+  .ananta-pwa-card {
+    background: var(--ananta-card-bg);
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: auto;
+    animation: pwaSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .ananta-pwa-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ananta-pwa-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    object-fit: contain;
+    background: #ffffff;
+    padding: 2px;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.1);
+    flex-shrink: 0;
+  }
+  .ananta-pwa-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .ananta-pwa-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ananta-dark-text);
+    line-height: 1.25;
+  }
+  .ananta-pwa-desc {
+    margin: 3px 0 0 0;
+    font-size: 12.5px;
+    color: var(--ananta-muted-text);
+    line-height: 1.35;
+  }
+  .ananta-pwa-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .btn-pwa-install {
+    flex: 1;
+    background: linear-gradient(135deg, var(--ananta-purple) 0%, var(--ananta-green) 100%);
+    color: #ffffff;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+    text-align: center;
+  }
+  .btn-pwa-install:active {
+    transform: scale(0.98);
+  }
+  .btn-pwa-dismiss {
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+}
+
+/* Desktop Bottom-Right Floating Card Layout */
+@media (min-width: 768px) {
+  .ananta-pwa-prompt-container {
+    bottom: 24px;
+    right: 24px;
+    width: 380px;
+    max-width: calc(100vw - 48px);
+  }
+  .ananta-pwa-card {
+    background: var(--ananta-card-bg);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    pointer-events: auto;
+    animation: pwaSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .ananta-pwa-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .ananta-pwa-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    object-fit: contain;
+    background: #ffffff;
+    padding: 3px;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.1);
+    flex-shrink: 0;
+  }
+  .ananta-pwa-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .ananta-pwa-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ananta-dark-text);
+    line-height: 1.25;
+  }
+  .ananta-pwa-desc {
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: var(--ananta-muted-text);
+    line-height: 1.4;
+  }
+  .ananta-pwa-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .btn-pwa-install {
+    background: linear-gradient(135deg, var(--ananta-purple) 0%, var(--ananta-green) 100%);
+    color: #ffffff;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 9px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .btn-pwa-install:hover {
+    transform: translateY(-1px);
+    opacity: 0.96;
+  }
+  .btn-pwa-dismiss {
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-pwa-dismiss:hover {
+    background: #e2e8f0;
+  }
+}
+
+@keyframes pwaSlideUp {
   from {
-    transform: translate(-50%, 100px);
     opacity: 0;
+    transform: translateY(24px);
   }
   to {
-    transform: translate(-50%, 0);
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.ananta-pwa-banner .pwa-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.ananta-pwa-banner .pwa-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  object-fit: contain;
-  background: #ffffff;
-  padding: 4px;
-}
-
-.ananta-pwa-banner .pwa-text h6 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.ananta-pwa-banner .pwa-text p {
-  margin: 2px 0 0 0;
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.ananta-pwa-banner .pwa-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ananta-pwa-banner .btn-pwa-install {
-  background: linear-gradient(135deg, #00b4d8 0%, #10b981 100%);
-  color: #ffffff;
-  border: none;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.ananta-pwa-banner .btn-pwa-install:hover {
-  transform: translateY(-1px);
-}
-
-.ananta-pwa-banner .btn-pwa-close {
-  background: transparent;
-  color: #94a3b8;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px 8px;
-}
-
-/* Safe Area Insets for iOS Standalone Mode */
+/* Safe Area Insets for iOS Standalone Display Mode */
 @supports (padding-top: env(safe-area-inset-top)) {
   body.pwa-standalone {
     padding-top: env(safe-area-inset-top);

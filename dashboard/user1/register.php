@@ -25,6 +25,37 @@ if (function_exists('date_default_timezone_set')) {
 $date = date('Y-m-d');
 $time = date('h:i a');
 
+// Extract URL Referral & Position Parameters
+$defaultSponsorFromURL = '';
+if (!empty($_GET['refferalId'])) {
+    $defaultSponsorFromURL = trim($_GET['refferalId']);
+} elseif (!empty($_GET['ref'])) {
+    $defaultSponsorFromURL = trim($_GET['ref']);
+} elseif (!empty($_GET['referral'])) {
+    $defaultSponsorFromURL = trim($_GET['referral']);
+} elseif (!empty($_GET['sponsor'])) {
+    $defaultSponsorFromURL = trim($_GET['sponsor']);
+} elseif (!empty($_GET['sponsorid'])) {
+    $defaultSponsorFromURL = trim($_GET['sponsorid']);
+} elseif (!empty($_GET['sponsor_id'])) {
+    $defaultSponsorFromURL = trim($_GET['sponsor_id']);
+} elseif (!empty($_GET['referral_code'])) {
+    $defaultSponsorFromURL = trim($_GET['referral_code']);
+} elseif (!empty($_GET['uid'])) {
+    $defaultSponsorFromURL = trim($_GET['uid']);
+}
+
+if (!empty($defaultSponsorFromURL) && is_numeric($defaultSponsorFromURL) && strpos(strtoupper($defaultSponsorFromURL), 'AN') !== 0) {
+    $defaultSponsorFromURL = 'AN' . $defaultSponsorFromURL;
+}
+
+$defaultPositionFromURL = '';
+if (!empty($_GET['position'])) {
+    $defaultPositionFromURL = strtolower(trim($_GET['position']));
+} elseif (!empty($_GET['type'])) {
+    $defaultPositionFromURL = strtolower(trim($_GET['type']));
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sponserid = $_POST['refferalId'];
     $sponserid1 = substr($sponserid, 2);
@@ -57,7 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->execute([$email]);
                 $row = $stmt->fetch();
                 if ($row['email_check'] > 0) {
-                    echo '<script>alert("You Can Register Only 1 ID From Same Email");window.location = "new_binary_registration_form.php";</script>';
+                    echo '<script>alert("You Can Register Only 1 ID From Same Email");window.location = "register.php";</script>';
                     exit();
                 }
 
@@ -65,7 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->execute([$mobile]);
                 $row = $stmt->fetch();
                 if ($row['mobile_check'] > 0) {
-                    echo '<script>alert("You Can Register Only 1 ID From Same Mobile Number");window.location = "new_binary_registration_form.php";</script>';
+                    echo '<script>alert("You Can Register Only 1 ID From Same Mobile Number");window.location = "register.php";</script>';
                     exit();
                 }
 
@@ -93,7 +124,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // Insert user into tree with spillover logic
                     $result = insertIntoTree($pdo, $sponserid1, $userid, strtolower($position));
                     if (!$result) {
-                        echo "<script>alert('No space available in $position branch of sponsor');window.location = 'new_binary_registration_form.php';</script>";
+                        echo "<script>alert('No space available in $position branch of sponsor');window.location = 'register.php';</script>";
                         exit();
                     }
 
@@ -102,34 +133,95 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if ($query_register) {
                         insertKYC($pdo, $userid, $aadhar);
 
-                        // Send registration email (⚠️ Consider removing raw password for security)
+                        // Send branded Welcome Email
                         $to = $email;
-                        $subject = $hmtitle . " Registration Successfully ";
-                        $headers = "From: " . strip_tags($hm_email) . "\r\n";
+                        $subject = "Welcome to ANANTA — Your Account Details";
+                        $headers = "From: ANANTA Multi Trade <" . strip_tags($hm_email ?: 'no-reply@ananta.com') . ">\r\n";
                         $headers .= "MIME-Version: 1.0\r\n";
-                        $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
-                        $message = '<html><body>';
-                        $message .= '<table>';
-                        $message .= "<tr style='background: #eee;'><td><strong>Name:</strong> </td><td>" . strip_tags($name) . "</td></tr>";
-                        $message .= "<tr><td><strong>Email</strong></td><td>" . htmlspecialchars($email) . "</td></tr>";
-                        $message .= "<tr><td><strong>Password</strong></td><td>" . htmlspecialchars($password) . "</td></tr>";
-                        $message .= "<tr><td><strong>Transaction Password</strong></td><td>" . htmlspecialchars($transaction_password) . "</td></tr>";
-                        $message .= "</table></body></html>";
+                        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                        
+                        $loginUrl = (!empty($hmurl) ? rtrim($hmurl, '/') : 'http://localhost:8000') . "/dashboard/user1/login.php";
+                        $logoUrl = !empty($hmlogo) ? $hmlogo : "https://ananta.com/images/logo.png";
+                        
+                        $message = '
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Welcome to ANANTA</title>
+                        </head>
+                        <body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: \'Plus Jakarta Sans\', Arial, sans-serif;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+                                <tr>
+                                    <td align="center" style="padding: 40px 15px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; overflow: hidden;">
+                                            <tr>
+                                                <td align="center" style="padding: 35px 30px 25px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%);">
+                                                    <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">ANANTA</h1>
+                                                    <p style="color: rgba(255,255,255,0.9); margin: 6px 0 0; font-size: 14px; font-weight: 600;">Welcome to the Platform</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 35px 30px;">
+                                                    <h2 style="color: #0f172a; margin: 0 0 10px; font-size: 20px; font-weight: 800;">Hello, ' . htmlspecialchars($name) . '! 🎉</h2>
+                                                    <p style="color: #475569; margin: 0 0 24px; font-size: 14.5px; line-height: 1.6;">Your account has been successfully created. Here are your credentials to log in and manage your account.</p>
+                                                    
+                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background: #f8fafc; border-radius: 14px; border: 1.5px solid #cbd5e1; margin-bottom: 25px; overflow: hidden;">
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Login ID / Username</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #0284c7; font-family: monospace;">' . htmlspecialchars($hmpre . $userid) . '</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Login Password</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #0f172a; font-family: monospace;">' . htmlspecialchars($password) . '</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; font-size: 13.5px; font-weight: 700; color: #64748b;">Transaction Key</td>
+                                                            <td style="padding: 14px 18px; font-size: 14.5px; font-weight: 800; color: #16a34a; font-family: monospace;">' . htmlspecialchars($transaction_password) . '</td>
+                                                        </tr>
+                                                    </table>
 
-                        mail($to, $subject, $message, $headers);
+                                                    <div style="background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 28px;">
+                                                        <p style="color: #991b1b; margin: 0; font-size: 13px; font-weight: 600;">🔒 <strong>Security Reminder:</strong> Please keep these details secure and do not share your Transaction Key with anyone.</p>
+                                                    </div>
+
+                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tr>
+                                                            <td align="center">
+                                                                <a href="' . $loginUrl . '" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-size: 15px; font-weight: 800; box-shadow: 0 6px 20px rgba(2,132,199,0.25);">Continue to Login &rarr;</a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="center" style="padding: 20px 30px; background: #f8fafc; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; font-weight: 500;">
+                                                    &copy; ' . date('Y') . ' ANANTA Multi Trade. All rights reserved.
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </body>
+                        </html>
+                        ';
+
+                        @mail($to, $subject, $message, $headers);
 
                         echo "<script>window.location = 'message?msg=$userid';</script>";
                         exit();
                     }
                 }
             } else {
-                echo '<script>alert("Your sponsor ID does not exist");window.location = "new_binary_registration_form.php";</script>';
+                echo '<script>alert("Your sponsor ID does not exist");window.location = "register.php";</script>';
             }
         } else {
             echo '<script>alert("You Can Register Only 1 ID From Same Email");</script>';
         }
     } else {
-        echo '<script>alert("Invalid sponsor ID.");window.location = "new_binary_registration_form.php";</script>';
+        echo '<script>alert("Invalid sponsor ID.");window.location = "register.php";</script>';
     }
 }
 
@@ -223,17 +315,10 @@ function updateCounts($pdo, $sponsorId, $side) {
 
 <!DOCTYPE html>
 <html lang="en">
-
-<!-- Mirrored from themewagon.github.io/dashtreme/register.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 05 Aug 2025 06:02:00 GMT -->
-<!-- Added by HTTrack -->
-<meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
-
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  <meta name="description" content="" />
-  <meta name="author" content="" />
   <title><?php echo $hmtitle;?></title>
   <!-- loader-->
   <link href="assets/css/pace.min.css" rel="stylesheet" />
@@ -242,260 +327,251 @@ function updateCounts($pdo, $sponsorId, $side) {
   <link rel="icon" href="<?php echo $hmfavicon?>" type="image/x-icon">
   <!-- Bootstrap core CSS-->
   <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
-  <!-- animate CSS-->
-  <link href="assets/css/animate.css" rel="stylesheet" type="text/css" />
-  <!-- Icons CSS-->
+  <!-- FontAwesome / Icons CSS-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="assets/css/icons.css" rel="stylesheet" type="text/css" />
-  <!-- Custom Style-->
-  <link href="assets/css/app-style.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body.ananta-auth-page {
+      background: rgba(15, 23, 42, 0.75) url('assets/images/bg-1.jpg') center/cover no-repeat fixed !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 20px 15px;
+    }
+    .auth-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 450px;
+      margin: 0 auto;
+    }
+    .ananta-auth-modal-card {
+      background: #ffffff !important;
+      border-radius: 24px !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+      border: none !important;
+      padding: 30px 26px;
+      color: #1e293b !important;
+      position: relative;
+    }
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .auth-logo img {
+      max-height: 85px;
+      width: auto;
+      object-fit: contain;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .auth-header h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f172a !important;
+      margin: 0 0 4px 0;
+    }
+    .auth-header p {
+      font-size: 10px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: #64748b !important;
+      margin: 0;
+    }
+    .ananta-modal-input {
+      background-color: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 10px !important;
+      height: 42px !important;
+      padding-right: 36px !important;
+      font-size: 13.5px;
+      color: #0f172a !important;
+      box-shadow: none !important;
+      transition: all 0.2s ease;
+    }
+    .ananta-modal-input::placeholder {
+      color: #94a3b8 !important;
+    }
+    .ananta-modal-input:focus {
+      border-color: #00b4d8 !important;
+      box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.15) !important;
+    }
+    .btn-ananta-primary {
+      background: linear-gradient(135deg, #00b4d8 0%, #10b981 100%) !important;
+      border: none !important;
+      border-radius: 10px !important;
+      height: 42px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #ffffff !important;
+      text-transform: uppercase;
+      width: 100%;
+      box-shadow: 0 8px 18px -4px rgba(16, 185, 129, 0.4);
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .btn-ananta-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px -4px rgba(16, 185, 129, 0.5);
+      opacity: 0.96;
+    }
+  </style>
 </head>
 
-<body class="bg-theme bg-theme1">
+<body class="ananta-auth-page">
 
-  <!-- start loader -->
-  <div id="pageloader-overlay" class="visible incoming">
-    <div class="loader-wrapper-outer">
-      <div class="loader-wrapper-inner">
-        <div class="loader"></div>
+  <div class="auth-wrapper">
+    <div class="ananta-auth-modal-card">
+      <div class="auth-logo">
+        <img src="/assets/images/pwa-icon.png" alt="Ananta Logo">
       </div>
+      <div class="auth-header">
+        <h3>Create Account</h3>
+        <p>JOIN ANANTA TO START YOUR JOURNEY</p>
+      </div>
+
+      <?php if (!empty($_GET['error'])): ?>
+        <div class="text-center" style="font-size: 13.5px; font-weight: 600; color: #dc2626; margin-bottom: 16px; line-height: 1.5; background: transparent; padding: 0;">
+          <i class="fa fa-exclamation-circle me-1" style="color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+      <?php endif; ?>
+
+      <form action="" method="post" id="registration_form">
+        <!-- Referrer ID -->
+        <div class="form-group mb-2 position-relative">
+          <input type="text" name="refferalId" id="referrerId" class="form-control ananta-modal-input" placeholder="Referrer ID" required value="<?php echo htmlspecialchars($defaultSponsorFromURL, ENT_QUOTES, 'UTF-8'); ?>">
+          <i class="fa fa-link" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+        </div>
+
+        <!-- Sponsor Name -->
+        <div class="form-group mb-2" id="sponsor_name" style="display: none;">
+          <input type="text" id="response2" class="form-control" style="background-color: #f1f5f9; font-size: 13px; font-weight: 600; border-radius: 10px; height: 38px; color: #0f172a;" readonly>
+        </div>
+
+        <!-- Full Name -->
+        <div class="form-group mb-2 position-relative">
+          <input type="text" name="userName" id="exampleInputName" class="form-control ananta-modal-input" placeholder="Full Name" required>
+          <i class="fa fa-user" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+        </div>
+
+        <!-- Email Address -->
+        <div class="form-group mb-2 position-relative">
+          <input type="email" name="email" id="exampleInputEmailId" class="form-control ananta-modal-input" placeholder="Email Address" required>
+          <i class="fa fa-envelope" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+        </div>
+
+        <!-- Mobile Number & Code -->
+        <div class="form-group mb-2 d-flex gap-2">
+          <select class="form-control" name="mobilecode" id="countryCode" style="flex: 0 0 42%; min-width: 0; border-radius: 10px; height: 42px; font-size: 12.5px; padding-left: 8px; padding-right: 8px; border: 1px solid #cbd5e1; color: #0f172a;">
+            <option value="+91" selected>India (+91)</option>
+            <option value="+1">US (+1)</option>
+            <option value="+44">UK (+44)</option>
+            <option value="+971">UAE (+971)</option>
+            <option value="+61">Australia (+61)</option>
+            <option value="+81">Japan (+81)</option>
+            <option value="+49">Germany (+49)</option>
+            <option value="+33">France (+33)</option>
+            <option value="+86">China (+86)</option>
+            <option value="+39">Italy (+39)</option>
+            <option value="+34">Spain (+34)</option>
+            <option value="+7">Russia (+7)</option>
+            <option value="+55">Brazil (+55)</option>
+            <option value="+27">South Africa (+27)</option>
+            <option value="+62">Indonesia (+62)</option>
+            <option value="+234">Nigeria (+234)</option>
+            <option value="+52">Mexico (+52)</option>
+            <option value="+31">Netherlands (+31)</option>
+            <option value="+63">Philippines (+63)</option>
+            <option value="+46">Sweden (+46)</option>
+            <option value="+64">New Zealand (+64)</option>
+            <option value="+20">Egypt (+20)</option>
+            <option value="+90">Turkey (+90)</option>
+            <option value="+66">Thailand (+66)</option>
+            <option value="+41">Switzerland (+41)</option>
+            <option value="+82">South Korea (+82)</option>
+            <option value="+65">Singapore (+65)</option>
+            <option value="+351">Portugal (+351)</option>
+            <option value="+48">Poland (+48)</option>
+            <option value="+886">Taiwan (+886)</option>
+            <option value="+94">Sri Lanka (+94)</option>
+            <option value="+880">Bangladesh (+880)</option>
+            <option value="+98">Iran (+98)</option>
+            <option value="+30">Greece (+30)</option>
+            <option value="+354">Iceland (+354)</option>
+            <option value="+372">Estonia (+372)</option>
+            <option value="+60">Malaysia (+60)</option>
+          </select>
+          <div class="position-relative flex-grow-1" style="flex: 1 1 58%; min-width: 0;">
+            <input type="text" name="mobile" id="mobileNumber" class="form-control ananta-modal-input" placeholder="Mobile Number" required>
+            <i class="fa fa-phone" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group mb-2 position-relative">
+          <input type="password" name="pass1" id="exampleInputPassword" class="form-control ananta-modal-input" placeholder="Password" required>
+          <i class="fa fa-lock" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group mb-2 position-relative">
+          <input type="password" name="pass2" id="confirmPassword" class="form-control ananta-modal-input" placeholder="Confirm Password" required>
+          <i class="fa fa-lock" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+        </div>
+        
+        <div id="passwordWarning" class="mb-2" style="color: #dc2626; font-size: 12px; font-weight: 600;"></div>
+
+        <!-- Position Selection -->
+        <div class="d-flex justify-content-between align-items-center mb-2 px-2 py-1" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12.5px;">
+          <span style="font-weight: 600; color: #475569;">Position:</span>
+          <div class="d-flex gap-3">
+            <label class="mb-0" style="cursor: pointer; color: #334155;"><input type="radio" id="left" name="position" value="left" <?php echo ($defaultPositionFromURL !== 'right') ? 'checked' : ''; ?> style="accent-color: #10b981;"> Left</label>
+            <label class="mb-0" style="cursor: pointer; color: #334155;"><input type="radio" id="right" name="position" value="right" <?php echo ($defaultPositionFromURL === 'right') ? 'checked' : ''; ?> style="accent-color: #10b981;"> Right</label>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="submitBtn" class="btn btn-ananta-primary w-100 mt-2">REGISTER</button>
+
+        <?php
+        $loginLinkUrl = 'login.php';
+        if (!empty($_GET)) {
+            $loginLinkUrl .= '?' . http_build_query($_GET);
+        }
+        ?>
+        <div class="text-center mt-2" style="font-size: 12.5px; color: #64748b;">
+          Already have an account? <a href="<?php echo htmlspecialchars($loginLinkUrl, ENT_QUOTES, 'UTF-8'); ?>" style="color: #10b981; font-weight: 700; text-decoration: none;">Sign In</a>
+        </div>
+      </form>
     </div>
   </div>
-  <!-- end loader -->
 
-  <!-- Start wrapper-->
-  <div id="wrapper">
-
-    <div class="card card-authentication1 mx-auto my-4">
-      <div class="card-body">
-        <div class="card-content p-2">
-          <div class="text-center">
-            <img src="assets/images/logo-icon.png" alt="logo icon">
-          </div>
-          <div class="card-title text-uppercase text-center py-3">Sign Up</div>
-          <form action="" method="post" id="registration_form">
-            <!-- Referrer ID -->
-            <div class="form-group">
-              <label for="referrerId" class="sr-only"></label>
-              <div class="position-relative has-icon-right">
-                <input type="text" name="refferalId" id="referrerId" class="form-control input-shadow"
-                  placeholder="Enter Referrer ID" required>
-                <div class="form-control-position">
-                  <i class="icon-link"></i>
-                </div>
-                 <!-- <span id="response2"></span>  -->
-              </div>
-            </div>
-
-            <!-- Sponsor Name -->
-            <div class="form-group" id="sponsor_name" style="display: none;>
-              
-              <div class="position-relative has-icon-right">
-                <input type="text" name="refferalid" id="response2" class="form-control input-shadow" readonly>
-              </div>
-            </div>
-
-            <!-- Name -->
-            <div class="form-group">
-              <label for="exampleInputName" class="sr-only">Name</label>
-              <div class="position-relative has-icon-right">
-                <input type="text" name="userName" id="exampleInputName" class="form-control input-shadow"
-                  placeholder="Enter User-Name" required>
-                <div class="form-control-position">
-                  <i class="icon-user"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- Email -->
-            <div class="form-group">
-              <label for="exampleInputEmailId" class="sr-only">Email ID</label>
-              <div class="position-relative has-icon-right">
-                <input type="email" name="email" id="exampleInputEmailId" class="form-control input-shadow"
-                  placeholder="Enter User-Email" required>
-                <div class="form-control-position">
-                  <i class="icon-envelope-open"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- Mobile -->
-            <div class="form-group">
-              <label for="mobileNumber" class="sr-only">Mobile</label>
-              <div class="d-flex align-items-center" style="gap: 10px;">
-                <!-- Country Code Dropdown -->
-                <select class="form-control" name="mobilecode" id="countryCode" style="width: 35%; color:black;">
-                  <option value="+1">United States (+1)</option>
-                  <option value="+91">India (+91)</option>
-                  <option value="+44">United Kingdom (+44)</option>
-                  <option value="+61">Australia (+61)</option>
-                  <option value="+81">Japan (+81)</option>
-                  <option value="+49">Germany (+49)</option>
-                  <option value="+33">France (+33)</option>
-                  <option value="+86">China (+86)</option>
-                  <option value="+39">Italy (+39)</option>
-                  <option value="+34">Spain (+34)</option>
-                  <option value="+7">Russia (+7)</option>
-                  <option value="+55">Brazil (+55)</option>
-                  <option value="+27">South Africa (+27)</option>
-                  <option value="+62">Indonesia (+62)</option>
-                  <option value="+234">Nigeria (+234)</option>
-                  <option value="+52">Mexico (+52)</option>
-                  <option value="+31">Netherlands (+31)</option>
-                  <option value="+63">Philippines (+63)</option>
-                  <option value="+46">Sweden (+46)</option>
-                  <option value="+64">New Zealand (+64)</option>
-                  <option value="+20">Egypt (+20)</option>
-                  <option value="+90">Turkey (+90)</option>
-                  <option value="+66">Thailand (+66)</option>
-                  <option value="+41">Switzerland (+41)</option>
-                  <option value="+82">South Korea (+82)</option>
-                  <option value="+65">Singapore (+65)</option>
-                  <option value="+351">Portugal (+351)</option>
-                  <option value="+48">Poland (+48)</option>
-                  <option value="+886">Taiwan (+886)</option>
-                  <option value="+94">Sri Lanka (+94)</option>
-                  <option value="+880">Bangladesh (+880)</option>
-                  <option value="+98">Iran (+98)</option>
-                  <option value="+30">Greece (+30)</option>
-                  <option value="+354">Iceland (+354)</option>
-                  <option value="+372">Estonia (+372)</option>
-                  <option value="+60">Malaysia (+60)</option>
-                </select>
-                <div class="position-relative has-icon-right">
-                  <input type="text" name="mobile" id="mobileNumber" class="form-control input-shadow"
-                    placeholder="Enter User-Mobile" required>
-                  <div class="form-control-position">
-                    <i class="icon-phone"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Password -->
-            <div class="form-group">
-              <label for="exampleInputPassword" class="sr-only">Password</label>
-              <div class="position-relative has-icon-right">
-                <input type="password" name="pass1" id="exampleInputPassword" class="form-control input-shadow"
-                  placeholder="Enter Password" required>
-                <div class="form-control-position">
-                  <i class="icon-lock"></i>
-                </div>
-                <span id="passwordWarning" style="color: red; font-size: 14px;"></span>
-              </div>
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="form-group">
-              <label for="confirmPassword" class="sr-only">Confirm Password</label>
-              <div class="position-relative has-icon-right">
-                <input type="password" name="pass2" id="confirmPassword" class="form-control input-shadow"
-                  placeholder="Confirm Password" required>
-                <div class="form-control-position">
-                  <i class="icon-lock"></i>
-                </div>
-              </div>
-            </div>
-            
-            <!--Radio button--> 
-            <div class="form-group">
-                <div class="icheck-material-white">
-                    <label>Position: </label> 
-                    <label for="left">Left</label> 
-                    <input type="radio" id="left" name="position" value="left" required checked> 
-                    <label for="right">Right</label> 
-                    <input type="radio" id="right" name="position" value="right"><br><br>
-                </div>
-            </div>
-            
-            <!-- Terms and Conditions -->
-            <div class="form-group">
-              <div class="icheck-material-white">
-                <input type="checkbox" id="user-checkbox" name="terms_accepted" />
-                <label for="user-checkbox">I Agree With Terms & Conditions</label>
-              </div>
-            </div>
-
-            <!-- Submit Button -->
-            <button type="submit" id="submitBtn" class="btn btn-light btn-block waves-effect waves-light">Sign Up</button>
-
-            <div class="text-center mt-3">Sign Up With</div>
-
-            <div class="form-row mt-4">
-              <div class="form-group mb-0 col-6">
-                <button type="button" class="btn btn-light btn-block"><i class="fa fa-facebook-square"></i>
-                  Facebook</button>
-              </div>
-              <div class="form-group mb-0 col-6 text-right">
-                <button type="button" class="btn btn-light btn-block"><i class="fa fa-twitter-square"></i>
-                  Twitter</button>
-              </div>
-            </div>
-          </form>
-
-        </div>
-      </div>
-      <div class="card-footer text-center py-3">
-        <p class="text-warning mb-0">Already have an account? <a href="login.php"> Sign In here</a></p>
-      </div>
-    </div>
-
-    <!--Start Back To Top Button-->
-    <a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i> </a>
-    <!--End Back To Top Button-->
-
-    <!--start color switcher-->
-    <div class="right-sidebar">
-      <div class="switcher-icon">
-        <i class="zmdi zmdi-settings zmdi-hc-spin"></i>
-      </div>
-      <div class="right-sidebar-content">
-
-        <p class="mb-0">Gaussion Texture</p>
-        <hr>
-
-        <ul class="switcher">
-          <li id="theme1"></li>
-          <li id="theme2"></li>
-          <li id="theme3"></li>
-          <li id="theme4"></li>
-          <li id="theme5"></li>
-          <li id="theme6"></li>
-        </ul>
-
-        <p class="mb-0">Gradient Background</p>
-        <hr>
-
-        <ul class="switcher">
-          <li id="theme7"></li>
-          <li id="theme8"></li>
-          <li id="theme9"></li>
-          <li id="theme10"></li>
-          <li id="theme11"></li>
-          <li id="theme12"></li>
-          <li id="theme13"></li>
-          <li id="theme14"></li>
-          <li id="theme15"></li>
-        </ul>
-
-      </div>
-    </div>
-    <!--end color switcher-->
-
-  </div><!--wrapper-->
-
-  <!-- Bootstrap core JavaScript-->
+  <!-- JavaScript-->
   <script src="assets/js/jquery.min.js"></script>
   <script src="assets/js/popper.min.js"></script>
   <script src="assets/js/bootstrap.min.js"></script>
 
-  <!-- sidebar-menu js -->
-  <script src="assets/js/sidebar-menu.js"></script>
+  <script src="particles.js"></script>
+  <script src="app.js"></script>
 
-  <!-- Custom scripts -->
-  <script src="assets/js/app-script.js"></script>
-  
   <!-- Ajax for auto-matic Name fetching -->
   <script>
   $(document).ready(function () {
@@ -523,19 +599,21 @@ function updateCounts($pdo, $sponsorId, $side) {
         });
       } 
     });
+
+    if ($('#referrerId').val().trim().length > 2) {
+      $('#referrerId').trigger('blur');
+    }
   });
-</script>
+  </script>
   
-<!-- logic for password and confirm password should be same -->
-<script>
+  <!-- Password matching & validation -->
+  <script>
   $(document).ready(function () {
     $('#registration_form').on('submit keyup', function (e) {
       const pass1 = $('#exampleInputPassword').val();
       const pass2 = $('#confirmPassword').val();
 
-     
       const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{6,}$/;
-
 
       if (pass1 !== pass2) {
         $('#passwordWarning').text('Passwords do not match');
@@ -544,7 +622,6 @@ function updateCounts($pdo, $sponsorId, $side) {
         return;
       }
 
-      
       if (!strongPasswordRegex.test(pass1)) {
         $('#passwordWarning').text('Password must be at least 6 characters long and include 1 uppercase, 1 lowercase, and 1 special character.');
         $('#submitBtn').attr('disabled', true).css('cursor', 'not-allowed');
@@ -552,20 +629,11 @@ function updateCounts($pdo, $sponsorId, $side) {
         return;
       }
 
-      
       $('#passwordWarning').text('');
       $('#submitBtn').removeAttr('disabled').css('cursor', 'pointer');
     });
   });
-</script>
-
-
-
-
-
+  </script>
 </body>
-
-<!-- Mirrored from themewagon.github.io/dashtreme/register.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 05 Aug 2025 06:02:00 GMT -->
-
-
 </html>
+

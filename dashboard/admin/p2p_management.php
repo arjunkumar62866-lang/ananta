@@ -69,7 +69,7 @@ $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM tbl_p2p_transfer WHERE st
       <div class="col-md-4 mb-3">
         <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">TOTAL P2P COMPLETED VOLUME</span>
-          <h3 class="mb-0 font-weight-bold text-success">₹<?php echo number_format($totVolume, 2); ?></h3>
+          <h3 class="mb-0 font-weight-bold text-success"><?php echo formatCurrency($totVolume); ?></h3>
         </div>
       </div>
       <div class="col-md-4 mb-3">
@@ -143,7 +143,7 @@ $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM tbl_p2p_transfer WHERE st
                 <th class="py-3 px-4">Transaction ID</th>
                 <th class="py-3">Sender User</th>
                 <th class="py-3">Receiver User</th>
-                <th class="py-3">Amount (₹)</th>
+                <th class="py-3">Amount</th>
                 <th class="py-3">Fee / Net</th>
                 <th class="py-3">Status</th>
                 <th class="py-3 px-4">Date & Time</th>
@@ -165,8 +165,8 @@ $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM tbl_p2p_transfer WHERE st
                     <strong><?php echo htmlspecialchars($p['receiver_id']); ?></strong>
                     <div class="small text-muted"><?php echo htmlspecialchars($p['receiver_name']??''); ?></div>
                   </td>
-                  <td class="font-weight-bold text-primary">₹<?php echo number_format((float)$p['amount'], 2); ?></td>
-                  <td class="small">Fee: ₹<?php echo number_format((float)($p['fee']??0), 2); ?><br>Net: <strong>₹<?php echo number_format((float)($p['net_amount']??$p['amount']), 2); ?></strong></td>
+                  <td class="font-weight-bold text-primary"><?php echo formatCurrency((float)$p['amount']); ?></td>
+                  <td class="small">Fee: <?php echo formatCurrency((float)($p['fee']??0)); ?><br>Net: <strong><?php echo formatCurrency((float)($p['net_amount']??$p['amount'])); ?></strong></td>
                   <td>
                     <span class="badge <?php echo $p['status']==='COMPLETED'?'badge-success':($p['status']==='PENDING'?'badge-warning':'badge-danger'); ?> px-2 py-1">
                       <?php echo htmlspecialchars($p['status']); ?>

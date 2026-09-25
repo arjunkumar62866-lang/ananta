@@ -360,38 +360,61 @@ table.dataTable.no-footer {
                     { data: null, render: (data, type, row, meta) => meta.row + 1 },
                     {
                         data: 'userid',
-                        render: function (data) {
-                            return `<a class="user-link" href="user_profile.php?uid=${data}"><?php echo $hmpre; ?>${data}</a>`;
+                        render: function (data, type, row) {
+                            var uname = row.username ? ` (${row.username})` : '';
+                            return `<a class="user-link" href="user_profile.php?uid=${data}"><?php echo $hmpre; ?>${data}${uname}</a>`;
                         }
                     },
-                    { data: 'tr_id' },
+                    { 
+                        data: 'tr_id',
+                        render: (data) => `<span style="font-family: monospace; font-weight: 700; color: #0f172a;">${data || 'N/A'}</span>`
+                    },
                     { data: 'subject' },
                     {
                         data: 'amount',
-                        render: function (data) {
-                            return `<span class="amount-display"><?php echo $hmcurrency; ?>${data}</span>`;
+                        render: function (data, type, row) {
+                            var prefix = (row.mode === 'BEP20') ? '$ ' : '₹ ';
+                            return `<span class="amount-display">${prefix}${parseFloat(data || 0).toFixed(2)}</span>`;
                         }
                     },
-                    { data: 'mode' },
+                    {
+                        data: 'mode',
+                        render: function (data) {
+                            var m = (data || 'INR').toUpperCase();
+                            if (m === 'BEP20') {
+                                return `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 700; padding: 4px 10px; border-radius: 6px;"><i class="fa fa-btc me-1"></i>BEP20</span>`;
+                            }
+                            return `<span class="badge" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; font-weight: 700; padding: 4px 10px; border-radius: 6px;"><i class="fa fa-inr me-1"></i>INR</span>`;
+                        }
+                    },
                     {
                       data: 'image',
                       render: function (data) {
-                        return `<a href="../img/${data}" target="_blank">
-                            <img src="../img/${data}" height="60" width="60" style="object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" alt="Pay Slip">
+                        if (!data) return '<span class="text-muted">No Image</span>';
+                        return `<a href="../img/${data}" target="_blank" title="Click to view full screenshot">
+                            <img src="../img/${data}" height="55" width="55" style="object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" alt="Pay Slip">
                         </a>`;
                         }
                     },
-                    { data: 'date'},
+                    { 
+                        data: 'date',
+                        render: function (data, type, row) {
+                            var dt = data || '';
+                            if (row.time) dt += ' ' + row.time;
+                            return dt || 'N/A';
+                        }
+                    },
                     {
                         data: null, 
                         render: function (data, type, row) {
+                            var passId = row.tr_id || row.id;
                             return `
                                 <div class="d-flex gap-1">
-                                    <a class="btn btn-success btn-sm font-weight-bold" href="action-payment.php?id=${row.tr_id}&uid=${row.userid}&title=Approved&amt=${row.amount}" onclick="return confirm('Approve this fund request?');">
+                                    <a class="btn btn-success btn-sm font-weight-bold" href="action-payment.php?id=${encodeURIComponent(passId)}&uid=${row.userid}&title=Approved&amt=${row.amount}" onclick="return confirm('Approve deposit request of ${row.amount}?');">
                                         <i class="fa fa-check me-1"></i> Approve
                                     </a>
-                                    <a class="btn btn-danger btn-sm font-weight-bold" href="action-payment.php?id=${row.tr_id}&uid=${row.userid}&title=Cancel&amt=${row.amount}" onclick="return confirm('Cancel this fund request?');">
-                                        <i class="fa fa-times me-1"></i> Cancel
+                                    <a class="btn btn-danger btn-sm font-weight-bold" href="action-payment.php?id=${encodeURIComponent(passId)}&uid=${row.userid}&title=Cancel&amt=${row.amount}" onclick="return confirm('Reject deposit request?');">
+                                        <i class="fa fa-times me-1"></i> Reject
                                     </a>
                                 </div>
                             `;

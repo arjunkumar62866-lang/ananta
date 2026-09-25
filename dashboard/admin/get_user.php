@@ -58,7 +58,7 @@ switch ($type) {
         break;
         
     default:
-        $stmt = $pdo->prepare("SELECT userid,name,mobile,sponserid,sponsername,joining_date,status,active FROM user ORDER BY id DESC");
+        $stmt = $pdo->prepare("SELECT userid, name, email, mobile, sponserid, sponsername, joining_date, status, active, kyc, amount, net_balance, active_investment, total_withdrawal, profit_income_wallet, profit_sharing_wallet, direct_bonus_wallet, mentor_income_wallet, rank_reward_wallet, vip_club_wallet, user_growth_wallet, company_turnover_wallet FROM user ORDER BY id DESC");
 }
 
 $stmt->execute();

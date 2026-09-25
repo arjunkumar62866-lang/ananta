@@ -79,7 +79,7 @@ try {
 
     // Reset default package configurations
     $pdo->exec("UPDATE tbl_ananta_package_config SET min_investment_usd = 145.00, max_investment_usd = 1000.00, bonus_percentage = 0.00, lock_period_months = 48, withdrawal_deduction_percent = 15.00, status = 1 WHERE package_id = 'BASIC'");
-    $pdo->exec("UPDATE tbl_ananta_package_config SET min_investment_usd = 1001.00, max_investment_usd = 12500.00, bonus_percentage = 0.00, lock_period_months = 48, withdrawal_deduction_percent = 15.00, status = 1 WHERE package_id = 'ADVANCE'");
+    $pdo->exec("UPDATE tbl_ananta_package_config SET min_investment_usd = 1001.00, max_investment_usd = NULL, bonus_percentage = 0.00, lock_period_months = 48, withdrawal_deduction_percent = 15.00, status = 1 WHERE package_id = 'ADVANCE'");
     $pdo->exec("UPDATE tbl_ananta_package_config SET min_investment_usd = 12501.00, max_investment_usd = NULL, bonus_percentage = 0.00, lock_period_months = 48, withdrawal_deduction_percent = 15.00, status = 1 WHERE package_id = 'PREMIUM'");
     $pdo->exec("UPDATE tbl_ananta_package_config SET min_investment_usd = 145.00, max_investment_usd = NULL, bonus_percentage = 30.00, lock_period_months = 6, withdrawal_deduction_percent = 15.00, status = 1 WHERE package_id = 'BONUS_30'");
     $pdo->exec("UPDATE tbl_ananta_package_config SET min_investment_usd = 145.00, max_investment_usd = NULL, bonus_percentage = 0.00, lock_period_months = 48, withdrawal_deduction_percent = 15.00, status = 1 WHERE package_id = 'TOUR'");
@@ -124,9 +124,9 @@ try {
     $r5 = validatePackageInvestment('ADVANCE', 1001.00);
     assertTest($r5['status'] === true, "5. Advance minimum validation ($1,001 => Valid)", $r5['message']);
 
-    // 6. Advance maximum validation
-    $r6 = validatePackageInvestment('ADVANCE', 12500.00);
-    assertTest($r6['status'] === true, "6. Advance maximum validation ($12,500 => Valid)", $r6['message']);
+    // 6. Advance no maximum limit validation ($50,000 accepted)
+    $r6 = validatePackageInvestment('ADVANCE', 50000.00);
+    assertTest($r6['status'] === true, "6. Advance no maximum limit validation ($50,000 => Valid)", $r6['message']);
 
     // 7. Advance invalid amount rejection
     $r7 = validatePackageInvestment('ADVANCE', 1000.00);

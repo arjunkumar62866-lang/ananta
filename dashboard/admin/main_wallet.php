@@ -56,19 +56,19 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <div class="col-md-4 mb-3">
         <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">TOTAL MAIN PIN WALLET BALANCES</span>
-          <h3 class="mb-0 font-weight-bold text-primary">₹<?php echo number_format($totMainWallet, 2); ?></h3>
+          <h3 class="mb-0 font-weight-bold text-primary"><?php echo formatCurrency($totMainWallet); ?></h3>
         </div>
       </div>
       <div class="col-md-4 mb-3">
         <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">TOTAL DEPOSIT WALLET BALANCES</span>
-          <h3 class="mb-0 font-weight-bold text-info">₹<?php echo number_format($totDepositWallet, 2); ?></h3>
+          <h3 class="mb-0 font-weight-bold text-info"><?php echo formatCurrency($totDepositWallet); ?></h3>
         </div>
       </div>
       <div class="col-md-4 mb-3">
         <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">TOTAL APPROVED DEPOSITS</span>
-          <h3 class="mb-0 font-weight-bold text-success">₹<?php echo number_format($totApprovedDeposits, 2); ?></h3>
+          <h3 class="mb-0 font-weight-bold text-success"><?php echo formatCurrency($totApprovedDeposits); ?></h3>
         </div>
       </div>
     </div>
@@ -117,8 +117,8 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <tr>
                   <td class="px-4 font-weight-bold"><strong><?php echo htmlspecialchars($u['userid']); ?></strong></td>
                   <td><?php echo htmlspecialchars($u['name']); ?></td>
-                  <td class="font-weight-bold text-primary">₹<?php echo number_format((float)$u['pin_wallet'], 2); ?></td>
-                  <td class="font-weight-bold text-info">₹<?php echo number_format((float)($u['deposite_wallet'] ?? 0), 2); ?></td>
+                  <td class="font-weight-bold text-primary"><?php echo formatCurrency((float)$u['pin_wallet']); ?></td>
+                  <td class="font-weight-bold text-info"><?php echo formatCurrency((float)($u['deposite_wallet'] ?? 0)); ?></td>
                   <td>
                     <span class="badge <?php echo $u['active']=='1'?'badge-success':'badge-secondary'; ?> px-2 py-1">
                       <?php echo $u['active']=='1'?'ACTIVE ($11)':'INACTIVE'; ?>

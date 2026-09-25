@@ -60,31 +60,31 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <div class="col-md-4 col-lg-2 mb-3">
         <div class="p-3 bg-white border rounded-lg shadow-sm h-100" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">PROFIT INCOME</span>
-          <h5 class="mb-0 font-weight-bold text-primary">₹<?php echo number_format($totals['pi'], 2); ?></h5>
+          <h5 class="mb-0 font-weight-bold text-primary"><?php echo formatCurrency($totals['pi']); ?></h5>
         </div>
       </div>
       <div class="col-md-4 col-lg-2.5 mb-3">
         <div class="p-3 bg-white border rounded-lg shadow-sm h-100" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">PROFIT SHARING</span>
-          <h5 class="mb-0 font-weight-bold text-success">₹<?php echo number_format($totals['ps'], 2); ?></h5>
+          <h5 class="mb-0 font-weight-bold text-success"><?php echo formatCurrency($totals['ps']); ?></h5>
         </div>
       </div>
       <div class="col-md-4 col-lg-2.5 mb-3">
         <div class="p-3 bg-white border rounded-lg shadow-sm h-100" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">DIRECT BONUS</span>
-          <h5 class="mb-0 font-weight-bold text-warning">₹<?php echo number_format($totals['db'], 2); ?></h5>
+          <h5 class="mb-0 font-weight-bold text-warning"><?php echo formatCurrency($totals['db']); ?></h5>
         </div>
       </div>
       <div class="col-md-4 col-lg-2.5 mb-3">
         <div class="p-3 bg-white border rounded-lg shadow-sm h-100" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">MENTOR INCOME</span>
-          <h5 class="mb-0 font-weight-bold text-info">₹<?php echo number_format($totals['mi'], 2); ?></h5>
+          <h5 class="mb-0 font-weight-bold text-info"><?php echo formatCurrency($totals['mi']); ?></h5>
         </div>
       </div>
       <div class="col-md-4 col-lg-2.5 mb-3">
         <div class="p-3 bg-white border rounded-lg shadow-sm h-100" style="border-radius:16px; border-color:#e2e8f0 !important;">
           <span class="text-muted small font-weight-bold d-block mb-1">VIP CLUB WALLET</span>
-          <h5 class="mb-0 font-weight-bold text-danger">$<?php echo number_format($totals['vip'], 2); ?></h5>
+          <h5 class="mb-0 font-weight-bold text-danger"><?php echo formatCurrency($totals['vip']); ?></h5>
         </div>
       </div>
     </div>
@@ -134,11 +134,11 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <tr>
                   <td class="px-4 font-weight-bold"><strong><?php echo htmlspecialchars($u['userid']); ?></strong></td>
                   <td><?php echo htmlspecialchars($u['name']); ?></td>
-                  <td class="font-weight-bold text-primary">₹<?php echo number_format((float)($u['profit_income_wallet']??0), 2); ?></td>
-                  <td class="font-weight-bold text-success">₹<?php echo number_format((float)($u['profit_sharing_wallet']??0), 2); ?></td>
-                  <td class="font-weight-bold text-warning">₹<?php echo number_format((float)($u['direct_bonus_wallet']??0), 2); ?></td>
-                  <td class="font-weight-bold text-info">₹<?php echo number_format((float)($u['mentor_income_wallet']??0), 2); ?></td>
-                  <td class="px-4 font-weight-bold text-danger">$<?php echo number_format((float)($u['vip_club_wallet']??0), 2); ?></td>
+                  <td class="font-weight-bold text-primary"><?php echo formatCurrency((float)($u['profit_income_wallet']??0)); ?></td>
+                  <td class="font-weight-bold text-success"><?php echo formatCurrency((float)($u['profit_sharing_wallet']??0)); ?></td>
+                  <td class="font-weight-bold text-warning"><?php echo formatCurrency((float)($u['direct_bonus_wallet']??0)); ?></td>
+                  <td class="font-weight-bold text-info"><?php echo formatCurrency((float)($u['mentor_income_wallet']??0)); ?></td>
+                  <td class="px-4 font-weight-bold text-danger"><?php echo formatCurrency((float)($u['vip_club_wallet']??0)); ?></td>
                 </tr>
               <?php endforeach; endif; ?>
             </tbody>

@@ -17,6 +17,13 @@ if ($current_session_user === '1290' || $current_session_user === 'AN1290') {
 require_once __DIR__ . '/connection.php';
 // require 'common/printmessage.php';
 require_once __DIR__ . '/db_method.php';
+
+if (isset($_GET['curr']) && in_array(strtoupper($_GET['curr']), ['INR', 'USD'])) {
+    $_SESSION['currency'] = strtoupper($_GET['curr']);
+    $_SESSION['selected_currency'] = strtoupper($_GET['curr']);
+}
+$activeCurrency = getUserCurrency();
+
 // require 'common/password.php';
 // require 'common/recharge_api.php';
 
@@ -127,10 +134,12 @@ $news = $newsdata['news'];
   <link href="assets/css/sidebar-menu.css" rel="stylesheet" />
   <!-- PWA Meta Tags & Manifest -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0a2540">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="<?php echo $hmtitle;?>">
+  <link rel="apple-touch-icon" href="/assets/images/pwa-icon.png">
   <!-- Custom Style-->
   <link href="assets/css/app-style.css" rel="stylesheet" />
   <link href="/assets/css/app-pwa.css" rel="stylesheet" />
@@ -140,6 +149,31 @@ $news = $newsdata['news'];
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 
+  <!-- Global Admin Currency Configuration -->
+  <script>
+    window.ADMIN_CURRENCY = "<?php echo $activeCurrency; ?>";
+    window.USD_TO_INR_RATE = <?php echo getUSDToINRRate($pdo); ?>;
+
+    window.getAdminCurrencySymbol = function() {
+      return window.ADMIN_CURRENCY === 'INR' ? '₹' : '$';
+    };
+
+    window.convertAdminCurrency = function(amountInUSD) {
+      var amt = parseFloat(amountInUSD) || 0;
+      if (window.ADMIN_CURRENCY === 'INR') {
+        return amt * window.USD_TO_INR_RATE;
+      }
+      return amt;
+    };
+
+    window.formatAdminCurrency = function(amountInUSD, includeSymbol) {
+      if (typeof includeSymbol === 'undefined') includeSymbol = true;
+      var converted = window.convertAdminCurrency(amountInUSD);
+      var symbol = includeSymbol ? window.getAdminCurrencySymbol() : '';
+      var formatted = converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return symbol + formatted;
+    };
+  </script>
 </head>
 
 <!--Start sidebar-wrapper-->
@@ -178,12 +212,13 @@ $news = $newsdata['news'];
       </a>
       <ul class="submenu">
         <li><a href="all_user.php"><i class="zmdi zmdi-circle-o"></i> All Users & Profiles</a></li>
+        <li><a href="move_team.php"><i class="zmdi zmdi-circle-o"></i> Move Team in Tree</a></li>
         <li><a href="active_all_user.php"><i class="zmdi zmdi-circle-o"></i> Active Users</a></li>
         <li><a href="inactive_all_user.php"><i class="zmdi zmdi-circle-o"></i> Inactive Users</a></li>
         <li><a href="deactive_user.php"><i class="zmdi zmdi-circle-o"></i> Blocked / Suspended</a></li>
         <li><a href="activation_history.php"><i class="zmdi zmdi-circle-o"></i> Activation History ($11)</a></li>
         <li><a href="user_timeline.php"><i class="zmdi zmdi-circle-o"></i> Complete User Timeline</a></li>
-        <li><a href="pin_wallet_amount.php"><i class="zmdi zmdi-circle-o"></i> Admin Wallet Control</a></li>
+        
       </ul>
     </li>
 
@@ -195,9 +230,9 @@ $news = $newsdata['news'];
       </a>
       <ul class="submenu">
         <li><a href="growth_wallet.php"><i class="zmdi zmdi-circle-o"></i> Growth Wallet & Income</a></li>
-        <li><a href="main_wallet.php"><i class="zmdi zmdi-circle-o"></i> Main Wallet & Transfers</a></li>
+        <li><a href="main_wallet.php"><i class="zmdi zmdi-circle-o"></i> Main Wallet Record</a></li>
         <li><a href="income_wallets.php"><i class="zmdi zmdi-circle-o"></i> All Income Wallets</a></li>
-        <li><a href="pin_wallet_amount.php"><i class="zmdi zmdi-circle-o"></i> Wallet Credit / Debit</a></li>
+        
         <li><a href="pin_wallet_amount_history.php"><i class="zmdi zmdi-circle-o"></i> Permanent Wallet History</a></li>
       </ul>
     </li>
@@ -210,22 +245,17 @@ $news = $newsdata['news'];
       </a>
       <ul class="submenu">
         <li><a href="pending-fund-request.php"><i class="zmdi zmdi-circle-o"></i> Pending Fund Requests</a></li>
-        <li><a href="fund-request.php?status=1"><i class="zmdi zmdi-circle-o"></i> Approved / Success Deposits</a></li>
-        <li><a href="fund-request.php?status=2"><i class="zmdi zmdi-circle-o"></i> Rejected Deposits</a></li>
+        <!-- <li><a href="fund-request.php?status=1"><i class="zmdi zmdi-circle-o"></i> Approved / Success Deposits</a></li> -->
+        <!-- <li><a href="fund-request.php?status=2"><i class="zmdi zmdi-circle-o"></i> Rejected Deposits</a></li> -->
         <li><a href="fund-request.php"><i class="zmdi zmdi-circle-o"></i> Full Deposit History</a></li>
       </ul>
     </li>
 
     <!-- 5. P2P Management -->
-    <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
-        <span><i class="zmdi zmdi-swap"></i> 5. P2P Management</span>
-        <i class="zmdi zmdi-chevron-down arrow-icon"></i>
+    <li>
+      <a href="p2p_management.php">
+        <i class="zmdi zmdi-swap"></i> <span>5. P2P Transaction History</span>
       </a>
-      <ul class="submenu">
-        <li><a href="p2p_management.php"><i class="zmdi zmdi-circle-o"></i> P2P Control & Investments</a></li>
-        <li><a href="p2p_management.php?tab=history"><i class="zmdi zmdi-circle-o"></i> P2P Transaction History</a></li>
-      </ul>
     </li>
 
     <!-- 6. Withdrawal Management -->
@@ -240,7 +270,7 @@ $news = $newsdata['news'];
         <li><a href="withdraw-history.php?type=1"><i class="zmdi zmdi-circle-o"></i> Approved & Paid</a></li>
         <li><a href="withdraw-history.php?type=2"><i class="zmdi zmdi-circle-o"></i> Rejected Withdrawals</a></li>
         <li><a href="investment-withdraw-history.php"><i class="zmdi zmdi-circle-o"></i> Investment Withdrawals</a></li>
-        <li><a href="withdraw-history.php"><i class="zmdi zmdi-circle-o"></i> Full Withdrawal History</a></li>
+        <!-- <li><a href="withdraw-history.php"><i class="zmdi zmdi-circle-o"></i> Full Withdrawal History</a></li> -->
       </ul>
     </li>
 
@@ -251,12 +281,12 @@ $news = $newsdata['news'];
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="income_management.php"><i class="zmdi zmdi-circle-o"></i> Income Dashboard & Overview</a></li>
+        <!-- <li><a href="income_management.php"><i class="zmdi zmdi-circle-o"></i> Income Dashboard & Overview</a></li> -->
         <li><a href="monthly-profit-closing.php"><i class="zmdi zmdi-circle-o"></i> Profit Income Closing</a></li>
         <li><a href="daily-level-income.php"><i class="zmdi zmdi-circle-o"></i> Profit Sharing (L1-15)</a></li>
         <li><a href="direct-bonus.php"><i class="zmdi zmdi-circle-o"></i> Direct Bonus 6% (10M)</a></li>
         <li><a href="mentor-income.php"><i class="zmdi zmdi-circle-o"></i> Mentor Income (2%)</a></li>
-        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> Rank Rewards & VIP Club</a></li>
+        <!-- <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> Rank Rewards & VIP Club</a></li> -->
         <li><a href="generation-income.php"><i class="zmdi zmdi-circle-o"></i> Generation Income</a></li>
         <li><a href="level-income.php"><i class="zmdi zmdi-circle-o"></i> Direct Income</a></li>
       </ul>
@@ -270,7 +300,7 @@ $news = $newsdata['news'];
       </a>
       <ul class="submenu">
         <li><a href="rank_settings.php"><i class="zmdi zmdi-circle-o"></i> Rank Settings & Matrix</a></li>
-        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> VIP Qualifications & Income</a></li>
+        <!-- <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> VIP Qualifications & Income</a></li> -->
         <li><a href="vip-club.php?tab=history"><i class="zmdi zmdi-circle-o"></i> VIP History & Closing</a></li>
       </ul>
     </li>
@@ -283,6 +313,7 @@ $news = $newsdata['news'];
       </a>
       <ul class="submenu">
         <li><a href="team_management.php"><i class="zmdi zmdi-circle-o"></i> Direct & Binary Team Tree</a></li>
+        <li><a href="move_team.php"><i class="zmdi zmdi-circle-o"></i> Move Team in Tree</a></li>
         <li><a href="team_management.php?tab=business"><i class="zmdi zmdi-circle-o"></i> Team Business & History</a></li>
       </ul>
     </li>
@@ -307,9 +338,9 @@ $news = $newsdata['news'];
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="support_tickets.php?status=OPEN"><i class="zmdi zmdi-circle-o"></i> Open Support Tickets</a></li>
+        <!-- <li><a href="support_tickets.php?status=OPEN"><i class="zmdi zmdi-circle-o"></i> Open Support Tickets</a></li>
         <li><a href="support_tickets.php?status=PENDING"><i class="zmdi zmdi-circle-o"></i> Pending Support Tickets</a></li>
-        <li><a href="support_tickets.php?status=RESOLVED"><i class="zmdi zmdi-circle-o"></i> Resolved Tickets</a></li>
+        <li><a href="support_tickets.php?status=RESOLVED"><i class="zmdi zmdi-circle-o"></i> Resolved Tickets</a></li> -->
         <li><a href="support_tickets.php"><i class="zmdi zmdi-circle-o"></i> Ticket History & Replies</a></li>
         <li><a href="user_enquiry.php"><i class="zmdi zmdi-circle-o"></i> Website Enquiries</a></li>
       </ul>
@@ -323,7 +354,7 @@ $news = $newsdata['news'];
       </a>
       <ul class="submenu">
         <li><a href="notification_centre.php"><i class="zmdi zmdi-circle-o"></i> Global Broadcast Notification</a></li>
-        <li><a href="notification_centre.php?tab=user"><i class="zmdi zmdi-circle-o"></i> User-wise Targeted Notice</a></li>
+        <!-- <li><a href="notification_centre.php?tab=user"><i class="zmdi zmdi-circle-o"></i> User-wise Targeted Notice</a></li> -->
       </ul>
     </li>
 
@@ -535,9 +566,12 @@ $news = $newsdata['news'];
 @media (max-width: 991px) {
     #sidebar-wrapper {
         margin-left: -260px;
+        z-index: 100000 !important;
     }
+    #wrapper.toggled #sidebar-wrapper,
     #sidebar-wrapper.toggled {
         margin-left: 0 !important;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.3) !important;
     }
     .content-wrapper {
         margin-left: 0 !important;
@@ -558,6 +592,16 @@ $news = $newsdata['news'];
     }
     .toggle-menu {
         display: block !important;
+    }
+    .header-brand-title {
+        font-size: 13.5px !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        max-width: 100% !important;
+    }
+    .header-brand-sub {
+        font-size: 10px !important;
     }
 }
 
@@ -620,46 +664,67 @@ document.addEventListener("DOMContentLoaded", function() {
 
 <!--Start topbar header-->
 <header class="topbar-nav">
-  <nav class="navbar navbar-expand fixed-top">
+  <nav class="navbar navbar-expand fixed-top px-2 px-md-3" style="background: rgba(255, 255, 255, 0.95) !important; backdrop-filter: blur(20px) !important; border-bottom: 1px solid #e2e8f0 !important; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;">
     <ul class="navbar-nav mr-auto align-items-center">
+      <!-- Brand Title (Mobile Fit Responsive - Left Aligned) -->
       <li class="nav-item">
-        <a class="nav-link toggle-menu" href="javascript:void();">
-          <i class="icon-menu menu-icon"></i>
-        </a>
+        <div class="d-flex align-items-center gap-2 p-0">
+          <div class="d-none d-sm-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; font-size: 16px; box-shadow: 0 3px 10px rgba(16,185,129,0.3);">
+            <i class="fa fa-shield"></i>
+          </div>
+          <div>
+            <h6 class="mb-0 font-weight-bold header-brand-title" style="color: #0f172a; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.2;">
+              Ananta Executive Command Centre
+            </h6>
+            <span class="text-muted small header-brand-sub" style="font-size: 11px; font-weight: 600; display: block;">
+              Super Admin Overview
+            </span>
+          </div>
+        </div>
       </li>
-      <!--<li class="nav-item">-->
-      <!--  <form class="search-bar">-->
-      <!--    <input type="text" class="form-control" placeholder="Enter keywords">-->
-      <!--    <a href="javascript:void();"><i class="icon-magnifier"></i></a>-->
-      <!--  </form>-->
-      <!--</li>-->
     </ul>
 
-    <ul class="navbar-nav align-items-center right-nav-link">
-      <!--<li class="nav-item dropdown-lg">-->
-      <!--  <a class="nav-link dropdown-toggle dropdown-toggle-nocaret waves-effect" data-toggle="dropdown"-->
-      <!--    href="javascript:void();">-->
-      <!--    <i class="fa fa-envelope-open-o"></i></a>-->
-      <!--</li>-->
-      <!--<li class="nav-item dropdown-lg">-->
-      <!--  <a class="nav-link dropdown-toggle dropdown-toggle-nocaret waves-effect" data-toggle="dropdown"-->
-      <!--    href="javascript:void();">-->
-      <!--    <i class="fa fa-bell-o"></i></a>-->
-      <!--</li>-->
-      <!--<li class="nav-item language">-->
-      <!--  <a class="nav-link dropdown-toggle dropdown-toggle-nocaret waves-effect" data-toggle="dropdown"-->
-      <!--    href="javascript:void();"><i class="fa fa-flag"></i></a>-->
-      <!--  <ul class="dropdown-menu dropdown-menu-right">-->
-      <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-gb mr-2"></i> English</li>-->
-      <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-fr mr-2"></i> French</li>-->
-      <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-cn mr-2"></i> Chinese</li>-->
-      <!--    <li class="dropdown-item"> <i class="flag-icon flag-icon-de mr-2"></i> German</li>-->
-      <!--  </ul>-->
-      <!--</li>-->
+    <ul class="navbar-nav align-items-center right-nav-link gap-2">
+      <!-- Currency Toggle Group -->
+      <?php
+      $existingParams = $_GET;
+      $existingParams['curr'] = 'INR';
+      $inrUrl = '?' . http_build_query($existingParams);
+      $existingParams['curr'] = 'USD';
+      $usdUrl = '?' . http_build_query($existingParams);
+      ?>
+      <li class="nav-item">
+        <div class="d-inline-flex bg-light rounded-pill p-1 border">
+          <a href="<?php echo htmlspecialchars($inrUrl); ?>" class="btn btn-sm py-1 px-2 px-sm-3 font-weight-bold <?php echo ($activeCurrency === 'INR') ? 'btn-success text-white' : 'text-muted'; ?>" style="border-radius: 100px; font-size: 11px; font-weight: 700; border: none; text-decoration: none;">
+            INR
+          </a>
+          <a href="<?php echo htmlspecialchars($usdUrl); ?>" class="btn btn-sm py-1 px-2 px-sm-3 font-weight-bold <?php echo ($activeCurrency === 'USD') ? 'btn-success text-white' : 'text-muted'; ?>" style="border-radius: 100px; font-size: 11px; font-weight: 700; border: none; text-decoration: none;">
+            USD
+          </a>
+        </div>
+      </li>
+
+      <!-- Dynamic Date Pill -->
+      <li class="nav-item d-none d-md-block">
+        <div class="px-3 py-1 bg-light rounded-lg border text-dark font-weight-bold small d-flex align-items-center gap-2" style="font-size: 12px; border-radius: 10px;">
+          <i class="fa fa-calendar text-success"></i>
+          <span><?php echo date('M d, Y'); ?></span>
+        </div>
+      </li>
+
+      <!-- Notification Bell -->
+      <li class="nav-item">
+        <a href="notification_centre.php" class="nav-link p-2" style="position: relative;">
+          <i class="fa fa-bell-o text-secondary" style="font-size: 18px;"></i>
+          <span style="position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span>
+        </a>
+      </li>
+
+      <!-- Admin User Avatar & Profile Dropdown -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" href="javascript:void(0);" role="button" aria-haspopup="true" aria-expanded="false">
           <span class="user-profile d-flex align-items-center justify-content-center">
-            <img src="/assets/images/usera.png" class="img-circle" alt="Admin Profile" style="width:40px; height:40px; object-fit:cover; border:2px solid #0284c7; border-radius:50%; box-shadow:0 3px 10px rgba(2,132,199,0.25);">
+            <img src="/assets/images/usera.png" class="img-circle" alt="Admin Profile" style="width:36px; height:36px; object-fit:cover; border:2px solid #10b981; border-radius:50%; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
           </span>
         </a>
         <ul class="dropdown-menu dropdown-menu-right shadow-lg border-0" style="border-radius:16px; padding:14px; margin-top:10px; background:#ffffff; min-width:230px;">
@@ -667,23 +732,23 @@ document.addEventListener("DOMContentLoaded", function() {
             <a href="user_profile.php?uid=1290" style="text-decoration:none;">
               <div class="media align-items-center">
                 <div class="avatar mr-2">
-                  <img class="align-self-start img-circle" src="/assets/images/usera.png" alt="Admin Profile" style="width:40px; height:40px; object-fit:cover; border-radius:50%;">
+                  <img class="align-self-start img-circle" src="/assets/images/usera.png" alt="Admin Profile" style="width:38px; height:38px; object-fit:cover; border-radius:50%;">
                 </div>
                 <div class="media-body">
-                  <h6 class="mt-0 mb-0 user-title font-weight-bold" style="color:#0f172a; font-size:14px;"><?php echo htmlspecialchars($username ?? 'Ananta Admin'); ?></h6>
-                  <p class="user-subtitle mb-0 text-muted small" style="font-size:12px;"><?php echo htmlspecialchars($usermobile ?? 'Admin Account'); ?></p>
+                  <h6 class="mt-0 mb-0 user-title font-weight-bold" style="color:#0f172a; font-size:13.5px;"><?php echo htmlspecialchars($username ?? 'Ananta Admin'); ?></h6>
+                  <span class="badge badge-success px-2 py-1 mt-1" style="font-size:10px; font-weight:700; border-radius:100px;">Super Admin</span>
                 </div>
               </div>
             </a>
           </li>
           <li class="dropdown-item" style="padding: 8px 12px; border-radius:8px;">
             <a href="user_profile.php?uid=1290" class="d-flex align-items-center gap-2 text-dark font-weight-bold small" style="color:#0f172a !important; text-decoration:none;">
-              <i class="fa fa-user-circle text-primary mr-2"></i> Admin Profile
+              <i class="fa fa-user-circle text-success mr-2"></i> Admin Profile
             </a>
           </li>
           <li class="dropdown-item" style="padding: 8px 12px; border-radius:8px;">
             <a href="password.php" class="d-flex align-items-center gap-2 text-dark font-weight-bold small" style="color:#0f172a !important; text-decoration:none;">
-              <i class="fa fa-key text-primary mr-2"></i> Update Password
+              <i class="fa fa-key text-success mr-2"></i> Update Password
             </a>
           </li>
           <li class="dropdown-divider" style="margin: 6px 0;"></li>
@@ -697,6 +762,22 @@ document.addEventListener("DOMContentLoaded", function() {
     </ul>
   </nav>
 </header>
+
+<style>
+@media (max-width: 576px) {
+  .header-brand-title {
+    font-size: 13px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  .header-brand-sub {
+    font-size: 9.5px !important;
+  }
+}
+</style>
+
 
 <style>
 .dropdown-menu.show,

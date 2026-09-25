@@ -101,6 +101,54 @@ if (isset($_POST['submit'])) {
     }
 }
 
+$txn_msg = '';
+$txn_msg_type = 'info';
+
+if (isset($_POST['send_txn_otp'])) {
+    $resOtp = sendTransactionKeyOTP($userid);
+    $txn_msg = $resOtp['message'];
+    $txn_msg_type = ($resOtp['status'] === 'success') ? 'success' : 'danger';
+}
+
+if (isset($_POST['verify_txn_otp'])) {
+    $otpCode = trim($_POST['otp_code'] ?? '');
+    $resVer = verifyTransactionKeyOTP($userid, $otpCode);
+    $txn_msg = $resVer['message'];
+    if ($resVer['status'] === 'success') {
+        $_SESSION['txn_otp_verified'] = true;
+        $txn_msg_type = 'success';
+    } else {
+        $txn_msg_type = 'danger';
+    }
+}
+
+if (isset($_POST['reset_txn_key'])) {
+    if (empty($_SESSION['txn_otp_verified'])) {
+        $txn_msg = "Please verify OTP sent to your registered email first.";
+        $txn_msg_type = "danger";
+    } else {
+        $newKey = trim($_POST['new_txn_key'] ?? '');
+        $confirmKey = trim($_POST['confirm_txn_key'] ?? '');
+
+        if ($newKey === '' || $confirmKey === '') {
+            $txn_msg = "Please enter and confirm your new Transaction Key.";
+            $txn_msg_type = "danger";
+        } elseif ($newKey !== $confirmKey) {
+            $txn_msg = "New Transaction Key and Confirm Key do not match.";
+            $txn_msg_type = "danger";
+        } else {
+            $resSet = setTransactionKey($userid, $newKey);
+            if ($resSet['status'] === 'success') {
+                unset($_SESSION['txn_otp_verified']);
+                echo "<script>alert('Transaction Key changed successfully.');window.location.assign('profile.php');</script>";
+                exit;
+            } else {
+                $txn_msg = $resSet['message'];
+                $txn_msg_type = "danger";
+            }
+        }
+    }
+}
 ?>
 
 <style>
@@ -608,32 +656,175 @@ body.ananta-user-dashboard {
                      PROFILE HEADER
                 ================================================== -->
 
-                <div class="profile-card-header">
-
                     <!-- Profile Header -->
-<div class="profile-card-header">
+                    <div class="profile-card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="profile-header-avatar">
+                                <img
+                                    src="<?php echo !empty($userimage) ? 'images/' . htmlspecialchars($userimage) : 'images/usera.png'; ?>"
+                                    alt="Profile Photo"
+                                    onerror="this.src='images/usera.png';"
+                                >
+                            </div>
 
-    <div class="profile-header-avatar">
-        <img
-            src="<?php echo !empty($userimage) ? 'images/' . htmlspecialchars($userimage) : 'images/usera.png'; ?>"
-            alt="Profile Photo"
-            onerror="this.src='images/usera.png';"
-        >
-    </div>
+                            <div class="profile-header-content">
+                                <h1 class="profile-header-title">
+                                    Profile Details &amp; Settings
+                                </h1>
+                                <p class="profile-header-subtitle mb-0">
+                                    Manage your account details and profile photo
+                                </p>
+                            </div>
+                        </div>
 
-    <div class="profile-header-content">
+                        <!-- Referral Toggle Button in Profile Header -->
+                        <div>
+                            <button type="button" class="btn text-white font-weight-bold px-3.5 py-2 d-inline-flex align-items-center shadow-sm" onclick="toggleProfileReferralSection()" style="background: linear-gradient(135deg, #0284c7 0%, #00b4d8 100%); border-radius: 12px; border: none; font-size: 13px; letter-spacing: 0.3px;">
+                                <i class="zmdi zmdi-share mr-2" style="font-size: 16px;"></i> Referral Links & QR
+                            </button>
+                        </div>
+                    </div>
 
-        <h1 class="profile-header-title">
-            Profile Details &amp; Settings
-        </h1>
+                    <!-- =================================================
+                         REFERRAL LINKS & QR CODES SECTION (PROFILE)
+                    ================================================== -->
+                    <?php 
+                    $left_link = $hmurl . "user1/register.php?refferalId=" . $userid . "&position=left";
+                    $left_qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" . urlencode($left_link);
+                    
+                    $right_link = $hmurl . "user1/register.php?refferalId=" . $userid . "&position=right";
+                    $right_qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" . urlencode($right_link);
+                    ?>
 
-        <p class="profile-header-subtitle">
-            Manage your account details and profile photo
-        </p>
+                    <div id="profileReferralSection" class="p-3 p-md-4 mb-4" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; border-radius: 0 0 22px 22px; display: block;">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom gap-3">
+                            <div>
+                                <h5 class="font-weight-bold mb-1" style="color: #0f172a; font-size: 18px;">Your Referral Links &amp; QR Codes</h5>
+                                <p class="text-muted small mb-0" style="font-size: 13px;">Share your personal referral links or QR codes directly to invite new team members.</p>
+                            </div>
+                            <!-- Social Media Links -->
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <span class="text-muted small font-weight-bold mr-1">Social:</span>
+                                <a href="https://youtube.com/@anantamelodyverse?si=qIDQyBt9kS0s4A0F" target="_blank" class="btn btn-sm text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: #FF0000;" title="YouTube">
+                                    <i class="fa fa-youtube"></i>
+                                </a>
+                                <a href="https://www.instagram.com/anantamelodyverses?igsh=NmQ1NGltY3VqZGhw&utm_source=qr" target="_blank" class="btn btn-sm text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);" title="Instagram">
+                                    <i class="fa fa-instagram"></i>
+                                </a>
+                                <a href="https://www.facebook.com/profile.php?id=61585786533006" target="_blank" class="btn btn-sm text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: #1877F2;" title="Facebook">
+                                    <i class="fa fa-facebook"></i>
+                                </a>
+                                <a href="https://wa.me/?text=<?php echo urlencode('Register on Ananta: ' . $left_link); ?>" target="_blank" class="btn btn-sm text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: #25D366;" title="WhatsApp">
+                                    <i class="fa fa-whatsapp"></i>
+                                </a>
+                            </div>
+                        </div>
 
-    </div>
+                        <div class="row align-items-stretch">
+                            <!-- Left Referral Card -->
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <div class="p-3 bg-white h-100 d-flex flex-column justify-content-between" style="border-radius: 16px; border: 1px solid #e2e8f0;">
+                                    <div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="font-weight-bold small text-uppercase mb-0" style="color: #0284c7; letter-spacing: 0.5px;"><i class="fa fa-arrow-left me-1"></i> Left Placement Link</label>
+                                            <span class="badge px-2 py-1" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; border-radius: 6px; font-size: 11px;">LEFT SIDE</span>
+                                        </div>
 
-</div>
+                                        <div class="d-flex flex-column flex-sm-row align-items-center gap-3 my-3">
+                                            <div class="p-2 bg-white rounded-lg shadow-sm text-center" style="border: 1px solid #cbd5e1; border-radius: 12px !important; flex-shrink: 0;">
+                                                <img src="<?php echo $left_qr_api; ?>" alt="Left QR Code" style="width: 100px; height: 100px; border-radius: 8px;">
+                                                <span class="d-block small text-muted mt-1 font-weight-bold" style="font-size: 10px;">SCAN TO REGISTER</span>
+                                            </div>
+                                            <div class="flex-grow-1 w-100">
+                                                <div class="input-group mb-2">
+                                                    <input type="text" id="leftLinkInputProfile" class="form-control form-control-sm" style="border-radius: 8px 0 0 8px; border-color: #cbd5e1; background: #ffffff !important; color: #0f172a !important; font-size: 12.5px; font-weight: 600;" value="<?php echo $left_link; ?>" readonly>
+                                                    <button type="button" onclick="copyTextProfile('leftLinkInputProfile')" class="btn btn-sm font-weight-bold text-white" style="border-radius: 0 8px 8px 0; background: #0284c7; border: none; padding: 6px 14px;">Copy</button>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <button type="button" onclick="shareLinkProfile('Left Placement Link', '<?php echo $left_link; ?>')" class="btn btn-sm btn-outline-info font-weight-bold flex-grow-1" style="border-radius: 8px;">
+                                                        <i class="fa fa-share-alt me-1"></i> Share Link
+                                                    </button>
+                                                    <a href="https://wa.me/?text=<?php echo urlencode('Register on Ananta (Left Side): ' . $left_link); ?>" target="_blank" class="btn btn-sm text-white font-weight-bold" style="background: #25D366; border-radius: 8px;" title="Share to WhatsApp">
+                                                        <i class="fa fa-whatsapp"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Referral Card -->
+                            <div class="col-md-6">
+                                <div class="p-3 bg-white h-100 d-flex flex-column justify-content-between" style="border-radius: 16px; border: 1px solid #e2e8f0;">
+                                    <div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="font-weight-bold small text-uppercase mb-0" style="color: #16a34a; letter-spacing: 0.5px;">Right Placement Link <i class="fa fa-arrow-right ms-1"></i></label>
+                                            <span class="badge px-2 py-1" style="background: rgba(22, 163, 74, 0.1); color: #16a34a; border-radius: 6px; font-size: 11px;">RIGHT SIDE</span>
+                                        </div>
+
+                                        <div class="d-flex flex-column flex-sm-row align-items-center gap-3 my-3">
+                                            <div class="p-2 bg-white rounded-lg shadow-sm text-center" style="border: 1px solid #cbd5e1; border-radius: 12px !important; flex-shrink: 0;">
+                                                <img src="<?php echo $right_qr_api; ?>" alt="Right QR Code" style="width: 100px; height: 100px; border-radius: 8px;">
+                                                <span class="d-block small text-muted mt-1 font-weight-bold" style="font-size: 10px;">SCAN TO REGISTER</span>
+                                            </div>
+                                            <div class="flex-grow-1 w-100">
+                                                <div class="input-group mb-2">
+                                                    <input type="text" id="rightLinkInputProfile" class="form-control form-control-sm" style="border-radius: 8px 0 0 8px; border-color: #cbd5e1; background: #ffffff !important; color: #0f172a !important; font-size: 12.5px; font-weight: 600;" value="<?php echo $right_link; ?>" readonly>
+                                                    <button type="button" onclick="copyTextProfile('rightLinkInputProfile')" class="btn btn-sm font-weight-bold text-white" style="border-radius: 0 8px 8px 0; background: #16a34a; border: none; padding: 6px 14px;">Copy</button>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <button type="button" onclick="shareLinkProfile('Right Placement Link', '<?php echo $right_link; ?>')" class="btn btn-sm btn-outline-success font-weight-bold flex-grow-1" style="border-radius: 8px;">
+                                                        <i class="fa fa-share-alt me-1"></i> Share Link
+                                                    </button>
+                                                    <a href="https://wa.me/?text=<?php echo urlencode('Register on Ananta (Right Side): ' . $right_link); ?>" target="_blank" class="btn btn-sm text-white font-weight-bold" style="background: #25D366; border-radius: 8px;" title="Share to WhatsApp">
+                                                        <i class="fa fa-whatsapp"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                    function toggleProfileReferralSection() {
+                        const sec = document.getElementById('profileReferralSection');
+                        if (sec) {
+                            if (sec.style.display === 'none') {
+                                sec.style.display = 'block';
+                                sec.scrollIntoView({ behavior: 'smooth' });
+                            } else {
+                                sec.style.display = 'none';
+                            }
+                        }
+                    }
+
+                    function copyTextProfile(inputId) {
+                        const input = document.getElementById(inputId);
+                        if (input) {
+                            input.select();
+                            input.setSelectionRange(0, 99999);
+                            navigator.clipboard.writeText(input.value);
+                            alert('Referral link copied to clipboard!');
+                        }
+                    }
+
+                    function shareLinkProfile(title, url) {
+                        if (navigator.share) {
+                            navigator.share({
+                                title: title,
+                                text: 'Join Ananta Multi Trade platform using my referral link:',
+                                url: url
+                            }).catch(err => console.log('Error sharing:', err));
+                        } else {
+                            navigator.clipboard.writeText(url);
+                            alert('Referral link copied to clipboard: ' + url);
+                        }
+                    }
+                    </script>
 
 <style>
 .profile-header-avatar {
@@ -915,6 +1106,96 @@ body.ananta-user-dashboard {
 
                 </div>
 
+            </div>
+
+            <!-- =================================================
+                 SECURITY & TRANSACTION KEY RESET CARD
+            ================================================== -->
+            <div class="profile-main-card mt-4" id="securityTxnSection">
+                <div class="profile-card-header d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="profile-header-icon" style="background: rgba(2, 132, 199, 0.12); color: #0284c7;">
+                            <i class="fa fa-key" style="font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <h2 class="profile-header-title" style="font-size: 20px;">Security &amp; Transaction Key</h2>
+                            <p class="profile-header-subtitle mb-0">Reset or change your Transaction Key using Email OTP Verification</p>
+                        </div>
+                    </div>
+                    <span class="badge" style="background: rgba(22, 163, 74, 0.12); color: #16a34a; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px;">
+                        <i class="fa fa-shield me-1"></i> OTP Protected
+                    </span>
+                </div>
+
+                <div class="profile-form-area p-4">
+                    <?php if (!empty($txn_msg)): ?>
+                        <div class="alert alert-<?php echo $txn_msg_type; ?> border-0 mb-4" style="border-radius: 12px; font-weight: 600;">
+                            <i class="fa fa-info-circle me-2"></i> <?php echo htmlspecialchars($txn_msg); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="row">
+                        <!-- Left Column: Send & Verify OTP -->
+                        <div class="col-md-6 border-end-md pr-md-4">
+                            <h5 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Forgot Transaction Key?</h5>
+                            <p class="text-muted small mb-4" style="font-size: 13px;">Click below to receive a 6-digit OTP on your registered email address.</p>
+
+                            <form method="POST" class="mb-4">
+                                <div class="form-group mb-3">
+                                    <label class="profile-label">Registered Email Address</label>
+                                    <input type="email" class="profile-input" value="<?php echo htmlspecialchars($useremail); ?>" readonly style="background: #f8fafc;">
+                                </div>
+
+                                <button type="submit" name="send_txn_otp" class="btn text-white font-weight-bold w-100" style="height: 48px; border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #00b4d8 100%); border: none; font-size: 14px;">
+                                    <i class="fa fa-paper-plane me-1"></i> Send OTP to Registered Email
+                                </button>
+                            </form>
+
+                            <hr class="my-4">
+
+                            <!-- Step 2: Verify OTP -->
+                            <form method="POST">
+                                <div class="form-group mb-3">
+                                    <label class="profile-label">Enter 6-Digit OTP <span class="text-danger">*</span></label>
+                                    <input type="text" name="otp_code" class="profile-input" placeholder="Enter OTP received in email" maxlength="6" required style="font-family: monospace; font-size: 16px; letter-spacing: 3px;">
+                                    <small class="text-muted" style="font-size: 11.5px;">OTP expires in 10 minutes and is valid for single use.</small>
+                                </div>
+
+                                <button type="submit" name="verify_txn_otp" class="btn text-white font-weight-bold w-100" style="height: 48px; border-radius: 12px; background: #0f172a; border: none; font-size: 14px;">
+                                    <i class="fa fa-check-circle me-1"></i> Verify OTP
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Right Column: Set New Transaction Key -->
+                        <div class="col-md-6 pl-md-4 mt-4 mt-md-0">
+                            <h5 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Set New Transaction Key</h5>
+                            <p class="text-muted small mb-4" style="font-size: 13px;">
+                                <?php if (!empty($_SESSION['txn_otp_verified'])): ?>
+                                    <span class="text-success font-weight-bold"><i class="fa fa-check-circle me-1"></i> OTP Verified! Enter your new Transaction Key below.</span>
+                                <?php else: ?>
+                                    <span>Please verify OTP on the left before setting a new Transaction Key.</span>
+                                <?php endif; ?>
+                            </p>
+
+                            <form method="POST">
+                                <div class="form-group mb-3">
+                                    <label class="profile-label">New Transaction Key <span class="text-danger">*</span></label>
+                                    <input type="password" name="new_txn_key" class="profile-input" placeholder="Enter new Transaction Key (min 4 chars)" required <?php echo empty($_SESSION['txn_otp_verified']) ? 'disabled' : ''; ?>>
+                                </div>
+
+                                <div class="form-group mb-4">
+                                    <label class="profile-label">Confirm New Transaction Key <span class="text-danger">*</span></label>
+                                    <input type="password" name="confirm_txn_key" class="profile-input" placeholder="Re-enter new Transaction Key" required <?php echo empty($_SESSION['txn_otp_verified']) ? 'disabled' : ''; ?>>
+                                </div>
+
+                                <button type="submit" name="reset_txn_key" class="btn text-white font-weight-bold w-100" style="height: 48px; border-radius: 12px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none; font-size: 14px;" <?php echo empty($_SESSION['txn_otp_verified']) ? 'disabled' : ''; ?>>
+                                    <i class="fa fa-save me-1"></i> Save New Transaction Key
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Space before footer -->

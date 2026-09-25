@@ -78,7 +78,7 @@ include 'common/header.php';
                 <h4 class="mb-1 font-weight-bold" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
                     <i class="zmdi zmdi-shield-check mr-2" style="color: #9333ea;"></i> User Account Activation ($11 Unlock Access)
                 </h4>
-                <p class="small mb-0" style="color: #64748b !important;">Activate your account or sponsor another member for 1-Year access validity</p>
+                <p class="small mb-0" style="color: #64748b !important;">Activate your account or sponsor another member for 4-Year access validity</p>
             </div>
             <div>
                 <nav aria-label="breadcrumb">
@@ -160,12 +160,12 @@ include 'common/header.php';
                         <div class="text-right">
                             <span class="small text-uppercase font-weight-bold text-muted d-block">Activation Fee</span>
                             <span class="font-weight-bold" style="color: #9333ea; font-size: 18px;">
-                                <?php echo formatCurrency(11.00, $selectedCurrency); ?> / 1 Year
+                                <?php echo formatCurrency(11.00, $selectedCurrency); ?> / 4 Years
                             </span>
                         </div>
                     </div>
                     <div class="mt-3 pt-3 border-top small text-muted font-weight-semibold">
-                        <i class="zmdi zmdi-info-outline mr-1 text-primary"></i> 1-Year Access unlocks team bonuses, ROI yield eligibility & full platform features.
+                        <i class="zmdi zmdi-info-outline mr-1 text-primary"></i> 4-Year Access unlocks team bonuses, ROI yield eligibility & full platform features.
                     </div>
                 </div>
             </div>
@@ -196,11 +196,14 @@ include 'common/header.php';
                                 
                                 <div class="form-group mb-3">
                                     <label class="font-weight-bold small text-uppercase" style="color: #475569;">Activation Charge</label>
-                                    <input type="text" class="form-control form-control-lg" value="<?php echo formatCurrency(11.00, $selectedCurrency); ?> (Valid for 1 Year)" readonly style="background: #f8fafc; font-weight: 700; color: #16a34a;">
+                                    <input type="text" class="form-control form-control-lg" value="<?php echo formatCurrency(11.00, $selectedCurrency); ?> (Valid for 4 Years)" readonly style="background: #f8fafc; font-weight: 700; color: #16a34a;">
                                 </div>
 
                                 <div class="form-group mb-4">
-                                    <label for="self_txn_key" class="font-weight-bold small text-uppercase" style="color: #475569;">Transaction Key (Security PIN)</label>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label for="self_txn_key" class="font-weight-bold small text-uppercase mb-0" style="color: #475569;">Transaction Key (Security PIN)</label>
+                                        <a href="profile.php#security_section" class="small font-weight-bold text-primary text-decoration-none"><i class="zmdi zmdi-lock-outline mr-1"></i>Forgot Key?</a>
+                                    </div>
                                     <input type="password" class="form-control form-control-lg" id="self_txn_key" name="txn_key" placeholder="Enter Transaction Key" required style="border-radius: 10px; border: 1px solid #cbd5e1;">
                                 </div>
 
@@ -254,7 +257,10 @@ include 'common/header.php';
                             <input type="hidden" name="target_user_id" id="hidden_target_id">
 
                             <div class="form-group mb-4">
-                                <label for="other_txn_key" class="font-weight-bold small text-uppercase" style="color: #475569;">Transaction Key (Security PIN)</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label for="other_txn_key" class="font-weight-bold small text-uppercase mb-0" style="color: #475569;">Transaction Key (Security PIN)</label>
+                                    <a href="profile.php#security_section" class="small font-weight-bold text-primary text-decoration-none"><i class="zmdi zmdi-lock-outline mr-1"></i>Forgot Key?</a>
+                                </div>
                                 <input type="password" class="form-control form-control-lg" id="other_txn_key" name="txn_key" placeholder="Enter your Transaction Key" required style="border-radius: 10px; border: 1px solid #cbd5e1;">
                             </div>
 
@@ -467,7 +473,7 @@ include 'common/header.php';
                     </div>
                     <div class="d-flex justify-content-between">
                         <span class="text-muted">Access Validity:</span>
-                        <strong style="color: #0f172a;">1 Year (365 Days)</strong>
+                        <strong style="color: #0f172a;">4 Years (1461 Days)</strong>
                     </div>
                 </div>
                 

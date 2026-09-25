@@ -577,10 +577,10 @@ table.dataTable.no-footer {
             function loadReportStats() {
                 $.getJSON('vip_club_action.php', { action: 'get_report_stats' }, function(res) {
                     if (res.status === 'success' && res.data) {
-                        $('#statTotalRewards').text('$ ' + parseFloat(res.data.total_rewards).toLocaleString('en-US', {minimumFractionDigits:2}));
-                        $('#statTotalMonthly').text('$ ' + parseFloat(res.data.total_monthly_payout).toLocaleString('en-US', {minimumFractionDigits:2}));
+                        $('#statTotalRewards').text(formatAdminCurrency(res.data.total_rewards));
+                        $('#statTotalMonthly').text(formatAdminCurrency(res.data.total_monthly_payout));
                         $('#statQualifiedUsers').text(res.data.total_qualified_users);
-                        $('#statTotalAdjusted').text('$ ' + parseFloat(res.data.total_adjusted).toLocaleString('en-US', {minimumFractionDigits:2}));
+                        $('#statTotalAdjusted').text(formatAdminCurrency(res.data.total_adjusted));
                     }
                 });
             }
@@ -593,14 +593,14 @@ table.dataTable.no-footer {
                     res.data.forEach(c => {
                         let isTurnover = parseInt(c.has_turnover_share) === 1;
                         let turnoverBadge = isTurnover ? '<span class="badge bg-purple text-white fw-bold">+ 0.50% Company Turnover</span>' : '<span class="badge bg-secondary">None</span>';
-                        let bizText = (parseFloat(c.req_left_business) >= 1000000) ? ('$ ' + (parseFloat(c.req_left_business)/10000000).toFixed(2) + ' Crore') : ('$ ' + parseFloat(c.req_left_business).toLocaleString());
-                        let rptText = (parseFloat(c.monthly_repeat_business) >= 1000000) ? ('$ ' + (parseFloat(c.monthly_repeat_business)/10000000).toFixed(2) + ' Crore') : ('$ ' + parseFloat(c.monthly_repeat_business).toLocaleString());
+                        let bizText = formatAdminCurrency(c.req_left_business);
+                        let rptText = formatAdminCurrency(c.monthly_repeat_business);
 
                         rows += `<tr>
                             <td class="fw-bold text-primary">Level ${c.level_id} (${c.name})</td>
                             <td><span class="badge bg-light text-dark border">${c.req_left_ids} : ${c.req_right_ids}</span></td>
                             <td class="fw-bold text-dark">${bizText} : ${bizText}</td>
-                            <td class="fw-bold text-warning">$ ${parseFloat(c.reward_amount).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                            <td class="fw-bold text-warning">${formatAdminCurrency(c.reward_amount)}</td>
                             <td class="fw-bold text-info">${parseFloat(c.vip_income_rate).toFixed(2)}% Weaker Leg</td>
                             <td>${turnoverBadge}</td>
                             <td class="fw-bold text-success">${rptText}</td>
@@ -623,9 +623,9 @@ table.dataTable.no-footer {
                     { data: 'user_id', render: (data, type, row) => '<strong><?php echo $hmpre; ?>' + data + '</strong>' + (row.username ? '<br><small class="text-muted">' + row.username + '</small>' : '') },
                     { data: 'vip_level', render: (data) => '<span class="badge bg-warning text-dark fw-bold">VIP Level ' + data + '</span>' },
                     { data: 'left_ids_achieved', render: (data, type, row) => row.left_ids_achieved + ' : ' + row.right_ids_achieved },
-                    { data: 'left_business_achieved', render: (data, type, row) => '$' + parseFloat(data).toLocaleString() + ' : $' + parseFloat(row.right_business_achieved).toLocaleString() },
-                    { data: 'weaker_leg_business', render: (data) => '<span class="fw-bold text-dark">$' + parseFloat(data).toLocaleString() + '</span>' },
-                    { data: 'reward_amount', render: (data) => '<span class="fw-bold text-success">$' + parseFloat(data).toFixed(2) + '</span>' },
+                    { data: 'left_business_achieved', render: (data, type, row) => formatAdminCurrency(data) + ' : ' + formatAdminCurrency(row.right_business_achieved) },
+                    { data: 'weaker_leg_business', render: (data) => '<span class="fw-bold text-dark">' + formatAdminCurrency(data) + '</span>' },
+                    { data: 'reward_amount', render: (data) => '<span class="fw-bold text-success">' + formatAdminCurrency(data) + '</span>' },
                     { data: 'reward_status', render: (data) => '<span class="badge bg-success">' + data + '</span>' },
                     { data: 'qualified_at', render: (data) => '<small class="text-muted">' + data + '</small>' }
                 ],
@@ -649,11 +649,11 @@ table.dataTable.no-footer {
                     { data: 'user_id', render: (data, type, row) => '<strong><?php echo $hmpre; ?>' + data + '</strong>' + (row.username ? '<br><small class="text-muted">' + row.username + '</small>' : '') },
                     { data: 'vip_level', render: (data) => '<span class="badge bg-warning text-dark fw-bold">VIP Level ' + data + '</span>' },
                     { data: 'closing_month', render: (data) => '<span class="badge bg-light text-dark border">' + data + '</span>' },
-                    { data: 'weaker_leg_business', render: (data) => '$' + parseFloat(data).toLocaleString() },
-                    { data: 'weaker_leg_payout', render: (data) => '<span class="text-info fw-bold">$' + parseFloat(data).toFixed(2) + '</span>' },
-                    { data: 'company_turnover', render: (data) => '$' + parseFloat(data).toLocaleString() },
-                    { data: 'turnover_payout', render: (data) => '<span class="text-purple fw-bold">$' + parseFloat(data).toFixed(2) + '</span>' },
-                    { data: 'total_payout', render: (data) => '<span class="text-success fw-bold">$' + parseFloat(data).toFixed(2) + '</span>' },
+                    { data: 'weaker_leg_business', render: (data) => formatAdminCurrency(data) },
+                    { data: 'weaker_leg_payout', render: (data) => '<span class="text-info fw-bold">' + formatAdminCurrency(data) + '</span>' },
+                    { data: 'company_turnover', render: (data) => formatAdminCurrency(data) },
+                    { data: 'turnover_payout', render: (data) => '<span class="text-purple fw-bold">' + formatAdminCurrency(data) + '</span>' },
+                    { data: 'total_payout', render: (data) => '<span class="text-success fw-bold">' + formatAdminCurrency(data) + '</span>' },
                     { data: 'status', render: (data) => '<span class="badge bg-success">' + data + '</span>' },
                     { data: 'credited_at', render: (data) => '<small class="text-muted">' + data + '</small>' }
                 ],
@@ -680,9 +680,9 @@ table.dataTable.no-footer {
                         data: 'action',
                         render: (data) => data === 'CREDIT' ? '<span class="badge bg-success">CREDIT (+)</span>' : '<span class="badge bg-danger">DEBIT (-)</span>'
                     },
-                    { data: 'amount', render: (data) => '$' + parseFloat(data).toFixed(2) },
-                    { data: 'previous_balance', render: (data) => '$' + parseFloat(data).toFixed(2) },
-                    { data: 'new_balance', render: (data) => '$' + parseFloat(data).toFixed(2) },
+                    { data: 'amount', render: (data) => formatAdminCurrency(data) },
+                    { data: 'previous_balance', render: (data) => formatAdminCurrency(data) },
+                    { data: 'new_balance', render: (data) => formatAdminCurrency(data) },
                     { data: 'reason' },
                     { data: 'reference', render: (data) => data || '-' },
                     { data: 'created_at' }

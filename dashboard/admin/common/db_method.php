@@ -143,65 +143,75 @@ function registerUser($referrer_id, $name, $email, $mobile, $password, $terms_ac
 }
 
 
-function updatenonworkwallet($sponsorcode, $newamount,$pdo)
-{
-    $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc WHERE userid = :sponsorcode";
-    
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':newamount', $newamount, PDO::PARAM_STR);
-    $stmt->bindParam(':totalinc', $newamount, PDO::PARAM_STR);
-    $stmt->bindParam(':sponsorcode', $sponsorcode, PDO::PARAM_STR);
-    
-    if ($stmt->execute()) {
-        // Update successful
-        return true;
-    } else {
-        // Update failed
-        return false;
+if (!function_exists('updatenonworkwallet')) {
+    function updatenonworkwallet($sponsorcode, $newamount,$pdo)
+    {
+        $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc WHERE userid = :sponsorcode";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':newamount', $newamount, PDO::PARAM_STR);
+        $stmt->bindParam(':totalinc', $newamount, PDO::PARAM_STR);
+        $stmt->bindParam(':sponsorcode', $sponsorcode, PDO::PARAM_STR);
+        
+        if ($stmt->execute()) {
+            // Update successful
+            return true;
+        } else {
+            // Update failed
+            return false;
+        }
     }
 }
 
 
-function insertSponsor($pdo, $sponsorId, $referralId, $createdDate) 
-{
-    $sql = "INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
-    return $stmt->execute([$sponsorId, $referralId, $createdDate]);
+if (!function_exists('insertSponsor')) {
+    function insertSponsor($pdo, $sponsorId, $referralId, $createdDate) 
+    {
+        $sql = "INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([$sponsorId, $referralId, $createdDate]);
+    }
 }
 
-function insertUser($pdo, $data) 
-{
-    $sql = "INSERT INTO user (
-        userid, name, mobile, email, pan, pass, txn_pass, sponserid, sponsername, underuserid,
-        active, status, join_side, package, joining_date, plan, pin, kyc, club, upgrade_date,
-        time, country, amount, capping, rank, closingdate, country_code, level, atime, pool,
-        state, father, gender, pin_code, address, otp, coin_wallet
-    ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?
-    )";
-    $stmt = $pdo->prepare($sql);
-    return $stmt->execute($data);
+if (!function_exists('insertUser')) {
+    function insertUser($pdo, $data) 
+    {
+        $sql = "INSERT INTO user (
+            userid, name, mobile, email, pan, pass, txn_pass, sponserid, sponsername, underuserid,
+            active, status, join_side, package, joining_date, plan, pin, kyc, club, upgrade_date,
+            time, country, amount, capping, rank, closingdate, country_code, level, atime, pool,
+            state, father, gender, pin_code, address, otp, coin_wallet
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?
+        )";
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute($data);
+    }
 }
 
-function insertKYC($pdo, $userId, $aadhar) {
-    $sql = "INSERT INTO kyc (
-        userid, holder_name, ac_number, bank, branch, ifsc, paytm, phone_pe, bhim,
-        idproof, card_no, adhar_front_img, adhar_back_img, pan, pan_img, status
-    ) VALUES (
-        ?, '', '', '', '', '', '', '', '', '', ?, '', '', '', '', '0'
-    )";
-    $stmt = $pdo->prepare($sql);
-    return $stmt->execute([$userId, $aadhar]);
+if (!function_exists('insertKYC')) {
+    function insertKYC($pdo, $userId, $aadhar) {
+        $sql = "INSERT INTO kyc (
+            userid, holder_name, ac_number, bank, branch, ifsc, paytm, phone_pe, bhim,
+            idproof, card_no, adhar_front_img, adhar_back_img, pan, pan_img, status
+        ) VALUES (
+            ?, '', '', '', '', '', '', '', '', '', ?, '', '', '', '', '0'
+        )";
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([$userId, $aadhar]);
+    }
 }
 
-function insertUserLevel($pdo, $sponsorId, $userId, $level) 
-{
-    $sql = "INSERT INTO user_level (sponsorid, downid, level) VALUES (?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
-    return $stmt->execute([$sponsorId, $userId, $level]);
+if (!function_exists('insertUserLevel')) {
+    function insertUserLevel($pdo, $sponsorId, $userId, $level) 
+    {
+        $sql = "INSERT INTO user_level (sponsorid, downid, level) VALUES (?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([$sponsorId, $userId, $level]);
+    }
 }
 
 
@@ -2578,20 +2588,44 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
     }
 
     $validWallets = [
+        'amount',
+        'net_balance',
+        'active_investment',
+        'total_withdrawal',
         'profit_income_wallet',
         'profit_sharing_wallet',
         'direct_bonus_wallet',
         'mentor_income_wallet',
+        'rank_reward_wallet',
         'vip_club_wallet',
+        'user_growth_wallet',
+        'company_turnover_wallet',
         'deposite_wallet',
         'working_wallet',
-        'nonwork_wallet',
-        'amount'
+        'nonwork_wallet'
+    ];
+
+    $walletNames = [
+        'amount'                  => 'Main Wallet',
+        'net_balance'             => 'Net Balance',
+        'active_investment'       => 'Active Investment',
+        'total_withdrawal'        => 'All Withdrawal',
+        'profit_income_wallet'    => 'Profit Income',
+        'profit_sharing_wallet'   => 'Profit Sharing',
+        'direct_bonus_wallet'     => 'Direct Bonus',
+        'mentor_income_wallet'    => 'Mentor Income',
+        'rank_reward_wallet'      => 'Rank Reward',
+        'vip_club_wallet'         => 'VIP Club Income',
+        'user_growth_wallet'      => 'User Growth',
+        'company_turnover_wallet' => 'Company Turnover Income',
+        'deposite_wallet'         => 'Deposit Wallet'
     ];
 
     if (!in_array($wallet_column, $validWallets)) {
         return ['status' => 'error', 'message' => "Invalid wallet type specified: {$wallet_column}"];
     }
+
+    $walletDisplayName = $walletNames[$wallet_column] ?? ucwords(str_replace('_', ' ', $wallet_column));
 
     $adjType = strtoupper(trim($adjustment_type));
     if (!in_array($adjType, ['CREDIT', 'DEBIT'])) {
@@ -2606,6 +2640,9 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
     if (empty(trim($reason))) {
         return ['status' => 'error', 'message' => 'A mandatory reason is required for any admin balance adjustment.'];
     }
+
+    // Generate unique transaction ID (ADM-XXXXXX)
+    $txnId = !empty($reference) ? $reference : ('ADM-' . str_pad(mt_rand(100000, 999999), 6, '0', STR_PAD_LEFT));
 
     $inLocalTxn = false;
     if (!$db->inTransaction()) {
@@ -2623,14 +2660,14 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             return ['status' => 'error', 'message' => "Target user {$target_user_id} not found."];
         }
 
-        $prevBal = (float)$userRow[$wallet_column];
+        $prevBal = (float)($userRow[$wallet_column] ?? 0.00);
 
         if ($adjType === 'DEBIT') {
             if ($prevBal < $amount) {
                 if ($inLocalTxn) $db->rollBack();
                 return [
                     'status'  => 'error',
-                    'message' => "Insufficient balance in {$wallet_column}. Current: " . number_format($prevBal, 2) . ", Requested Debit: " . number_format($amount, 2) . ". Negative balance is blocked."
+                    'message' => "Insufficient balance in {$walletDisplayName}. Current: ₹" . number_format($prevBal, 2) . ", Requested Debit: ₹" . number_format($amount, 2) . ". Negative balance is blocked."
                 ];
             }
             $newBal = round($prevBal - $amount, 2);
@@ -2643,11 +2680,9 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
         $updStmt->execute([':amt' => $amount, ':userid' => $target_user_id]);
 
         $txnType = ($adjType === 'CREDIT') ? 'Credit' : 'Debit';
-        $subject = "Admin Adjustment ({$adjType}) - Wallet: {$wallet_column} - Reason: {$reason}";
-        if (!empty($reference)) {
-            $subject .= " (Ref: {$reference})";
-        }
+        $subject = "Admin Adjustment ({$adjType}) - Wallet: {$walletDisplayName} - Reason: {$reason} (Txn: {$txnId})";
 
+        // Create transaction record in tbl_transaction
         $insTxn = $db->prepare("
             INSERT INTO tbl_transaction
             (user_id, type, subject, amount, created_date, status)
@@ -2661,7 +2696,25 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             ':amount'  => $amount
         ]);
 
-        logAdminAuditAction($admin_id, $adjType, $target_user_id, $amount, $wallet_column, $prevBal, $newBal, $reason, $reference, $db);
+        // Log Immutable Admin Audit Record in tbl_admin_audit_log
+        logAdminAuditAction($admin_id, $adjType, $target_user_id, $amount, $wallet_column, $prevBal, $newBal, $reason, $txnId, $db);
+
+        // Create User Notification in tbl_system_notifications
+        $notifTitle = ($adjType === 'CREDIT') ? "Admin Wallet Credit" : "Admin Wallet Debit";
+        $notifMessage = "₹" . number_format($amount, 2) . " has been " . strtolower($adjType) . "ed " . ($adjType === 'CREDIT' ? 'to' : 'from') . " your " . $walletDisplayName . ".\n\nReason:\n" . $reason . "\n\nTransaction ID:\n" . $txnId;
+
+        $insNotif = $db->prepare("
+            INSERT INTO tbl_system_notifications
+            (target_type, target_user_id, title, message, created_by, is_read, created_at)
+            VALUES
+            ('USER', :target_user_id, :title, :message, :created_by, 0, NOW())
+        ");
+        $insNotif->execute([
+            ':target_user_id' => $target_user_id,
+            ':title'          => $notifTitle,
+            ':message'        => $notifMessage,
+            ':created_by'     => $admin_id
+        ]);
 
         if ($inLocalTxn) {
             $db->commit();
@@ -2669,7 +2722,8 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
 
         return [
             'status'           => 'success',
-            'message'          => "Successfully processed {$adjType} of " . number_format($amount, 2) . " on {$wallet_column} for user {$target_user_id}.",
+            'transaction_id'   => $txnId,
+            'message'          => "Successfully processed {$adjType} of ₹" . number_format($amount, 2) . " on {$walletDisplayName} for user {$target_user_id}.",
             'previous_balance' => $prevBal,
             'new_balance'      => $newBal
         ];
@@ -3378,4 +3432,565 @@ if (!function_exists('getVIPClubReportStats')) {
     }
 }
 
+/**
+ * Helper to fetch tree details and downline counts for a user.
+ */
+if (!function_exists('getTreeUserDetails')) {
+    function getTreeUserDetails($userId, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($userId)) return null;
+
+        $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', trim($userId));
+        $prefixedUid = 'AN' . $cleanUid;
+        $anantaUid = 'ANANTA' . $cleanUid;
+
+        $stmtUser = $db->prepare("SELECT * FROM user WHERE userid = :clean OR userid = :prefixed OR userid = :ananta LIMIT 1");
+        $stmtUser->execute([':clean' => $cleanUid, ':prefixed' => $prefixedUid, ':ananta' => $anantaUid]);
+        $u = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+        if (!$u) return null;
+        $actualUid = $u['userid'];
+
+        $stmtTree = $db->prepare("SELECT * FROM tree WHERE userid = :uid LIMIT 1");
+        $stmtTree->execute([':uid' => $actualUid]);
+        $t = $stmtTree->fetch(PDO::FETCH_ASSOC);
+
+        // Find current parent
+        $stmtParent = $db->prepare("SELECT * FROM tree WHERE left_id = :uid OR right_id = :uid LIMIT 1");
+        $stmtParent->execute([':uid' => $actualUid]);
+        $parentRow = $stmtParent->fetch(PDO::FETCH_ASSOC);
+
+        $currentParentId = $parentRow ? $parentRow['userid'] : 'ROOT / NONE';
+        $currentPosition = 'NONE';
+        if ($parentRow) {
+            if ($parentRow['left_id'] === $actualUid) {
+                $currentPosition = 'LEFT';
+            } elseif ($parentRow['right_id'] === $actualUid) {
+                $currentPosition = 'RIGHT';
+            }
+        }
+
+        // Direct children
+        $directChildren = [];
+        if ($t) {
+            if (!empty($t['left_id'])) $directChildren[] = ['userid' => $t['left_id'], 'position' => 'LEFT'];
+            if (!empty($t['right_id'])) $directChildren[] = ['userid' => $t['right_id'], 'position' => 'RIGHT'];
+        }
+
+        // Calculate complete downline count recursively
+        $downlineIds = getSubtreeDescendantIds($actualUid, $db);
+
+        return [
+            'userid' => $actualUid,
+            'name' => $u['name'],
+            'sponserid' => $u['sponserid'] ?? '',
+            'sponsername' => $u['sponsername'] ?? '',
+            'current_parent' => $currentParentId,
+            'current_position' => $currentPosition,
+            'left_child' => $t['left_id'] ?? '',
+            'right_child' => $t['right_id'] ?? '',
+            'left_count' => (int)($t['leftcount'] ?? 0),
+            'right_count' => (int)($t['rightcount'] ?? 0),
+            'left_total' => (int)($t['lefttotal'] ?? 0),
+            'right_total' => (int)($t['righttotal'] ?? 0),
+            'direct_children' => $directChildren,
+            'downline_count' => count($downlineIds),
+            'downline_ids' => $downlineIds
+        ];
+    }
+}
+
+/**
+ * Returns all descendant user IDs in the binary tree below $userId.
+ */
+if (!function_exists('getSubtreeDescendantIds')) {
+    function getSubtreeDescendantIds($userId, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($userId)) return [];
+
+        $descendants = [];
+        $queue = [$userId];
+
+        while (!empty($queue)) {
+            $curr = array_shift($queue);
+            $stmt = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+            $stmt->execute([':uid' => $curr]);
+            $t = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($t) {
+                if (!empty($t['left_id']) && !in_array($t['left_id'], $descendants)) {
+                    $descendants[] = $t['left_id'];
+                    $queue[] = $t['left_id'];
+                }
+                if (!empty($t['right_id']) && !in_array($t['right_id'], $descendants)) {
+                    $descendants[] = $t['right_id'];
+                    $queue[] = $t['right_id'];
+                }
+            }
+        }
+
+        return $descendants;
+    }
+}
+
+/**
+ * Check new parent availability for LEFT and RIGHT slots.
+ */
+if (!function_exists('getNewParentAvailability')) {
+    function getNewParentAvailability($targetUserId, $newParentId, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($newParentId)) {
+            return ['status' => 'error', 'message' => 'New parent ID is required.'];
+        }
+
+        $targetUser = getTreeUserDetails($targetUserId, $db);
+        if (!$targetUser) {
+            return ['status' => 'error', 'message' => 'Selected target user not found.'];
+        }
+
+        $parentUser = getTreeUserDetails($newParentId, $db);
+        if (!$parentUser) {
+            return ['status' => 'error', 'message' => 'Selected new parent user not found.'];
+        }
+
+        // Root protection check: Master admin 1290 cannot be moved under someone else as a child
+        if ($targetUser['userid'] === 'AN1290' || $targetUser['userid'] === '1290') {
+            return ['status' => 'error', 'message' => 'Master Root Admin (AN1290) cannot be moved under another parent.'];
+        }
+
+        // Check self-parent
+        if ($targetUser['userid'] === $parentUser['userid']) {
+            return ['status' => 'error', 'message' => 'Target user and New Parent user cannot be the same.'];
+        }
+
+        // Circular Tree Check: New Parent cannot be a descendant of target user
+        if (in_array($parentUser['userid'], $targetUser['downline_ids'])) {
+            return ['status' => 'error', 'message' => "Invalid parent. You cannot move a user under their own downline."];
+        }
+
+        // Check left and right slot occupancy
+        $stmtParentTree = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+        $stmtParentTree->execute([':uid' => $parentUser['userid']]);
+        $pTree = $stmtParentTree->fetch(PDO::FETCH_ASSOC);
+
+        $leftOccupied = !empty($pTree['left_id']);
+        $leftOccupant = $pTree['left_id'] ?? '';
+        $rightOccupied = !empty($pTree['right_id']);
+        $rightOccupant = $pTree['right_id'] ?? '';
+
+        // Allow slot if currently occupied by the same target user (same position check)
+        $leftValid = !$leftOccupied || ($leftOccupant === $targetUser['userid']);
+        $rightValid = !$rightOccupied || ($rightOccupant === $targetUser['userid']);
+
+        return [
+            'status' => 'success',
+            'target_user' => $targetUser,
+            'new_parent' => $parentUser,
+            'left' => [
+                'occupied' => $leftOccupied,
+                'occupant' => $leftOccupant,
+                'valid'    => $leftValid
+            ],
+            'right' => [
+                'occupied' => $rightOccupied,
+                'occupant' => $rightOccupant,
+                'valid'    => $rightValid
+            ]
+        ];
+    }
+}
+
+/**
+ * Executes Atomic Team Move in Binary Tree with complete validation and audit logging.
+ */
+if (!function_exists('processAdminMoveTeamInTree')) {
+    function processAdminMoveTeamInTree($adminId, $targetUserId, $newParentId, $targetPosition, $reason = '', $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($adminId) || empty($targetUserId) || empty($newParentId) || empty($targetPosition)) {
+            return ['status' => 'error', 'message' => 'All parameters (Admin ID, Target User, New Parent, Position) are required.'];
+        }
+        if (empty(trim($reason))) {
+            return ['status' => 'error', 'message' => 'Reason / Remarks is mandatory for moving a user in the tree.'];
+        }
+
+        $targetPosition = strtoupper(trim($targetPosition));
+        if (!in_array($targetPosition, ['LEFT', 'RIGHT'])) {
+            return ['status' => 'error', 'message' => 'Invalid position specified. Must be LEFT or RIGHT.'];
+        }
+
+        $inLocalTxn = false;
+        if (!$db->inTransaction()) {
+            $db->beginTransaction();
+            $inLocalTxn = true;
+        }
+
+        try {
+            // 1. Lock and validate Target User
+            $stmtT = $db->prepare("SELECT * FROM user WHERE userid = :uid FOR UPDATE");
+            $stmtT->execute([':uid' => $targetUserId]);
+            $targetRow = $stmtT->fetch(PDO::FETCH_ASSOC);
+
+            if (!$targetRow) {
+                // Fallback clean check
+                $cleanT = preg_replace('/^(AN|ANANTA)/i', '', $targetUserId);
+                $stmtT->execute([':uid' => $cleanT]);
+                $targetRow = $stmtT->fetch(PDO::FETCH_ASSOC);
+            }
+
+            if (!$targetRow) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Target user {$targetUserId} not found."];
+            }
+            $actualTargetId = $targetRow['userid'];
+
+            // Master root admin check
+            if ($actualTargetId === '1290' || $actualTargetId === 'AN1290') {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => 'Master Root Admin (AN1290) cannot be moved in the tree.'];
+            }
+
+            // 2. Lock and validate New Parent User
+            $stmtP = $db->prepare("SELECT * FROM user WHERE userid = :uid FOR UPDATE");
+            $stmtP->execute([':uid' => $newParentId]);
+            $parentRow = $stmtP->fetch(PDO::FETCH_ASSOC);
+
+            if (!$parentRow) {
+                $cleanP = preg_replace('/^(AN|ANANTA)/i', '', $newParentId);
+                $stmtP->execute([':uid' => $cleanP]);
+                $parentRow = $stmtP->fetch(PDO::FETCH_ASSOC);
+            }
+
+            if (!$parentRow) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "New parent user {$newParentId} not found."];
+            }
+            $actualParentId = $parentRow['userid'];
+
+            // 3. Validation: Self parent check
+            if ($actualTargetId === $actualParentId) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => 'Target User and New Parent User cannot be the same.'];
+            }
+
+            // 4. Validation: Circular tree check (New Parent is in Target User's downline)
+            $downlineIds = getSubtreeDescendantIds($actualTargetId, $db);
+            if (in_array($actualParentId, $downlineIds)) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Invalid parent. You cannot move a user under their own downline."];
+            }
+
+            // 5. Fetch Target User's current parent in tree table
+            $stmtCurrParent = $db->prepare("SELECT * FROM tree WHERE left_id = :uid OR right_id = :uid FOR UPDATE");
+            $stmtCurrParent->execute([':uid' => $actualTargetId]);
+            $oldParentTree = $stmtCurrParent->fetch(PDO::FETCH_ASSOC);
+
+            $oldParentId = $oldParentTree ? $oldParentTree['userid'] : 'NONE';
+            $oldPosition = 'NONE';
+            if ($oldParentTree) {
+                if ($oldParentTree['left_id'] === $actualTargetId) {
+                    $oldPosition = 'LEFT';
+                } elseif ($oldParentTree['right_id'] === $actualTargetId) {
+                    $oldPosition = 'RIGHT';
+                }
+            }
+
+            // Check same parent and same position
+            if ($oldParentId === $actualParentId && $oldPosition === $targetPosition) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "User {$actualTargetId} is already attached to Parent {$actualParentId} on position {$targetPosition}."];
+            }
+
+            // 6. Check target position availability on new parent
+            $stmtNewParentTree = $db->prepare("SELECT * FROM tree WHERE userid = :uid FOR UPDATE");
+            $stmtNewParentTree->execute([':uid' => $actualParentId]);
+            $newParentTree = $stmtNewParentTree->fetch(PDO::FETCH_ASSOC);
+
+            if (!$newParentTree) {
+                // Ensure tree record exists for new parent
+                $db->prepare("INSERT INTO tree (userid, left_id, right_id, leftcount, rightcount, status, join_side, leftsp, rightsp, lefttotal, righttotal) VALUES (:uid, '', '', 0, 0, 1, '', 0, 0, 0, 0)")
+                   ->execute([':uid' => $actualParentId]);
+                $stmtNewParentTree->execute([':uid' => $actualParentId]);
+                $newParentTree = $stmtNewParentTree->fetch(PDO::FETCH_ASSOC);
+            }
+
+            $colToOccupy = ($targetPosition === 'LEFT') ? 'left_id' : 'right_id';
+            $currentOccupant = $newParentTree[$colToOccupy] ?? '';
+
+            if (!empty($currentOccupant) && $currentOccupant !== $actualTargetId) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Target position {$targetPosition} under Parent {$actualParentId} is already occupied by User {$currentOccupant}."];
+            }
+
+            // 7. Remove Target User from Old Parent's tree record slot
+            if ($oldParentTree) {
+                if ($oldPosition === 'LEFT') {
+                    $db->prepare("UPDATE tree SET left_id = '' WHERE userid = :pid")->execute([':pid' => $oldParentId]);
+                } elseif ($oldPosition === 'RIGHT') {
+                    $db->prepare("UPDATE tree SET right_id = '' WHERE userid = :pid")->execute([':pid' => $oldParentId]);
+                }
+            }
+
+            // 8. Attach Target User to New Parent's tree record slot
+            if ($targetPosition === 'LEFT') {
+                $db->prepare("UPDATE tree SET left_id = :tid WHERE userid = :pid")->execute([':tid' => $actualTargetId, ':pid' => $actualParentId]);
+            } else {
+                $db->prepare("UPDATE tree SET right_id = :tid WHERE userid = :pid")->execute([':tid' => $actualTargetId, ':pid' => $actualParentId]);
+            }
+
+            // Ensure tree record exists for Target User
+            $stmtTargetTree = $db->prepare("SELECT * FROM tree WHERE userid = :uid FOR UPDATE");
+            $stmtTargetTree->execute([':uid' => $actualTargetId]);
+            if (!$stmtTargetTree->fetch()) {
+                $db->prepare("INSERT INTO tree (userid, left_id, right_id, leftcount, rightcount, status, join_side, leftsp, rightsp, lefttotal, righttotal) VALUES (:uid, '', '', 0, 0, 1, '', 0, 0, 0, 0)")
+                   ->execute([':uid' => $actualTargetId]);
+            }
+
+            // 9. Post-move Integrity Verifications
+            $checkNewParent = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :pid");
+            $checkNewParent->execute([':pid' => $actualParentId]);
+            $npRow = $checkNewParent->fetch(PDO::FETCH_ASSOC);
+
+            $expectedChild = ($targetPosition === 'LEFT') ? ($npRow['left_id'] ?? '') : ($npRow['right_id'] ?? '');
+            if ($expectedChild !== $actualTargetId) {
+                throw new Exception("Tree integrity verification failed: New parent slot does not point to target user.");
+            }
+
+            if ($oldParentId !== 'NONE') {
+                $checkOldParent = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :pid");
+                $checkOldParent->execute([':pid' => $oldParentId]);
+                $opRow = $checkOldParent->fetch(PDO::FETCH_ASSOC);
+                if (($opRow['left_id'] ?? '') === $actualTargetId || ($opRow['right_id'] ?? '') === $actualTargetId) {
+                    throw new Exception("Tree integrity verification failed: Old parent slot still retains target user.");
+                }
+            }
+
+            // 10. Audit Log Entry
+            $totalTeamMoved = count($downlineIds) + 1;
+            $auditRemarks = "Admin {$adminId} moved user {$actualTargetId} ({$targetRow['name']}) and team of {$totalTeamMoved} members from Parent {$oldParentId} ({$oldPosition}) to New Parent {$actualParentId} ({$targetPosition}). Reason: " . ($reason ?: 'Admin Manual Move');
+
+            logAdminAuditAction(
+                $adminId,
+                'MOVE_TEAM_IN_TREE',
+                $actualTargetId,
+                0.00,
+                'tree',
+                1,
+                0,
+                $auditRemarks,
+                null,
+                $db
+            );
+
+            // Optional User Notification
+            try {
+                $db->prepare("
+                    INSERT INTO tbl_user_notifications (user_id, title, message, type, is_read, created_at)
+                    VALUES (:uid, 'Team Tree Location Updated', :msg, 'SYSTEM', 0, NOW())
+                ")->execute([
+                    ':uid' => $actualTargetId,
+                    ':msg' => "Your binary tree placement has been updated by Admin to Parent: {$actualParentId} ({$targetPosition} Position)."
+                ]);
+            } catch (Exception $ne) {
+                // Ignore if notification table column schema varies
+            }
+
+            if ($inLocalTxn) {
+                $db->commit();
+            }
+
+            return [
+                'status'           => 'success',
+                'message'          => "User {$actualTargetId} and complete team of {$totalTeamMoved} members successfully moved under New Parent {$actualParentId} on position {$targetPosition}!",
+                'user_id'          => $actualTargetId,
+                'user_name'        => $targetRow['name'],
+                'old_parent'       => $oldParentId,
+                'old_position'     => $oldPosition,
+                'new_parent'       => $actualParentId,
+                'new_position'     => $targetPosition,
+                'downline_moved'   => count($downlineIds),
+                'total_team_moved' => $totalTeamMoved
+            ];
+
+        } catch (Exception $e) {
+            if ($inLocalTxn && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            return [
+                'status'  => 'error',
+                'message' => 'Move Team transaction failed and rolled back. Error: ' . $e->getMessage()
+            ];
+        }
+    }
+}
+
+/**
+ * Permanently deletes a user account and all associated user records atomically.
+ *
+ * @param string $admin_id Admin performing the deletion
+ * @param string $target_user_id Target user ID (clean or prefixed)
+ * @param PDO|null $pdoConnection
+ * @return array Response status and message
+ */
+function processPermanentUserAccountDeletion($admin_id, $target_user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+
+    if (!$db || empty($target_user_id)) {
+        return ['status' => 'error', 'message' => 'Target User ID is required.'];
+    }
+
+    $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', trim($target_user_id));
+    $prefixedUid = 'AN' . $cleanUid;
+    $anantaUid = 'ANANTA' . $cleanUid;
+
+    // Prevent Admin deleting master admin account (AN1290 / 1290)
+    if ($cleanUid === '1290' || strtolower($target_user_id) === 'an1290' || strtolower($target_user_id) === 'ananta1290') {
+        return ['status' => 'error', 'message' => 'Admin master account (AN1290) cannot be deleted.'];
+    }
+
+    try {
+        $db->beginTransaction();
+
+        // 1. Lock and fetch target user record
+        $stmtUser = $db->prepare("SELECT * FROM user WHERE userid = :clean OR userid = :prefixed OR userid = :ananta FOR UPDATE");
+        $stmtUser->execute([':clean' => $cleanUid, ':prefixed' => $prefixedUid, ':ananta' => $anantaUid]);
+        $userRecord = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+        if (!$userRecord) {
+            $db->rollBack();
+            return ['status' => 'error', 'message' => "Target user {$target_user_id} not found."];
+        }
+
+        $actualUserId = $userRecord['userid'];
+
+        // 2. Safely reassign downline sponsors so tree structure for other users remains valid
+        $sponsorOfDeleted = $userRecord['sponserid'] ?? '';
+        $sponsorNameOfDeleted = $userRecord['sponsername'] ?? '';
+
+        $updateDownline = $db->prepare("UPDATE user SET sponserid = :newsponsor, sponsername = :newsponsorname WHERE sponserid = :clean OR sponserid = :prefixed OR sponserid = :actual");
+        $updateDownline->execute([
+            ':newsponsor'     => $sponsorOfDeleted,
+            ':newsponsorname' => $sponsorNameOfDeleted,
+            ':clean'          => $cleanUid,
+            ':prefixed'       => $prefixedUid,
+            ':actual'         => $actualUserId
+        ]);
+
+        $uParams = [
+            ':clean'    => $cleanUid,
+            ':prefixed' => $prefixedUid,
+            ':actual'   => $actualUserId
+        ];
+
+        // 3. Delete records from all user-related tables with 'userid' column
+        $useridTables = [
+            'kyc', 'pin_generate_detail', 'pin_list', 'tbl_cart', 'tbl_check_user', 
+            'tbl_deposit_withdrawal_history', 'tbl_log', 'tbl_order', 'tbl_otp', 
+            'tbl_payment', 'tbl_pool2', 'tbl_pool3', 'tbl_query', 'tbl_royalty_user', 
+            'tbl_singleg_user', 'tbl_singleg_user2', 'tbl_singleg_user3', 'tree', 'user1'
+        ];
+        foreach ($useridTables as $tbl) {
+            try {
+                $stmt = $db->prepare("DELETE FROM `$tbl` WHERE userid = :clean OR userid = :prefixed OR userid = :actual");
+                $stmt->execute($uParams);
+            } catch (Exception $e) {
+                // Ignore if table/column does not exist in specific environments
+            }
+        }
+
+        // 4. Delete records from all user-related tables with 'user_id' column
+        $userIdTables = [
+            'tbl_bonus', 'tbl_capital_withdrawal_request', 'tbl_daily_levelinc', 
+            'tbl_direct_bonus_admin_audit', 'tbl_directinc', 'tbl_flush', 'tbl_franchise', 
+            'tbl_inr_deposits', 'tbl_levelinc', 'tbl_mentor_income_admin_audit', 
+            'tbl_oneroyalty_user', 'tbl_recharge', 'tbl_repurchase_data', 'tbl_rewardinc', 
+            'tbl_roi_one', 'tbl_roi_three', 'tbl_roi_two', 'tbl_roiinc', 'tbl_sponserinc', 
+            'tbl_support_tickets', 'tbl_temp_data', 'tbl_transaction', 'tbl_user_login_history', 
+            'tbl_user_notifications', 'tbl_user_welcome', 'tbl_vip_admin_audit', 
+            'tbl_vip_monthly_schedule', 'tbl_vip_user_qualification'
+        ];
+        foreach ($userIdTables as $tbl) {
+            try {
+                $stmt = $db->prepare("DELETE FROM `$tbl` WHERE user_id = :clean OR user_id = :prefixed OR user_id = :actual");
+                $stmt->execute($uParams);
+            } catch (Exception $e) {
+                // Ignore if table/column does not exist
+            }
+        }
+
+        // 5. Special multi-column / specific relationship tables
+        $specialQueries = [
+            "DELETE FROM pin_transfer WHERE reciever_sponser = :clean OR reciever_sponser = :prefixed OR reciever_sponser = :actual OR sender_sponser = :clean OR sender_sponser = :prefixed OR sender_sponser = :actual",
+            "DELETE FROM tbl_account_activation WHERE activator_user_id = :clean OR activator_user_id = :prefixed OR activator_user_id = :actual OR target_user_id = :clean OR target_user_id = :prefixed OR target_user_id = :actual",
+            "DELETE FROM tbl_beneficiary_acount WHERE user_id = :clean OR user_id = :prefixed OR user_id = :actual OR sender_id = :clean OR sender_id = :prefixed OR sender_id = :actual",
+            "DELETE FROM tbl_direct_bonus_schedule WHERE source_user_id = :clean OR source_user_id = :prefixed OR source_user_id = :actual",
+            "DELETE FROM tbl_downline WHERE downline_id = :clean OR downline_id = :prefixed OR downline_id = :actual",
+            "DELETE FROM tbl_imps_sender WHERE user_id = :clean OR user_id = :prefixed OR user_id = :actual OR sender_id = :clean OR sender_id = :prefixed OR sender_id = :actual",
+            "DELETE FROM tbl_mentor_direct_contribution WHERE direct_user_id = :clean OR direct_user_id = :prefixed OR direct_user_id = :actual",
+            "DELETE FROM tbl_mentor_income_schedule WHERE direct_user_id = :clean OR direct_user_id = :prefixed OR direct_user_id = :actual",
+            "DELETE FROM tbl_p2p_transfer WHERE sender_id = :clean OR sender_id = :prefixed OR sender_id = :actual OR receiver_id = :clean OR receiver_id = :prefixed OR receiver_id = :actual",
+            "DELETE FROM tbl_sponsor WHERE sponsor_id = :clean OR sponsor_id = :prefixed OR sponsor_id = :actual",
+            "DELETE FROM tbl_system_notifications WHERE target_user_id = :clean OR target_user_id = :prefixed OR target_user_id = :actual",
+            "DELETE FROM tbl_ticket_replies WHERE sender_id = :clean OR sender_id = :prefixed OR sender_id = :actual",
+            "DELETE FROM tbl_userlevel WHERE sponser_id = :clean OR sponser_id = :prefixed OR sponser_id = :actual OR downline_id = :clean OR downline_id = :prefixed OR downline_id = :actual",
+            "DELETE FROM tbl_userlevel_a WHERE sponser_id = :clean OR sponser_id = :prefixed OR sponser_id = :actual OR downline_id = :clean OR downline_id = :prefixed OR downline_id = :actual",
+            "DELETE FROM tbl_userlevel_b WHERE sponser_id = :clean OR sponser_id = :prefixed OR sponser_id = :actual OR downline_id = :clean OR downline_id = :prefixed OR downline_id = :actual"
+        ];
+
+        foreach ($specialQueries as $sq) {
+            try {
+                $db->prepare($sq)->execute($uParams);
+            } catch (Exception $e) {
+                // Ignore if table does not exist
+            }
+        }
+
+        // 6. Log Admin Audit Action BEFORE deleting primary user record
+        logAdminAuditAction(
+            $admin_id, 
+            'USER_PERMANENT_DELETE', 
+            $actualUserId, 
+            0.00, 
+            'user', 
+            1, 
+            0, 
+            "Admin {$admin_id} permanently deleted user account {$actualUserId} ({$userRecord['name']}) and all associated records.", 
+            null, 
+            $db
+        );
+
+        // 7. Finally delete the primary user row
+        $stmtDeleteUser = $db->prepare("DELETE FROM user WHERE userid = :clean OR userid = :prefixed OR userid = :actual");
+        $stmtDeleteUser->execute($uParams);
+
+        // 8. Verify user row is gone
+        $stmtCheck = $db->prepare("SELECT COUNT(*) FROM user WHERE userid = :clean OR userid = :prefixed OR userid = :actual");
+        $stmtCheck->execute($uParams);
+        if ((int)$stmtCheck->fetchColumn() > 0) {
+            throw new Exception("User record could not be removed from user table.");
+        }
+
+        $db->commit();
+
+        return [
+            'status'  => 'success',
+            'message' => "Account {$actualUserId} permanently deleted successfully."
+        ];
+
+    } catch (Exception $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        return [
+            'status'  => 'error',
+            'message' => 'Account deletion failed. No changes were made. Error: ' . $e->getMessage()
+        ];
+    }
+}
+
 ?>
+
