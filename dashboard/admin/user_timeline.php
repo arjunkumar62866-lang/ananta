@@ -57,18 +57,23 @@ foreach ($stmtAudit->fetchAll(PDO::FETCH_ASSOC) as $a) {
 }
 
 // 3. KYC
-$stmtKyc = $pdo->prepare("SELECT id, status, date FROM kyc WHERE userid = :uid ORDER BY id DESC LIMIT 10");
-$stmtKyc->execute([':uid' => $target_user]);
-foreach ($stmtKyc->fetchAll(PDO::FETCH_ASSOC) as $k) {
-    $stText = ($k['status'] == '1') ? 'PENDING' : (($k['status'] == '2') ? 'APPROVED' : ($k['status'] == '3' ? 'REJECTED' : 'NOT SUBMITTED'));
-    $events[] = [
-        'type' => 'KYC',
-        'title' => "KYC Application Status: {$stText}",
-        'desc' => "KYC verification record status: {$stText}",
-        'time' => $k['date'] ?? date('Y-m-d H:i:s'),
-        'icon' => 'fa-id-card',
-        'badge' => ($k['status'] == '2' ? 'badge-success' : ($k['status'] == '3' ? 'badge-danger' : 'badge-warning'))
-    ];
+try {
+    $stmtKyc = $pdo->prepare("SELECT * FROM kyc WHERE userid = :uid ORDER BY id DESC LIMIT 10");
+    $stmtKyc->execute([':uid' => $target_user]);
+    foreach ($stmtKyc->fetchAll(PDO::FETCH_ASSOC) as $k) {
+        $stVal = $k['status'] ?? '0';
+        $stText = ($stVal == '1') ? 'PENDING' : (($stVal == '2') ? 'APPROVED' : ($stVal == '3' ? 'REJECTED' : 'NOT SUBMITTED'));
+        $events[] = [
+            'type' => 'KYC',
+            'title' => "KYC Application Status: {$stText}",
+            'desc' => "KYC verification record status: {$stText}",
+            'time' => $k['date'] ?? $k['created_at'] ?? $k['updated_at'] ?? date('Y-m-d H:i:s'),
+            'icon' => 'fa-id-card',
+            'badge' => ($stVal == '2' ? 'badge-success' : ($stVal == '3' ? 'badge-danger' : 'badge-warning'))
+        ];
+    }
+} catch (Exception $eKyc) {
+    // Ignore if kyc table schema lacks optional timestamp fields
 }
 
 // Sort all timeline events descending by time
