@@ -21,20 +21,84 @@ if (isset($_POST['submit'])) {
     $mobile      = $_POST['mobile'] ?? '';
     $pass        = $_POST['pass'] ?? '';
 
-    $update = $pdo->prepare("UPDATE user SET sponsername=:sponsername, name=:name, mobile=:mobile, email=:email, pass=:pass WHERE userid=:userid OR userid=:clean");
-    $update->execute([
-        ':sponsername' => $sponsername,
-        ':name'        => $name,
-        ':mobile'      => $mobile,
-        ':email'       => $email,
-        ':pass'        => $pass,
-        ':userid'      => $uid,
-        ':clean'       => $cleanUid
-    ]);
+    // Handle profile picture upload
+    $imagePath = null;
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['image']['tmp_name'];
+        $fileName = $_FILES['image']['name'];
+        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 
-    if ($update) {
-        echo '<script>alert("Profile Updated Successfully");</script>'; 
+        if (in_array($fileExtension, $allowedExtensions)) {
+            $newFileName = 'profile_' . preg_replace('/[^A-Za-z0-9]/', '', $uid) . '_' . time() . '.' . $fileExtension;
+            $uploadFileDir = __DIR__ . '/images/';
+            if (!is_dir($uploadFileDir)) {
+                mkdir($uploadFileDir, 0755, true);
+            }
+            $dest_path = $uploadFileDir . $newFileName;
+            if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                $imagePath = 'images/' . $newFileName;
+            }
+        }
     }
+
+    if ($imagePath !== null) {
+        $update = $pdo->prepare("UPDATE user SET sponsername=:sponsername, name=:name, mobile=:mobile, email=:email, pass=:pass, image=:image WHERE userid=:userid OR userid=:clean");
+        $update->execute([
+            ':sponsername' => $sponsername,
+            ':name'        => $name,
+            ':mobile'      => $mobile,
+            ':email'       => $email,
+            ':pass'        => $pass,
+            ':image'       => $imagePath,
+            ':userid'      => $uid,
+            ':clean'       => $cleanUid
+        ]);
+
+        // Also sync to admin table if updating admin profile (1290 / AN1290 / admin)
+        if ($uid === '1290' || $uid === 'AN1290' || strtolower($uid) === 'admin') {
+            try {
+                $updateAdmin = $pdo->prepare("UPDATE admin SET name=:name, mobile=:mobile, email=:email, pass=:pass, image=:image WHERE auserid IN ('admin', '1290', 'AN1290') OR id = 1");
+                $updateAdmin->execute([
+                    ':name'   => $name,
+                    ':mobile' => $mobile,
+                    ':email'  => $email,
+                    ':pass'   => $pass,
+                    ':image'  => $imagePath
+                ]);
+            } catch (Exception $e) {
+                // Ignore if admin columns differ
+            }
+        }
+    } else {
+        $update = $pdo->prepare("UPDATE user SET sponsername=:sponsername, name=:name, mobile=:mobile, email=:email, pass=:pass WHERE userid=:userid OR userid=:clean");
+        $update->execute([
+            ':sponsername' => $sponsername,
+            ':name'        => $name,
+            ':mobile'      => $mobile,
+            ':email'       => $email,
+            ':pass'        => $pass,
+            ':userid'      => $uid,
+            ':clean'       => $cleanUid
+        ]);
+
+        if ($uid === '1290' || $uid === 'AN1290' || strtolower($uid) === 'admin') {
+            try {
+                $updateAdmin = $pdo->prepare("UPDATE admin SET name=:name, mobile=:mobile, email=:email, pass=:pass WHERE auserid IN ('admin', '1290', 'AN1290') OR id = 1");
+                $updateAdmin->execute([
+                    ':name'   => $name,
+                    ':mobile' => $mobile,
+                    ':email'  => $email,
+                    ':pass'   => $pass
+                ]);
+            } catch (Exception $e) {
+                // Ignore if admin columns differ
+            }
+        }
+    }
+
+    echo '<script>alert("Profile Updated Successfully"); window.location.href="user_profile.php?uid=' . urlencode($uid) . '";</script>';
+    exit;
 }
 
 // Fetch target user record
@@ -451,9 +515,12 @@ body.ananta-admin-dashboard, body.bg-theme, body.bg-theme1 {
         <!-- Profile Left Section -->
         <div class="d-flex align-items-center gap-3 profile-info">
 
-            <!-- Profile Icon -->
-            <div class="profile-header-icon">
-                <i class="fa fa-user-circle-o"></i>
+            <!-- Profile Icon / Avatar -->
+            <div class="profile-header-icon overflow-hidden position-relative" style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid #10b981; box-shadow: 0 4px 14px rgba(16,185,129,0.3);">
+                <?php 
+                $profilePic = !empty($row['image']) ? $row['image'] : '/assets/images/usera.png';
+                ?>
+                <img id="headerProfileAvatar" src="<?php echo htmlspecialchars($profilePic); ?>" alt="Profile Photo" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
 
             <!-- Profile Details -->
@@ -529,7 +596,7 @@ body.ananta-admin-dashboard, body.bg-theme, body.bg-theme1 {
 </div>
 
         <!-- Section 1: User Account Information Form -->
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <div class="row">
                 <!-- Left Column -->
                 <div class="col-lg-6">
@@ -538,6 +605,14 @@ body.ananta-admin-dashboard, body.bg-theme, body.bg-theme1 {
                             <h4><i class="fa fa-id-card-o text-primary me-2"></i> Account Information</h4>
                         </div>
                         <div class="card-body p-4">
+                            <div class="form-group mb-3">
+                                <label>Profile Picture</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img id="previewAvatar" src="<?php echo htmlspecialchars($profilePic); ?>" alt="Preview" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2px solid #cbd5e1;">
+                                    <input type="file" name="image" accept="image/*" class="form-control" onchange="previewImage(this)">
+                                </div>
+                                <small class="text-muted mt-1 d-block">Supported formats: JPG, PNG, WEBP, GIF (Max size: 5MB)</small>
+                            </div>
                             <div class="form-group mb-3">
                                 <label>User ID</label>
                                 <input type="text" value="<?php echo $hmpre . htmlspecialchars($row['userid']); ?>" readonly class="form-control">
@@ -557,6 +632,22 @@ body.ananta-admin-dashboard, body.bg-theme, body.bg-theme1 {
                         </div>
                     </div>
                 </div>
+
+                <script>
+                function previewImage(input) {
+                    if (input.files && input.files[0]) {
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            document.getElementById('previewAvatar').src = e.target.result;
+                            var headerAvatar = document.getElementById('headerProfileAvatar');
+                            if (headerAvatar) {
+                                headerAvatar.src = e.target.result;
+                            }
+                        };
+                        reader.readAsDataURL(input.files[0]);
+                    }
+                }
+                </script>
 
                 <!-- Right Column -->
                 <div class="col-lg-6">

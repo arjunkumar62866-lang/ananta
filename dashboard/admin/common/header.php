@@ -56,15 +56,30 @@ if (!$rowheader) {
         $userid     = $rowUser['userid'];
         $username   = $rowUser['name'];
         $usermobile = $rowUser['mobile'];
+        $userImage  = !empty($rowUser['image']) ? $rowUser['image'] : (!empty($rowUser['photo']) ? $rowUser['photo'] : '/assets/images/usera.png');
     } else {
         $userid     = 'AN1290';
         $username   = 'Ananta Admin';
         $usermobile = 'Admin Account';
+        $userImage  = '/assets/images/usera.png';
     }
 } else {
     $userid     = $rowheader['auserid'] ?? 'AN1290';
     $username   = $rowheader['name'] ?? 'Ananta Admin';
     $usermobile = $rowheader['mobile'] ?? 'Admin Account';
+    $userImage  = !empty($rowheader['image']) ? $rowheader['image'] : (!empty($rowheader['photo']) ? $rowheader['photo'] : '/assets/images/usera.png');
+}
+
+// Ensure admin image fallback from user table for AN1290
+if ($userImage === '/assets/images/usera.png') {
+    try {
+        $stmtImg = $pdo->prepare("SELECT image FROM user WHERE userid IN ('1290', 'AN1290') AND image IS NOT NULL AND image != '' LIMIT 1");
+        $stmtImg->execute();
+        $foundImg = $stmtImg->fetchColumn();
+        if (!empty($foundImg)) {
+            $userImage = $foundImg;
+        }
+    } catch (Exception $e) {}
 }
 // $usersponser     = $rowheader['sponserid'];
 // $usersponsername = $rowheader['sponsername'];
@@ -724,7 +739,7 @@ document.addEventListener("DOMContentLoaded", function() {
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" href="javascript:void(0);" role="button" aria-haspopup="true" aria-expanded="false">
           <span class="user-profile d-flex align-items-center justify-content-center">
-            <img src="/assets/images/usera.png" class="img-circle" alt="Admin Profile" style="width:36px; height:36px; object-fit:cover; border:2px solid #10b981; border-radius:50%; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
+            <img src="<?php echo htmlspecialchars($userImage); ?>" class="img-circle" alt="Admin Profile" style="width:36px; height:36px; object-fit:cover; border:2px solid #10b981; border-radius:50%; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
           </span>
         </a>
         <ul class="dropdown-menu dropdown-menu-right shadow-lg border-0" style="border-radius:16px; padding:14px; margin-top:10px; background:#ffffff; min-width:230px;">
@@ -732,7 +747,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <a href="user_profile.php?uid=1290" style="text-decoration:none;">
               <div class="media align-items-center">
                 <div class="avatar mr-2">
-                  <img class="align-self-start img-circle" src="/assets/images/usera.png" alt="Admin Profile" style="width:38px; height:38px; object-fit:cover; border-radius:50%;">
+                  <img class="align-self-start img-circle" src="<?php echo htmlspecialchars($userImage); ?>" alt="Admin Profile" style="width:38px; height:38px; object-fit:cover; border-radius:50%;">
                 </div>
                 <div class="media-body">
                   <h6 class="mt-0 mb-0 user-title font-weight-bold" style="color:#0f172a; font-size:13.5px;"><?php echo htmlspecialchars($username ?? 'Ananta Admin'); ?></h6>
