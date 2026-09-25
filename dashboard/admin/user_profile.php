@@ -15,90 +15,103 @@ $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', $uid);
 
 // Handle basic profile update submit
 if (isset($_POST['submit'])) {
-    $sponsername = $_POST['sponsername'] ?? '';
-    $name        = $_POST['name'] ?? '';
-    $email       = $_POST['email'] ?? '';
-    $mobile      = $_POST['mobile'] ?? '';
-    $pass        = $_POST['pass'] ?? '';
+    try {
+        // Ensure image column exists in user table
+        try {
+            $pdo->exec("ALTER TABLE user ADD COLUMN image VARCHAR(255) NULL");
+        } catch (Exception $e) {}
 
-    // Handle profile picture upload
-    $imagePath = null;
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $fileTmpPath = $_FILES['image']['tmp_name'];
-        $fileName = $_FILES['image']['name'];
-        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        $sponsername = $_POST['sponsername'] ?? '';
+        $name        = $_POST['name'] ?? '';
+        $email       = $_POST['email'] ?? '';
+        $mobile      = $_POST['mobile'] ?? '';
+        $pass        = $_POST['pass'] ?? '';
 
-        if (in_array($fileExtension, $allowedExtensions)) {
-            $newFileName = 'profile_' . preg_replace('/[^A-Za-z0-9]/', '', $uid) . '_' . time() . '.' . $fileExtension;
-            $uploadFileDir = __DIR__ . '/images/';
-            if (!is_dir($uploadFileDir)) {
-                mkdir($uploadFileDir, 0755, true);
-            }
-            $dest_path = $uploadFileDir . $newFileName;
-            if (move_uploaded_file($fileTmpPath, $dest_path)) {
-                $imagePath = 'images/' . $newFileName;
+        // Handle profile picture upload
+        $imagePath = null;
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $fileTmpPath = $_FILES['image']['tmp_name'];
+            $fileName = $_FILES['image']['name'];
+            $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
+            if (in_array($fileExtension, $allowedExtensions)) {
+                $newFileName = 'profile_' . preg_replace('/[^A-Za-z0-9]/', '', $uid) . '_' . time() . '.' . $fileExtension;
+                $uploadFileDir = __DIR__ . '/images/';
+                if (!is_dir($uploadFileDir)) {
+                    @mkdir($uploadFileDir, 0755, true);
+                }
+                $dest_path = $uploadFileDir . $newFileName;
+                if (@move_uploaded_file($fileTmpPath, $dest_path)) {
+                    $imagePath = 'images/' . $newFileName;
+                }
             }
         }
+
+        if ($imagePath !== null) {
+            $update = $pdo->prepare("UPDATE user SET sponsername=:sponsername, name=:name, mobile=:mobile, email=:email, pass=:pass, image=:image WHERE userid=:userid OR userid=:clean");
+            $update->execute([
+                ':sponsername' => $sponsername,
+                ':name'        => $name,
+                ':mobile'      => $mobile,
+                ':email'       => $email,
+                ':pass'        => $pass,
+                ':image'       => $imagePath,
+                ':userid'      => $uid,
+                ':clean'       => $cleanUid
+            ]);
+
+            // Also sync to admin table if updating admin profile (1290 / AN1290 / admin)
+            if ($uid === '1290' || $uid === 'AN1290' || strtolower($uid) === 'admin') {
+                try {
+                    $pdo->exec("ALTER TABLE admin ADD COLUMN image VARCHAR(255) NULL");
+                } catch (Exception $e) {}
+                try {
+                    $updateAdmin = $pdo->prepare("UPDATE admin SET name=:name, mobile=:mobile, email=:email, pass=:pass, image=:image WHERE auserid IN ('admin', '1290', 'AN1290') OR id = 1");
+                    $updateAdmin->execute([
+                        ':name'   => $name,
+                        ':mobile' => $mobile,
+                        ':email'  => $email,
+                        ':pass'   => $pass,
+                        ':image'  => $imagePath
+                    ]);
+                } catch (Exception $e) {}
+            }
+        } else {
+            $update = $pdo->prepare("UPDATE user SET sponsername=:sponsername, name=:name, mobile=:mobile, email=:email, pass=:pass WHERE userid=:userid OR userid=:clean");
+            $update->execute([
+                ':sponsername' => $sponsername,
+                ':name'        => $name,
+                ':mobile'      => $mobile,
+                ':email'       => $email,
+                ':pass'        => $pass,
+                ':userid'      => $uid,
+                ':clean'       => $cleanUid
+            ]);
+
+            if ($uid === '1290' || $uid === 'AN1290' || strtolower($uid) === 'admin') {
+                try {
+                    $updateAdmin = $pdo->prepare("UPDATE admin SET name=:name, mobile=:mobile, email=:email, pass=:pass WHERE auserid IN ('admin', '1290', 'AN1290') OR id = 1");
+                    $updateAdmin->execute([
+                        ':name'   => $name,
+                        ':mobile' => $mobile,
+                        ':email'  => $email,
+                        ':pass'   => $pass
+                    ]);
+                } catch (Exception $e) {}
+            }
+        }
+
+        $redirectUrl = "user_profile.php?uid=" . urlencode($uid);
+        if (isset($_GET['curr'])) {
+            $redirectUrl .= "&curr=" . urlencode($_GET['curr']);
+        }
+        echo '<script>alert("Profile Updated Successfully"); window.location.href="' . $redirectUrl . '";</script>';
+        exit;
+    } catch (Exception $ex) {
+        $errorMsg = addslashes($ex->getMessage());
+        echo '<script>alert("Error updating profile: ' . $errorMsg . '");</script>';
     }
-
-    if ($imagePath !== null) {
-        $update = $pdo->prepare("UPDATE user SET sponsername=:sponsername, name=:name, mobile=:mobile, email=:email, pass=:pass, image=:image WHERE userid=:userid OR userid=:clean");
-        $update->execute([
-            ':sponsername' => $sponsername,
-            ':name'        => $name,
-            ':mobile'      => $mobile,
-            ':email'       => $email,
-            ':pass'        => $pass,
-            ':image'       => $imagePath,
-            ':userid'      => $uid,
-            ':clean'       => $cleanUid
-        ]);
-
-        // Also sync to admin table if updating admin profile (1290 / AN1290 / admin)
-        if ($uid === '1290' || $uid === 'AN1290' || strtolower($uid) === 'admin') {
-            try {
-                $updateAdmin = $pdo->prepare("UPDATE admin SET name=:name, mobile=:mobile, email=:email, pass=:pass, image=:image WHERE auserid IN ('admin', '1290', 'AN1290') OR id = 1");
-                $updateAdmin->execute([
-                    ':name'   => $name,
-                    ':mobile' => $mobile,
-                    ':email'  => $email,
-                    ':pass'   => $pass,
-                    ':image'  => $imagePath
-                ]);
-            } catch (Exception $e) {
-                // Ignore if admin columns differ
-            }
-        }
-    } else {
-        $update = $pdo->prepare("UPDATE user SET sponsername=:sponsername, name=:name, mobile=:mobile, email=:email, pass=:pass WHERE userid=:userid OR userid=:clean");
-        $update->execute([
-            ':sponsername' => $sponsername,
-            ':name'        => $name,
-            ':mobile'      => $mobile,
-            ':email'       => $email,
-            ':pass'        => $pass,
-            ':userid'      => $uid,
-            ':clean'       => $cleanUid
-        ]);
-
-        if ($uid === '1290' || $uid === 'AN1290' || strtolower($uid) === 'admin') {
-            try {
-                $updateAdmin = $pdo->prepare("UPDATE admin SET name=:name, mobile=:mobile, email=:email, pass=:pass WHERE auserid IN ('admin', '1290', 'AN1290') OR id = 1");
-                $updateAdmin->execute([
-                    ':name'   => $name,
-                    ':mobile' => $mobile,
-                    ':email'  => $email,
-                    ':pass'   => $pass
-                ]);
-            } catch (Exception $e) {
-                // Ignore if admin columns differ
-            }
-        }
-    }
-
-    echo '<script>alert("Profile Updated Successfully"); window.location.href="user_profile.php?uid=' . urlencode($uid) . '";</script>';
-    exit;
 }
 
 // Fetch target user record
