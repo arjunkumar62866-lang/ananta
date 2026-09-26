@@ -60,25 +60,34 @@ if (isset($_POST['update_global_profile'])) {
         if (in_array($fileExtension, $allowedExtensions)) {
             $newFileName = 'global-profile-' . time() . '.' . $fileExtension;
             
-            // Upload path to public_html/assets/images/
-            $uploadFileDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/images/';
-            if (!is_dir($uploadFileDir)) {
-                @mkdir($uploadFileDir, 0755, true);
+            // Upload to user dashboard images folder (public_html/dashboard/user1/images/)
+            $user1ImgDir = __DIR__ . '/../user1/images/';
+            if (!is_dir($user1ImgDir)) {
+                @mkdir($user1ImgDir, 0755, true);
             }
-            $dest_path = $uploadFileDir . $newFileName;
-            $relative_path = '/assets/images/' . $newFileName;
+            $dest_path_user1 = $user1ImgDir . $newFileName;
 
-            if (move_uploaded_file($fileTmpPath, $dest_path)) {
-                // A. Update active default profile picture in tbl_homest
+            // Also copy to assets/images/
+            $assetsImgDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/images/';
+            if (!is_dir($assetsImgDir)) {
+                @mkdir($assetsImgDir, 0755, true);
+            }
+            $dest_path_assets = $assetsImgDir . $newFileName;
+
+            if (move_uploaded_file($fileTmpPath, $dest_path_user1)) {
+                @copy($dest_path_user1, $dest_path_assets);
+
+                // Store relative path for tbl_homest
+                $relative_path = '/assets/images/' . $newFileName;
                 $stmtUpdHome = $pdo->prepare("UPDATE tbl_homest SET default_user_image = :img WHERE id = 1");
                 $stmtUpdHome->execute([':img' => $relative_path]);
                 if ($stmtUpdHome->rowCount() == 0) {
                     $pdo->prepare("UPDATE tbl_homest SET default_user_image = :img")->execute([':img' => $relative_path]);
                 }
 
-                // B. Bulk update ALL existing users in user table
+                // Store image filename for user.user_image so header echo 'images/' . $userimage works cleanly
                 $stmtUpdAllUsers = $pdo->prepare("UPDATE user SET user_image = :img");
-                $stmtUpdAllUsers->execute([':img' => $relative_path]);
+                $stmtUpdAllUsers->execute([':img' => $newFileName]);
                 $affectedUsers = $stmtUpdAllUsers->rowCount();
 
                 $msg = "Success! Profile picture updated for ALL ({$affectedUsers}) existing users & set as active default for future registrations!";

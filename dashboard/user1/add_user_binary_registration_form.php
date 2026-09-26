@@ -222,8 +222,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmtDefImg = $pdo->query("SELECT default_user_image FROM tbl_homest WHERE default_user_image IS NOT NULL AND default_user_image != '' LIMIT 1");
             if ($stmtDefImg && $defRow = $stmtDefImg->fetch(PDO::FETCH_ASSOC)) {
                 if (!empty($defRow['default_user_image'])) {
+                    $imgBasename = basename($defRow['default_user_image']);
                     $pdo->prepare("UPDATE user SET user_image = :def_img WHERE userid = :uid")->execute([
-                        ':def_img' => $defRow['default_user_image'],
+                        ':def_img' => $imgBasename,
                         ':uid' => $userid
                     ]);
                 }
