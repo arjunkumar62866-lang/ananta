@@ -74,6 +74,7 @@ $side            =$rowheader['join_side'];
 $useramount      = round((float)$useramount, 2);
 $usertotal_package=$rowheader['total_package'];
 $pin_wallet=$rowheader['pin_wallet'];
+$deposite_wallet = round((float)($rowheader['deposite_wallet'] ?? $rowheader['pin_wallet'] ?? 0), 2);
 $idactive=$rowheader['active'];
 $kyc=$rowheader['kyc'];
 $pending_geninc = $rowheader['pending_geninc'];
@@ -339,7 +340,7 @@ setTimeout(function() {
 <!--Start sidebar-wrapper-->
 <!--Start sidebar-wrapper-->
 <div id="sidebar-wrapper">
-  <div class="brand-logo" style="padding: 15px; text-align: center;">
+  <div class="brand-logo" style="padding: 25px; text-align: left;">
     <a href="index.php">
       <img src="/assets/images/logo.png" class="logo-icon" alt="Ananta Logo" style="max-height: 50px; width: auto; object-fit: contain;">
     </a>
@@ -1379,18 +1380,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     /* ================================================
-       CENTER LOGO (BALANCED BETWEEN HAMBURGER & USD/INR)
+       MOBILE LOGO — BIGGER & ALIGNED TO FAR LEFT
     ================================================ */
 
     .ananta-mobile-logo {
         display: flex !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         width: auto !important;
-        max-width: 120px !important;
-        height: 44px !important;
-        padding: 0 6px !important;
-        margin: 0 auto !important;
+        max-width: 190px !important;
+        height: 52px !important;
+        padding: 0 !important;
+        margin: 0 auto 0 0 !important;
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
@@ -1404,8 +1405,9 @@ document.addEventListener("DOMContentLoaded", function() {
         width: auto !important;
         max-width: 100% !important;
         height: 100% !important;
-        max-height: 38px !important;
+        max-height: 48px !important;
         object-fit: contain !important;
+        object-position: left center !important;
     }
 
 
@@ -1765,10 +1767,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     .ananta-mobile-logo {
-
-        width: 44px !important;
-
-        height: 44px !important;
+        width: auto !important;
+        max-width: 180px !important;
+        height: 48px !important;
     }
 
 

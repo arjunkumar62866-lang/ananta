@@ -1,6 +1,7 @@
 /**
  * ANANTA Progressive Web App (PWA) Handler
- * Handles Service Worker Registration, Splash Screen, Standalone Detection, and Custom Install Prompt
+ * Handles Service Worker Registration, Pure White Splash Screen,
+ * Standalone Detection, Center Screen Install Modal, and Header Thin Line Banner.
  */
 (function () {
   'use strict';
@@ -19,34 +20,38 @@
     });
   }
 
-  // 2. Standalone Mode Detection & White Splash Screen Implementation
+  // 2. Standalone Mode Detection & Pure White Splash Screen
   var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                      window.navigator.standalone === true ||
                      document.referrer.includes('android-app://');
 
   if (isStandalone) {
     document.documentElement.classList.add('pwa-standalone');
-    
-    // Create & Inject White Splash Screen on App Launch
+
+    // Create & Inject Pure Creamy White Splash Screen on App Launch
     var createSplash = function () {
       if (document.getElementById('ananta-pwa-splash')) return;
       var splash = document.createElement('div');
       splash.id = 'ananta-pwa-splash';
       splash.innerHTML = '<img src="/assets/images/pwa-icon.png" class="splash-logo" alt="ANANTA">';
-      if (document.body) {
-        document.body.classList.add('pwa-splash-active');
-        document.body.appendChild(splash);
-      } else {
-        document.addEventListener('DOMContentLoaded', function () {
+      
+      var mountSplash = function () {
+        if (document.body) {
           document.body.classList.add('pwa-splash-active');
           document.body.appendChild(splash);
-        });
+        }
+      };
+
+      if (document.body) {
+        mountSplash();
+      } else {
+        document.addEventListener('DOMContentLoaded', mountSplash);
       }
     };
 
     createSplash();
 
-    // Smoothly fade out splash screen when page load completes
+    // Fade out splash screen when page load completes
     var removeSplash = function () {
       var splash = document.getElementById('ananta-pwa-splash');
       if (splash) {
@@ -68,141 +73,180 @@
       });
     }
 
-    // End execution for Standalone PWA mode (Install prompt should NOT show inside installed PWA)
+    // End execution for Standalone PWA mode (Do NOT show install prompts inside installed PWA)
     return;
   }
 
-  // 3. Install Prompt Logic for Browsers
+  // 3. Browser Install Logic (Uninstalled PWA Auto-Detect & Prompts)
   var deferredPrompt = null;
+  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-  // Listen for native PWA installation event
+  // Listen for native PWA install prompt event
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
 
-    // Check installation or dismissal preferences
     if (localStorage.getItem('ananta_pwa_installed') === 'true') {
       return;
     }
 
-    var dismissedUntil = localStorage.getItem('ananta_pwa_dismissed_until');
-    if (dismissedUntil && Date.now() < parseInt(dismissedUntil, 10)) {
-      return;
-    }
-
-    // Show Custom Install Prompt UI
-    showInstallPrompt();
+    initPwaPrompts();
   });
 
-  // Handle successful app installation event
+  // Track successful app installation
   window.addEventListener('appinstalled', function () {
     localStorage.setItem('ananta_pwa_installed', 'true');
-    hideInstallPrompt();
+    hideCenterModal();
+    hideHeaderBanner();
     console.log('ANANTA PWA installed successfully');
   });
 
-  // Render Custom Install Prompt UI
-  function showInstallPrompt() {
-    if (document.getElementById('ananta-pwa-prompt')) return;
+  // Auto-detect on page load if app is not installed
+  window.addEventListener('DOMContentLoaded', function () {
+    if (localStorage.getItem('ananta_pwa_installed') !== 'true') {
+      initPwaPrompts();
+    }
+  });
 
-    var container = document.createElement('div');
-    container.id = 'ananta-pwa-prompt';
-    container.className = 'ananta-pwa-prompt-container';
+  function initPwaPrompts() {
+    if (localStorage.getItem('ananta_pwa_installed') === 'true') return;
 
-    container.innerHTML =
-      '<div class="ananta-pwa-card">' +
-        '<div class="ananta-pwa-header">' +
-          '<img src="/assets/images/pwa-icon.png" class="ananta-pwa-logo" alt="ANANTA Logo">' +
-          '<div class="ananta-pwa-info">' +
-            '<h6 class="ananta-pwa-title">Install ANANTA App</h6>' +
-            '<p class="ananta-pwa-desc">Install the ANANTA app for a faster and better experience.</p>' +
-          '</div>' +
-        '</div>' +
-        '<div class="ananta-pwa-actions">' +
-          '<button id="btn-ananta-pwa-dismiss" class="btn-pwa-dismiss">Not Now</button>' +
-          '<button id="btn-ananta-pwa-install" class="btn-pwa-install">Install App</button>' +
+    var centerDismissed = sessionStorage.getItem('ananta_pwa_center_dismissed') === 'true';
+    var headerDismissed = sessionStorage.getItem('ananta_pwa_header_dismissed') === 'true';
+
+    // Step 1: If center modal not yet dismissed in current session, show Center Modal
+    if (!centerDismissed) {
+      showCenterModal();
+    } 
+    // Step 2: If center modal was dismissed, show Thin Header Banner automatically
+    else if (!headerDismissed) {
+      showHeaderBanner();
+    }
+  }
+
+  // ==================================================
+  // A. CENTER SCREEN MODAL PROMPT
+  // ==================================================
+  function showCenterModal() {
+    if (document.getElementById('ananta-pwa-center-modal')) return;
+
+    var overlay = document.createElement('div');
+    overlay.id = 'ananta-pwa-center-modal';
+    overlay.className = 'ananta-pwa-modal-overlay';
+
+    var modalHtml =
+      '<div class="ananta-pwa-center-card">' +
+        '<button id="btn-pwa-center-x" class="ananta-pwa-modal-close-btn">&times;</button>' +
+        '<img src="/assets/images/pwa-icon.png" class="ananta-pwa-center-logo" alt="ANANTA Logo">' +
+        '<h5 class="ananta-pwa-center-title">Install ANANTA App</h5>' +
+        '<p class="ananta-pwa-center-desc">' +
+          (isIOS ? 'Tap Share and select "Add to Home Screen" to install ANANTA App for faster access.' : 'Install the ANANTA official app on your phone for a smoother and faster experience.') +
+        '</p>' +
+        '<div class="ananta-pwa-center-actions">' +
+          '<button id="btn-pwa-center-install" class="btn-pwa-center-install">' + (isIOS ? 'Got It' : 'Install App') + '</button>' +
+          '<button id="btn-pwa-center-cancel" class="btn-pwa-center-cancel">Not Now</button>' +
         '</div>' +
       '</div>';
 
-    document.body.appendChild(container);
+    overlay.innerHTML = modalHtml;
+    document.body.appendChild(overlay);
 
-    // "Install App" button click handler
-    document.getElementById('btn-ananta-pwa-install').addEventListener('click', function () {
+    // Install Button Handler
+    document.getElementById('btn-pwa-center-install').addEventListener('click', function () {
       if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then(function (choiceResult) {
           if (choiceResult.outcome === 'accepted') {
             localStorage.setItem('ananta_pwa_installed', 'true');
-            hideInstallPrompt();
+            hideCenterModal();
+          } else {
+            switchToHeaderBanner();
           }
           deferredPrompt = null;
         });
+      } else {
+        // Fallback or iOS
+        switchToHeaderBanner();
       }
     });
 
-    // "Not Now" secondary button click handler
-    document.getElementById('btn-ananta-pwa-dismiss').addEventListener('click', function () {
-      // Dismiss for 7 days
-      var sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-      localStorage.setItem('ananta_pwa_dismissed_until', (Date.now() + sevenDaysMs).toString());
-      hideInstallPrompt();
-    });
+    // Close / Cancel Handlers -> Switch to Thin Header Line Banner
+    document.getElementById('btn-pwa-center-x').addEventListener('click', switchToHeaderBanner);
+    document.getElementById('btn-pwa-center-cancel').addEventListener('click', switchToHeaderBanner);
   }
 
-  function hideInstallPrompt() {
-    var promptEl = document.getElementById('ananta-pwa-prompt');
-    if (promptEl) {
-      promptEl.remove();
+  function switchToHeaderBanner() {
+    sessionStorage.setItem('ananta_pwa_center_dismissed', 'true');
+    hideCenterModal();
+    if (sessionStorage.getItem('ananta_pwa_header_dismissed') !== 'true') {
+      showHeaderBanner();
     }
   }
 
-  // 4. iOS Safari Add to Home Screen Instructions (If iOS & not standalone)
-  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
-  if (isIOS && !isStandalone) {
-    if (
-      localStorage.getItem('ananta_pwa_installed') !== 'true' &&
-      (!localStorage.getItem('ananta_pwa_dismissed_until') || Date.now() >= parseInt(localStorage.getItem('ananta_pwa_dismissed_until'), 10))
-    ) {
-      window.addEventListener('load', function () {
-        setTimeout(showIOSPrompt, 1500);
-      });
-    }
+  function hideCenterModal() {
+    var modal = document.getElementById('ananta-pwa-center-modal');
+    if (modal) modal.remove();
   }
 
-  function showIOSPrompt() {
-    if (document.getElementById('ananta-pwa-prompt')) return;
+  // ==================================================
+  // B. THIN HEADER LINE BANNER
+  // ==================================================
+  function showHeaderBanner() {
+    if (document.getElementById('ananta-pwa-header-banner')) return;
+    if (sessionStorage.getItem('ananta_pwa_header_dismissed') === 'true') return;
 
-    var container = document.createElement('div');
-    container.id = 'ananta-pwa-prompt';
-    container.className = 'ananta-pwa-prompt-container';
+    var banner = document.createElement('div');
+    banner.id = 'ananta-pwa-header-banner';
+    banner.className = 'ananta-pwa-header-banner';
 
-    container.innerHTML =
-      '<div class="ananta-pwa-card">' +
-        '<div class="ananta-pwa-header">' +
-          '<img src="/assets/images/pwa-icon.png" class="ananta-pwa-logo" alt="ANANTA Logo">' +
-          '<div class="ananta-pwa-info">' +
-            '<h6 class="ananta-pwa-title">Install ANANTA App</h6>' +
-            '<p class="ananta-pwa-desc">Tap <span style="font-weight:700;">Share</span> and select <span style="font-weight:700;">"Add to Home Screen"</span> to install.</p>' +
-          '</div>' +
-        '</div>' +
-        '<div class="ananta-pwa-actions">' +
-          '<button id="btn-ananta-pwa-dismiss" class="btn-pwa-dismiss">Not Now</button>' +
-          '<button id="btn-ananta-pwa-install" class="btn-pwa-install">Got It</button>' +
-        '</div>' +
+    banner.innerHTML =
+      '<div id="ananta-pwa-banner-action" class="ananta-pwa-banner-left">' +
+        '<img src="/assets/images/pwa-icon.png" class="ananta-pwa-banner-icon" alt="ANANTA">' +
+        '<span class="ananta-pwa-banner-text">Install ANANTA App</span>' +
+      '</div>' +
+      '<div class="ananta-pwa-banner-right">' +
+        '<button id="btn-pwa-banner-install" class="btn-pwa-banner-install">Install</button>' +
+        '<button id="btn-pwa-banner-close" class="btn-pwa-banner-close" title="Close">&times;</button>' +
       '</div>';
 
-    document.body.appendChild(container);
+    document.body.classList.add('has-pwa-header-banner');
+    document.body.insertBefore(banner, document.body.firstChild);
 
-    document.getElementById('btn-ananta-pwa-install').addEventListener('click', function () {
-      var sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-      localStorage.setItem('ananta_pwa_dismissed_until', (Date.now() + sevenDaysMs).toString());
-      hideInstallPrompt();
-    });
+    var triggerInstall = function () {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function (choiceResult) {
+          if (choiceResult.outcome === 'accepted') {
+            localStorage.setItem('ananta_pwa_installed', 'true');
+            hideHeaderBanner();
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        // Show center modal if prompt not available
+        sessionStorage.removeItem('ananta_pwa_center_dismissed');
+        hideHeaderBanner();
+        showCenterModal();
+      }
+    };
 
-    document.getElementById('btn-ananta-pwa-dismiss').addEventListener('click', function () {
-      var sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-      localStorage.setItem('ananta_pwa_dismissed_until', (Date.now() + sevenDaysMs).toString());
-      hideInstallPrompt();
+    document.getElementById('ananta-pwa-banner-action').addEventListener('click', triggerInstall);
+    document.getElementById('btn-pwa-banner-install').addEventListener('click', triggerInstall);
+
+    // Cross button close handler
+    document.getElementById('btn-pwa-banner-close').addEventListener('click', function (e) {
+      e.stopPropagation();
+      sessionStorage.setItem('ananta_pwa_header_dismissed', 'true');
+      hideHeaderBanner();
     });
   }
+
+  function hideHeaderBanner() {
+    var banner = document.getElementById('ananta-pwa-header-banner');
+    if (banner) {
+      banner.remove();
+      document.body.classList.remove('has-pwa-header-banner');
+    }
+  }
+
 })();

@@ -26,11 +26,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_user_name') {
         $cleanId = substr($cleanId, 2);
     }
 
-    if (strtoupper($cleanId) === strtoupper($userid) || strtoupper($lookupInput) === strtoupper($userid)) {
-        echo json_encode(['status' => 'error', 'message' => 'Self transfer is not allowed']);
-        exit();
-    }
-
     // Query both with raw input and cleaned ID
     $stmtLook = $pdo->prepare("SELECT userid, name FROM user WHERE userid = :uid OR userid = :cid LIMIT 1");
     $stmtLook->execute([':uid' => $lookupInput, ':cid' => $cleanId]);
@@ -205,16 +200,15 @@ foreach ($receivedReport as $r) {
                         <div class="form-group col-md-6 mb-3">
                             <label for="from_wallet" class="font-weight-bold small text-uppercase" style="color: #475569;">From Wallet</label>
                             <select class="form-control form-control-lg" id="from_wallet" name="from_wallet" required style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;" onchange="updateToWalletOptions()">
-                                <option value="Main Wallet">Main Wallet (Available: <?php echo formatCurrency($mainWalletBal, $selectedCurrency); ?>)</option>
                                 <option value="Net Balance">Net Balance (Available: <?php echo formatCurrency($netBalanceBal, $selectedCurrency); ?>)</option>
+                                <option value="Main Wallet">Main Wallet (Available: <?php echo formatCurrency($mainWalletBal, $selectedCurrency); ?>)</option>
                             </select>
                         </div>
 
                         <!-- To Wallet -->
                         <div class="form-group col-md-6 mb-3">
                             <label for="to_wallet" class="font-weight-bold small text-uppercase" style="color: #475569;">To Wallet</label>
-                            <select class="form-control form-control-lg" id="to_wallet" name="to_wallet" required style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;">
-                                <option value="Net Balance">Net Balance</option>
+                            <select class="form-control form-control-lg" id="to_wallet" name="to_wallet" required style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;" readonly tabindex="-1">
                                 <option value="Main Wallet">Main Wallet</option>
                             </select>
                         </div>
@@ -256,13 +250,7 @@ foreach ($receivedReport as $r) {
         let isUserVerified = false;
 
         function updateToWalletOptions() {
-            const fromW = document.getElementById('from_wallet').value;
-            const toWSelect = document.getElementById('to_wallet');
-            if (fromW === 'Main Wallet') {
-                toWSelect.value = 'Net Balance';
-            } else {
-                toWSelect.value = 'Main Wallet';
-            }
+            document.getElementById('to_wallet').value = 'Main Wallet';
         }
 
         function verifyReceiverUser() {

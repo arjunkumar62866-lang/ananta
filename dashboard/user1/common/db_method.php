@@ -1812,18 +1812,14 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         return ['status' => 'error', 'message' => 'P2P Transfer rejected: ' . $verKey['message']];
     }
 
-    // 2. Validate Allowed Wallets (Only Main Wallet and Net Balance allowed)
-    $allowedWallets = ['Main Wallet', 'Net Balance'];
+    // 2. Validate Allowed Wallets (From Wallet: Net Balance / Main Wallet, To Wallet: Main Wallet)
+    $allowedFromWallets = ['Net Balance', 'Main Wallet'];
+    $allowedToWallets   = ['Main Wallet'];
     $fromWallet = trim($fromWallet ?? '');
     $toWallet = trim($toWallet ?? '');
 
-    if (!in_array($fromWallet, $allowedWallets, true) || !in_array($toWallet, $allowedWallets, true)) {
-        return ['status' => 'error', 'message' => 'Invalid wallet selection. Only Main Wallet and Net Balance are allowed for P2P transfer.'];
-    }
-
-    // Source and Destination wallets must be different
-    if ($fromWallet === $toWallet) {
-        return ['status' => 'error', 'message' => 'Source wallet and destination wallet must be different.'];
+    if (!in_array($fromWallet, $allowedFromWallets, true) || !in_array($toWallet, $allowedToWallets, true)) {
+        return ['status' => 'error', 'message' => 'Invalid wallet selection. From Wallet must be Net Balance or Main Wallet, and To Wallet must be Main Wallet.'];
     }
 
     // 3. Amount Validation
@@ -1849,7 +1845,7 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         // Map wallet name to database column
         // Main Wallet => pin_wallet, Net Balance => amount
         $fromCol = ($fromWallet === 'Main Wallet') ? 'pin_wallet' : 'amount';
-        $toCol   = ($toWallet === 'Main Wallet')   ? 'pin_wallet' : 'amount';
+        $toCol   = 'pin_wallet';
 
         // Lock Sender Row FOR UPDATE
         $cleanSenderId = preg_replace('/^(AN|ANANTA)/i', '', (string)$senderId);
@@ -1892,12 +1888,6 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         }
 
         $receiverId = $receiver['userid']; // Use exact database userid for receiver
-
-        // Prevent self-transfer
-        if ($senderId === $receiverId) {
-            if ($inLocalTxn) $db->rollBack();
-            return ['status' => 'error', 'message' => 'Self P2P transfer is not allowed. Sender and Receiver must be different users.'];
-        }
 
         // Perform Atomic Debit on Sender
         if ($fromWallet === 'Main Wallet') {
@@ -3840,29 +3830,91 @@ if (!function_exists('getUserIncomeWalletSummary')) {
             ];
         }
 
-        $growth = getUserGrowthBreakdown($userid, $db);
+        // Fetch user wallet column values from DB
+        $stmtU = $db->prepare("SELECT profit_income_wallet, profit_sharing_wallet, direct_bonus_wallet, mentor_income_wallet, vip_club_wallet FROM user WHERE userid = :uid LIMIT 1");
+        $stmtU->execute([':uid' => $userid]);
+        $u = $stmtU->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        $profitInc   = (float)($growth['profit_income']['total_balance'] ?? 0);
-        $profitShare = (float)($growth['profit_sharing']['total_balance'] ?? 0);
-        $directBon   = (float)($growth['direct_bonus']['total_balance'] ?? 0);
-        $mentorInc   = (float)($growth['mentor_income']['total_balance'] ?? 0);
-        $vipClub     = (float)($growth['vip_club']['total_balance'] ?? 0);
+        // 1. Profit Income (Check user table + tbl_roiinc + tbl_transaction)
+        $stmtPI1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid");
+        $stmtPI1->execute([':uid' => $userid]);
+        $pi1 = (float)$stmtPI1->fetchColumn();
 
-        // Rank reward total
-        $rankRew = 0.0;
-        if (!empty($growth['rank_reward']['history'])) {
-            foreach ($growth['rank_reward']['history'] as $r) {
-                $rankRew += (float)($r['amount'] ?? 0);
-            }
-        }
+        $stmtPI2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (type = 'Profit Income' OR subject LIKE '%Profit Income%')");
+        $stmtPI2->execute([':uid' => $userid]);
+        $pi2 = (float)$stmtPI2->fetchColumn();
 
-        // Company turnover total
-        $turnover = 0.0;
-        if (!empty($growth['company_turnover']['history'])) {
-            foreach ($growth['company_turnover']['history'] as $r) {
-                $turnover += (float)($r['amount'] ?? 0);
-            }
-        }
+        $profitInc = max((float)($u['profit_income_wallet'] ?? 0), $pi1, $pi2);
+
+        // 2. Profit Sharing (Check user table + tbl_daily_levelinc + tbl_transaction)
+        $stmtPS1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id = :uid");
+        $stmtPS1->execute([':uid' => $userid]);
+        $ps1 = (float)$stmtPS1->fetchColumn();
+
+        $stmtPS2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Profit Sharing%'");
+        $stmtPS2->execute([':uid' => $userid]);
+        $ps2 = (float)$stmtPS2->fetchColumn();
+
+        $profitShare = max((float)($u['profit_sharing_wallet'] ?? 0), $ps1, $ps2);
+
+        // 3. Direct Bonus (Check user table + tbl_roi_two + tbl_direct_bonus_schedule)
+        $stmtDB1 = $db->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_two WHERE user_id = :uid");
+        $stmtDB1->execute([':uid' => $userid]);
+        $db1 = (float)$stmtDB1->fetchColumn();
+
+        $stmtDB2 = $db->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
+        $stmtDB2->execute([':uid' => $userid]);
+        $db2 = (float)$stmtDB2->fetchColumn();
+
+        $directBon = max((float)($u['direct_bonus_wallet'] ?? 0), $db1, $db2);
+
+        // 4. Mentor Income (Check user table + tbl_transaction + tbl_mentor_income_schedule)
+        $stmtMI1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Generation Income Payout%'");
+        $stmtMI1->execute([':uid' => $userid]);
+        $mi1 = (float)$stmtMI1->fetchColumn();
+
+        $stmtMI2 = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE (mentor_id = :uid OR direct_user_id = :uid) AND status = 'CREDITED'");
+        $stmtMI2->execute([':uid' => $userid]);
+        $mi2 = (float)$stmtMI2->fetchColumn();
+
+        $mentorInc = max((float)($u['mentor_income_wallet'] ?? 0), $mi1, $mi2);
+
+        // 5. Rank Reward (Check tbl_transaction + tbl_rewardinc)
+        $stmtRR1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Reward Income%'");
+        $stmtRR1->execute([':uid' => $userid]);
+        $rr1 = (float)$stmtRR1->fetchColumn();
+
+        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid");
+        $stmtRR2->execute([':uid' => $userid]);
+        $rr2 = (float)$stmtRR2->fetchColumn();
+
+        $rankRew = max($rr1, $rr2);
+
+        // 6. VIP Club (Check user table + tbl_transaction + tbl_vip_user_qualification + tbl_vip_monthly_schedule)
+        $stmtVIP1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Ranking Income Payout%'");
+        $stmtVIP1->execute([':uid' => $userid]);
+        $vip1 = (float)$stmtVIP1->fetchColumn();
+
+        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
+        $stmtVIP2->execute([':uid' => $userid]);
+        $vip2 = (float)$stmtVIP2->fetchColumn();
+
+        $stmtVIP3 = $db->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
+        $stmtVIP3->execute([':uid' => $userid]);
+        $vip3 = (float)$stmtVIP3->fetchColumn();
+
+        $vipClub = max((float)($u['vip_club_wallet'] ?? 0), $vip1, ($vip2 + $vip3));
+
+        // 7. Company Turnover (Check tbl_transaction + tbl_vip_monthly_schedule)
+        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover%')");
+        $stmtCT1->execute([':uid' => $userid]);
+        $ct1 = (float)$stmtCT1->fetchColumn();
+
+        $stmtCT2 = $db->prepare("SELECT COALESCE(SUM(turnover_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
+        $stmtCT2->execute([':uid' => $userid]);
+        $ct2 = (float)$stmtCT2->fetchColumn();
+
+        $turnover = max($ct1, $ct2);
 
         $totalIncBal = round($profitInc + $profitShare + $directBon + $mentorInc + $rankRew + $vipClub + $turnover, 2);
 

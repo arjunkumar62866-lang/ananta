@@ -82,6 +82,58 @@
     display: inline-block;
     opacity: 0.85;
 }
+
+.quick-wallet-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    padding: 12px 10px !important;
+    transition: transform 0.2s;
+}
+.quick-wallet-icon {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 12px !important;
+    flex-shrink: 0;
+    margin-right: 8px !important;
+}
+.quick-wallet-icon i {
+    font-size: 18px !important;
+}
+.quick-wallet-title {
+    font-size: 11px !important;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.quick-wallet-amount {
+    font-size: 15px !important;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (min-width: 576px) {
+    .quick-wallet-card {
+        padding: 14px 16px !important;
+        border-radius: 18px !important;
+    }
+    .quick-wallet-icon {
+        width: 44px !important;
+        height: 44px !important;
+        margin-right: 12px !important;
+    }
+    .quick-wallet-icon i {
+        font-size: 20px !important;
+    }
+    .quick-wallet-title {
+        font-size: 13px !important;
+    }
+    .quick-wallet-amount {
+        font-size: 18px !important;
+    }
+}
 </style>
 <?php 
 include 'common/header.php'; 
@@ -1073,64 +1125,84 @@ body.ananta-user-dashboard {
                 </div>
             </div>
 
-            <!-- 4. Quick Wallet Access Cards (3 Horizontal Cards directly BELOW Direct Slots) -->
+            <!-- 4. Quick Wallet Access Cards (4 Cards directly BELOW Direct Slots) -->
             <div class="row g-2 mb-4">
                 <!-- Card 1: Main Wallet -->
-                <div class="col-12 col-md-4 mb-2 mb-md-0">
-                    <a href="main_wallet.php" class="card border-0 shadow-sm p-3.5 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                <div class="col-6 col-md-3 mb-2 mb-md-0">
+                    <a href="main_wallet.php" class="card border-0 shadow-sm quick-wallet-card h-100 text-decoration-none">
                         <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center min-w-0">
-                                <div class="rounded-xl p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #eff6ff; color: #0284c7; width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;">
-                                    <i class="zmdi zmdi-balance-wallet zmdi-hc-lg" style="font-size: 22px;"></i>
+                            <div class="d-flex align-items-center min-w-0" style="flex: 1;">
+                                <div class="rounded-xl quick-wallet-icon p-2 d-flex align-items-center justify-content-center" style="background: #eff6ff; color: #0284c7;">
+                                    <i class="zmdi zmdi-balance-wallet zmdi-hc-lg"></i>
                                 </div>
-                                <div class="text-truncate">
-                                    <span class="d-block text-muted font-weight-bold text-truncate" style="font-size: 13px;">Main Wallet</span>
-                                    <h4 class="mb-0 font-weight-bold text-truncate" style="color: #0f172a; font-size: 19px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                                        <?php echo formatCurrency($useramount, $selectedCurrency); ?>
+                                <div class="min-w-0" style="flex: 1;">
+                                    <span class="d-block text-muted font-weight-bold quick-wallet-title">Main Wallet</span>
+                                    <h4 class="mb-0 font-weight-bold quick-wallet-amount" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
+                                        <?php echo formatCurrency($deposite_wallet, $selectedCurrency); ?>
                                     </h4>
                                 </div>
                             </div>
-                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-2" style="font-size: 20px;"></i>
+                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-1 d-none d-sm-block" style="font-size: 18px;"></i>
                         </div>
                     </a>
                 </div>
 
                 <!-- Card 2: Active Investment -->
-                <div class="col-12 col-md-4 mb-2 mb-md-0">
-                    <a href="package_buy.php" class="card border-0 shadow-sm p-3.5 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                <div class="col-6 col-md-3 mb-2 mb-md-0">
+                    <a href="package_buy.php" class="card border-0 shadow-sm quick-wallet-card h-100 text-decoration-none">
                         <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center min-w-0">
-                                <div class="rounded-xl p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #f0fdf4; color: #16a34a; width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;">
-                                    <i class="zmdi zmdi-layers zmdi-hc-lg" style="font-size: 22px;"></i>
+                            <div class="d-flex align-items-center min-w-0" style="flex: 1;">
+                                <div class="rounded-xl quick-wallet-icon p-2 d-flex align-items-center justify-content-center" style="background: #f0fdf4; color: #16a34a;">
+                                    <i class="zmdi zmdi-layers zmdi-hc-lg"></i>
                                 </div>
-                                <div class="text-truncate">
-                                    <span class="d-block text-muted font-weight-bold text-truncate" style="font-size: 13px;">Active Investment</span>
-                                    <h4 class="mb-0 font-weight-bold text-truncate" style="color: #0f172a; font-size: 19px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                                <div class="min-w-0" style="flex: 1;">
+                                    <span class="d-block text-muted font-weight-bold quick-wallet-title">Active Investment</span>
+                                    <h4 class="mb-0 font-weight-bold quick-wallet-amount" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
                                         <?php echo formatCurrency($roipackage, $selectedCurrency); ?>
                                     </h4>
                                 </div>
                             </div>
-                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-2" style="font-size: 20px;"></i>
+                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-1 d-none d-sm-block" style="font-size: 18px;"></i>
                         </div>
                     </a>
                 </div>
 
-                <!-- Card 3: Total Withdrawal -->
-                <div class="col-12 col-md-4 mb-2 mb-md-0">
-                    <a href="withdraw-history.php" class="card border-0 shadow-sm p-3.5 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                <!-- Card 3: Net Balance -->
+                <div class="col-6 col-md-3 mb-2 mb-md-0">
+                    <a href="income_wallet.php" class="card border-0 shadow-sm quick-wallet-card h-100 text-decoration-none">
                         <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center min-w-0">
-                                <div class="rounded-xl p-2 mr-3 d-flex align-items-center justify-content-center" style="background: #eff6ff; color: #0284c7; width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;">
-                                    <i class="zmdi zmdi-swap-vertical zmdi-hc-lg" style="font-size: 22px;"></i>
+                            <div class="d-flex align-items-center min-w-0" style="flex: 1;">
+                                <div class="rounded-xl quick-wallet-icon p-2 d-flex align-items-center justify-content-center" style="background: #fefce8; color: #ca8a04;">
+                                    <i class="zmdi zmdi-money-box zmdi-hc-lg"></i>
                                 </div>
-                                <div class="text-truncate">
-                                    <span class="d-block text-muted font-weight-bold text-truncate" style="font-size: 13px;">Total Withdrawal</span>
-                                    <h4 class="mb-0 font-weight-bold text-truncate" style="color: #0f172a; font-size: 19px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                                <div class="min-w-0" style="flex: 1;">
+                                    <span class="d-block text-muted font-weight-bold quick-wallet-title">Net Balance</span>
+                                    <h4 class="mb-0 font-weight-bold quick-wallet-amount" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
+                                        <?php echo formatCurrency($useramount, $selectedCurrency); ?>
+                                    </h4>
+                                </div>
+                            </div>
+                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-1 d-none d-sm-block" style="font-size: 18px;"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Card 4: Total Withdrawal -->
+                <div class="col-6 col-md-3 mb-2 mb-md-0">
+                    <a href="withdraw-history.php" class="card border-0 shadow-sm quick-wallet-card h-100 text-decoration-none">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center min-w-0" style="flex: 1;">
+                                <div class="rounded-xl quick-wallet-icon p-2 d-flex align-items-center justify-content-center" style="background: #eff6ff; color: #0284c7;">
+                                    <i class="zmdi zmdi-swap-vertical zmdi-hc-lg"></i>
+                                </div>
+                                <div class="min-w-0" style="flex: 1;">
+                                    <span class="d-block text-muted font-weight-bold quick-wallet-title">Total Withdrawal</span>
+                                    <h4 class="mb-0 font-weight-bold quick-wallet-amount" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">
                                         <?php echo formatCurrency($withdrawaltotal, $selectedCurrency); ?>
                                     </h4>
                                 </div>
                             </div>
-                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-2" style="font-size: 20px;"></i>
+                            <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-1 d-none d-sm-block" style="font-size: 18px;"></i>
                         </div>
                     </a>
                 </div>

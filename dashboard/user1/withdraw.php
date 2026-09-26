@@ -44,12 +44,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Fetch User Info
+// Fetch User Info & Registered Bank KYC Details
 $stmtU = $pdo->prepare("SELECT amount, bep20_address, withdrawal_status, kyc FROM user WHERE userid = :uid");
 $stmtU->execute([':uid' => $userid]);
 $uData = $stmtU->fetch(PDO::FETCH_ASSOC) ?: [];
 $userBal = (float)($uData['amount'] ?? 0);
 $bep20Addr = $uData['bep20_address'] ?? '';
+
+$stmtKyc = $pdo->prepare("SELECT holder_name, ac_number, bank, branch, ifsc, status FROM kyc WHERE userid = :uid ORDER BY id DESC LIMIT 1");
+$stmtKyc->execute([':uid' => $userid]);
+$kycData = $stmtKyc->fetch(PDO::FETCH_ASSOC) ?: [];
+
+$bankAccNo  = trim($kycData['ac_number'] ?? '');
+$bankName   = trim($kycData['bank'] ?? '');
+$bankHolder = trim($kycData['holder_name'] ?? '');
+$bankIfsc   = trim($kycData['ifsc'] ?? '');
 
 // Check Global Withdrawal setting
 $stmtSys = $pdo->prepare("SELECT setting_value FROM tbl_system_control WHERE setting_key = 'withdrawal_enable' LIMIT 1");
@@ -329,8 +338,43 @@ label.form-label, label {
                               <input type="password" class="form-control" id="txn_key" name="txn_key" placeholder="Enter 4-digit Transaction Key" required <?php echo $isWithdrawalDisabled ? 'disabled' : ''; ?> style="height: 48px;">
                           </div>
 
+                          <!-- Registered Bank Account Display for INR Withdrawal -->
+                          <div class="form-group mb-4" id="inr_info_box">
+                              <label class="font-weight-bold" style="color: #334155;">Registered Bank Account Number (INR Destination)</label>
+                              <div class="input-group">
+                                  <div class="input-group-prepend">
+                                      <span class="input-group-text bg-white border-right-0" style="border-color: #cbd5e1;"><i class="fa fa-university text-primary"></i></span>
+                                  </div>
+                                  <input type="text" class="form-control font-weight-bold border-left-0" value="<?php echo !empty($bankAccNo) ? htmlspecialchars($bankAccNo) : 'Not Registered / Missing'; ?>" readonly style="height: 48px; background: #f8fafc; color: #0f172a; font-size: 15px;">
+                              </div>
+                              
+                              <?php if (!empty($bankAccNo)): ?>
+                                  <div class="p-3 mt-2" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; font-size: 13px;">
+                                      <div class="d-flex justify-content-between mb-1">
+                                          <span class="text-muted">Account Holder:</span>
+                                          <strong class="text-dark"><?php echo htmlspecialchars($bankHolder ?: 'N/A'); ?></strong>
+                                      </div>
+                                      <div class="d-flex justify-content-between mb-1">
+                                          <span class="text-muted">Bank Name:</span>
+                                          <strong class="text-dark"><?php echo htmlspecialchars($bankName ?: 'N/A'); ?></strong>
+                                      </div>
+                                      <div class="d-flex justify-content-between">
+                                          <span class="text-muted">IFSC Code:</span>
+                                          <strong class="text-dark"><?php echo htmlspecialchars($bankIfsc ?: 'N/A'); ?></strong>
+                                      </div>
+                                  </div>
+                                  <small class="text-success font-weight-bold d-block mt-2">
+                                      <i class="fa fa-check-circle me-1"></i> Your INR withdrawal will be credited directly to this verified bank account number.
+                                  </small>
+                              <?php else: ?>
+                                  <small class="text-danger font-weight-bold d-block mt-2">
+                                      <i class="fa fa-warning me-1"></i> Registered Bank Account Number missing! Please update your Bank details in <a href="kyc.php" class="text-primary font-weight-bold">KYC Verification</a> first.
+                                  </small>
+                              <?php endif; ?>
+                          </div>
+
                           <div class="form-group mb-4" id="bep20_info_box" style="display: none;">
-                              <label>BEP20 Destination Address</label>
+                              <label class="font-weight-bold" style="color: #334155;">BEP20 Destination Address</label>
                               <input type="text" class="form-control font-weight-bold" value="<?php echo htmlspecialchars($bep20Addr); ?>" readonly style="height: 48px; background: #f8fafc;">
                               <?php if (empty($bep20Addr)): ?>
                                   <small class="text-danger font-weight-bold d-block mt-2"><i class="fa fa-warning me-1"></i> BEP20 Address missing! Update in <a href="settings.php" class="text-primary">Settings</a> first.</small>
@@ -574,14 +618,24 @@ label.form-label, label {
 </div>
 
 <script>
-document.getElementById('withdrawal_method').addEventListener('change', function() {
+function updateWithdrawalMethodBoxes() {
+    var methodSelect = document.getElementById('withdrawal_method');
+    if (!methodSelect) return;
+    var val = methodSelect.value;
     var bep20Box = document.getElementById('bep20_info_box');
-    if (this.value === 'BEP20') {
-        bep20Box.style.display = 'block';
+    var inrBox = document.getElementById('inr_info_box');
+
+    if (val === 'BEP20') {
+        if (bep20Box) bep20Box.style.display = 'block';
+        if (inrBox) inrBox.style.display = 'none';
     } else {
-        bep20Box.style.display = 'none';
+        if (bep20Box) bep20Box.style.display = 'none';
+        if (inrBox) inrBox.style.display = 'block';
     }
-});
+}
+
+document.getElementById('withdrawal_method').addEventListener('change', updateWithdrawalMethodBoxes);
+updateWithdrawalMethodBoxes();
 </script>
 
 </body>
