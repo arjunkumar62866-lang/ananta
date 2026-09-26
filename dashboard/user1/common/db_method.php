@@ -1624,6 +1624,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                     COALESCE(u.`rank`, 'Member') as `rank`,
                     u.joining_date,
                     u.active,
+                    u.join_side,
                     COALESCE(SUM(r.package), 0) as total_investment_inr,
                     COALESCE(SUM(r.real_fund_usd), 0) as total_investment_usd,
                     MAX(r.date) as latest_investment_date,
@@ -1631,7 +1632,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                 FROM user u
                 LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
                 WHERE u.userid = :uid
-                GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active
+                GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active, u.join_side
                 LIMIT 1
             ");
             $stmtU->execute([':uid' => $uid]);
@@ -1651,23 +1652,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                 $downlineIds = getSubtreeDescendantIds($uid, $db);
                 $downlineCount = count($downlineIds);
 
-                $stmtT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
-                $stmtT->execute([':uid' => $uid]);
-                $tData = $stmtT->fetch(PDO::FETCH_ASSOC);
-
-                $nodePos = $curr['position'];
-                if (!empty($curr['parent_id'])) {
-                    $stmtPT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :pid LIMIT 1");
-                    $stmtPT->execute([':pid' => $curr['parent_id']]);
-                    $pTree = $stmtPT->fetch(PDO::FETCH_ASSOC);
-                    if ($pTree) {
-                        if ($pTree['left_id'] === $uid) {
-                            $nodePos = 'LEFT';
-                        } elseif ($pTree['right_id'] === $uid) {
-                            $nodePos = 'RIGHT';
-                        }
-                    }
-                }
+                $nodePos = !empty($curr['position']) ? $curr['position'] : (!empty($uData['join_side']) ? strtoupper($uData['join_side']) : $initialPosition);
 
                 $results[] = [
                     'userid'           => $uid,
@@ -1686,20 +1671,42 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                     'downline_count'   => $downlineCount
                 ];
 
+                // Gather children from BOTH tree table AND user table
+                $children = [];
+
+                $stmtT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+                $stmtT->execute([':uid' => $uid]);
+                $tData = $stmtT->fetch(PDO::FETCH_ASSOC);
+
                 if ($tData) {
                     if (!empty($tData['left_id'])) {
-                        $queue[] = [
-                            'userid'    => $tData['left_id'],
-                            'parent_id' => $uid,
-                            'position'  => 'LEFT',
-                            'level'     => $curr['level'] + 1
-                        ];
+                        $children[] = ['id' => $tData['left_id'], 'side' => 'LEFT'];
                     }
                     if (!empty($tData['right_id'])) {
+                        $children[] = ['id' => $tData['right_id'], 'side' => 'RIGHT'];
+                    }
+                }
+
+                $stmtUChildren = $db->prepare("SELECT userid, join_side FROM user WHERE underuserid = :uid OR (sponserid = :uid AND (underuserid IS NULL OR underuserid = '' OR underuserid = :uid))");
+                $stmtUChildren->execute([':uid' => $uid]);
+                $uChildren = $stmtUChildren->fetchAll(PDO::FETCH_ASSOC);
+
+                $existingChildIds = array_column($children, 'id');
+                foreach ($uChildren as $uc) {
+                    $cId = $uc['userid'];
+                    if ($cId !== $uid && !in_array($cId, $existingChildIds) && !in_array($cId, $visited)) {
+                        $side = !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DOWNLINE';
+                        $children[] = ['id' => $cId, 'side' => $side];
+                        $existingChildIds[] = $cId;
+                    }
+                }
+
+                foreach ($children as $ch) {
+                    if (!in_array($ch['id'], $visited)) {
                         $queue[] = [
-                            'userid'    => $tData['right_id'],
+                            'userid'    => $ch['id'],
                             'parent_id' => $uid,
-                            'position'  => 'RIGHT',
+                            'position'  => $ch['side'],
                             'level'     => $curr['level'] + 1
                         ];
                     }
@@ -1778,14 +1785,66 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
             ];
         }
     } elseif ($teamType === 'LEFT' || $teamType === 'RIGHT') {
-        // Fetch user's direct root child from tree table
+        // 1. Check tree table for root child
         $stmtRoot = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
         $stmtRoot->execute([':uid' => $userid]);
         $tRoot = $stmtRoot->fetch(PDO::FETCH_ASSOC);
 
         $rootChildId = ($teamType === 'LEFT') ? ($tRoot['left_id'] ?? '') : ($tRoot['right_id'] ?? '');
+
         if (!empty($rootChildId)) {
             $members = getRootBranchTreeDetailed($rootChildId, $db, $teamType);
+        }
+
+        // 2. Also check tbl_userlevel_a (for LEFT) or tbl_userlevel_b (for RIGHT) to catch any missing downlines
+        $lvlTable = ($teamType === 'LEFT') ? 'tbl_userlevel_a' : 'tbl_userlevel_b';
+        try {
+            $stmtLvl = $db->prepare("SELECT DISTINCT downline_id, level FROM {$lvlTable} WHERE sponser_id = :uid ORDER BY level ASC");
+            $stmtLvl->execute([':uid' => $userid]);
+            $lvlRows = $stmtLvl->fetchAll(PDO::FETCH_ASSOC);
+
+            $existingMemberIds = array_column($members, 'userid');
+
+            foreach ($lvlRows as $lItem) {
+                $downId = $lItem['downline_id'];
+                if ($downId !== $userid && !in_array($downId, $existingMemberIds)) {
+                    $subMembers = getRootBranchTreeDetailed($downId, $db, $teamType);
+                    if (!empty($subMembers)) {
+                        foreach ($subMembers as $sm) {
+                            if (!in_array($sm['userid'], $existingMemberIds)) {
+                                $members[] = $sm;
+                                $existingMemberIds[] = $sm['userid'];
+                            }
+                        }
+                    } else {
+                        // Direct fetch user row
+                        $stmtDirectU = $db->prepare("SELECT userid, name, active, joining_date, join_side FROM user WHERE userid = :uid LIMIT 1");
+                        $stmtDirectU->execute([':uid' => $downId]);
+                        $uRow = $stmtDirectU->fetch(PDO::FETCH_ASSOC);
+                        if ($uRow) {
+                            $members[] = [
+                                'userid'           => $uRow['userid'],
+                                'name'             => $uRow['name'],
+                                'rank'             => 'Member',
+                                'level'            => intval($lItem['level']),
+                                'parent_id'        => $userid,
+                                'position'         => strtoupper($teamType),
+                                'joining_date'     => $uRow['joining_date'],
+                                'investment_date'  => 'N/A',
+                                'investment_inr'   => 0,
+                                'investment_usd'   => 0,
+                                'status'           => ($uRow['active'] == 1) ? 'Active' : 'Inactive',
+                                'package'          => 'N/A',
+                                'direct_count'     => 0,
+                                'downline_count'   => 0
+                            ];
+                            $existingMemberIds[] = $uRow['userid'];
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            // Fallback if table doesn't exist
         }
     }
 

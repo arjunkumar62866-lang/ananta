@@ -97,9 +97,9 @@
       <i class="fa fa-home"></i>
       <span>Home</span>
     </a>
-    <a href="my_team.php" class="apple-nav-link <?php echo (in_array($currentUserPage, ['my_team.php', 'my_direct.php', 'left_team.php', 'right_team.php', 'tree.php'])) ? 'active' : ''; ?>">
-      <i class="fa fa-users"></i>
-      <span>My Team</span>
+    <a href="tree.php" class="apple-nav-link <?php echo (in_array($currentUserPage, ['tree.php', 'my_team.php', 'my_direct.php', 'left_team.php', 'right_team.php'])) ? 'active' : ''; ?>">
+      <i class="fa fa-sitemap"></i>
+      <span>Tree View</span>
     </a>
     <a href="p2p.php" class="apple-nav-link <?php echo ($currentUserPage === 'p2p.php') ? 'active' : ''; ?>">
       <i class="fa fa-exchange"></i>

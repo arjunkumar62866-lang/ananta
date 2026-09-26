@@ -5,13 +5,15 @@ include("common/connection.php");
 include("common/db_method.php");
 
 // -------------------------------------------------------------
-// 1. DYNAMIC API ENDPOINT FOR HORIZONTAL TREE DATA (AJAX)
+// 1. DYNAMIC API ENDPOINT FOR UNLIMITED HORIZONTAL TREE DATA (AJAX)
 // -------------------------------------------------------------
 if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     header('Content-Type: application/json');
 
     $sessionUserid = $_SESSION['userid'] ?? $_SESSION['user_id'] ?? '';
     $reqNodeId = !empty($_GET['node_id']) ? trim($_GET['node_id']) : $sessionUserid;
+    $reqDepth = isset($_GET['depth']) ? max(1, min(20, intval($_GET['depth']))) : 10;
+    $currSelection = getUserCurrency();
 
     if (empty($reqNodeId)) {
         echo json_encode(['status' => 'error', 'message' => 'No User ID specified']);
@@ -28,9 +30,9 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         exit;
     }
 
-    // Recursive function to fetch real user tree nodes with ACCURATE Left/Right counts & business amounts
-    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 6) {
-        global $pdo;
+    // Recursive function for unlimited horizontal binary tree expansion with currency formatting & real team counts
+    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10) {
+        global $pdo, $currSelection;
 
         if (empty($nodeId)) return null;
 
@@ -67,46 +69,44 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             'lefttotal' => 0, 'righttotal' => 0
         ];
 
-        // Fetch Left & Right Team Downline Members Detailed
+        // Calculate Left Team Members & Business
         $leftMembers = !empty($tree['left_id']) ? getRootBranchTreeDetailed($tree['left_id'], $pdo, 'LEFT') : [];
-        $rightMembers = !empty($tree['right_id']) ? getRootBranchTreeDetailed($tree['right_id'], $pdo, 'RIGHT') : [];
+        $leftSubtreeDesc = !empty($tree['left_id']) ? getSubtreeDescendantIds($tree['left_id'], $pdo) : [];
+        $leftCount = !empty($tree['left_id']) ? (count($leftSubtreeDesc) + 1) : 0;
+        if ($leftCount < intval($tree['leftcount'])) {
+            $leftCount = intval($tree['leftcount']);
+        }
+        if ($leftCount < count($leftMembers)) {
+            $leftCount = count($leftMembers);
+        }
 
-        $leftCount = max(intval($tree['leftcount']), count($leftMembers));
-        $rightCount = max(intval($tree['rightcount']), count($rightMembers));
+        // Calculate Right Team Members & Business
+        $rightMembers = !empty($tree['right_id']) ? getRootBranchTreeDetailed($tree['right_id'], $pdo, 'RIGHT') : [];
+        $rightSubtreeDesc = !empty($tree['right_id']) ? getSubtreeDescendantIds($tree['right_id'], $pdo) : [];
+        $rightCount = !empty($tree['right_id']) ? (count($rightSubtreeDesc) + 1) : 0;
+        if ($rightCount < intval($tree['rightcount'])) {
+            $rightCount = intval($tree['rightcount']);
+        }
+        if ($rightCount < count($rightMembers)) {
+            $rightCount = count($rightMembers);
+        }
 
         $leftBusiness = array_sum(array_column($leftMembers, 'investment_usd'));
         if ($leftBusiness <= 0 && floatval($tree['lefttotal']) > 0) {
-            $leftBusiness = floatval($tree['lefttotal']);
+            $leftBusiness = parseInputToUSD(floatval($tree['lefttotal']), 'INR', $pdo);
         }
 
         $rightBusiness = array_sum(array_column($rightMembers, 'investment_usd'));
         if ($rightBusiness <= 0 && floatval($tree['righttotal']) > 0) {
-            $rightBusiness = floatval($tree['righttotal']);
+            $rightBusiness = parseInputToUSD(floatval($tree['righttotal']), 'INR', $pdo);
         }
 
         $personalBusiness = floatval($user['personal_business_usd']);
         if ($personalBusiness <= 0 && floatval($user['user_amount']) > 0) {
-            $personalBusiness = floatval($user['user_amount']);
+            $personalBusiness = parseInputToUSD(floatval($user['user_amount']), 'INR', $pdo);
         }
 
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
-
-        $node = [
-            'id'                => $user['userid'],
-            'name'              => !empty($user['name']) ? $user['name'] : $user['userid'],
-            'active'            => ($user['active'] == '1'),
-            'status'            => ($user['active'] == '1') ? 'Active' : 'Inactive',
-            'sponserid'         => $user['sponserid'] ?? '',
-            'joining_date'      => $user['joining_date'] ?? '',
-            'mobile'            => $user['mobile'] ?? '',
-            'leftcount'         => $leftCount,
-            'rightcount'        => $rightCount,
-            'personal_business' => $personalBusiness,
-            'left_business'     => $leftBusiness,
-            'right_business'    => $rightBusiness,
-            'total_business'    => $totalBusiness,
-            'children'          => []
-        ];
 
         // Gather real children IDs
         $childrenList = [];
@@ -133,7 +133,25 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             }
         }
 
-        // Recurse children if within depth
+        $node = [
+            'id'                    => $user['userid'],
+            'name'                  => !empty($user['name']) ? $user['name'] : $user['userid'],
+            'active'                => ($user['active'] == '1'),
+            'status'                => ($user['active'] == '1') ? 'Active' : 'Inactive',
+            'sponserid'             => $user['sponserid'] ?? '',
+            'joining_date'          => $user['joining_date'] ?? '',
+            'mobile'                => $user['mobile'] ?? '',
+            'leftcount'             => $leftCount,
+            'rightcount'            => $rightCount,
+            'personal_business_fmt' => formatCurrency($personalBusiness, $currSelection),
+            'left_business_fmt'     => formatCurrency($leftBusiness, $currSelection),
+            'right_business_fmt'    => formatCurrency($rightBusiness, $currSelection),
+            'total_business_fmt'    => formatCurrency($totalBusiness, $currSelection),
+            'has_children_db'       => count($childrenList) > 0,
+            'children'              => []
+        ];
+
+        // Recurse children if within depth limit
         if ($currentDepth < $maxDepth) {
             foreach ($childrenList as $cItem) {
                 $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth);
@@ -147,7 +165,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         return $node;
     }
 
-    $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, 6);
+    $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, $reqDepth);
 
     echo json_encode([
         'status' => 'success',
@@ -242,8 +260,10 @@ body.bg-theme {
     transform: translateY(-1px);
 }
 
-/* SVG Canvas Wrapper - Catch-All Drag & Pan Surface */
-#tree-canvas-container {
+/* SVG Canvas Wrapper - Catch-All Drag & Pan Surface for Mobile & Desktop */
+#tree-canvas-container,
+#tree-canvas-container svg,
+#tree-canvas-container rect {
     width: 100%;
     height: 720px;
     min-height: 600px;
@@ -251,9 +271,10 @@ body.bg-theme {
     position: relative;
     cursor: grab;
     overflow: hidden;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
+    touch-action: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
 }
 
 #tree-canvas-container:active {
@@ -353,7 +374,7 @@ body.bg-theme {
                                 <i class="fa fa-sitemap mr-2" style="color: #0284c7;"></i> Binary Tree View
                             </h4>
                             <p class="mb-0 small" style="color: #64748b !important; font-weight: 600;">
-                                Smooth 360° Drag/Pan Canvas. Click nodes to Expand/Collapse. Green = Active, Red = Inactive.
+                                Mobile & Desktop 360° Touch Drag/Pan Canvas. Click nodes to Expand/Collapse. Green = Active, Red = Inactive.
                             </p>
                         </div>
 
@@ -408,7 +429,7 @@ body.bg-theme {
 <?php include 'common/footer.php'; ?>
 
 <!-- -------------------------------------------------------------
-     3. JAVASCRIPT HORIZONTAL BEZIER TREE ENGINE WITH SMOOTH PAN & REAL BUSINESS DATA
+     3. JAVASCRIPT MOBILE TOUCH & DESKTOP SLIDING BEZIER TREE ENGINE
 ------------------------------------------------------------- -->
 <script>
 (function() {
@@ -421,9 +442,23 @@ body.bg-theme {
     let svg, gCanvas, zoomBehavior;
     let rootNode;
 
+    // Prevent default mobile touch scrolling over tree canvas to allow free 1-finger sliding
+    container.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1 || e.touches.length === 2) {
+            e.stopPropagation();
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 1 || e.touches.length === 2) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, { passive: false });
+
     // Load Data
     function loadTreeData(searchId) {
-        fetch(`tree.php?api=get_tree&node_id=${encodeURIComponent(searchId)}`)
+        fetch(`tree.php?api=get_tree&depth=10&node_id=${encodeURIComponent(searchId)}`)
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'success' && res.data) {
@@ -443,6 +478,7 @@ body.bg-theme {
 
         const width = container.clientWidth || 1000;
         const height = container.clientHeight || 720;
+        const isMobile = (width < 768);
 
         // 1. Create Main SVG
         svg = d3.select('#tree-canvas-container')
@@ -451,16 +487,22 @@ body.bg-theme {
             .attr('height', '100%')
             .attr('viewBox', `0 0 ${width} ${height}`);
 
-        // 2. Full Background Overlay to Capture Mouse/Touch Drag Events Everywhere
+        // 2. Full Background Overlay to Capture Mouse & Touch Drag Events Everywhere
         svg.append('rect')
             .attr('width', '100%')
             .attr('height', '100%')
             .attr('fill', '#ffffff')
             .attr('pointer-events', 'all');
 
-        // 3. Pan & Zoom Behavior (Mousewheel, drag, touch pinch zoom)
+        // 3. Mobile & Desktop Pan & Zoom Behavior
         zoomBehavior = d3.zoom()
-            .scaleExtent([0.15, 3.0])
+            .scaleExtent([0.12, 3.5])
+            .filter(function(event) {
+                if (event.type === 'wheel') return true;
+                if (event.type === 'touchstart' || event.type === 'touchmove') return true;
+                if (event.type === 'mousedown') return event.button === 0;
+                return !event.ctrlKey;
+            })
             .on('zoom', (event) => {
                 gCanvas.attr('transform', event.transform);
             });
@@ -473,17 +515,21 @@ body.bg-theme {
 
         rootNode = d3.hierarchy(data, d => d.children);
         rootNode.x0 = height / 2;
-        rootNode.y0 = 120;
+        rootNode.y0 = isMobile ? 40 : 100;
 
-        // Collapse nodes after first 2 levels initially
+        // Collapse nodes after first 2 levels initially for clean view
         if (rootNode.children) {
             rootNode.children.forEach(collapseSubtree);
         }
 
-        // Center Initial Position (Root placed nicely in vertical middle, left margin 120px)
+        // Center Initial Position according to screen size
+        const initialScale = isMobile ? 0.72 : 0.92;
+        const initialTranslateX = isMobile ? 35 : 110;
+        const initialTranslateY = height / 2 - 20;
+
         const initialTransform = d3.zoomIdentity
-            .translate(120, height / 2 - 20)
-            .scale(0.92);
+            .translate(initialTranslateX, initialTranslateY)
+            .scale(initialScale);
 
         svg.call(zoomBehavior.transform, initialTransform);
 
@@ -554,7 +600,7 @@ body.bg-theme {
             .attr('class', 'node-toggle-sign')
             .attr('dy', -10)
             .attr('dx', -3.5)
-            .text(d => (d.children || d._children) ? (d.children ? '-' : '+') : '');
+            .text(d => (d.children || d._children || d.data.has_children_db) ? (d.children ? '-' : '+') : '');
 
         // User Name Text
         nodeEnter.append('text')
@@ -573,20 +619,48 @@ body.bg-theme {
                 return `${d.data.id}${pos}`;
             });
 
-        // Click Event (Toggle Expand / Collapse)
+        // Click / Tap Event (UNLIMITED EXPANSION & TOGGLE)
         nodeEnter.on('click', (event, d) => {
             event.stopPropagation();
+            
             if (d.children) {
+                // Collapse from visible to memory
                 d._children = d.children;
                 d.children = null;
+                updateTree(d);
             } else if (d._children) {
+                // Expand from memory
                 d.children = d._children;
                 d._children = null;
+                updateTree(d);
+            } else if (d.data.has_children_db) {
+                // Fetch deeper downlines dynamically via AJAX for Unlimited Depth
+                fetch(`tree.php?api=get_tree&depth=10&node_id=${encodeURIComponent(d.data.id)}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success' && res.data && res.data.children && res.data.children.length > 0) {
+                            const subHierarchy = d3.hierarchy(res.data, child => child.children);
+                            d.children = subHierarchy.children;
+                            if (d.children) {
+                                d.children.forEach(c => {
+                                    c.parent = d;
+                                    c.depth = d.depth + 1;
+                                });
+                            }
+                            d.data.children = res.data.children;
+                            updateTree(d);
+                        } else {
+                            d.data.has_children_db = false;
+                            updateTree(d);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to load deeper downlines:', err);
+                    });
             }
-            updateTree(d);
         });
 
-        // Hover Tooltip Handlers
+        // Hover / Touch Tooltip Handlers
         nodeEnter.on('mouseover', (event, d) => {
             showTooltip(event, d.data);
         }).on('mouseout', () => {
@@ -604,7 +678,7 @@ body.bg-theme {
             .attr('class', d => d.data.active ? 'node-circle active-node' : 'node-circle inactive-node');
 
         nodeUpdate.select('.node-toggle-sign')
-            .text(d => (d.children || d._children) ? (d.children ? '-' : '+') : '');
+            .text(d => (d.children || d._children || d.data.has_children_db) ? (d.children ? '-' : '+') : '');
 
         // Node Exit
         nodeSelection.exit()
@@ -628,12 +702,6 @@ body.bg-theme {
         });
     }
 
-    // Format Currency Helper ($ USD)
-    function formatUSD(val) {
-        const num = parseFloat(val) || 0;
-        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
     // Floating Tooltip Detail
     function showTooltip(event, data) {
         tooltip.innerHTML = `
@@ -643,26 +711,26 @@ body.bg-theme {
             <span>Status: <b style="color: ${data.active ? '#22c55e' : '#ef4444'};">${data.active ? 'Active' : 'Inactive'}</b></span><br>
             <span>Joining Date: ${data.joining_date || 'N/A'}</span><hr style="margin: 8px 0; border-color: #cbd5e1;">
             <div style="font-size: 12px; margin-bottom: 4px;">
-                <strong>Personal Investment:</strong> <span style="color: #10b981; font-weight: 700;">${formatUSD(data.personal_business)}</span>
+                <strong>Personal Investment:</strong> <span style="color: #10b981; font-weight: 700;">${data.personal_business_fmt}</span>
             </div>
             <div style="font-size: 12px; margin-bottom: 4px;">
-                <strong>Total Team Business:</strong> <span style="color: #0284c7; font-weight: 700;">${formatUSD(data.total_business)}</span>
+                <strong>Total Team Business:</strong> <span style="color: #0284c7; font-weight: 700;">${data.total_business_fmt}</span>
             </div>
             <hr style="margin: 6px 0; border-color: #e2e8f0;">
             <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px; color: #334155;">
-                <span>Left Team: <b>${data.leftcount}</b> (${formatUSD(data.left_business)})</span>
+                <span>Left Team: <b>${data.leftcount} Members</b> (${data.left_business_fmt})</span>
             </div>
             <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px; color: #334155; margin-top: 2px;">
-                <span>Right Team: <b>${data.rightcount}</b> (${formatUSD(data.right_business)})</span>
+                <span>Right Team: <b>${data.rightcount} Members</b> (${data.right_business_fmt})</span>
             </div>
         `;
 
         const bounds = container.getBoundingClientRect();
-        const mouseX = event.clientX - bounds.left;
-        const mouseY = event.clientY - bounds.top;
+        const mouseX = (event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : bounds.left + bounds.width / 2)) - bounds.left;
+        const mouseY = (event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : bounds.top + bounds.height / 2)) - bounds.top;
 
-        tooltip.style.left = (mouseX + 15) + 'px';
-        tooltip.style.top = (mouseY + 15) + 'px';
+        tooltip.style.left = Math.min(bounds.width - 270, Math.max(10, mouseX + 15)) + 'px';
+        tooltip.style.top = Math.min(bounds.height - 220, Math.max(10, mouseY + 15)) + 'px';
         tooltip.style.display = 'block';
     }
 
@@ -680,8 +748,18 @@ body.bg-theme {
     });
 
     document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+        const width = container.clientWidth || 1000;
         const height = container.clientHeight || 720;
-        const initialTransform = d3.zoomIdentity.translate(120, height / 2 - 20).scale(0.92);
+        const isMobile = (width < 768);
+
+        const initialScale = isMobile ? 0.72 : 0.92;
+        const initialTranslateX = isMobile ? 35 : 110;
+        const initialTranslateY = height / 2 - 20;
+
+        const initialTransform = d3.zoomIdentity
+            .translate(initialTranslateX, initialTranslateY)
+            .scale(initialScale);
+            
         svg.transition().duration(400).call(zoomBehavior.transform, initialTransform);
     });
 

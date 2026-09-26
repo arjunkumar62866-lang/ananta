@@ -1418,15 +1418,15 @@ body.ananta-user-dashboard {
                         </div>
                         <div class="d-flex justify-content-between py-1 border-bottom">
                             <span class="text-muted">Personal Package Investment</span>
-                            <span class="font-weight-bold text-success"><?php echo "$hmcurrency ".$usertotal_package;?></span>
+                            <span class="font-weight-bold text-success"><?php echo formatCurrency(parseInputToUSD($usertotal_package, 'INR'), $selectedCurrency); ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1 border-bottom">
                             <span class="text-muted">Total Team Business</span>
-                            <span class="font-weight-bold text-primary"><?php echo $hmcurrency.$directbusinesstotal?></span>
+                            <span class="font-weight-bold text-primary"><?php echo formatCurrency(parseInputToUSD($directbusinesstotal, 'INR'), $selectedCurrency); ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1 border-bottom">
                             <span class="text-muted">Team Business (Left / Right)</span>
-                            <span class="font-weight-bold text-dark"><?php echo $hmcurrency.$directbusinesstotalleft. " / " .$hmcurrency.$directbusinesstotalright; ?></span>
+                            <span class="font-weight-bold text-dark"><?php echo formatCurrency(parseInputToUSD($directbusinesstotalleft, 'INR'), $selectedCurrency) . " / " . formatCurrency(parseInputToUSD($directbusinesstotalright, 'INR'), $selectedCurrency); ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1 border-bottom">
                             <span class="text-muted">Active Team (Left / Right)</span>
@@ -1554,7 +1554,7 @@ body.ananta-user-dashboard {
                                         echo "<span class='small text-muted'>" . htmlspecialchars($id_name['name']) . "</span>";
                                         echo "</div>";
                                         echo "<div>";
-                                        echo "<span class='badge px-2 py-1' style='background: rgba(22, 163, 74, 0.1); color: #16a34a; font-weight: 700; border-radius: 6px;'>" . htmlspecialchars($id_name['plan']) . " (" . $hmcurrency . htmlspecialchars($id_name['total_package']) . ")</span>";
+                                        echo "<span class='badge px-2 py-1' style='background: rgba(22, 163, 74, 0.1); color: #16a34a; font-weight: 700; border-radius: 6px;'>" . htmlspecialchars($id_name['plan']) . " (" . formatCurrency(parseInputToUSD($id_name['total_package'], 'INR'), $selectedCurrency) . ")</span>";
                                         echo "</div>";
                                         echo "</div>";
                                         echo "</div>";

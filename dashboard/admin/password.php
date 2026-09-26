@@ -6,15 +6,15 @@
 include 'common/header.php';
 include 'common/connection.php'; // contains $pdo
 
-// ---------------- CHANGE PASSWORD LOGIC ----------------
+$msg = '';
+$msgType = '';
+
+// ---------------- 1. CHANGE ADMIN PASSWORD LOGIC ----------------
 $stmt1 = $pdo->prepare("SELECT pass FROM admin WHERE id=1");
 $stmt1->execute();
 $row1 = $stmt1->fetch(PDO::FETCH_ASSOC);
 
 $current_pass = $row1['pass'] ?? '';
-
-$msg = '';
-$msgType = '';
 
 if (isset($_POST['submit'])) {
     $old = trim($_POST['old_password'] ?? '');
@@ -39,6 +39,73 @@ if (isset($_POST['submit'])) {
         $msg = "Admin password updated successfully!";
         $msgType = "success";
     }
+}
+
+// ---------------- 2. GLOBAL DEFAULT PROFILE PICTURE LOGIC ----------------
+// Ensure default_user_image column exists in tbl_homest
+try {
+    $pdo->exec("ALTER TABLE tbl_homest ADD COLUMN default_user_image VARCHAR(255) NULL");
+} catch (Exception $e) {
+    // Column already exists or permission caught safely
+}
+
+// Handle Global Profile Picture Upload & Bulk Update to All Users
+if (isset($_POST['update_global_profile'])) {
+    if (isset($_FILES['global_profile_pic']) && $_FILES['global_profile_pic']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['global_profile_pic']['tmp_name'];
+        $fileName = $_FILES['global_profile_pic']['name'];
+        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (in_array($fileExtension, $allowedExtensions)) {
+            $newFileName = 'global-profile-' . time() . '.' . $fileExtension;
+            
+            // Upload path to public_html/assets/images/
+            $uploadFileDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/images/';
+            if (!is_dir($uploadFileDir)) {
+                @mkdir($uploadFileDir, 0755, true);
+            }
+            $dest_path = $uploadFileDir . $newFileName;
+            $relative_path = '/assets/images/' . $newFileName;
+
+            if (move_uploaded_file($fileTmpPath, $dest_path)) {
+                // A. Update active default profile picture in tbl_homest
+                $stmtUpdHome = $pdo->prepare("UPDATE tbl_homest SET default_user_image = :img WHERE id = 1");
+                $stmtUpdHome->execute([':img' => $relative_path]);
+                if ($stmtUpdHome->rowCount() == 0) {
+                    $pdo->prepare("UPDATE tbl_homest SET default_user_image = :img")->execute([':img' => $relative_path]);
+                }
+
+                // B. Bulk update ALL existing users in user table
+                $stmtUpdAllUsers = $pdo->prepare("UPDATE user SET user_image = :img");
+                $stmtUpdAllUsers->execute([':img' => $relative_path]);
+                $affectedUsers = $stmtUpdAllUsers->rowCount();
+
+                $msg = "Success! Profile picture updated for ALL ({$affectedUsers}) existing users & set as active default for future registrations!";
+                $msgType = "success";
+            } else {
+                $msg = "Error moving uploaded file to destination directory.";
+                $msgType = "danger";
+            }
+        } else {
+            $msg = "Invalid file format. Only JPG, JPEG, PNG, WEBP images are allowed.";
+            $msgType = "danger";
+        }
+    } else {
+        $msg = "Please select a valid image file to upload.";
+        $msgType = "danger";
+    }
+}
+
+// Fetch Active Default Profile Picture
+$activeProfilePic = '';
+try {
+    $stmtHome = $pdo->query("SELECT default_user_image FROM tbl_homest LIMIT 1");
+    if ($stmtHome && $rowH = $stmtHome->fetch(PDO::FETCH_ASSOC)) {
+        $activeProfilePic = $rowH['default_user_image'] ?? '';
+    }
+} catch (Exception $e) {
+    $activeProfilePic = '';
 }
 ?>
 
@@ -191,8 +258,8 @@ function togglePwdVis(fieldId, iconId) {
                   </div>
               <?php endif; ?>
 
-              <!-- CHANGE PASSWORD CARD CONTAINER -->
-              <div class="card password-card">
+              <!-- CARD 1: CHANGE PASSWORD CONTAINER -->
+              <div class="card password-card mb-4">
                   
                   <div class="password-header-banner text-center">
                       <div class="mb-2">
@@ -251,6 +318,52 @@ function togglePwdVis(fieldId, iconId) {
 
                   </div>
               </div>
+
+              <!-- CARD 2: GLOBAL DEFAULT PROFILE PICTURE UPDATE CARD -->
+              <div class="card password-card">
+                  <div class="password-header-banner text-center">
+                      <div class="mb-2">
+                          <span class="neon-purple-badge mr-2"><i class="fa fa-users mr-1"></i> USER MANAGEMENT</span>
+                          <span class="neon-green-badge"><i class="fa fa-picture-o mr-1"></i> GLOBAL PROFILE PIC</span>
+                      </div>
+                      <h3 class="mb-1 font-weight-bold" style="color: #000000 !important; font-size: 22px;">Update Profile Picture to All Users</h3>
+                      <p class="mb-0 small" style="color: #475569 !important; font-weight: 600;">Upload a new profile image to replace all users' profile pictures at once & set active default for new registrations.</p>
+                  </div>
+
+                  <div class="card-body p-4 p-md-5 text-center">
+                      <!-- Active Profile Picture Preview -->
+                      <div class="mb-4">
+                          <label class="form-label-custom mb-3"><i class="fa fa-eye text-primary mr-2"></i> Current Active Global Profile Picture</label>
+                          <div class="d-flex flex-column align-items-center justify-content-center">
+                              <?php if (!empty($activeProfilePic)): ?>
+                                  <img src="<?php echo htmlspecialchars($activeProfilePic); ?>" alt="Active Default Profile Pic" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3.5px solid #10b981; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);" class="mb-2">
+                                  <span class="badge badge-success px-3 py-1 font-weight-bold" style="border-radius: 100px;">Active Profile Picture</span>
+                              <?php else: ?>
+                                  <div style="width: 100px; height: 100px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 2px dashed #cbd5e1; margin-bottom: 8px;">
+                                      <i class="fa fa-user-circle-o text-muted" style="font-size: 55px;"></i>
+                                  </div>
+                                  <span class="badge badge-secondary px-3 py-1 font-weight-bold" style="border-radius: 100px;">Default System Profile</span>
+                              <?php endif; ?>
+                          </div>
+                      </div>
+
+                      <hr class="my-4" style="border-color: #e2e8f0;">
+
+                      <!-- Upload & Replace Form -->
+                      <form method="POST" enctype="multipart/form-data" class="text-left">
+                          <div class="form-group mb-4">
+                              <label class="form-label-custom"><i class="fa fa-upload text-success mr-2"></i> Select New Profile Picture to Replace All</label>
+                              <input type="file" name="global_profile_pic" accept="image/*" required class="form-control p-1" style="height: 48px; border: 1.5px solid #cbd5e1; border-radius: 12px; background: #ffffff;">
+                              <small class="text-muted font-weight-bold d-block mt-2"><i class="fa fa-info-circle mr-1"></i> Uploading a new picture will instantly update all existing users' profile pictures and set it as default for future signups.</small>
+                          </div>
+
+                          <button type="submit" name="update_global_profile" class="btn btn-update-password w-100" style="background: linear-gradient(135deg, #7c3aed 0%, #0284c7 100%) !important; box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3) !important;">
+                              <i class="fa fa-refresh mr-2"></i> Update Profile Picture For All Users
+                          </button>
+                      </form>
+                  </div>
+              </div>
+
           </div>
       </div>
 

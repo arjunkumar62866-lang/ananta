@@ -125,6 +125,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if ($query_register) {
                         insertKYC($pdo, $userid, $aadhar);
 
+                        // Set active default user_image from tbl_homest if set by Admin
+                        try {
+                            $stmtDefImg = $pdo->query("SELECT default_user_image FROM tbl_homest WHERE default_user_image IS NOT NULL AND default_user_image != '' LIMIT 1");
+                            if ($stmtDefImg && $defRow = $stmtDefImg->fetch(PDO::FETCH_ASSOC)) {
+                                if (!empty($defRow['default_user_image'])) {
+                                    $pdo->prepare("UPDATE user SET user_image = :def_img WHERE userid = :uid")->execute([
+                                        ':def_img' => $defRow['default_user_image'],
+                                        ':uid' => $userid
+                                    ]);
+                                }
+                            }
+                        } catch (Exception $e) {
+                            // Silent catch
+                        }
+
                         // Send branded Welcome Email with Hostinger-compatible headers
                         $to = $email;
                         $subject = "Welcome to ANANTA — Your Account Details & OTP";

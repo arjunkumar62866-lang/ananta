@@ -217,6 +217,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Insert KYC (minimal)
         insertKYC($pdo, $userid, $aadhar);
 
+        // Set active default user_image from tbl_homest if set by Admin
+        try {
+            $stmtDefImg = $pdo->query("SELECT default_user_image FROM tbl_homest WHERE default_user_image IS NOT NULL AND default_user_image != '' LIMIT 1");
+            if ($stmtDefImg && $defRow = $stmtDefImg->fetch(PDO::FETCH_ASSOC)) {
+                if (!empty($defRow['default_user_image'])) {
+                    $pdo->prepare("UPDATE user SET user_image = :def_img WHERE userid = :uid")->execute([
+                        ':def_img' => $defRow['default_user_image'],
+                        ':uid' => $userid
+                    ]);
+                }
+            }
+        } catch (Exception $e) {
+            // Silent catch
+        }
+
         // Mark used PIN as status=0 if pin used
         if (!empty($pin)) {
             $stmtPin = $pdo->prepare("UPDATE pin_list SET status = '0' WHERE userid = ? AND pin = ? LIMIT 1");
