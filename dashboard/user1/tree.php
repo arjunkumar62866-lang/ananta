@@ -2,6 +2,7 @@
 ob_start();
 session_start();
 include("common/connection.php");
+include("common/db_method.php");
 
 // -------------------------------------------------------------
 // 1. DYNAMIC API ENDPOINT FOR HORIZONTAL TREE DATA (AJAX)
@@ -27,20 +28,37 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         exit;
     }
 
-    // Recursive function to fetch real user tree nodes (no empty placeholders)
+    // Recursive function to fetch real user tree nodes with ACCURATE Left/Right counts & business amounts
     function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 6) {
         global $pdo;
 
         if (empty($nodeId)) return null;
 
-        // Fetch User Info
-        $uStmt = $pdo->prepare("SELECT userid, name, active, status, package, sponserid, joining_date, mobile FROM user WHERE userid = :id LIMIT 1");
+        // Fetch User Info & Personal Investment
+        $uStmt = $pdo->prepare("
+            SELECT 
+                u.userid,
+                u.name,
+                u.active,
+                u.status,
+                u.package,
+                u.sponserid,
+                u.joining_date,
+                u.mobile,
+                COALESCE(u.amount, 0) as user_amount,
+                COALESCE(SUM(r.real_fund_usd), COALESCE(SUM(r.package), 0)) as personal_business_usd
+            FROM user u
+            LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
+            WHERE u.userid = :id
+            GROUP BY u.userid, u.name, u.active, u.status, u.package, u.sponserid, u.joining_date, u.mobile, u.amount
+            LIMIT 1
+        ");
         $uStmt->execute([':id' => $nodeId]);
         $user = $uStmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) return null;
 
-        // Fetch Tree Placement
+        // Fetch Tree Placement Record
         $tStmt = $pdo->prepare("SELECT left_id, right_id, leftcount, rightcount, lefttotal, righttotal FROM tree WHERE userid = :id LIMIT 1");
         $tStmt->execute([':id' => $nodeId]);
         $tree = $tStmt->fetch(PDO::FETCH_ASSOC) ?: [
@@ -49,25 +67,50 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             'lefttotal' => 0, 'righttotal' => 0
         ];
 
+        // Fetch Left & Right Team Downline Members Detailed
+        $leftMembers = !empty($tree['left_id']) ? getRootBranchTreeDetailed($tree['left_id'], $pdo, 'LEFT') : [];
+        $rightMembers = !empty($tree['right_id']) ? getRootBranchTreeDetailed($tree['right_id'], $pdo, 'RIGHT') : [];
+
+        $leftCount = max(intval($tree['leftcount']), count($leftMembers));
+        $rightCount = max(intval($tree['rightcount']), count($rightMembers));
+
+        $leftBusiness = array_sum(array_column($leftMembers, 'investment_usd'));
+        if ($leftBusiness <= 0 && floatval($tree['lefttotal']) > 0) {
+            $leftBusiness = floatval($tree['lefttotal']);
+        }
+
+        $rightBusiness = array_sum(array_column($rightMembers, 'investment_usd'));
+        if ($rightBusiness <= 0 && floatval($tree['righttotal']) > 0) {
+            $rightBusiness = floatval($tree['righttotal']);
+        }
+
+        $personalBusiness = floatval($user['personal_business_usd']);
+        if ($personalBusiness <= 0 && floatval($user['user_amount']) > 0) {
+            $personalBusiness = floatval($user['user_amount']);
+        }
+
+        $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
+
         $node = [
-            'id'           => $user['userid'],
-            'name'         => !empty($user['name']) ? $user['name'] : $user['userid'],
-            'active'       => ($user['active'] == '1'),
-            'status'       => ($user['active'] == '1') ? 'Active' : 'Inactive',
-            'sponserid'    => $user['sponserid'] ?? '',
-            'joining_date' => $user['joining_date'] ?? '',
-            'mobile'       => $user['mobile'] ?? '',
-            'leftcount'    => intval($tree['leftcount']),
-            'rightcount'   => intval($tree['rightcount']),
-            'lefttotal'    => floatval($tree['lefttotal']),
-            'righttotal'   => floatval($tree['righttotal']),
-            'children'     => []
+            'id'                => $user['userid'],
+            'name'              => !empty($user['name']) ? $user['name'] : $user['userid'],
+            'active'            => ($user['active'] == '1'),
+            'status'            => ($user['active'] == '1') ? 'Active' : 'Inactive',
+            'sponserid'         => $user['sponserid'] ?? '',
+            'joining_date'      => $user['joining_date'] ?? '',
+            'mobile'            => $user['mobile'] ?? '',
+            'leftcount'         => $leftCount,
+            'rightcount'        => $rightCount,
+            'personal_business' => $personalBusiness,
+            'left_business'     => $leftBusiness,
+            'right_business'    => $rightBusiness,
+            'total_business'    => $totalBusiness,
+            'children'          => []
         ];
 
         // Gather real children IDs
         $childrenList = [];
 
-        // 1. From tree table (left_id and right_id)
         if (!empty($tree['left_id'])) {
             $childrenList[] = ['id' => $tree['left_id'], 'side' => 'LEFT'];
         }
@@ -75,7 +118,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             $childrenList[] = ['id' => $tree['right_id'], 'side' => 'RIGHT'];
         }
 
-        // 2. Also check user table for downlines under this user
+        // Also check user table for direct/underuserid downlines
         $uChildStmt = $pdo->prepare("SELECT userid, join_side FROM user WHERE underuserid = :id OR (sponserid = :id AND (underuserid IS NULL OR underuserid = '' OR underuserid = :id))");
         $uChildStmt->execute([':id' => $nodeId]);
         $uChildren = $uChildStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -199,7 +242,7 @@ body.bg-theme {
     transform: translateY(-1px);
 }
 
-/* SVG Canvas Wrapper */
+/* SVG Canvas Wrapper - Catch-All Drag & Pan Surface */
 #tree-canvas-container {
     width: 100%;
     height: 720px;
@@ -209,6 +252,8 @@ body.bg-theme {
     cursor: grab;
     overflow: hidden;
     touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #tree-canvas-container:active {
@@ -220,14 +265,9 @@ body.bg-theme {
     fill: none;
     stroke: #cbd5e1;
     stroke-width: 1.8px;
-    transition: all 0.35s ease;
+    transition: stroke 0.35s ease, stroke-width 0.35s ease;
 }
 
-.tree-link.link-active {
-    stroke: #94a3b8;
-}
-
-/* Node Styling */
 .tree-node {
     cursor: pointer;
 }
@@ -239,15 +279,15 @@ body.bg-theme {
 }
 
 .node-circle.active-node {
-    fill: #22c55e; /* Green for Active */
+    fill: #22c55e; /* Bright Green */
 }
 
 .node-circle.inactive-node {
-    fill: #ef4444; /* Red for Inactive */
+    fill: #ef4444; /* Bright Red */
 }
 
 .tree-node:hover .node-circle {
-    transform: scale(1.3);
+    transform: scale(1.35);
 }
 
 .node-name-text {
@@ -279,17 +319,18 @@ body.bg-theme {
     border: 2px solid #0284c7;
     border-radius: 14px;
     padding: 14px 16px;
-    width: 240px;
+    width: 260px;
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
     pointer-events: none;
     display: none;
     font-size: 12.5px;
     color: #0f172a;
+    line-height: 1.45;
 }
 
 .tree-popover-tooltip strong {
     color: #0f172a;
-    font-size: 14px;
+    font-size: 14.5px;
     display: block;
     margin-bottom: 4px;
 }
@@ -312,7 +353,7 @@ body.bg-theme {
                                 <i class="fa fa-sitemap mr-2" style="color: #0284c7;"></i> Binary Tree View
                             </h4>
                             <p class="mb-0 small" style="color: #64748b !important; font-weight: 600;">
-                                Horizontal Collapsible Tree. Click any node to Expand/Collapse downline. Green = Active, Red = Inactive.
+                                Smooth 360° Drag/Pan Canvas. Click nodes to Expand/Collapse. Green = Active, Red = Inactive.
                             </p>
                         </div>
 
@@ -336,7 +377,7 @@ body.bg-theme {
                                 <button type="button" id="btn-zoom-out" class="btn-tree-ctrl" title="Zoom Out (-)">
                                     <i class="fa fa-search-minus"></i> -
                                 </button>
-                                <button type="button" id="btn-zoom-reset" class="btn-tree-ctrl" title="Reset View">
+                                <button type="button" id="btn-zoom-reset" class="btn-tree-ctrl" title="Reset Center">
                                     <i class="fa fa-refresh"></i> Reset
                                 </button>
                                 <?php if (strtoupper($search) !== strtoupper($userid)): ?>
@@ -367,7 +408,7 @@ body.bg-theme {
 <?php include 'common/footer.php'; ?>
 
 <!-- -------------------------------------------------------------
-     3. JAVASCRIPT HORIZONTAL BEZIER BINARY TREE ENGINE
+     3. JAVASCRIPT HORIZONTAL BEZIER TREE ENGINE WITH SMOOTH PAN & REAL BUSINESS DATA
 ------------------------------------------------------------- -->
 <script>
 (function() {
@@ -379,7 +420,6 @@ body.bg-theme {
 
     let svg, gCanvas, zoomBehavior;
     let rootNode;
-    let i = 0;
 
     // Load Data
     function loadTreeData(searchId) {
@@ -404,37 +444,46 @@ body.bg-theme {
         const width = container.clientWidth || 1000;
         const height = container.clientHeight || 720;
 
+        // 1. Create Main SVG
         svg = d3.select('#tree-canvas-container')
             .append('svg')
             .attr('width', '100%')
             .attr('height', '100%')
             .attr('viewBox', `0 0 ${width} ${height}`);
 
-        // Pan & Zoom Behavior (Mousewheel, drag, touch pinch zoom)
+        // 2. Full Background Overlay to Capture Mouse/Touch Drag Events Everywhere
+        svg.append('rect')
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .attr('fill', '#ffffff')
+            .attr('pointer-events', 'all');
+
+        // 3. Pan & Zoom Behavior (Mousewheel, drag, touch pinch zoom)
         zoomBehavior = d3.zoom()
-            .scaleExtent([0.25, 3.0])
+            .scaleExtent([0.15, 3.0])
             .on('zoom', (event) => {
                 gCanvas.attr('transform', event.transform);
             });
 
         svg.call(zoomBehavior).on("dblclick.zoom", null);
 
+        // 4. Viewport Group for Transformations
         gCanvas = svg.append('g')
             .attr('class', 'tree-viewport');
 
         rootNode = d3.hierarchy(data, d => d.children);
         rootNode.x0 = height / 2;
-        rootNode.y0 = 80;
+        rootNode.y0 = 120;
 
         // Collapse nodes after first 2 levels initially
         if (rootNode.children) {
             rootNode.children.forEach(collapseSubtree);
         }
 
-        // Center Initial Position (Root on left, extending to right)
+        // Center Initial Position (Root placed nicely in vertical middle, left margin 120px)
         const initialTransform = d3.zoomIdentity
-            .translate(80, height / 2 - 20)
-            .scale(0.95);
+            .translate(120, height / 2 - 20)
+            .scale(0.92);
 
         svg.call(zoomBehavior.transform, initialTransform);
 
@@ -451,7 +500,7 @@ body.bg-theme {
 
     function updateTree(source) {
         const treeLayout = d3.tree()
-            .nodeSize([48, 220]); // Vertical spacing = 48, Horizontal depth = 220
+            .nodeSize([52, 230]); // Vertical spacing = 52, Horizontal depth = 230
 
         const treeData = treeLayout(rootNode);
         const nodes = treeData.descendants();
@@ -498,13 +547,13 @@ body.bg-theme {
         // Circle Junction
         nodeEnter.append('circle')
             .attr('class', d => d.data.active ? 'node-circle active-node' : 'node-circle inactive-node')
-            .attr('r', 6);
+            .attr('r', 6.5);
 
-        // Toggle Sign (+ / -) above node
+        // Toggle Sign (+ / -) above node circle
         nodeEnter.append('text')
             .attr('class', 'node-toggle-sign')
-            .attr('dy', -9)
-            .attr('dx', -3)
+            .attr('dy', -10)
+            .attr('dx', -3.5)
             .text(d => (d.children || d._children) ? (d.children ? '-' : '+') : '');
 
         // User Name Text
@@ -579,6 +628,12 @@ body.bg-theme {
         });
     }
 
+    // Format Currency Helper ($ USD)
+    function formatUSD(val) {
+        const num = parseFloat(val) || 0;
+        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     // Floating Tooltip Detail
     function showTooltip(event, data) {
         tooltip.innerHTML = `
@@ -586,10 +641,19 @@ body.bg-theme {
             <span style="color: #0284c7; font-weight: 700;">User ID: ${data.id}</span><br>
             <span>Sponsor ID: ${data.sponserid || 'N/A'}</span><br>
             <span>Status: <b style="color: ${data.active ? '#22c55e' : '#ef4444'};">${data.active ? 'Active' : 'Inactive'}</b></span><br>
-            <span>Joining: ${data.joining_date || 'N/A'}</span><hr style="margin: 6px 0; border-color: #e2e8f0;">
-            <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px;">
-                <span>Left: ${data.leftcount}</span>
-                <span>Right: ${data.rightcount}</span>
+            <span>Joining Date: ${data.joining_date || 'N/A'}</span><hr style="margin: 8px 0; border-color: #cbd5e1;">
+            <div style="font-size: 12px; margin-bottom: 4px;">
+                <strong>Personal Investment:</strong> <span style="color: #10b981; font-weight: 700;">${formatUSD(data.personal_business)}</span>
+            </div>
+            <div style="font-size: 12px; margin-bottom: 4px;">
+                <strong>Total Team Business:</strong> <span style="color: #0284c7; font-weight: 700;">${formatUSD(data.total_business)}</span>
+            </div>
+            <hr style="margin: 6px 0; border-color: #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px; color: #334155;">
+                <span>Left Team: <b>${data.leftcount}</b> (${formatUSD(data.left_business)})</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px; color: #334155; margin-top: 2px;">
+                <span>Right Team: <b>${data.rightcount}</b> (${formatUSD(data.right_business)})</span>
             </div>
         `;
 
@@ -617,7 +681,7 @@ body.bg-theme {
 
     document.getElementById('btn-zoom-reset').addEventListener('click', () => {
         const height = container.clientHeight || 720;
-        const initialTransform = d3.zoomIdentity.translate(80, height / 2 - 20).scale(0.95);
+        const initialTransform = d3.zoomIdentity.translate(120, height / 2 - 20).scale(0.92);
         svg.transition().duration(400).call(zoomBehavior.transform, initialTransform);
     });
 
