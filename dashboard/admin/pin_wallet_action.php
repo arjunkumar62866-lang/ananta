@@ -58,10 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($success) {
         $txn_id = $pdo->lastInsertId();
 
-        $stmtUpd = $pdo->prepare("UPDATE user SET pin_wallet = pin_wallet + :amount WHERE userid = :userid");
+        $stmtUpd = $pdo->prepare("UPDATE user SET pin_wallet = pin_wallet + :amount, deposite_wallet = deposite_wallet + :amount, amount = amount + :amount, total_deposit = total_deposit + :amount WHERE userid = :userid OR userid = :clean OR userid = :prefixed");
         $stmtUpd->execute([
-            ':amount' => $amount,
-            ':userid' => $target_userid
+            ':amount'   => $amount,
+            ':userid'   => $target_userid,
+            ':clean'    => $clean_uid,
+            ':prefixed' => 'AN' . $clean_uid
         ]);
 
         // Complete 8-field Audit Record

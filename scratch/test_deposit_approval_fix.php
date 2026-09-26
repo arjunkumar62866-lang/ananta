@@ -45,7 +45,7 @@ try {
     if ($reqStatus === 0 && $title === "Approved") {
         $pdo->beginTransaction();
         $pdo->prepare("UPDATE tbl_payment SET status = 1, remark = :remark WHERE id = :id AND status = 0")->execute([':id' => $reqId, ':remark' => $remark]);
-        $pdo->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, total_deposit = total_deposit + :amt WHERE userid = :userid")->execute([':amt' => $amt, ':userid' => $userid]);
+        $pdo->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt, amount = amount + :amt, total_deposit = total_deposit + :amt WHERE userid = :userid")->execute([':amt' => $amt, ':userid' => $userid]);
         $pdo->prepare("INSERT INTO tbl_transaction (user_id, type, subject, time, created_date, status, amount) VALUES (:u_id, 'Credit', :sub, CURTIME(), CURDATE(), 1, :amount)")
             ->execute([':u_id' => $userid, ':sub' => "Deposit Request Approved — $" . number_format($amt, 2) . " credited to Main Wallet (Ref: {$testTrId})", ':amount' => $amt]);
         $pdo->commit();
@@ -55,8 +55,15 @@ try {
     echo "Approval Error: " . $e->getMessage() . "\n";
 }
 
-$balAfter = (float)$pdo->query("SELECT deposite_wallet FROM user WHERE userid = '{$testUserid}'")->fetchColumn();
-echo "4. Main Wallet (deposite_wallet) After Approval: \${$balAfter}\n";
+$uBalRow = $pdo->query("SELECT deposite_wallet, pin_wallet, amount FROM user WHERE userid = '{$testUserid}'")->fetch(PDO::FETCH_ASSOC);
+$balAfter = (float)($uBalRow['deposite_wallet'] ?? 0);
+$pinAfter = (float)($uBalRow['pin_wallet'] ?? 0);
+$amtAfter = (float)($uBalRow['amount'] ?? 0);
+
+echo "4. Wallet Balances After Approval:\n";
+echo "   - deposite_wallet (Deposit Wallet): \${$balAfter}\n";
+echo "   - pin_wallet (Fund Wallet): \${$pinAfter}\n";
+echo "   - amount (Net Balance / Main Wallet): \${$amtAfter}\n";
 
 $payStatus = (int)$pdo->query("SELECT status FROM tbl_payment WHERE id = {$payId}")->fetchColumn();
 echo "5. Deposit Request Status in tbl_payment: {$payStatus} (1 = APPROVED)\n";
@@ -75,7 +82,7 @@ $balDup = (float)$pdo->query("SELECT deposite_wallet FROM user WHERE userid = '{
 echo "8. Main Wallet Balance After Duplicate Approval Attempt: \${$balDup}\n";
 
 // Clean up test data & restore initial user balance
-$pdo->exec("UPDATE user SET deposite_wallet = deposite_wallet - {$amt}, total_deposit = total_deposit - {$amt} WHERE userid = '{$testUserid}'");
+$pdo->exec("UPDATE user SET deposite_wallet = deposite_wallet - {$amt}, pin_wallet = pin_wallet - {$amt}, amount = amount - {$amt}, total_deposit = total_deposit - {$amt} WHERE userid = '{$testUserid}'");
 $pdo->exec("DELETE FROM tbl_payment WHERE id = {$payId}");
 $pdo->exec("DELETE FROM tbl_transaction WHERE user_id = '{$testUserid}' AND amount = 250.00 AND subject LIKE '%Deposit Request Approved%'");
 echo "\n9. Test data cleaned up & initial balance restored successfully.\n\n";

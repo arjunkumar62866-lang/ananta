@@ -3735,8 +3735,15 @@ if (!function_exists('getUserWalletBalance')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userid) return 0.0;
 
-        $stmt = $db->prepare("SELECT amount FROM user WHERE userid = :uid");
-        $stmt->execute([':uid' => $userid]);
+        $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
+        $prefixedUid = 'AN' . $cleanUid;
+
+        $stmt = $db->prepare("SELECT amount FROM user WHERE userid = :uid OR userid = :clean OR userid = :prefixed LIMIT 1");
+        $stmt->execute([
+            ':uid'      => $userid,
+            ':clean'    => $cleanUid,
+            ':prefixed' => $prefixedUid
+        ]);
         return round((float)($stmt->fetchColumn() ?: 0), 2);
     }
 }

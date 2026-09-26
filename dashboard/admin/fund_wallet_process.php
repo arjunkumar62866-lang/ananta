@@ -37,11 +37,16 @@ if(isset($_POST['userid'], $_POST['amount'])) {
         ]);
 
         if($result) {
-            // Update user wallet
-            $stmtUpdate = $pdo->prepare("UPDATE user SET amount = amount + :amount WHERE userid = :userid AND status='1'");
+            $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$sponserid);
+            $prefixedUid = 'AN' . $cleanUid;
+
+            // Update user wallet fields (amount, deposite_wallet, pin_wallet, total_deposit)
+            $stmtUpdate = $pdo->prepare("UPDATE user SET amount = amount + :amount, deposite_wallet = deposite_wallet + :amount, pin_wallet = pin_wallet + :amount, total_deposit = total_deposit + :amount WHERE userid = :userid OR userid = :clean OR userid = :prefixed");
             $stmtUpdate->execute([
-                ':amount' => $amount,
-                ':userid' => $sponserid
+                ':amount'   => $amount,
+                ':userid'   => $sponserid,
+                ':clean'    => $cleanUid,
+                ':prefixed' => $prefixedUid
             ]);
 
             echo json_encode(['status' => 'success', 'message' => 'Amount transferred successfully']);
