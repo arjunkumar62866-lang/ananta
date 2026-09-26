@@ -101,6 +101,26 @@ if (isset($_POST['submit'])) {
     }
 }
 
+$email_change_msg = '';
+$email_change_msg_type = 'info';
+
+if (isset($_POST['change_email'])) {
+    $newEmail = trim($_POST['new_email'] ?? '');
+    $currPassword = trim($_POST['current_password'] ?? '');
+
+    if (empty($newEmail) || empty($currPassword)) {
+        $email_change_msg = "Please enter your new email address and current login password.";
+        $email_change_msg_type = "danger";
+    } else {
+        $resChange = changeUserEmail($userid, $newEmail, $currPassword);
+        $email_change_msg = $resChange['message'];
+        $email_change_msg_type = ($resChange['status'] === 'success') ? 'success' : 'danger';
+        if ($resChange['status'] === 'success') {
+            $useremail = $newEmail;
+        }
+    }
+}
+
 $txn_msg = '';
 $txn_msg_type = 'info';
 
@@ -1109,6 +1129,65 @@ body.ananta-user-dashboard {
             </div>
 
             <!-- =================================================
+                 CHANGE REGISTERED EMAIL ADDRESS CARD
+            ================================================== -->
+            <div class="profile-main-card mt-4" id="changeEmailSection">
+                <div class="profile-card-header d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="profile-header-icon" style="background: rgba(14, 165, 233, 0.12); color: #0ea5e9;">
+                            <i class="fa fa-envelope" style="font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <h2 class="profile-header-title" style="font-size: 20px;">Change Email Address</h2>
+                            <p class="profile-header-subtitle mb-0">Update your account email address. Password verification required.</p>
+                        </div>
+                    </div>
+                    <span class="badge" style="background: rgba(14, 165, 233, 0.12); color: #0ea5e9; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px;">
+                        <i class="fa fa-lock me-1"></i> Password Protected
+                    </span>
+                </div>
+
+                <div class="profile-form-area p-4">
+                    <?php if (!empty($email_change_msg)): ?>
+                        <div class="alert alert-<?php echo $email_change_msg_type; ?> border-0 mb-4" style="border-radius: 12px; font-weight: 600;">
+                            <i class="fa fa-info-circle me-2"></i> <?php echo htmlspecialchars($email_change_msg); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <form method="POST" action="profile.php#changeEmailSection">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="profile-label">Current Email Address</label>
+                                <input type="email" class="profile-input" value="<?php echo htmlspecialchars($useremail); ?>" readonly style="background: #f8fafc;">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="profile-label">New Email Address <span class="text-danger">*</span></label>
+                                <input type="email" name="new_email" class="profile-input" placeholder="Enter new registered email" required>
+                            </div>
+                        </div>
+
+                        <div class="row align-items-end">
+                            <div class="col-md-6 mb-3">
+                                <label class="profile-label">Current Login Password <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    <input type="password" id="email_change_password" name="current_password" class="profile-input" placeholder="Enter current login password" required style="padding-right: 45px;">
+                                    <button type="button" class="btn border-0 text-muted position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%); background: transparent; z-index: 10;" onclick="togglePassVisibility('email_change_password', 'toggleEmailPassIcon')">
+                                        <i class="fa fa-eye" id="toggleEmailPassIcon"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted" style="font-size: 11.5px;">Required for security verification.</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <button type="submit" name="change_email" class="btn text-white font-weight-bold w-100" style="height: 48px; border-radius: 12px; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border: none; font-size: 14px;">
+                                    <i class="fa fa-save me-1"></i> Change Email Address
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- =================================================
                  SECURITY & TRANSACTION KEY RESET CARD
             ================================================== -->
             <div class="profile-main-card mt-4" id="securityTxnSection">
@@ -1236,6 +1315,23 @@ body.ananta-user-dashboard {
 <script src="assets/js/popper.min.js"></script>
 <script src="assets/js/bootstrap.min.js"></script>
 <script src="assets/js/app-script.js"></script>
+<script>
+function togglePassVisibility(inputId, iconId) {
+    var input = document.getElementById(inputId);
+    var icon = document.getElementById(iconId);
+    if (input && icon) {
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+}
+</script>
 
 </body>
 </html>

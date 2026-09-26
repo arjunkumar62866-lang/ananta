@@ -4153,13 +4153,79 @@ if (!function_exists('sendTransactionKeyOTP')) {
             $sent = @mail($to, $subject, $message, $headers);
 
             if (!$sent) {
-                error_log("OTP mail() delivery notice for user {$userid} to {$email}");
+                error_log("OTP mail() delivery failed for user {$userid} to {$email}");
+                try {
+                    $db->prepare("DELETE FROM tbl_otp WHERE userid = :uid AND otp = :otp AND type = 'TXN_KEY_RESET'")->execute([':uid' => $userid, ':otp' => $otp]);
+                } catch (Throwable $delEx) {
+                    // Ignore deletion error
+                }
+                return ['status' => 'error', 'message' => 'Unable to send OTP email. Please try again later.'];
             }
 
-            return ['status' => 'success', 'message' => 'OTP has been sent to your registered email: ' . htmlspecialchars($email)];
+            return ['status' => 'success', 'message' => 'OTP sent successfully to your registered email address.'];
         } catch (Throwable $e) {
             error_log("sendTransactionKeyOTP Exception: " . $e->getMessage());
-            return ['status' => 'error', 'message' => 'Unable to send OTP right now. Please try again later.'];
+            return ['status' => 'error', 'message' => 'Unable to send OTP email. Please try again later.'];
+        }
+    }
+}
+
+if (!function_exists('changeUserEmail')) {
+    function changeUserEmail($userid, $newEmail, $currentPassword, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userid) {
+            return ['status' => 'error', 'message' => 'User authentication required.'];
+        }
+
+        $newEmail = trim((string)$newEmail);
+        $currentPassword = (string)$currentPassword;
+
+        if (empty($newEmail) || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            return ['status' => 'error', 'message' => 'Please enter a valid email address.'];
+        }
+
+        if (empty($currentPassword)) {
+            return ['status' => 'error', 'message' => 'Current login password is required.'];
+        }
+
+        try {
+            // Fetch user password and email by user ID only
+            $stmt = $db->prepare("SELECT pass, email FROM user WHERE userid = :uid LIMIT 1");
+            $stmt->execute([':uid' => $userid]);
+            $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userRow) {
+                return ['status' => 'error', 'message' => 'User record not found.'];
+            }
+
+            $storedPass = $userRow['pass'] ?? '';
+
+            // Verify password (password_verify or legacy plain-text match)
+            $isPasswordValid = false;
+            if (!empty($storedPass)) {
+                if (password_verify($currentPassword, $storedPass)) {
+                    $isPasswordValid = true;
+                } elseif ($storedPass === $currentPassword) {
+                    $isPasswordValid = true;
+                }
+            }
+
+            if (!$isPasswordValid) {
+                return ['status' => 'error', 'message' => 'Incorrect password. Email address was not changed.'];
+            }
+
+            // Update only the current user's email
+            $stmtUpdate = $db->prepare("UPDATE user SET email = :email WHERE userid = :uid");
+            $stmtUpdate->execute([
+                ':email' => $newEmail,
+                ':uid'   => $userid
+            ]);
+
+            return ['status' => 'success', 'message' => 'Email address updated successfully.'];
+        } catch (Throwable $e) {
+            error_log("changeUserEmail Exception: " . $e->getMessage());
+            return ['status' => 'error', 'message' => 'Unable to update email address. Please try again later.'];
         }
     }
 }
