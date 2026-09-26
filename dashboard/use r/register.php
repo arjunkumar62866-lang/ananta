@@ -51,16 +51,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($userdata !== null) {
         $idactive = $userdata['idactive'];
 
-        if (userid($userid) == 0) {
+        if (userid($userid) === true) {
             if (checkuseridregister($sponserid1) == 1) {
-                $stmt = $pdo->prepare("SELECT COUNT(*) as email_check FROM user WHERE email = ?");
-                $stmt->execute([$email]);
-                $row = $stmt->fetch();
-                if ($row['email_check'] > 0) {
-                    echo '<script>alert("You Can Register Only 1 ID From Same Email");window.location = "new_binary_registration_form.php";</script>';
-                    exit();
-                }
-
                 $stmt = $pdo->prepare("SELECT COUNT(*) as mobile_check FROM user WHERE mobile = ?");
                 $stmt->execute([$mobile]);
                 $row = $stmt->fetch();
@@ -126,7 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 echo '<script>alert("Your sponsor ID does not exist");window.location = "new_binary_registration_form.php";</script>';
             }
         } else {
-            echo '<script>alert("You Can Register Only 1 ID From Same Email");</script>';
+            echo '<script>alert("User ID generation error. Please try again.");window.location = "new_binary_registration_form.php";</script>';
         }
     } else {
         echo '<script>alert("Invalid sponsor ID.");window.location = "new_binary_registration_form.php";</script>';

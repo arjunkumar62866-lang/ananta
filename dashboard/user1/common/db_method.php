@@ -446,11 +446,11 @@ if (!function_exists('insertSponsor')) {
 
 function insertUser($pdo, $data) 
 {
-    $sql = "INSERT INTO user (
-        userid, name, mobile, email, pan, pass, txn_pass, sponserid, sponsername, underuserid,
-        active, status, join_side, package, joining_date, plan, pin, kyc, club, upgrade_date,
-        time, country, amount, capping, rank, closingdate, country_code, level, atime, pool,
-        state, father, gender, pin_code, address, otp, coin_wallet
+    $sql = "INSERT INTO `user` (
+        `userid`, `name`, `mobile`, `email`, `pan`, `pass`, `txn_pass`, `sponserid`, `sponsername`, `underuserid`,
+        `active`, `status`, `join_side`, `package`, `joining_date`, `plan`, `pin`, `kyc`, `club`, `upgrade_date`,
+        `time`, `country`, `amount`, `capping`, `rank`, `closingdate`, `country_code`, `level`, `atime`, `pool`,
+        `state`, `father`, `gender`, `pin_code`, `address`, `otp`, `coin_wallet`
     ) VALUES (
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,

@@ -273,7 +273,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 echo '<script>alert("Your sponsor ID does not exist");window.location = "new_binary_registration_form.php";</script>';
             }
         } else {
-            echo '<script>alert("You Can Register Only 1 ID From Same Email");</script>';
+            echo '<script>alert("User ID generation error. Please try again.");window.location = "new_binary_registration_form.php";</script>';
         }
     } else {
         echo '<script>alert("Invalid sponsor ID.");window.location = "new_binary_registration_form.php";</script>';
