@@ -46,9 +46,48 @@
     text-decoration: none;
     font-weight: 600;
 }
+
+@keyframes pulseGreenGlow {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.8);
+        opacity: 0.8;
+    }
+    70% {
+        transform: scale(1.2);
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        opacity: 0.8;
+    }
+}
+
+.blinking-dot {
+    width: 9px;
+    height: 9px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulseGreenGlow 1.4s infinite ease-in-out;
+}
+
+.inactive-dot {
+    width: 9px;
+    height: 9px;
+    background-color: #93c5fd;
+    border-radius: 50%;
+    display: inline-block;
+    opacity: 0.85;
+}
 </style>
 <?php 
 include 'common/header.php'; 
+
+$isAccountActive = (isset($idactive) && ((string)$idactive === '1' || (int)$idactive === 1)) || (isset($status) && strtolower((string)$status) === 'active');
+
 
 // get level Business
 $directbusinesstotal=gettotallevelbusiness($userid);
@@ -877,15 +916,30 @@ body.ananta-user-dashboard {
                 </div>
 
                 <div class="card-body p-4 p-md-5 position-relative" style="z-index: 2;">
-                    <!-- Card Header Icon + Title -->
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle p-3 mr-3 d-flex align-items-center justify-content-center" style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); width: 50px; height: 50px; flex-shrink: 0;">
-                            <i class="zmdi zmdi-accounts-alt zmdi-hc-2x text-white"></i>
+                    <!-- Card Header Icon + Title & Active/Inactive Account Status Badge -->
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle p-3 mr-3 d-flex align-items-center justify-content-center" style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); width: 50px; height: 50px; flex-shrink: 0;">
+                                <i class="zmdi zmdi-accounts-alt zmdi-hc-2x text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0 font-weight-bold text-white" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px;">User Growth</h4>
+                                <span class="small" style="color: rgba(255, 255, 255, 0.85); font-weight: 500;">Total Earnings (All 7 Types)</span>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="mb-0 font-weight-bold text-white" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px;">User Growth</h4>
-                            <span class="small" style="color: rgba(255, 255, 255, 0.85); font-weight: 500;">Total Earnings (All 7 Types)</span>
-                        </div>
+
+                        <!-- Active / Inactive Status Badge -->
+                        <?php if (!empty($isAccountActive)): ?>
+                            <div class="account-status-badge d-flex align-items-center" style="background: rgba(34, 197, 94, 0.25); border: 1px solid rgba(34, 197, 94, 0.6); backdrop-filter: blur(8px); border-radius: 100px; padding: 6px 14px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);">
+                                <span class="blinking-dot mr-2"></span>
+                                <span style="color: #ffffff; font-weight: 800; font-size: 13px; letter-spacing: 0.6px; font-family: 'Plus Jakarta Sans', sans-serif;">ACTIVE</span>
+                            </div>
+                        <?php else: ?>
+                            <div class="account-status-badge d-flex align-items-center" style="background: rgba(37, 99, 235, 0.35); border: 1px solid rgba(147, 197, 253, 0.6); backdrop-filter: blur(8px); border-radius: 100px; padding: 6px 14px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);">
+                                <span class="inactive-dot mr-2"></span>
+                                <span style="color: #ffffff; font-weight: 800; font-size: 13px; letter-spacing: 0.6px; font-family: 'Plus Jakarta Sans', sans-serif;">INACTIVE</span>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Big Amount Display with Eye Hide/Show Toggle -->
