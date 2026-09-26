@@ -4064,11 +4064,18 @@ if (!function_exists('ensureOTPTableExists')) {
                 otp VARCHAR(10) NOT NULL,
                 type VARCHAR(50) NOT NULL DEFAULT 'TXN_KEY_RESET',
                 is_used TINYINT(1) NOT NULL DEFAULT 0,
+                is_sent TINYINT(1) NOT NULL DEFAULT 1,
                 created_at DATETIME NOT NULL,
                 expires_at DATETIME NOT NULL,
                 INDEX idx_user_type (userid, type),
                 INDEX idx_otp_verify (userid, otp, is_used)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // Add is_sent column if missing in older schema
+            $checkCol = $db->query("SHOW COLUMNS FROM tbl_otp LIKE 'is_sent'");
+            if ($checkCol && $checkCol->rowCount() === 0) {
+                $db->exec("ALTER TABLE tbl_otp ADD COLUMN is_sent TINYINT(1) NOT NULL DEFAULT 1");
+            }
         } catch (Throwable $t) {
             error_log("ensureOTPTableExists error: " . $t->getMessage());
         }
@@ -4086,7 +4093,7 @@ if (!function_exists('sendTransactionKeyOTP')) {
         ensureOTPTableExists($db);
 
         try {
-            // Fetch user email & name
+            // STEP 1 & 2: Fetch registered email directly by authenticated userid
             $stmtUser = $db->prepare("SELECT email, name FROM user WHERE userid = :uid LIMIT 1");
             $stmtUser->execute([':uid' => $userid]);
             $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
@@ -4095,77 +4102,116 @@ if (!function_exists('sendTransactionKeyOTP')) {
                 return ['status' => 'error', 'message' => 'Registered user email not found.'];
             }
 
-            $email = $userRow['email'];
+            $email = trim($userRow['email']);
             $name = $userRow['name'] ?: 'User';
 
-            // Check Rate Limiting: Max 3 OTPs within 5 minutes
-            $stmtLimit = $db->prepare("SELECT COUNT(*) FROM tbl_otp WHERE userid = :uid AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
+            // STEP 3: Validate email format
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return ['status' => 'error', 'message' => 'Registered user email format is invalid.'];
+            }
+
+            // STEP 4: Rate Limiting Check (Max 3 successful OTP deliveries within 5 minutes)
+            $stmtLimit = $db->prepare("SELECT COUNT(*) FROM tbl_otp WHERE userid = :uid AND type = 'TXN_KEY_RESET' AND is_sent = 1 AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
             $stmtLimit->execute([':uid' => $userid]);
             if ((int)$stmtLimit->fetchColumn() >= 3) {
                 return ['status' => 'error', 'message' => 'Rate limit exceeded. Please wait 5 minutes before requesting a new OTP.'];
             }
 
-            // Invalidate any previous active unused OTPs for this user & request type
+            // Invalidate any previous active unused OTPs for this user
             $stmtInvalidate = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE userid = :uid AND type = 'TXN_KEY_RESET' AND is_used = 0");
             $stmtInvalidate->execute([':uid' => $userid]);
 
-            // Generate 6-digit secure OTP
+            // STEP 5: Generate 6-digit secure OTP
             $otp = sprintf("%06d", random_int(100000, 999999));
 
-            // Insert OTP record with 10 minute expiry
-            $stmtInsert = $db->prepare("INSERT INTO tbl_otp (userid, email, otp, type, is_used, created_at, expires_at) VALUES (:uid, :email, :otp, 'TXN_KEY_RESET', 0, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))");
-            $stmtInsert->execute([
-                ':uid' => $userid,
-                ':email' => $email,
-                ':otp' => $otp
-            ]);
-
-            // Fetch home email settings
+            // Fetch site email settings & match exact working configuration from register.php
             $homeset = function_exists('getHomeSettings') ? getHomeSettings($db) : [];
-            $fromEmail = !empty($homeset['emailfrom']) ? $homeset['emailfrom'] : (!empty($homeset['email']) ? $homeset['email'] : 'no-reply@anantamtptl.com');
+            $fromEmailDomain = !empty($homeset['emailfrom']) ? trim($homeset['emailfrom']) : 'no-reply@anantamtptl.com';
+            if (strpos($fromEmailDomain, '@gmail.com') !== false || strpos($fromEmailDomain, '@yahoo.com') !== false || empty($fromEmailDomain)) {
+                $fromEmailDomain = 'no-reply@anantamtptl.com';
+            }
+            $replyToEmail = !empty($homeset['email']) ? trim($homeset['email']) : 'anantamultitread@gmail.com';
+            if (empty($replyToEmail)) {
+                $replyToEmail = 'anantamultitread@gmail.com';
+            }
 
-            // Send Email via mail()
+            // STEP 7: Prepare Email using EXACT headers proven working in register.php
             $to = $email;
-            $subject = "ANANTA — OTP for Transaction Key Reset";
-            $headers = "From: ANANTA Security <" . strip_tags($fromEmail) . ">\r\n";
-            $headers .= "Reply-To: " . strip_tags($fromEmail) . "\r\n";
+            $subject = "ANANTA Security — Transaction Key OTP";
+            $headers = "From: ANANTA Security <" . strip_tags($fromEmailDomain) . ">\r\n";
+            $headers .= "Reply-To: " . strip_tags($replyToEmail) . "\r\n";
             $headers .= "MIME-Version: 1.0\r\n";
             $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
 
             $message = '
             <!DOCTYPE html>
             <html>
-            <body style="font-family: Arial, sans-serif; background: #f4f6f8; padding: 30px 15px;">
-                <div style="max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 8px 25px rgba(0,0,0,0.05);">
-                    <h2 style="color: #0f172a; margin-top: 0;">ANANTA Security OTP</h2>
-                    <p style="color: #475569; font-size: 14px;">Hello <strong>' . htmlspecialchars($name) . '</strong>,</p>
-                    <p style="color: #475569; font-size: 14px;">Use the following One Time Password (OTP) to reset your Transaction Key:</p>
-                    <div style="text-align: center; margin: 25px 0;">
-                        <span style="font-size: 32px; font-weight: 800; font-family: monospace; letter-spacing: 6px; color: #0284c7; background: #f0f9ff; padding: 12px 24px; border-radius: 12px; border: 1px solid #bae6fd;">' . $otp . '</span>
-                    </div>
-                    <p style="color: #ef4444; font-size: 12.5px; font-weight: 600;">⏱️ This OTP is valid for 10 minutes and can only be used once.</p>
-                    <p style="color: #64748b; font-size: 12px; margin-bottom: 0;">If you did not request this OTP, please secure your account immediately.</p>
-                </div>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>ANANTA Security — Transaction Key OTP</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: \'Plus Jakarta Sans\', Arial, sans-serif;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+                    <tr>
+                        <td align="center" style="padding: 40px 15px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; overflow: hidden;">
+                                <tr>
+                                    <td align="center" style="padding: 35px 30px 25px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%);">
+                                        <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">ANANTA</h1>
+                                        <p style="color: rgba(255,255,255,0.9); margin: 6px 0 0; font-size: 14px; font-weight: 600;">Security Verification</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 35px 30px;">
+                                        <h2 style="color: #0f172a; margin: 0 0 10px; font-size: 20px; font-weight: 800;">Hello, ' . htmlspecialchars($name) . '!</h2>
+                                        <p style="color: #475569; margin: 0 0 24px; font-size: 14.5px; line-height: 1.6;">Your OTP for changing your Transaction Key is:</p>
+                                        
+                                        <div style="text-align: center; margin: 30px 0;">
+                                            <span style="font-size: 34px; font-weight: 800; font-family: monospace; letter-spacing: 8px; color: #0284c7; background: #f0f9ff; padding: 14px 28px; border-radius: 14px; border: 1.5px solid #bae6fd; display: inline-block;">' . $otp . '</span>
+                                        </div>
+                                        
+                                        <div style="background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 28px;">
+                                            <p style="color: #991b1b; margin: 0; font-size: 13px; font-weight: 600;">⏱️ This OTP is valid for 10 minutes and can be used only once. If you did not request this Transaction Key change, please ignore this email.</p>
+                                        </div>
+                                        
+                                        <p style="color: #64748b; font-size: 13px; margin: 0;">Regards,<br><strong>ANANTA Security</strong><br>Ananta Multi Trade Private Limited</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding: 20px 30px; background: #f8fafc; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; font-weight: 500;">
+                                        &copy; ' . date('Y') . ' ANANTA Multi Trade. All rights reserved.
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
             </body>
             </html>
             ';
 
+            // Send email using exact mail() signature from register.php
             $sent = @mail($to, $subject, $message, $headers);
 
+            // STEP 8 & 9: Inspect Delivery Status
             if (!$sent) {
                 error_log("OTP mail() delivery failed for user {$userid} to {$email}");
-                try {
-                    $db->prepare("DELETE FROM tbl_otp WHERE userid = :uid AND otp = :otp AND type = 'TXN_KEY_RESET'")->execute([':uid' => $userid, ':otp' => $otp]);
-                } catch (Throwable $delEx) {
-                    // Ignore deletion error
-                }
-                return ['status' => 'error', 'message' => 'Unable to send OTP email. Please try again later.'];
+                return ['status' => 'error', 'message' => 'Unable to send OTP email right now. Please try again later.'];
             }
+
+            // Insert OTP record ONLY after mail delivery succeeds
+            $stmtInsert = $db->prepare("INSERT INTO tbl_otp (userid, email, otp, type, is_used, is_sent, created_at, expires_at) VALUES (:uid, :email, :otp, 'TXN_KEY_RESET', 0, 1, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))");
+            $stmtInsert->execute([
+                ':uid' => $userid,
+                ':email' => $email,
+                ':otp' => $otp
+            ]);
 
             return ['status' => 'success', 'message' => 'OTP sent successfully to your registered email address.'];
         } catch (Throwable $e) {
             error_log("sendTransactionKeyOTP Exception: " . $e->getMessage());
-            return ['status' => 'error', 'message' => 'Unable to send OTP email. Please try again later.'];
+            return ['status' => 'error', 'message' => 'Unable to send OTP email right now. Please try again later.'];
         }
     }
 }
