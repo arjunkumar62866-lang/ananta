@@ -1852,8 +1852,11 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         $toCol   = ($toWallet === 'Main Wallet')   ? 'pin_wallet' : 'amount';
 
         // Lock Sender Row FOR UPDATE
-        $stmtSender = $db->prepare("SELECT userid, name, pin_wallet, amount FROM user WHERE userid = :uid FOR UPDATE");
-        $stmtSender->execute([':uid' => $senderId]);
+        $cleanSenderId = preg_replace('/^(AN|ANANTA)/i', '', (string)$senderId);
+        $prefixedSenderId = 'AN' . $cleanSenderId;
+
+        $stmtSender = $db->prepare("SELECT userid, name, pin_wallet, deposite_wallet, amount FROM user WHERE userid = :uid OR userid = :cid OR userid = :pid FOR UPDATE");
+        $stmtSender->execute([':uid' => $senderId, ':cid' => $cleanSenderId, ':pid' => $prefixedSenderId]);
         $sender = $stmtSender->fetch(PDO::FETCH_ASSOC);
 
         if (!$sender) {
@@ -1861,20 +1864,26 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
             return ['status' => 'error', 'message' => "Sender account {$senderId} not found."];
         }
 
-        $senderPrevBal = (float)($sender[$fromCol] ?? 0);
+        $senderId = $sender['userid']; // Use exact database userid for sender
+
+        // Determine available sender balance
+        if ($fromWallet === 'Main Wallet') {
+            $senderPrevBal = (float)($sender['deposite_wallet'] ?? $sender['pin_wallet'] ?? $sender['amount'] ?? 0);
+        } else {
+            $senderPrevBal = (float)($sender['amount'] ?? 0);
+        }
+
         if ($senderPrevBal < $amount) {
             if ($inLocalTxn) $db->rollBack();
             return ['status' => 'error', 'message' => "Insufficient {$fromWallet} balance ($" . number_format($senderPrevBal, 2) . "). Requested: $" . number_format($amount, 2)];
         }
 
         // Lock Receiver Row FOR UPDATE
-        $cleanRecId = $receiverId;
-        if (strripos($cleanRecId, 'AN') === 0) {
-            $cleanRecId = substr($cleanRecId, 2);
-        }
+        $cleanRecId = preg_replace('/^(AN|ANANTA)/i', '', (string)$receiverId);
+        $prefixedRecId = 'AN' . $cleanRecId;
 
-        $stmtRec = $db->prepare("SELECT userid, name, pin_wallet, amount FROM user WHERE userid = :uid OR userid = :cid FOR UPDATE");
-        $stmtRec->execute([':uid' => $receiverId, ':cid' => $cleanRecId]);
+        $stmtRec = $db->prepare("SELECT userid, name, pin_wallet, deposite_wallet, amount FROM user WHERE userid = :uid OR userid = :cid OR userid = :pid FOR UPDATE");
+        $stmtRec->execute([':uid' => $receiverId, ':cid' => $cleanRecId, ':pid' => $prefixedRecId]);
         $receiver = $stmtRec->fetch(PDO::FETCH_ASSOC);
 
         if (!$receiver) {
@@ -1882,13 +1891,31 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
             return ['status' => 'error', 'message' => "Receiver User ID '{$receiverId}' not found."];
         }
 
-        $receiverId = $receiver['userid']; // Use exact database userid for operations
+        $receiverId = $receiver['userid']; // Use exact database userid for receiver
 
-        $receiverPrevBal = (float)($receiver[$toCol] ?? 0);
+        // Prevent self-transfer
+        if ($senderId === $receiverId) {
+            if ($inLocalTxn) $db->rollBack();
+            return ['status' => 'error', 'message' => 'Self P2P transfer is not allowed. Sender and Receiver must be different users.'];
+        }
 
-        // Perform Atomic Debit & Credit
-        $db->prepare("UPDATE user SET {$fromCol} = {$fromCol} - :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $senderId]);
-        $db->prepare("UPDATE user SET {$toCol} = {$toCol} + :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $receiverId]);
+        // Perform Atomic Debit on Sender
+        if ($fromWallet === 'Main Wallet') {
+            $db->prepare("UPDATE user SET deposite_wallet = GREATEST(0, deposite_wallet - :amt), pin_wallet = GREATEST(0, pin_wallet - :amt), amount = GREATEST(0, amount - :amt) WHERE userid = :uid")
+                ->execute([':amt' => $amount, ':uid' => $senderId]);
+        } else {
+            $db->prepare("UPDATE user SET amount = GREATEST(0, amount - :amt) WHERE userid = :uid")
+                ->execute([':amt' => $amount, ':uid' => $senderId]);
+        }
+
+        // Perform Atomic Credit on Receiver (Sync deposite_wallet, pin_wallet, amount, total_deposit)
+        if ($toWallet === 'Main Wallet') {
+            $db->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt, amount = amount + :amt, total_deposit = total_deposit + :amt WHERE userid = :uid")
+                ->execute([':amt' => $amount, ':uid' => $receiverId]);
+        } else {
+            $db->prepare("UPDATE user SET amount = amount + :amt, deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt WHERE userid = :uid")
+                ->execute([':amt' => $amount, ':uid' => $receiverId]);
+        }
 
         // Generate Server-Side Unique Transaction ID
         $txRef = 'P2P-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
