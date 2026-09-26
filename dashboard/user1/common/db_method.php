@@ -446,16 +446,23 @@ if (!function_exists('insertSponsor')) {
 
 function insertUser($pdo, $data) 
 {
+    // Sanitize date fields for MySQL 8.0 strict mode compatibility
+    if (isset($data[19]) && ($data[19] === '' || $data[19] === '0000-00-00')) {
+        $data[19] = null; // upgrade_date
+    }
+    if (isset($data[25]) && ($data[25] === '' || $data[25] === '0000-00-00')) {
+        $data[25] = date('Y-m-d'); // closingdate
+    }
     $sql = "INSERT INTO `user` (
         `userid`, `name`, `mobile`, `email`, `pan`, `pass`, `txn_pass`, `sponserid`, `sponsername`, `underuserid`,
         `active`, `status`, `join_side`, `package`, `joining_date`, `plan`, `pin`, `kyc`, `club`, `upgrade_date`,
         `time`, `country`, `amount`, `capping`, `rank`, `closingdate`, `country_code`, `level`, `atime`, `pool`,
-        `state`, `father`, `gender`, `pin_code`, `address`, `otp`, `coin_wallet`
+        `state`, `father`, `gender`, `pin_code`, `address`, `otp`, `coin_wallet`, `one_club_status`
     ) VALUES (
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, 0
     )";
     $stmt = $pdo->prepare($sql);
     return $stmt->execute($data);
@@ -2902,11 +2909,16 @@ if (!function_exists('setTransactionKey')) {
             return ['status' => 'error', 'message' => 'Transaction Key must be at least 4 characters long.'];
         }
 
-        $hash = password_hash($txnKey, PASSWORD_BCRYPT);
-        $stmt = $db->prepare("UPDATE user SET txn_pass = :hash WHERE userid = :uid");
-        $stmt->execute([':hash' => $hash, ':uid' => $userid]);
+        try {
+            $hash = password_hash($txnKey, PASSWORD_BCRYPT);
+            $stmt = $db->prepare("UPDATE user SET txn_pass = :hash WHERE userid = :uid");
+            $stmt->execute([':hash' => $hash, ':uid' => $userid]);
 
-        return ['status' => 'success', 'message' => 'Transaction Key updated successfully.'];
+            return ['status' => 'success', 'message' => 'Transaction Key updated successfully.'];
+        } catch (Throwable $e) {
+            error_log("setTransactionKey Exception: " . $e->getMessage());
+            return ['status' => 'error', 'message' => 'Failed to update Transaction Key. Please try again.'];
+        }
     }
 }
 
@@ -4039,6 +4051,30 @@ if (!function_exists('getUserIncomeWalletHistory')) {
 /**
  * OTP Security & Transaction Key Reset Helpers
  */
+if (!function_exists('ensureOTPTableExists')) {
+    function ensureOTPTableExists($pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db) return;
+        try {
+            $db->exec("CREATE TABLE IF NOT EXISTS tbl_otp (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                userid VARCHAR(50) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                otp VARCHAR(10) NOT NULL,
+                type VARCHAR(50) NOT NULL DEFAULT 'TXN_KEY_RESET',
+                is_used TINYINT(1) NOT NULL DEFAULT 0,
+                created_at DATETIME NOT NULL,
+                expires_at DATETIME NOT NULL,
+                INDEX idx_user_type (userid, type),
+                INDEX idx_otp_verify (userid, otp, is_used)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        } catch (Throwable $t) {
+            error_log("ensureOTPTableExists error: " . $t->getMessage());
+        }
+    }
+}
+
 if (!function_exists('sendTransactionKeyOTP')) {
     function sendTransactionKeyOTP($userid, $pdoConnection = null) {
         global $pdo;
@@ -4047,72 +4083,84 @@ if (!function_exists('sendTransactionKeyOTP')) {
             return ['status' => 'error', 'message' => 'User authentication required.'];
         }
 
-        // Fetch user email & name
-        $stmtUser = $db->prepare("SELECT email, name FROM user WHERE userid = :uid LIMIT 1");
-        $stmtUser->execute([':uid' => $userid]);
-        $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        ensureOTPTableExists($db);
 
-        if (!$userRow || empty($userRow['email'])) {
-            return ['status' => 'error', 'message' => 'Registered user email not found.'];
-        }
+        try {
+            // Fetch user email & name
+            $stmtUser = $db->prepare("SELECT email, name FROM user WHERE userid = :uid LIMIT 1");
+            $stmtUser->execute([':uid' => $userid]);
+            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
-        $email = $userRow['email'];
-        $name = $userRow['name'] ?: 'User';
+            if (!$userRow || empty($userRow['email'])) {
+                return ['status' => 'error', 'message' => 'Registered user email not found.'];
+            }
 
-        // Check Rate Limiting: Max 3 OTPs within 5 minutes
-        $stmtLimit = $db->prepare("SELECT COUNT(*) FROM tbl_otp WHERE userid = :uid AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
-        $stmtLimit->execute([':uid' => $userid]);
-        if ((int)$stmtLimit->fetchColumn() >= 3) {
-            return ['status' => 'error', 'message' => 'Rate limit exceeded. Please wait 5 minutes before requesting a new OTP.'];
-        }
+            $email = $userRow['email'];
+            $name = $userRow['name'] ?: 'User';
 
-        // Invalidate any previous active unused OTPs for this user & request type
-        $stmtInvalidate = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE userid = :uid AND type = 'TXN_KEY_RESET' AND is_used = 0");
-        $stmtInvalidate->execute([':uid' => $userid]);
+            // Check Rate Limiting: Max 3 OTPs within 5 minutes
+            $stmtLimit = $db->prepare("SELECT COUNT(*) FROM tbl_otp WHERE userid = :uid AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
+            $stmtLimit->execute([':uid' => $userid]);
+            if ((int)$stmtLimit->fetchColumn() >= 3) {
+                return ['status' => 'error', 'message' => 'Rate limit exceeded. Please wait 5 minutes before requesting a new OTP.'];
+            }
 
-        // Generate 6-digit secure OTP
-        $otp = sprintf("%06d", mt_rand(100000, 999999));
+            // Invalidate any previous active unused OTPs for this user & request type
+            $stmtInvalidate = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE userid = :uid AND type = 'TXN_KEY_RESET' AND is_used = 0");
+            $stmtInvalidate->execute([':uid' => $userid]);
 
-        // Insert OTP record with 10 minute expiry
-        $stmtInsert = $db->prepare("INSERT INTO tbl_otp (userid, email, otp, type, is_used, created_at, expires_at) VALUES (:uid, :email, :otp, 'TXN_KEY_RESET', 0, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))");
-        $stmtInsert->execute([
-            ':uid' => $userid,
-            ':email' => $email,
-            ':otp' => $otp
-        ]);
+            // Generate 6-digit secure OTP
+            $otp = sprintf("%06d", random_int(100000, 999999));
 
-        // Fetch home email settings
-        $homeset = function_exists('getHomeSettings') ? getHomeSettings($db) : [];
-        $fromEmail = !empty($homeset['emailfrom']) ? $homeset['emailfrom'] : (!empty($homeset['email']) ? $homeset['email'] : 'no-reply@ananta.com');
+            // Insert OTP record with 10 minute expiry
+            $stmtInsert = $db->prepare("INSERT INTO tbl_otp (userid, email, otp, type, is_used, created_at, expires_at) VALUES (:uid, :email, :otp, 'TXN_KEY_RESET', 0, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))");
+            $stmtInsert->execute([
+                ':uid' => $userid,
+                ':email' => $email,
+                ':otp' => $otp
+            ]);
 
-        // Send Email via mail()
-        $to = $email;
-        $subject = "ANANTA — OTP for Transaction Key Reset";
-        $headers = "From: ANANTA Security <" . strip_tags($fromEmail) . ">\r\n";
-        $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+            // Fetch home email settings
+            $homeset = function_exists('getHomeSettings') ? getHomeSettings($db) : [];
+            $fromEmail = !empty($homeset['emailfrom']) ? $homeset['emailfrom'] : (!empty($homeset['email']) ? $homeset['email'] : 'no-reply@anantamtptl.com');
 
-        $message = '
-        <!DOCTYPE html>
-        <html>
-        <body style="font-family: Arial, sans-serif; background: #f4f6f8; padding: 30px 15px;">
-            <div style="max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 8px 25px rgba(0,0,0,0.05);">
-                <h2 style="color: #0f172a; margin-top: 0;">ANANTA Security OTP</h2>
-                <p style="color: #475569; font-size: 14px;">Hello <strong>' . htmlspecialchars($name) . '</strong>,</p>
-                <p style="color: #475569; font-size: 14px;">Use the following One Time Password (OTP) to reset your Transaction Key:</p>
-                <div style="text-align: center; margin: 25px 0;">
-                    <span style="font-size: 32px; font-weight: 800; font-family: monospace; letter-spacing: 6px; color: #0284c7; background: #f0f9ff; padding: 12px 24px; border-radius: 12px; border: 1px solid #bae6fd;">' . $otp . '</span>
+            // Send Email via mail()
+            $to = $email;
+            $subject = "ANANTA — OTP for Transaction Key Reset";
+            $headers = "From: ANANTA Security <" . strip_tags($fromEmail) . ">\r\n";
+            $headers .= "Reply-To: " . strip_tags($fromEmail) . "\r\n";
+            $headers .= "MIME-Version: 1.0\r\n";
+            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+
+            $message = '
+            <!DOCTYPE html>
+            <html>
+            <body style="font-family: Arial, sans-serif; background: #f4f6f8; padding: 30px 15px;">
+                <div style="max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 8px 25px rgba(0,0,0,0.05);">
+                    <h2 style="color: #0f172a; margin-top: 0;">ANANTA Security OTP</h2>
+                    <p style="color: #475569; font-size: 14px;">Hello <strong>' . htmlspecialchars($name) . '</strong>,</p>
+                    <p style="color: #475569; font-size: 14px;">Use the following One Time Password (OTP) to reset your Transaction Key:</p>
+                    <div style="text-align: center; margin: 25px 0;">
+                        <span style="font-size: 32px; font-weight: 800; font-family: monospace; letter-spacing: 6px; color: #0284c7; background: #f0f9ff; padding: 12px 24px; border-radius: 12px; border: 1px solid #bae6fd;">' . $otp . '</span>
+                    </div>
+                    <p style="color: #ef4444; font-size: 12.5px; font-weight: 600;">⏱️ This OTP is valid for 10 minutes and can only be used once.</p>
+                    <p style="color: #64748b; font-size: 12px; margin-bottom: 0;">If you did not request this OTP, please secure your account immediately.</p>
                 </div>
-                <p style="color: #ef4444; font-size: 12.5px; font-weight: 600;">⏱️ This OTP is valid for 10 minutes and can only be used once.</p>
-                <p style="color: #64748b; font-size: 12px; margin-bottom: 0;">If you did not request this OTP, please secure your account immediately.</p>
-            </div>
-        </body>
-        </html>
-        ';
+            </body>
+            </html>
+            ';
 
-        @mail($to, $subject, $message, $headers);
+            $sent = @mail($to, $subject, $message, $headers);
 
-        return ['status' => 'success', 'message' => 'OTP has been sent to your registered email: ' . htmlspecialchars($email)];
+            if (!$sent) {
+                error_log("OTP mail() delivery notice for user {$userid} to {$email}");
+            }
+
+            return ['status' => 'success', 'message' => 'OTP has been sent to your registered email: ' . htmlspecialchars($email)];
+        } catch (Throwable $e) {
+            error_log("sendTransactionKeyOTP Exception: " . $e->getMessage());
+            return ['status' => 'error', 'message' => 'Unable to send OTP right now. Please try again later.'];
+        }
     }
 }
 
@@ -4129,20 +4177,30 @@ if (!function_exists('verifyTransactionKeyOTP')) {
             return ['status' => 'error', 'message' => 'Please enter the OTP.'];
         }
 
-        // Check for valid unexpired OTP
-        $stmtCheck = $db->prepare("SELECT id FROM tbl_otp WHERE userid = :uid AND otp = :otp AND type = 'TXN_KEY_RESET' AND is_used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1");
-        $stmtCheck->execute([
-            ':uid' => $userid,
-            ':otp' => $otpInput
-        ]);
-        $otpRow = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+        ensureOTPTableExists($db);
 
-        if (!$otpRow) {
-            return ['status' => 'error', 'message' => 'Invalid or expired OTP. Please enter a valid OTP or request a new one.'];
+        try {
+            // Check for valid unexpired OTP
+            $stmtCheck = $db->prepare("SELECT id FROM tbl_otp WHERE userid = :uid AND otp = :otp AND type = 'TXN_KEY_RESET' AND is_used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1");
+            $stmtCheck->execute([
+                ':uid' => $userid,
+                ':otp' => $otpInput
+            ]);
+            $otpRow = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+            if (!$otpRow) {
+                return ['status' => 'error', 'message' => 'Invalid or expired OTP. Please enter a valid OTP or request a new one.'];
+            }
+
+            // Mark OTP as single-use (is_used = 1)
+            $stmtMark = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE id = :id");
+            $stmtMark->execute([':id' => $otpRow['id']]);
+
+            return ['status' => 'success', 'message' => 'OTP verified successfully! You may now enter your new Transaction Key below.'];
+        } catch (Throwable $e) {
+            error_log("verifyTransactionKeyOTP Exception: " . $e->getMessage());
+            return ['status' => 'error', 'message' => 'Unable to verify OTP right now. Please try again later.'];
         }
-
-        // Mark OTP as single-use (is_used = 1)
-        $stmtMark = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE id = :id");
     }
 }
 

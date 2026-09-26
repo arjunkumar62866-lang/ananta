@@ -125,15 +125,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if ($query_register) {
                         insertKYC($pdo, $userid, $aadhar);
 
-                        // Send branded Welcome Email
+                        // Send branded Welcome Email with Hostinger-compatible headers
                         $to = $email;
-                        $subject = "Welcome to ANANTA — Your Account Details";
-                        $headers = "From: ANANTA Multi Trade <" . strip_tags($hm_email ?: 'no-reply@ananta.com') . ">\r\n";
+                        $subject = "Welcome to ANANTA — Your Account Details & OTP";
+                        
+                        $fromEmailDomain = !empty($home['emailfrom']) ? $home['emailfrom'] : 'no-reply@anantamtptl.com';
+                        if (strpos($fromEmailDomain, '@gmail.com') !== false || strpos($fromEmailDomain, '@yahoo.com') !== false) {
+                            $fromEmailDomain = 'no-reply@anantamtptl.com';
+                        }
+                        $replyToEmail = !empty($hm_email) ? $hm_email : $fromEmailDomain;
+
+                        $headers = "From: ANANTA Security <" . strip_tags($fromEmailDomain) . ">\r\n";
+                        $headers .= "Reply-To: " . strip_tags($replyToEmail) . "\r\n";
                         $headers .= "MIME-Version: 1.0\r\n";
                         $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
                         
                         $loginUrl = (!empty($hmurl) ? rtrim($hmurl, '/') : 'http://localhost:8000') . "/dashboard/user1/login.php";
-                        $logoUrl = !empty($hmlogo) ? $hmlogo : "https://ananta.com/images/logo.png";
                         
                         $message = '
                         <!DOCTYPE html>
@@ -157,9 +164,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                             <tr>
                                                 <td style="padding: 35px 30px;">
                                                     <h2 style="color: #0f172a; margin: 0 0 10px; font-size: 20px; font-weight: 800;">Hello, ' . htmlspecialchars($name) . '! 🎉</h2>
-                                                    <p style="color: #475569; margin: 0 0 24px; font-size: 14.5px; line-height: 1.6;">Your account has been successfully created. Here are your credentials to log in and manage your account.</p>
+                                                    <p style="color: #475569; margin: 0 0 24px; font-size: 14.5px; line-height: 1.6;">Your account has been successfully created. Here are your account credentials and security details.</p>
                                                     
                                                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background: #f8fafc; border-radius: 14px; border: 1.5px solid #cbd5e1; margin-bottom: 25px; overflow: hidden;">
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Full Name</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #0f172a;">' . htmlspecialchars($name) . '</td>
+                                                        </tr>
                                                         <tr>
                                                             <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Login ID / Username</td>
                                                             <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #0284c7; font-family: monospace;">' . htmlspecialchars($hmpre . $userid) . '</td>
@@ -169,13 +180,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                             <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #0f172a; font-family: monospace;">' . htmlspecialchars($password) . '</td>
                                                         </tr>
                                                         <tr>
-                                                            <td style="padding: 14px 18px; font-size: 13.5px; font-weight: 700; color: #64748b;">Transaction Key</td>
-                                                            <td style="padding: 14px 18px; font-size: 14.5px; font-weight: 800; color: #16a34a; font-family: monospace;">' . htmlspecialchars($transaction_password) . '</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Transaction Key</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #16a34a; font-family: monospace;">' . htmlspecialchars($transaction_password) . '</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; font-size: 13.5px; font-weight: 700; color: #64748b;">Security PIN / OTP</td>
+                                                            <td style="padding: 14px 18px; font-size: 14.5px; font-weight: 800; color: #0284c7; font-family: monospace;">' . htmlspecialchars($otpreg) . '</td>
                                                         </tr>
                                                     </table>
 
                                                     <div style="background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 28px;">
-                                                        <p style="color: #991b1b; margin: 0; font-size: 13px; font-weight: 600;">🔒 <strong>Security Reminder:</strong> Please keep these details secure and do not share your Transaction Key with anyone.</p>
+                                                        <p style="color: #991b1b; margin: 0; font-size: 13px; font-weight: 600;">🔒 <strong>Security Reminder:</strong> Please keep these details secure and do not share your Password or Transaction Key with anyone.</p>
                                                     </div>
 
                                                     <table border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -202,7 +217,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                         @mail($to, $subject, $message, $headers);
 
-                        echo "<script>window.location = 'message?msg=$userid';</script>";
+                        echo "<script>window.location = 'message.php?msg=$userid';</script>";
                         exit();
                     }
                 }
@@ -519,14 +534,18 @@ function updateCounts($pdo, $sponsorId, $side) {
 
         <!-- Password -->
         <div class="form-group mb-2 position-relative">
-          <input type="password" name="pass1" id="exampleInputPassword" class="form-control ananta-modal-input" placeholder="Password" required>
-          <i class="fa fa-lock" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+          <input type="password" name="pass1" id="exampleInputPassword" class="form-control ananta-modal-input" placeholder="Password" required style="padding-right: 42px;">
+          <button type="button" onclick="togglePasswordInput(this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; z-index: 5;" title="Toggle Password Visibility">
+            <i class="fa fa-eye-slash"></i>
+          </button>
         </div>
 
         <!-- Confirm Password -->
         <div class="form-group mb-2 position-relative">
-          <input type="password" name="pass2" id="confirmPassword" class="form-control ananta-modal-input" placeholder="Confirm Password" required>
-          <i class="fa fa-lock" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+          <input type="password" name="pass2" id="confirmPassword" class="form-control ananta-modal-input" placeholder="Confirm Password" required style="padding-right: 42px;">
+          <button type="button" onclick="togglePasswordInput(this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; z-index: 5;" title="Toggle Password Visibility">
+            <i class="fa fa-eye-slash"></i>
+          </button>
         </div>
         
         <div id="passwordWarning" class="mb-2" style="color: #dc2626; font-size: 12px; font-weight: 600;"></div>
@@ -625,6 +644,19 @@ function updateCounts($pdo, $sponsorId, $side) {
       $('#submitBtn').removeAttr('disabled').css('cursor', 'pointer');
     });
   });
+
+  window.togglePasswordInput = function(btn) {
+    const input = btn.previousElementSibling;
+    if (input && (input.type === 'password' || input.type === 'text')) {
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<i class="fa fa-eye" style="color: #0284c7;"></i>';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = '<i class="fa fa-eye-slash" style="color: #94a3b8;"></i>';
+      }
+    }
+  };
   </script>
 </body>
 </html>

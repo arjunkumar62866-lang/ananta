@@ -239,9 +239,42 @@ $hmservice="service-details.php";
                         <i class="fa fa-user" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                     </div>
                     <div class="form-group mb-3 position-relative">
-                        <input type="password" name="password" class="form-control ananta-modal-input" placeholder="Password" required style="border-radius: 12px; height: 46px; padding-right: 40px;">
-                        <i class="fa fa-lock" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-                    </div>
+    <input type="password"
+           name="password"
+           id="password"
+           class="form-control ananta-modal-input"
+           placeholder="Password"
+           required
+           style="border-radius: 12px; height: 46px; padding-right: 42px;">
+
+    <button type="button"
+            class="btn-toggle-pass"
+            onclick="togglePasswordVisibility(this)"
+            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; z-index: 5;"
+            title="Show Password">
+        <i class="fa fa-eye-slash"></i>
+    </button>
+</div>
+
+<script>
+function togglePasswordVisibility(button) {
+    const input = button.parentElement.querySelector('input');
+    const icon = button.querySelector('i');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+        button.title = 'Hide Password';
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+        button.title = 'Show Password';
+    }
+}
+</script>
+
                     <div class="d-flex justify-content-between align-items-center mb-4" style="font-size: 13px;">
                         <label class="mb-0 d-flex align-items-center gap-1" style="color: #64748b; cursor: pointer;">
                             <input type="checkbox" checked style="accent-color: #10b981;"> Remember me
@@ -301,14 +334,60 @@ $hmservice="service-details.php";
                         </div>
                     </div>
                     <div class="form-group mb-2 position-relative">
-                        <input type="password" name="pass1" id="modalPass1" class="form-control ananta-modal-input" placeholder="Password" required style="border-radius: 10px; height: 42px; padding-right: 36px; font-size: 13.5px;">
-                        <i class="fa fa-lock" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-                    </div>
-                    <div class="form-group mb-2 position-relative">
-                        <input type="password" name="pass2" id="modalPass2" class="form-control ananta-modal-input" placeholder="Confirm Password" required style="border-radius: 10px; height: 42px; padding-right: 36px; font-size: 13.5px;">
-                        <i class="fa fa-lock" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2 px-2 py-1" style="background: #f8fafc; border-radius: 8px; font-size: 12.5px;">
+    <input type="password"
+           name="pass1"
+           id="modalPass1"
+           class="form-control ananta-modal-input"
+           placeholder="Password"
+           required
+           style="border-radius: 10px; height: 42px; padding-right: 42px; font-size: 13.5px;">
+
+    <button type="button"
+            class="btn-toggle-pass"
+            onclick="togglePasswordVisibility(this)"
+            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; z-index: 5;"
+            title="Show Password">
+        <i class="fa fa-eye-slash"></i>
+    </button>
+</div>
+
+<div class="form-group mb-2 position-relative">
+    <input type="password"
+           name="pass2"
+           id="modalPass2"
+           class="form-control ananta-modal-input"
+           placeholder="Confirm Password"
+           required
+           style="border-radius: 10px; height: 42px; padding-right: 42px; font-size: 13.5px;">
+
+    <button type="button"
+            class="btn-toggle-pass"
+            onclick="togglePasswordVisibility(this)"
+            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; z-index: 5;"
+            title="Show Password">
+        <i class="fa fa-eye-slash"></i>
+    </button>
+</div>
+
+<script>
+function togglePasswordVisibility(button) {
+    const input = button.parentElement.querySelector('input');
+    const icon = button.querySelector('i');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+        button.title = 'Hide Password';
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+        button.title = 'Show Password';
+    }
+}
+</script>
+<div class="d-flex justify-content-between align-items-center mb-2 px-2 py-1" style="background: #f8fafc; border-radius: 8px; font-size: 12.5px;">
                         <span style="font-weight: 600; color: #475569;">Position:</span>
                         <div class="d-flex gap-3">
                             <label class="mb-0" style="cursor: pointer;"><input type="radio" name="position" value="left" checked> Left</label>
@@ -601,6 +680,22 @@ $hmservice="service-details.php";
                 });
             }
         });
+
+        // Global Password Hide/Show Eye Toggle
+        window.togglePasswordVisibility = function(btn) {
+            if (!btn) return;
+            const parent = btn.closest('.position-relative') || btn.parentElement;
+            const input = parent ? parent.querySelector('input') : null;
+            if (input) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    btn.innerHTML = '<i class="fa fa-eye" style="color: #0284c7; font-size: 15px;"></i>';
+                } else {
+                    input.type = 'password';
+                    btn.innerHTML = '<i class="fa fa-eye-slash" style="color: #94a3b8; font-size: 15px;"></i>';
+                }
+            }
+        };
         </script>
 
     </body>

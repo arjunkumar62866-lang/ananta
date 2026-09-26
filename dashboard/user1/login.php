@@ -202,8 +202,10 @@ $hmcolor = $homeset['color'] ?? '';
           <i class="fa fa-user" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
         </div>
         <div class="form-group mb-3 position-relative">
-          <input type="password" name="password" class="form-control ananta-modal-input" placeholder="Password" required>
-          <i class="fa fa-lock" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+          <input type="password" name="password" class="form-control ananta-modal-input" placeholder="Password" required style="padding-right: 42px;">
+          <button type="button" onclick="togglePasswordInput(this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; z-index: 5;" title="Toggle Password Visibility">
+            <i class="fa fa-eye-slash"></i>
+          </button>
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-4" style="font-size: 13px;">
@@ -237,5 +239,19 @@ $hmcolor = $homeset['color'] ?? '';
   <script src="assets/js/jquery.min.js"></script>
   <script src="assets/js/popper.min.js"></script>
   <script src="assets/js/bootstrap.min.js"></script>
+  <script>
+    window.togglePasswordInput = function(btn) {
+      const input = btn.previousElementSibling;
+      if (input && (input.type === 'password' || input.type === 'text')) {
+        if (input.type === 'password') {
+          input.type = 'text';
+          btn.innerHTML = '<i class="fa fa-eye" style="color: #0284c7;"></i>';
+        } else {
+          input.type = 'password';
+          btn.innerHTML = '<i class="fa fa-eye-slash" style="color: #94a3b8;"></i>';
+        }
+      }
+    };
+  </script>
 </body>
 </html>

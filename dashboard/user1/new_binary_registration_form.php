@@ -213,20 +213,95 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         insertKYC($pdo, $userid, $aadhar);
 
                         $to = $email;
-                        $subject = $hmtitle . " Registration Successfully ";
-                        $headers = "From: " . strip_tags($hm_email) . "\r\n";
-                        $headers .= "MIME-Version: 1.0\r\n";
-                        $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
-                        $message = '<html><body>';
-                        $message .= '<table>';
-                        $message .= "<tr style='background: #eee;'><td><strong>Name:</strong> </td><td>" . strip_tags($name) . "</td></tr>";
-                        $message .= "<tr><td><strong>Email:</strong></td><td>" . htmlspecialchars($email) . "</td></tr>";
-                        $message .= "<tr><td><strong>User id:</strong></td><td>" . htmlspecialchars($hmpre.$userid) . "</td></tr>";
-                        $message .= "<tr><td><strong>Password:</strong></td><td>" . htmlspecialchars($password) . "</td></tr>";
-                        // $message .= "<tr><td><strong>Transaction Password:</strong></td><td>" . htmlspecialchars($transaction_password) . "</td></tr>";
-                        $message .= "</table></body></html>";
+                        $subject = "Welcome to ANANTA — Your Account Details & OTP";
+                        
+                        $fromEmailDomain = !empty($home['emailfrom']) ? $home['emailfrom'] : 'no-reply@anantamtptl.com';
+                        if (strpos($fromEmailDomain, '@gmail.com') !== false || strpos($fromEmailDomain, '@yahoo.com') !== false) {
+                            $fromEmailDomain = 'no-reply@anantamtptl.com';
+                        }
+                        $replyToEmail = !empty($hm_email) ? $hm_email : $fromEmailDomain;
 
-                        mail($to, $subject, $message, $headers);
+                        $headers = "From: ANANTA Security <" . strip_tags($fromEmailDomain) . ">\r\n";
+                        $headers .= "Reply-To: " . strip_tags($replyToEmail) . "\r\n";
+                        $headers .= "MIME-Version: 1.0\r\n";
+                        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                        
+                        $loginUrl = (!empty($hmurl) ? rtrim($hmurl, '/') : 'http://localhost:8000') . "/dashboard/user1/login.php";
+                        
+                        $message = '
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Welcome to ANANTA</title>
+                        </head>
+                        <body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: \'Plus Jakarta Sans\', Arial, sans-serif;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+                                <tr>
+                                    <td align="center" style="padding: 40px 15px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; overflow: hidden;">
+                                            <tr>
+                                                <td align="center" style="padding: 35px 30px 25px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%);">
+                                                    <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">ANANTA</h1>
+                                                    <p style="color: rgba(255,255,255,0.9); margin: 6px 0 0; font-size: 14px; font-weight: 600;">Welcome to the Platform</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 35px 30px;">
+                                                    <h2 style="color: #0f172a; margin: 0 0 10px; font-size: 20px; font-weight: 800;">Hello, ' . htmlspecialchars($name) . '! 🎉</h2>
+                                                    <p style="color: #475569; margin: 0 0 24px; font-size: 14.5px; line-height: 1.6;">Your account has been successfully created. Here are your account credentials and security details.</p>
+                                                    
+                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background: #f8fafc; border-radius: 14px; border: 1.5px solid #cbd5e1; margin-bottom: 25px; overflow: hidden;">
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Full Name</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #0f172a;">' . htmlspecialchars($name) . '</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Login ID / Username</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #0284c7; font-family: monospace;">' . htmlspecialchars($hmpre . $userid) . '</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Login Password</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #0f172a; font-family: monospace;">' . htmlspecialchars($password) . '</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; font-weight: 700; color: #64748b;">Transaction Key</td>
+                                                            <td style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; font-size: 14.5px; font-weight: 800; color: #16a34a; font-family: monospace;">' . htmlspecialchars($transaction_password) . '</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 14px 18px; font-size: 13.5px; font-weight: 700; color: #64748b;">Security PIN / OTP</td>
+                                                            <td style="padding: 14px 18px; font-size: 14.5px; font-weight: 800; color: #0284c7; font-family: monospace;">' . htmlspecialchars($otpreg) . '</td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <div style="background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 28px;">
+                                                        <p style="color: #991b1b; margin: 0; font-size: 13px; font-weight: 600;">🔒 <strong>Security Reminder:</strong> Please keep these details secure and do not share your Password or Transaction Key with anyone.</p>
+                                                    </div>
+
+                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tr>
+                                                            <td align="center">
+                                                                <a href="' . $loginUrl . '" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-size: 15px; font-weight: 800; box-shadow: 0 6px 20px rgba(2,132,199,0.25);">Continue to Login &rarr;</a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="center" style="padding: 20px 30px; background: #f8fafc; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; font-weight: 500;">
+                                                    &copy; ' . date('Y') . ' ANANTA Multi Trade. All rights reserved.
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </body>
+                        </html>
+                        ';
+
+                        @mail($to, $subject, $message, $headers);
 
                         $pinfinal = $userid;
                         if($position == "left"){
