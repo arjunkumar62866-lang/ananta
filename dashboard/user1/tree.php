@@ -643,20 +643,23 @@ body.bg-theme {
                     .then(res => res.json())
                     .then(res => {
                         if (res.status === 'success' && res.data && res.data.children && res.data.children.length > 0) {
-                            const subHierarchy = d3.hierarchy(res.data, child => child.children);
-                            d.children = subHierarchy.children;
-                            if (d.children) {
-                                function assignDepths(node, parentNode) {
-                                    node.parent = parentNode;
-                                    node.depth = parentNode.depth + 1;
-                                    if (node.children) {
-                                        node.children.forEach(c => assignDepths(c, node));
-                                    }
-                                }
-                                d.children.forEach(c => assignDepths(c, d));
-                            }
                             d.data.children = res.data.children;
-                            updateTree(d);
+                            
+                            // Re-build hierarchy from rootNode data so depth & level positions update globally forward
+                            const newRoot = d3.hierarchy(rootNode.data, child => child.children);
+                            newRoot.x0 = rootNode.x0;
+                            newRoot.y0 = rootNode.y0;
+                            rootNode = newRoot;
+
+                            // Find target node in new tree
+                            let targetNode = rootNode;
+                            rootNode.descendants().forEach(nd => {
+                                if (nd.data.id === d.data.id) {
+                                    targetNode = nd;
+                                }
+                            });
+
+                            updateTree(targetNode);
                         } else {
                             d.data.has_children_db = false;
                             updateTree(d);
