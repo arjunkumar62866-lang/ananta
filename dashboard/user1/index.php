@@ -149,15 +149,15 @@ $isAccountActive = (isset($idactive) && ((string)$idactive === '1' || (int)$idac
 $leftBranchMembers = !empty($leftid) ? getRootBranchTreeDetailed($leftid, $pdo, 'LEFT') : [];
 $rightBranchMembers = !empty($rightid) ? getRootBranchTreeDetailed($rightid, $pdo, 'RIGHT') : [];
 
-$directbusinesstotalleft = array_sum(array_column($leftBranchMembers, 'investment_inr'));
-$directbusinesstotalright = array_sum(array_column($rightBranchMembers, 'investment_inr'));
+$directbusinesstotalleft = array_sum(array_column($leftBranchMembers, 'investment_usd'));
+$directbusinesstotalright = array_sum(array_column($rightBranchMembers, 'investment_usd'));
 
-// Fallback to tree.lefttotal / righttotal if investment sum is 0
+// Fallback to tree.lefttotal / righttotal (converted to USD) if investment sum is 0
 if ($directbusinesstotalleft <= 0 && floatval($left_total) > 0) {
-    $directbusinesstotalleft = floatval($left_total);
+    $directbusinesstotalleft = parseInputToUSD(floatval($left_total), 'INR');
 }
 if ($directbusinesstotalright <= 0 && floatval($right_total) > 0) {
-    $directbusinesstotalright = floatval($right_total);
+    $directbusinesstotalright = parseInputToUSD(floatval($right_total), 'INR');
 }
 $directbusinesstotal = $directbusinesstotalleft + $directbusinesstotalright;
 
@@ -1526,11 +1526,11 @@ body.ananta-user-dashboard {
                         </div>
                         <div class="d-flex justify-content-between py-1 border-bottom">
                             <span class="text-muted">Total Team Business</span>
-                            <span class="font-weight-bold text-primary"><?php echo formatCurrency(parseInputToUSD($directbusinesstotal, 'INR'), $selectedCurrency); ?></span>
+                            <span class="font-weight-bold text-primary"><?php echo formatCurrency($directbusinesstotal, $selectedCurrency); ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1 border-bottom">
                             <span class="text-muted">Team Business (Left / Right)</span>
-                            <span class="font-weight-bold text-dark"><?php echo formatCurrency(parseInputToUSD($directbusinesstotalleft, 'INR'), $selectedCurrency) . " / " . formatCurrency(parseInputToUSD($directbusinesstotalright, 'INR'), $selectedCurrency); ?></span>
+                            <span class="font-weight-bold text-dark"><?php echo formatCurrency($directbusinesstotalleft, $selectedCurrency) . " / " . formatCurrency($directbusinesstotalright, $selectedCurrency); ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1 border-bottom">
                             <span class="text-muted">Active Team (Left / Right)</span>

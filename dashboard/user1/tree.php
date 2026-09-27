@@ -44,7 +44,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $uid = (string)$row['userid'];
         $globalUserMap[$uid] = $row;
 
-        $pId = !empty($row['underuserid']) ? (string)$row['underuserid'] : (!empty($row['sponserid']) ? (string)$row['sponserid'] : '');
+        $pId = !empty($row['underuserid']) ? (string)$row['underuserid'] : '';
         if (!empty($pId)) {
             $underUserChildrenMap[$pId][] = $row;
         }
@@ -82,7 +82,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         return ['count' => $count, 'business_usd' => $business];
     }
 
-    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, $visitedTree = []) {
+    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, &$visitedTree = []) {
         global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap;
 
         $nodeId = (string)$nodeId;

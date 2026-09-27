@@ -84,15 +84,30 @@ $direct_bonus_wallet = $rowheader['direct_bonus_wallet'] ?? 0;
 
 
 
-$treedata=getusertreedata($userid);
-$leftid = $treedata['left'];
-$rightid = $treedata['right'];
-$left_team = $treedata['leftcount'];
-$right_team = $treedata['rightcount'];
-$total_team=$left_team+$right_team;
-$left_total = $treedata['lefttotal'];
-$right_total = $treedata['righttotal'];
-$all_total=$left_total+$right_total;
+$treedata = function_exists('getUserTreeData') ? getUserTreeData($userid) : null;
+$leftid = $treedata['left'] ?? '';
+$rightid = $treedata['right'] ?? '';
+$left_team = intval($treedata['leftcount'] ?? 0);
+$right_team = intval($treedata['rightcount'] ?? 0);
+$left_total = floatval($treedata['lefttotal'] ?? 0);
+$right_total = floatval($treedata['righttotal'] ?? 0);
+
+// Dynamic fallback from user.underuserid if tree table left/right IDs are empty
+if (empty($leftid) || empty($rightid)) {
+    $stmtChildCheck = $pdo->prepare("SELECT userid, join_side FROM user WHERE underuserid = :uid");
+    $stmtChildCheck->execute([':uid' => $userid]);
+    while ($cRow = $stmtChildCheck->fetch(PDO::FETCH_ASSOC)) {
+        $cSide = strtolower($cRow['join_side'] ?? '');
+        if ($cSide === 'left' && empty($leftid)) {
+            $leftid = (string)$cRow['userid'];
+        } elseif ($cSide === 'right' && empty($rightid)) {
+            $rightid = (string)$cRow['userid'];
+        }
+    }
+}
+
+$total_team = $left_team + $right_team;
+$all_total = $left_total + $right_total;
 
 $left_active=$left_team;
 $right_active=$right_team;
