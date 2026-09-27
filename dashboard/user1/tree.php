@@ -655,9 +655,19 @@ body.bg-theme {
                             const subHierarchy = d3.hierarchy(res.data, child => child.children);
                             d.children = subHierarchy.children;
                             if (d.children) {
+                                function syncNodeDepth(node, parentNode) {
+                                    node.parent = parentNode;
+                                    node.depth = parentNode.depth + 1;
+                                    if (node.children) {
+                                        node.children.forEach(ch => syncNodeDepth(ch, node));
+                                    }
+                                    if (node._children) {
+                                        node._children.forEach(ch => syncNodeDepth(ch, node));
+                                    }
+                                }
                                 d.children.forEach(c => {
-                                    c.parent = d;
-                                    collapseSubtree(c); // Collapse all deeper descendants
+                                    syncNodeDepth(c, d);
+                                    collapseSubtree(c); // Collapse all deeper descendants beyond immediate level
                                 });
                             }
 
