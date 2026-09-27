@@ -524,17 +524,9 @@ body.bg-theme {
         rootNode.x0 = height / 2;
         rootNode.y0 = isMobile ? 40 : 100;
 
-        rootNode = d3.hierarchy(data, d => d.children);
-        rootNode.x0 = height / 2;
-        rootNode.y0 = isMobile ? 40 : 100;
-
         // Clean Step-by-Step View: Only root and its immediate children (depth 1) are open on initial load
         if (rootNode.children) {
-            rootNode.children.forEach(c => {
-                if (c.children) {
-                    c.children.forEach(collapseSubtree);
-                }
-            });
+            rootNode.children.forEach(collapseSubtree);
         }
 
         // Center Initial Position according to screen size
@@ -634,7 +626,7 @@ body.bg-theme {
                 return `${d.data.id}${pos}`;
             });
 
-        // Click / Tap Event (UNLIMITED EXPANSION & STRICT 1-LEVEL STEP-BY-STEP TOGGLE)
+        // Click / Tap Event (UNLIMITED EXPANSION & STRICT SINGLE-LEVEL TOGGLE)
         nodeEnter.on('click', (event, d) => {
             event.stopPropagation();
             
@@ -659,26 +651,17 @@ body.bg-theme {
                         if (res.status === 'success' && res.data && res.data.children && res.data.children.length > 0) {
                             d.data.children = res.data.children;
                             
-                            // Re-build hierarchy from rootNode data
-                            const newRoot = d3.hierarchy(rootNode.data, child => child.children);
-                            newRoot.x0 = rootNode.x0;
-                            newRoot.y0 = rootNode.y0;
-                            rootNode = newRoot;
-
-                            // Find target node in new tree
-                            let targetNode = rootNode;
-                            rootNode.descendants().forEach(nd => {
-                                if (nd.data.id === d.data.id) {
-                                    targetNode = nd;
-                                }
-                            });
-
-                            // Ensure ONLY immediate next level opens (collapse all deeper sub-children recursively)
-                            if (targetNode.children) {
-                                targetNode.children.forEach(collapseSubtree);
+                            // Build subHierarchy for target node directly
+                            const subHierarchy = d3.hierarchy(res.data, child => child.children);
+                            d.children = subHierarchy.children;
+                            if (d.children) {
+                                d.children.forEach(c => {
+                                    c.parent = d;
+                                    collapseSubtree(c); // Collapse all deeper descendants
+                                });
                             }
 
-                            updateTree(targetNode);
+                            updateTree(d);
                         } else {
                             d.data.has_children_db = false;
                             updateTree(d);
