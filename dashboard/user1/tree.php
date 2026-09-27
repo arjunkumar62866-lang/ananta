@@ -30,113 +30,114 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         exit;
     }
 
-    // Recursive function for unlimited horizontal binary tree expansion with currency formatting & real team counts
-    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10) {
-        global $pdo, $currSelection;
-        static $branchCache = [];
+    // Pre-load all users, tree placement, and investments into memory maps for ultra-fast, zero-timeout execution
+    $stmtAllUsers = $pdo->query("
+        SELECT 
+            u.userid, u.name, u.active, u.status, u.package, u.sponserid, u.underuserid, u.join_side, u.joining_date, u.mobile, COALESCE(u.amount, 0) as user_amount,
+            t.left_id, t.right_id, t.leftcount, t.rightcount, t.lefttotal, t.righttotal
+        FROM user u
+        LEFT JOIN tree t ON t.userid = u.userid
+    ");
+    $globalUserMap = [];
+    $underUserChildrenMap = [];
+    while ($row = $stmtAllUsers->fetch(PDO::FETCH_ASSOC)) {
+        $uid = (string)$row['userid'];
+        $globalUserMap[$uid] = $row;
 
-        if (empty($nodeId)) return null;
-
-        // Fetch User Info & Personal Investment
-        $uStmt = $pdo->prepare("
-            SELECT 
-                u.userid,
-                u.name,
-                u.active,
-                u.status,
-                u.package,
-                u.sponserid,
-                u.joining_date,
-                u.mobile,
-                COALESCE(u.amount, 0) as user_amount,
-                COALESCE(SUM(r.real_fund_usd), COALESCE(SUM(r.package), 0)) as personal_business_usd
-            FROM user u
-            LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
-            WHERE u.userid = :id
-            GROUP BY u.userid, u.name, u.active, u.status, u.package, u.sponserid, u.joining_date, u.mobile, u.amount
-            LIMIT 1
-        ");
-        $uStmt->execute([':id' => $nodeId]);
-        $user = $uStmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$user) return null;
-
-        // Fetch Tree Placement Record
-        $tStmt = $pdo->prepare("SELECT left_id, right_id, leftcount, rightcount, lefttotal, righttotal FROM tree WHERE userid = :id LIMIT 1");
-        $tStmt->execute([':id' => $nodeId]);
-        $tree = $tStmt->fetch(PDO::FETCH_ASSOC) ?: [
-            'left_id' => '', 'right_id' => '',
-            'leftcount' => 0, 'rightcount' => 0,
-            'lefttotal' => 0, 'righttotal' => 0
-        ];
-
-        // Calculate Left Team Members & Business
-        if (!empty($tree['left_id'])) {
-            if (!isset($branchCache[$tree['left_id']])) {
-                $branchCache[$tree['left_id']] = getRootBranchTreeDetailed($tree['left_id'], $pdo, 'LEFT');
-            }
-            $leftMembers = $branchCache[$tree['left_id']];
-        } else {
-            $leftMembers = [];
+        $pId = !empty($row['underuserid']) ? (string)$row['underuserid'] : (!empty($row['sponserid']) ? (string)$row['sponserid'] : '');
+        if (!empty($pId)) {
+            $underUserChildrenMap[$pId][] = $row;
         }
-        $leftCount = count($leftMembers);
-        if ($leftCount < intval($tree['leftcount'])) {
-            $leftCount = intval($tree['leftcount']);
+    }
+
+    $stmtAllInv = $pdo->query("SELECT user_id, COALESCE(SUM(real_fund_usd), COALESCE(SUM(package), 0)) as total_usd FROM tbl_roi_one GROUP BY user_id");
+    $globalInvMap = [];
+    while ($r = $stmtAllInv->fetch(PDO::FETCH_ASSOC)) {
+        $globalInvMap[(string)$r['user_id']] = (float)$r['total_usd'];
+    }
+
+    function calcBranchStatsFast($startNodeId, &$globalUserMap, &$globalInvMap, $visited = []) {
+        if (empty($startNodeId) || !isset($globalUserMap[$startNodeId]) || isset($visited[$startNodeId])) {
+            return ['count' => 0, 'business_usd' => 0.0];
+        }
+        $visited[$startNodeId] = true;
+
+        $u = $globalUserMap[$startNodeId];
+        $count = 1;
+        $business = (float)($globalInvMap[$startNodeId] ?? 0);
+        if ($business <= 0 && (float)($u['user_amount'] ?? 0) > 0) {
+            $business = parseInputToUSD((float)$u['user_amount'], 'INR');
         }
 
-        // Calculate Right Team Members & Business
-        if (!empty($tree['right_id'])) {
-            if (!isset($branchCache[$tree['right_id']])) {
-                $branchCache[$tree['right_id']] = getRootBranchTreeDetailed($tree['right_id'], $pdo, 'RIGHT');
-            }
-            $rightMembers = $branchCache[$tree['right_id']];
-        } else {
-            $rightMembers = [];
-        }
-        $rightCount = count($rightMembers);
-        if ($rightCount < intval($tree['rightcount'])) {
-            $rightCount = intval($tree['rightcount']);
+        $cList = [];
+        if (!empty($u['left_id'])) $cList[] = (string)$u['left_id'];
+        if (!empty($u['right_id'])) $cList[] = (string)$u['right_id'];
+
+        foreach ($cList as $cId) {
+            $sub = calcBranchStatsFast($cId, $globalUserMap, $globalInvMap, $visited);
+            $count += $sub['count'];
+            $business += $sub['business_usd'];
         }
 
-        $leftBusiness = array_sum(array_column($leftMembers, 'investment_usd'));
-        if ($leftBusiness <= 0 && floatval($tree['lefttotal']) > 0) {
-            $leftBusiness = parseInputToUSD(floatval($tree['lefttotal']), 'INR', $pdo);
+        return ['count' => $count, 'business_usd' => $business];
+    }
+
+    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, $visitedTree = []) {
+        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap;
+
+        $nodeId = (string)$nodeId;
+        if (empty($nodeId) || !isset($globalUserMap[$nodeId]) || isset($visitedTree[$nodeId])) return null;
+        $visitedTree[$nodeId] = true;
+
+        $user = $globalUserMap[$nodeId];
+
+        // Left Branch Stats
+        $leftStats = ['count' => 0, 'business_usd' => 0.0];
+        if (!empty($user['left_id'])) {
+            $leftStats = calcBranchStatsFast((string)$user['left_id'], $globalUserMap, $globalInvMap);
+        }
+        $leftCount = max(intval($user['leftcount'] ?? 0), $leftStats['count']);
+        $leftBusiness = $leftStats['business_usd'];
+        if ($leftBusiness <= 0 && floatval($user['lefttotal'] ?? 0) > 0) {
+            $leftBusiness = parseInputToUSD(floatval($user['lefttotal']), 'INR');
         }
 
-        $rightBusiness = array_sum(array_column($rightMembers, 'investment_usd'));
-        if ($rightBusiness <= 0 && floatval($tree['righttotal']) > 0) {
-            $rightBusiness = parseInputToUSD(floatval($tree['righttotal']), 'INR', $pdo);
+        // Right Branch Stats
+        $rightStats = ['count' => 0, 'business_usd' => 0.0];
+        if (!empty($user['right_id'])) {
+            $rightStats = calcBranchStatsFast((string)$user['right_id'], $globalUserMap, $globalInvMap);
+        }
+        $rightCount = max(intval($user['rightcount'] ?? 0), $rightStats['count']);
+        $rightBusiness = $rightStats['business_usd'];
+        if ($rightBusiness <= 0 && floatval($user['righttotal'] ?? 0) > 0) {
+            $rightBusiness = parseInputToUSD(floatval($user['righttotal']), 'INR');
         }
 
-        $personalBusiness = floatval($user['personal_business_usd']);
-        if ($personalBusiness <= 0 && floatval($user['user_amount']) > 0) {
-            $personalBusiness = parseInputToUSD(floatval($user['user_amount']), 'INR', $pdo);
+        $personalBusiness = (float)($globalInvMap[$nodeId] ?? 0);
+        if ($personalBusiness <= 0 && floatval($user['user_amount'] ?? 0) > 0) {
+            $personalBusiness = parseInputToUSD(floatval($user['user_amount']), 'INR');
         }
 
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
-        // Gather real children IDs
+        // Gather Children
         $childrenList = [];
-
-        if (!empty($tree['left_id'])) {
-            $childrenList[] = ['id' => $tree['left_id'], 'side' => 'LEFT'];
+        if (!empty($user['left_id'])) {
+            $childrenList[] = ['id' => (string)$user['left_id'], 'side' => 'LEFT'];
         }
-        if (!empty($tree['right_id'])) {
-            $childrenList[] = ['id' => $tree['right_id'], 'side' => 'RIGHT'];
+        if (!empty($user['right_id'])) {
+            $childrenList[] = ['id' => (string)$user['right_id'], 'side' => 'RIGHT'];
         }
-
-        // Also check user table for direct/underuserid downlines
-        $uChildStmt = $pdo->prepare("SELECT userid, join_side FROM user WHERE underuserid = :id OR (sponserid = :id AND (underuserid IS NULL OR underuserid = '' OR underuserid = :id))");
-        $uChildStmt->execute([':id' => $nodeId]);
-        $uChildren = $uChildStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $existingChildIds = array_column($childrenList, 'id');
-        foreach ($uChildren as $uc) {
-            $cId = $uc['userid'];
-            if ($cId !== $nodeId && !in_array($cId, $existingChildIds)) {
-                $side = !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DOWNLINE';
-                $childrenList[] = ['id' => $cId, 'side' => $side];
-                $existingChildIds[] = $cId;
+        if (isset($underUserChildrenMap[$nodeId])) {
+            foreach ($underUserChildrenMap[$nodeId] as $uc) {
+                $cId = (string)$uc['userid'];
+                if ($cId !== $nodeId && !in_array($cId, $existingChildIds)) {
+                    $side = !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DOWNLINE';
+                    $childrenList[] = ['id' => $cId, 'side' => $side];
+                    $existingChildIds[] = $cId;
+                }
             }
         }
 
@@ -158,10 +159,9 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             'children'              => []
         ];
 
-        // Recurse children if within depth limit
         if ($currentDepth < $maxDepth) {
             foreach ($childrenList as $cItem) {
-                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth);
+                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedTree);
                 if ($childNode) {
                     $childNode['position'] = $cItem['side'];
                     $node['children'][] = $childNode;

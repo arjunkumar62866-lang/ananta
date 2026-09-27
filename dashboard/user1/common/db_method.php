@@ -1613,10 +1613,51 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || empty($startChildId)) return [];
 
+        static $memoCache = [];
+        $cacheKey = $startChildId . '_' . $initialPosition;
+        if (isset($memoCache[$cacheKey])) {
+            return $memoCache[$cacheKey];
+        }
+
+        // Bulk load all users, tree nodes, investments, and direct count in 2 single queries
+        $stmtUsers = $db->query("
+            SELECT 
+                u.userid, u.name, COALESCE(u.`rank`, 'Member') as `rank`, u.joining_date, u.active, u.join_side, u.sponserid, u.underuserid,
+                t.left_id, t.right_id
+            FROM user u
+            LEFT JOIN tree t ON t.userid = u.userid
+        ");
+        $userMap = [];
+        $underMap = [];
+        $directMap = [];
+        while ($r = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (string)$r['userid'];
+            $userMap[$uid] = $r;
+            $sp = !empty($r['sponserid']) ? (string)$r['sponserid'] : '';
+            if ($sp !== '') {
+                $directMap[$sp] = ($directMap[$sp] ?? 0) + 1;
+            }
+            $pId = !empty($r['underuserid']) ? (string)$r['underuserid'] : ($sp !== '' ? $sp : '');
+            if ($pId !== '') {
+                $underMap[$pId][] = $r;
+            }
+        }
+
+        $stmtInv = $db->query("
+            SELECT r.user_id, COALESCE(SUM(r.package), 0) as total_inr, COALESCE(SUM(r.real_fund_usd), 0) as total_usd, MAX(r.date) as latest_date,
+                   (SELECT r2.package_code FROM tbl_roi_one r2 WHERE r2.user_id = r.user_id ORDER BY r2.id DESC LIMIT 1) as latest_pkg
+            FROM tbl_roi_one r
+            GROUP BY r.user_id
+        ");
+        $invMap = [];
+        while ($r = $stmtInv->fetch(PDO::FETCH_ASSOC)) {
+            $invMap[(string)$r['user_id']] = $r;
+        }
+
         $results = [];
         $queue = [
             [
-                'userid'    => $startChildId,
+                'userid'    => (string)$startChildId,
                 'parent_id' => '',
                 'position'  => strtoupper($initialPosition),
                 'level'     => 1
@@ -1627,104 +1668,72 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         while (!empty($queue)) {
             $curr = array_shift($queue);
             $uid = $curr['userid'];
-            if (in_array($uid, $visited)) continue;
-            $visited[] = $uid;
+            if (isset($visited[$uid]) || !isset($userMap[$uid])) continue;
+            $visited[$uid] = true;
 
-            $stmtU = $db->prepare("
-                SELECT 
-                    u.userid,
-                    u.name,
-                    COALESCE(u.`rank`, 'Member') as `rank`,
-                    u.joining_date,
-                    u.active,
-                    u.join_side,
-                    COALESCE(SUM(r.package), 0) as total_investment_inr,
-                    COALESCE(SUM(r.real_fund_usd), 0) as total_investment_usd,
-                    MAX(r.date) as latest_investment_date,
-                    (SELECT r2.package_code FROM tbl_roi_one r2 WHERE r2.user_id = u.userid ORDER BY r2.id DESC LIMIT 1) as latest_package
-                FROM user u
-                LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
-                WHERE u.userid = :uid
-                GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active, u.join_side
-                LIMIT 1
-            ");
-            $stmtU->execute([':uid' => $uid]);
-            $uData = $stmtU->fetch(PDO::FETCH_ASSOC);
+            $uData = $userMap[$uid];
+            $invData = $invMap[$uid] ?? [];
 
-            if ($uData) {
-                $invInr = (float)($uData['total_investment_inr'] ?? 0);
-                $invUsd = (float)($uData['total_investment_usd'] ?? 0);
-                if ($invUsd <= 0 && $invInr > 0) {
-                    $invUsd = parseInputToUSD($invInr, 'INR', $db);
-                }
+            $invInr = (float)($invData['total_inr'] ?? 0);
+            $invUsd = (float)($invData['total_usd'] ?? 0);
+            if ($invUsd <= 0 && $invInr > 0) {
+                $invUsd = parseInputToUSD($invInr, 'INR', $db);
+            }
 
-                $stmtDir = $db->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :uid");
-                $stmtDir->execute([':uid' => $uid]);
-                $directCount = (int)$stmtDir->fetchColumn();
+            $directCount = $directMap[$uid] ?? 0;
+            $nodePos = !empty($curr['position']) ? $curr['position'] : (!empty($uData['join_side']) ? strtoupper($uData['join_side']) : $initialPosition);
 
-                $nodePos = !empty($curr['position']) ? $curr['position'] : (!empty($uData['join_side']) ? strtoupper($uData['join_side']) : $initialPosition);
+            $results[] = [
+                'userid'           => $uid,
+                'name'             => $uData['name'],
+                'rank'             => $uData['rank'],
+                'level'            => $curr['level'],
+                'parent_id'        => $curr['parent_id'],
+                'position'         => strtoupper($nodePos),
+                'joining_date'     => $uData['joining_date'],
+                'investment_date'  => $invData['latest_date'] ?? 'N/A',
+                'investment_inr'   => $invInr,
+                'investment_usd'   => $invUsd,
+                'status'           => ($uData['active'] == 1) ? 'Active' : 'Inactive',
+                'package'          => $invData['latest_pkg'] ?? ($invUsd > 0 ? 'ANANTA' : 'N/A'),
+                'direct_count'     => $directCount,
+                'downline_count'   => 0
+            ];
 
-                $results[] = [
-                    'userid'           => $uid,
-                    'name'             => $uData['name'],
-                    'rank'             => $uData['rank'],
-                    'level'            => $curr['level'],
-                    'parent_id'        => $curr['parent_id'],
-                    'position'         => strtoupper($nodePos),
-                    'joining_date'     => $uData['joining_date'],
-                    'investment_date'  => $uData['latest_investment_date'] ?: 'N/A',
-                    'investment_inr'   => $invInr,
-                    'investment_usd'   => $invUsd,
-                    'status'           => ($uData['active'] == 1) ? 'Active' : 'Inactive',
-                    'package'          => $uData['latest_package'] ?: ($invUsd > 0 ? 'ANANTA' : 'N/A'),
-                    'direct_count'     => $directCount,
-                    'downline_count'   => 0
-                ];
+            // Gather children
+            $children = [];
+            if (!empty($uData['left_id'])) {
+                $children[] = ['id' => (string)$uData['left_id'], 'side' => 'LEFT'];
+            }
+            if (!empty($uData['right_id'])) {
+                $children[] = ['id' => (string)$uData['right_id'], 'side' => 'RIGHT'];
+            }
 
-                // Gather children from BOTH tree table AND user table
-                $children = [];
-
-                $stmtT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
-                $stmtT->execute([':uid' => $uid]);
-                $tData = $stmtT->fetch(PDO::FETCH_ASSOC);
-
-                if ($tData) {
-                    if (!empty($tData['left_id'])) {
-                        $children[] = ['id' => $tData['left_id'], 'side' => 'LEFT'];
-                    }
-                    if (!empty($tData['right_id'])) {
-                        $children[] = ['id' => $tData['right_id'], 'side' => 'RIGHT'];
-                    }
-                }
-
-                $stmtUChildren = $db->prepare("SELECT userid, join_side FROM user WHERE underuserid = :uid OR (sponserid = :uid AND (underuserid IS NULL OR underuserid = '' OR underuserid = :uid))");
-                $stmtUChildren->execute([':uid' => $uid]);
-                $uChildren = $stmtUChildren->fetchAll(PDO::FETCH_ASSOC);
-
-                $existingChildIds = array_column($children, 'id');
-                foreach ($uChildren as $uc) {
-                    $cId = $uc['userid'];
-                    if ($cId !== $uid && !in_array($cId, $existingChildIds) && !in_array($cId, $visited)) {
+            $existingChildIds = array_column($children, 'id');
+            if (isset($underMap[$uid])) {
+                foreach ($underMap[$uid] as $uc) {
+                    $cId = (string)$uc['userid'];
+                    if ($cId !== $uid && !in_array($cId, $existingChildIds) && !isset($visited[$cId])) {
                         $side = !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DOWNLINE';
                         $children[] = ['id' => $cId, 'side' => $side];
                         $existingChildIds[] = $cId;
                     }
                 }
+            }
 
-                foreach ($children as $ch) {
-                    if (!in_array($ch['id'], $visited)) {
-                        $queue[] = [
-                            'userid'    => $ch['id'],
-                            'parent_id' => $uid,
-                            'position'  => $ch['side'],
-                            'level'     => $curr['level'] + 1
-                        ];
-                    }
+            foreach ($children as $ch) {
+                if (!isset($visited[$ch['id']])) {
+                    $queue[] = [
+                        'userid'    => $ch['id'],
+                        'parent_id' => $uid,
+                        'position'  => $ch['side'],
+                        'level'     => $curr['level'] + 1
+                    ];
                 }
             }
         }
 
-        // Calculate downline_count in memory for all results in a single pass
+        // Calculate downline_count in memory
         if (!empty($results)) {
             $childrenMap = [];
             foreach ($results as $item) {
@@ -1748,6 +1757,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             unset($item);
         }
 
+        $memoCache[$cacheKey] = $results;
         return $results;
     }
 }
