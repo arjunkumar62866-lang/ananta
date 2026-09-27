@@ -141,15 +141,33 @@ include 'common/header.php';
 $isAccountActive = (isset($idactive) && ((string)$idactive === '1' || (int)$idactive === 1)) || (isset($status) && strtolower((string)$status) === 'active');
 
 
-// get level Business
-$directbusinesstotal=gettotallevelbusiness($userid);
-$directbusinesstotalleft=gettotallevelbusinessleft($userid);
-$directbusinesstotalright=gettotallevelbusinessright($userid);
+// Get real-time accurate Left & Right branch downline data using single source of truth getRootBranchTreeDetailed()
+$leftBranchMembers = !empty($leftid) ? getRootBranchTreeDetailed($leftid, $pdo, 'LEFT') : [];
+$rightBranchMembers = !empty($rightid) ? getRootBranchTreeDetailed($rightid, $pdo, 'RIGHT') : [];
 
-// $my_right_active_directs = getmydirectidright($userid,"right");
-// $my_left_active_directs = getmydirectidleft($userid,"right");
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
+$directbusinesstotalleft = array_sum(array_column($leftBranchMembers, 'investment_inr'));
+$directbusinesstotalright = array_sum(array_column($rightBranchMembers, 'investment_inr'));
+
+// Fallback to tree.lefttotal / righttotal if investment sum is 0
+if ($directbusinesstotalleft <= 0 && floatval($left_total) > 0) {
+    $directbusinesstotalleft = floatval($left_total);
+}
+if ($directbusinesstotalright <= 0 && floatval($right_total) > 0) {
+    $directbusinesstotalright = floatval($right_total);
+}
+$directbusinesstotal = $directbusinesstotalleft + $directbusinesstotalright;
+
+// Calculate active team members in Left & Right branches
+$my_left_active_directs = count(array_filter($leftBranchMembers, function($m) { return ($m['status'] === 'Active'); }));
+$my_right_active_directs = count(array_filter($rightBranchMembers, function($m) { return ($m['status'] === 'Active'); }));
+
+// Fallback to tree count if active filter is 0
+if ($my_left_active_directs <= 0 && intval($left_active) > 0) {
+    $my_left_active_directs = intval($left_active);
+}
+if ($my_right_active_directs <= 0 && intval($right_active) > 0) {
+    $my_right_active_directs = intval($right_active);
+}
 
 // Reward achiever check 
 rank_reward($userid);
