@@ -1511,12 +1511,22 @@ include "common/header.php";
     $stmtOffer = $pdo->prepare("SELECT offer_image FROM tbl_homest WHERE id = 1 LIMIT 1");
     $stmtOffer->execute();
     $rowOffer = $stmtOffer->fetch(PDO::FETCH_ASSOC);
-    $promoOfferImg = (!empty($rowOffer['offer_image']) && file_exists(__DIR__ . '/img/' . $rowOffer['offer_image'])) ? $rowOffer['offer_image'] : '';
+    
+    $rawOfferImg = trim($rowOffer['offer_image'] ?? '');
+    $promoOfferImgSrc = '';
+
+    if (!empty($rawOfferImg)) {
+        if (file_exists(__DIR__ . '/dashboard/img/' . $rawOfferImg)) {
+            $promoOfferImgSrc = 'dashboard/img/' . $rawOfferImg;
+        } elseif (file_exists(__DIR__ . '/img/' . $rawOfferImg)) {
+            $promoOfferImgSrc = 'img/' . $rawOfferImg;
+        }
+    }
     ?>
 
-    <?php if (!empty($promoOfferImg)): ?>
+    <?php if (!empty($promoOfferImgSrc)): ?>
     <!-- ============================================================== -->
-    <!-- PROMOTIONAL OFFER AD MODAL POPUP (CENTER SCREEN)               -->
+    <!-- PROMOTIONAL OFFER AD MODAL POPUP (CENTER SCREEN ON LANDING)    -->
     <!-- ============================================================== -->
     <style>
     .ananta-offer-modal-overlay {
@@ -1618,7 +1628,7 @@ include "common/header.php";
             </button>
             
             <div class="ananta-offer-modal-body">
-                <img src="img/<?php echo htmlspecialchars($promoOfferImg); ?>" alt="Exclusive Promotional Offer" class="ananta-offer-modal-img">
+                <img src="<?php echo htmlspecialchars($promoOfferImgSrc); ?>" alt="Exclusive Promotional Offer" class="ananta-offer-modal-img">
             </div>
 
             <div class="ananta-offer-modal-footer">

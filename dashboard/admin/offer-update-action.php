@@ -46,12 +46,22 @@ try {
         $stmtOld->execute();
         $oldRow = $stmtOld->fetch(PDO::FETCH_ASSOC);
 
+        if (!is_dir("../img")) {
+            @mkdir("../img", 0777, true);
+        }
+        if (!is_dir("../../img")) {
+            @mkdir("../../img", 0777, true);
+        }
+
         if (move_uploaded_file($_FILES['qr_codeimage']['tmp_name'], $uploadPath)) {
+            // Also copy to root img directory if available
+            @copy($uploadPath, "../../img/" . $imagename);
+
             if ($oldRow && !empty($oldRow['offer_image']) && $oldRow['offer_image'] !== $imagename) {
-                $oldPath = "../img/" . $oldRow['offer_image'];
-                if (file_exists($oldPath)) {
-                    @unlink($oldPath);
-                }
+                $oldPath1 = "../img/" . $oldRow['offer_image'];
+                $oldPath2 = "../../img/" . $oldRow['offer_image'];
+                if (file_exists($oldPath1)) @unlink($oldPath1);
+                if (file_exists($oldPath2)) @unlink($oldPath2);
             }
 
             $stmt = $pdo->prepare("UPDATE tbl_homest SET offer_image = ? WHERE id = 1");
