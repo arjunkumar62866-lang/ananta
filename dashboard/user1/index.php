@@ -1156,8 +1156,8 @@ body.ananta-user-dashboard {
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center min-w-0" style="flex: 1;">
                     <div class="rounded-xl quick-wallet-icon p-2 d-flex align-items-center justify-content-center"
-                         style="background: #ecfeff; color: #0891b2;">
-                        <i class="zmdi zmdi-wallet zmdi-hc-lg"></i>
+                         style="background: #f0fdf4 !important; color: #16a34a !important; border: 1px solid #bbf7d0;">
+                        <i class="fa fa-money" style="font-size: 20px; color: #16a34a !important;"></i>
                     </div>
 
                     <div class="min-w-0 ml-2" style="flex: 1;">
