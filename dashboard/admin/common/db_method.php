@@ -3741,6 +3741,14 @@ if (!function_exists('processAdminMoveTeamInTree')) {
                 $db->prepare("UPDATE tree SET right_id = :tid WHERE userid = :pid")->execute([':tid' => $actualTargetId, ':pid' => $actualParentId]);
             }
 
+            // Sync user table placement records (underuserid and join_side)
+            $db->prepare("UPDATE user SET underuserid = :pid, join_side = :side WHERE userid = :tid")
+               ->execute([
+                   ':pid'  => $actualParentId,
+                   ':side' => strtolower($targetPosition),
+                   ':tid'  => $actualTargetId
+               ]);
+
             // Ensure tree record exists for Target User
             $stmtTargetTree = $db->prepare("SELECT * FROM tree WHERE userid = :uid FOR UPDATE");
             $stmtTargetTree->execute([':uid' => $actualTargetId]);

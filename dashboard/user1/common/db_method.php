@@ -355,6 +355,19 @@ function loginUser($userid, $password, $pdo)
         $_SESSION['userid'] = $user['userid']; // match old system
         $_SESSION['show_banner'] = true; // Show promo ad banner only once on login session
 
+        // Trigger New Login Notification
+        if (function_exists('createUserNotification')) {
+            $userIp = $_SERVER['REMOTE_ADDR'] ?? 'Unknown IP';
+            createUserNotification(
+                $user['userid'],
+                'GENERAL',
+                'New Account Login Alert',
+                "Your account was logged in successfully from IP: {$userIp} at " . date('d M Y, h:i A') . '.',
+                null,
+                $pdo
+            );
+        }
+
         // Special Admin Access for AN1290 / ID 1290
         if ($user['userid'] == '1290' || $user['userid'] == 'AN1290') {
             // Check admin table for 1290 or set default admin session
@@ -2222,44 +2235,85 @@ function getUserGrowthBreakdown($userid, $pdoConnection = null) {
 }
 
 /**
- * Requirement #21: Fetch Date-Filtered Fund Statement Data.
+ * Requirement #21: Fetch Date-Filtered Fund Statement Data (Including Self + Downline Sponsor Chain).
  */
 function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$userid) return ['investments' => [], 'unlock_debits' => []];
 
-    // Build SQL for investments
-    $sqlInv = "SELECT id, package_code, real_fund_usd, bonus_amount_usd, lock_period_months, maturity_date, deduction_percent_snapshot, capital_withdrawal_status, package, date, time FROM tbl_roi_one WHERE user_id = :uid";
-    $paramsInv = [':uid' => $userid];
+    // Gather self + all downline IDs in sponsor/placement chain
+    $downlineIds = getSubtreeDescendantIds($userid, $db);
+    $allTargetUserIds = array_unique(array_merge([$userid], $downlineIds));
+
+    if (empty($allTargetUserIds)) {
+        return ['investments' => [], 'unlock_debits' => []];
+    }
+
+    // Build SQL for investments (Self + Downline Team)
+    $inPlaceholders = implode(',', array_fill(0, count($allTargetUserIds), '?'));
+    $sqlInv = "
+        SELECT 
+            r.id, 
+            r.user_id,
+            u.name as investor_name,
+            u.sponserid as investor_sponsor,
+            r.package_code, 
+            r.real_fund_usd, 
+            r.bonus_amount_usd, 
+            r.lock_period_months, 
+            r.maturity_date, 
+            r.deduction_percent_snapshot, 
+            r.capital_withdrawal_status, 
+            r.package, 
+            r.date, 
+            r.time 
+        FROM tbl_roi_one r
+        LEFT JOIN user u ON u.userid = r.user_id
+        WHERE r.user_id IN ($inPlaceholders)
+    ";
+    $paramsInv = array_values($allTargetUserIds);
 
     if ($fromDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fromDate)) {
-        $sqlInv .= " AND DATE(date) >= :from_date";
-        $paramsInv[':from_date'] = $fromDate;
+        $sqlInv .= " AND DATE(r.date) >= ?";
+        $paramsInv[] = $fromDate;
     }
     if ($toDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $toDate)) {
-        $sqlInv .= " AND DATE(date) <= :to_date";
-        $paramsInv[':to_date'] = $toDate;
+        $sqlInv .= " AND DATE(r.date) <= ?";
+        $paramsInv[] = $toDate;
     }
-    $sqlInv .= " ORDER BY id DESC";
+    $sqlInv .= " ORDER BY r.id DESC";
 
     $stmtInv = $db->prepare($sqlInv);
     $stmtInv->execute($paramsInv);
     $investments = $stmtInv->fetchAll(PDO::FETCH_ASSOC);
 
-    // Build SQL for unlock access debit history
-    $sqlDeb = "SELECT id, amount, subject, created_date, time FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Unlock Access%' OR subject LIKE '%Activation%')";
-    $paramsDeb = [':uid' => $userid];
+    // Build SQL for unlock access debit history (Self + Downline Team)
+    $sqlDeb = "
+        SELECT 
+            t.id, 
+            t.user_id,
+            u.name as investor_name,
+            t.amount, 
+            t.subject, 
+            t.created_date, 
+            t.time 
+        FROM tbl_transaction t
+        LEFT JOIN user u ON u.userid = t.user_id
+        WHERE t.user_id IN ($inPlaceholders) 
+          AND (t.subject LIKE '%Unlock Access%' OR t.subject LIKE '%Activation%')
+    ";
+    $paramsDeb = array_values($allTargetUserIds);
 
     if ($fromDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fromDate)) {
-        $sqlDeb .= " AND DATE(created_date) >= :from_date_deb";
-        $paramsDeb[':from_date_deb'] = $fromDate;
+        $sqlDeb .= " AND DATE(t.created_date) >= ?";
+        $paramsDeb[] = $fromDate;
     }
     if ($toDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $toDate)) {
-        $sqlDeb .= " AND DATE(created_date) <= :to_date_deb";
-        $paramsDeb[':to_date_deb'] = $toDate;
+        $sqlDeb .= " AND DATE(t.created_date) <= ?";
+        $paramsDeb[] = $toDate;
     }
-    $sqlDeb .= " ORDER BY id DESC";
+    $sqlDeb .= " ORDER BY t.id DESC";
 
     $stmtDeb = $db->prepare($sqlDeb);
     $stmtDeb->execute($paramsDeb);
@@ -4501,14 +4555,39 @@ if (!function_exists('getUserNotifications')) {
         if (!$db || !$userId) return [];
 
         try {
-            $stmt = $db->prepare("
-                SELECT id, type, title, message, ref_id, is_read, created_at
-                FROM tbl_user_notifications
-                WHERE user_id = :uid
-                ORDER BY id DESC
+            // Fetch direct user notifications AND global/targeted admin system broadcasts
+            $sql = "
+                SELECT 
+                    n.id, 
+                    n.type, 
+                    n.title, 
+                    n.message, 
+                    n.ref_id, 
+                    n.is_read, 
+                    n.created_at
+                FROM tbl_user_notifications n
+                WHERE n.user_id = :uid
+
+                UNION ALL
+
+                SELECT 
+                    (1000000 + s.id) as id, 
+                    'ADMIN' as type, 
+                    s.title, 
+                    s.message, 
+                    s.id as ref_id, 
+                    0 as is_read, 
+                    s.created_at
+                FROM tbl_system_notifications s
+                WHERE s.target_type = 'GLOBAL' OR (s.target_type = 'USER' AND s.target_user_id = :uid_target)
+
+                ORDER BY created_at DESC
                 LIMIT :lim
-            ");
+            ";
+
+            $stmt = $db->prepare($sql);
             $stmt->bindValue(':uid', $userId, PDO::PARAM_STR);
+            $stmt->bindValue(':uid_target', $userId, PDO::PARAM_STR);
             $stmt->bindValue(':lim', (int)$limit, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);

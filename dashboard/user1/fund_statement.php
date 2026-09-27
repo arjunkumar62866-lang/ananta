@@ -85,6 +85,7 @@ foreach ($investments as $inv) {
                             <tr>
                                 <th class="py-3 px-4 text-center">#</th>
                                 <th class="py-3 px-3">Inv ID</th>
+                                <th class="py-3 px-3">Investor User</th>
                                 <th class="py-3 px-3 text-center">Package Code</th>
                                 <th class="py-3 px-3 text-right">Fund Investment</th>
                                 <th class="py-3 px-3 text-right">Bonus Amount</th>
@@ -100,6 +101,10 @@ foreach ($investments as $inv) {
                                     <tr style="border-bottom: 1px solid #f1f5f9;">
                                         <td class="py-3 px-4 text-center font-weight-bold" style="color: #64748b;"><?php echo $sr++; ?></td>
                                         <td class="py-3 px-3 font-weight-bold" style="color: #0284c7;">#<?php echo $inv['id']; ?></td>
+                                        <td class="py-3 px-3">
+                                            <div class="font-weight-bold" style="color: #0f172a;"><?php echo htmlspecialchars($inv['user_id']); ?></div>
+                                            <div class="small text-muted"><?php echo htmlspecialchars($inv['investor_name'] ?: 'N/A'); ?></div>
+                                        </td>
                                         <td class="py-3 px-3 text-center">
                                             <span class="badge px-3 py-1" style="background: rgba(2, 132, 199, 0.1); color: #0284c7; font-weight: 600; border-radius: 6px;">
                                                 <?php echo htmlspecialchars($inv['package_code'] ?: 'ANANTA'); ?>
@@ -129,7 +134,7 @@ foreach ($investments as $inv) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="9" class="text-center py-5 text-muted">
+                                    <td colspan="10" class="text-center py-5 text-muted">
                                         <i class="zmdi zmdi-file-text zmdi-hc-3x d-block mb-2" style="color: #cbd5e1;"></i>
                                         No investment records found for the selected date range.
                                     </td>

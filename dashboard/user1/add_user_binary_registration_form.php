@@ -217,6 +217,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Insert KYC (minimal)
         insertKYC($pdo, $userid, $aadhar);
 
+        // Trigger Notifications for Binary Registration
+        if (function_exists('createUserNotification')) {
+            createUserNotification(
+                $userid,
+                'GENERAL',
+                'Welcome to ANANTA!',
+                "Your account {$userid} has been created successfully. Explore your dashboard to get started.",
+                null,
+                $pdo
+            );
+
+            $joinSideUpper = strtoupper($position);
+            createUserNotification(
+                $sponserid1,
+                'GENERAL',
+                "New Team Member Joined ({$joinSideUpper} Side)",
+                "User {$name} ({$userid}) has joined your team under {$joinSideUpper} position.",
+                null,
+                $pdo
+            );
+        }
+
         // Set active default user_image from tbl_homest if set by Admin
         try {
             $stmtDefImg = $pdo->query("SELECT default_user_image FROM tbl_homest WHERE default_user_image IS NOT NULL AND default_user_image != '' LIMIT 1");

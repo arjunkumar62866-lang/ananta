@@ -125,6 +125,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if ($query_register) {
                         insertKYC($pdo, $userid, $aadhar);
 
+                        // Trigger Registration & Sponsor Notifications
+                        if (function_exists('createUserNotification')) {
+                            // 1. Welcome Notification to New User
+                            createUserNotification(
+                                $userid,
+                                'GENERAL',
+                                'Welcome to ANANTA!',
+                                "Your account {$userid} has been created successfully. Explore your dashboard to get started.",
+                                null,
+                                $pdo
+                            );
+
+                            // 2. Notification to Sponsor
+                            $joinSideUpper = strtoupper($position);
+                            createUserNotification(
+                                $sponserid1,
+                                'GENERAL',
+                                "New Team Member Joined ({$joinSideUpper} Side)",
+                                "User {$name} ({$userid}) has joined your team under {$joinSideUpper} position.",
+                                null,
+                                $pdo
+                            );
+                        }
+
                         // Set active default user_image from tbl_homest if set by Admin
                         try {
                             $stmtDefImg = $pdo->query("SELECT default_user_image FROM tbl_homest WHERE default_user_image IS NOT NULL AND default_user_image != '' LIMIT 1");
@@ -253,11 +277,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 // ----------------------
 
 function insertIntoTree($pdo, $sponsorId, $newUserId, $side) {
+    // Ensure sponsor has a record in tree table
+    $stmtChk = $pdo->prepare("SELECT userid FROM tree WHERE userid = ?");
+    $stmtChk->execute([$sponsorId]);
+    if (!$stmtChk->fetch()) {
+        $pdo->prepare("INSERT INTO tree (userid, left_id, right_id, leftcount, rightcount, status, join_side, leftsp, rightsp, lefttotal, righttotal) VALUES (?, '', '', 0, 0, 1, '', 0, 0, 0, 0)")
+            ->execute([$sponsorId]);
+    }
+
     // Find first available node under sponsor in given side
     $availableNode = findAvailableNode($pdo, $sponsorId, $side);
 
     if (!$availableNode) {
-        return false; // no space found
+        $availableNode = $sponsorId;
     }
 
     // Place new user under available node
@@ -289,7 +321,11 @@ function findAvailableNode($pdo, $rootUserId, $side) {
         $stmt->execute([$current]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$row) continue;
+        if (!$row) {
+            $pdo->prepare("INSERT INTO tree (userid, left_id, right_id, leftcount, rightcount, status, join_side, leftsp, rightsp, lefttotal, righttotal) VALUES (?, '', '', 0, 0, 1, '', 0, 0, 0, 0)")
+                ->execute([$current]);
+            return $current;
+        }
 
         if ($side == "left") {
             if (empty($row['left_id'])) {
