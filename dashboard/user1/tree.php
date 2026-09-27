@@ -524,8 +524,14 @@ body.bg-theme {
         rootNode.x0 = height / 2;
         rootNode.y0 = isMobile ? 40 : 100;
 
-        // Auto expand initial tree structure (do not collapse subtrees)
-        
+        // Clean Step-by-Step View: Keep top 3 levels open, collapse deeper levels into _children
+        rootNode.descendants().forEach(d => {
+            if (d.depth >= 3 && d.children) {
+                d._children = d.children;
+                d.children = null;
+            }
+        });
+
         // Center Initial Position according to screen size
         const initialScale = isMobile ? 0.72 : 0.92;
         const initialTranslateX = isMobile ? 35 : 110;
@@ -623,19 +629,27 @@ body.bg-theme {
                 return `${d.data.id}${pos}`;
             });
 
-        // Click / Tap Event (UNLIMITED EXPANSION & TOGGLE)
+        // Click / Tap Event (UNLIMITED EXPANSION & STEP-BY-STEP TOGGLE)
         nodeEnter.on('click', (event, d) => {
             event.stopPropagation();
             
             if (d.children) {
-                // Collapse from visible to memory
+                // Collapse this node's branch
                 d._children = d.children;
                 d.children = null;
                 updateTree(d);
             } else if (d._children) {
-                // Expand from memory
+                // Expand 1 step forward (keep sub-children collapsed into _children so it doesn't open everything at once)
                 d.children = d._children;
                 d._children = null;
+                if (d.children) {
+                    d.children.forEach(c => {
+                        if (c.children) {
+                            c._children = c.children;
+                            c.children = null;
+                        }
+                    });
+                }
                 updateTree(d);
             } else if (d.data.has_children_db) {
                 // Fetch deeper downlines dynamically via AJAX for Unlimited Depth
@@ -651,13 +665,22 @@ body.bg-theme {
                             newRoot.y0 = rootNode.y0;
                             rootNode = newRoot;
 
-                            // Find target node in new tree
+                            // Find target node in new tree and collapse its sub-children beyond immediate level
                             let targetNode = rootNode;
                             rootNode.descendants().forEach(nd => {
                                 if (nd.data.id === d.data.id) {
                                     targetNode = nd;
                                 }
                             });
+
+                            if (targetNode.children) {
+                                targetNode.children.forEach(c => {
+                                    if (c.children) {
+                                        c._children = c.children;
+                                        c.children = null;
+                                    }
+                                });
+                            }
 
                             updateTree(targetNode);
                         } else {
