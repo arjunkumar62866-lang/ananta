@@ -168,7 +168,7 @@ include "common/header.php";
              SECTION 02 — ABOUT US & OUR GROWTH
              ID: #about
              ================================================== -->
-        <section id="about" class="py-4 position-relative overflow-hidden w-100" style="background-image: url('assets/images/background/bg.png') !important; background-repeat: repeat !important; border-top: 1px solid rgba(197, 160, 89, 0.3); border-bottom: 1px solid rgba(197, 160, 89, 0.3);">
+        <section id="about" class="py-5 position-relative overflow-hidden w-100" style="background: #0b0d14 !important; border-top: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
             <div class="container-fluid p-0 position-relative" style="z-index: 5;">
                 
                 <div class="row g-0 align-items-center">
@@ -178,12 +178,12 @@ include "common/header.php";
                         
                         <!-- SECTION HEADER -->
                         <div class="text-center mb-4 mb-md-5">
-                            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 3px; color: #0F5132; text-transform: uppercase;">OUR</span>
-                            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 4vw, 42px); font-weight: 900; letter-spacing: 2px; background: linear-gradient(135deg, #0B2545 0%, #1D4ED8 50%, #0284C7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; margin-bottom: 4px; line-height: 1.1;">GROWTH</h2>
+                            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 3px; color: #FF4D1A; text-transform: uppercase;">OUR</span>
+                            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 4vw, 42px); font-weight: 900; letter-spacing: 2px; color: #FFFFFF; text-transform: uppercase; margin-bottom: 4px; line-height: 1.1;">GROWTH</h2>
                             <div class="d-flex align-items-center justify-content-center gap-2 gap-md-3 mt-1 flex-wrap">
-                                <span style="font-size: 11.5px; font-weight: 800; letter-spacing: 1.5px; color: #1E293B; text-transform: uppercase;">STRONGER NETWORK</span>
-                                <span style="color: #94A3B8; font-weight: 400; font-size: 13px;">|</span>
-                                <span style="font-size: 11.5px; font-weight: 800; letter-spacing: 1.5px; color: #1E293B; text-transform: uppercase;">BIGGER TOMORROW</span>
+                                <span style="font-size: 11.5px; font-weight: 700; letter-spacing: 1.5px; color: #94A3B8; text-transform: uppercase;">STRONGER NETWORK</span>
+                                <span style="color: #475569; font-weight: 400; font-size: 13px;">|</span>
+                                <span style="font-size: 11.5px; font-weight: 700; letter-spacing: 1.5px; color: #94A3B8; text-transform: uppercase;">BIGGER TOMORROW</span>
                             </div>
                         </div>
 
@@ -192,97 +192,49 @@ include "common/header.php";
                             
                             <!-- Card 1: 7+ Countries -->
                             <div class="col">
-                                <div class="growth-stat-card h-100 p-3 p-md-4 text-center text-md-start" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1.5px solid rgba(29, 78, 216, 0.2); border-radius: 20px; box-shadow: 0 10px 30px rgba(29, 78, 216, 0.08); transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mb-2 flex-wrap flex-md-nowrap">
-                                        <div class="stat-icon-box rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background: rgba(29, 78, 216, 0.1); color: #1D4ED8; font-size: 20px;">
-                                            <i class="fas fa-globe-americas"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="7" data-prefix="" data-suffix="+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1+</h3>
-                                        </div>
-                                    </div>
-                                    <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #1D4ED8; letter-spacing: 0.5px; text-transform: uppercase;">Countries</h5>
-                                    <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.35;">Expanding presence across global markets worldwide.</p>
+                                <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                                    <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="7" data-prefix="" data-suffix="+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1+</h3>
+                                    <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Countries</span>
                                 </div>
                             </div>
 
                             <!-- Card 2: 10K+ Members -->
                             <div class="col">
-                                <div class="growth-stat-card h-100 p-3 p-md-4 text-center text-md-start" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1.5px solid rgba(2, 132, 199, 0.2); border-radius: 20px; box-shadow: 0 10px 30px rgba(2, 132, 199, 0.08); transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mb-2 flex-wrap flex-md-nowrap">
-                                        <div class="stat-icon-box rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background: rgba(2, 132, 199, 0.1); color: #0284C7; font-size: 20px;">
-                                            <i class="fas fa-users"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1K+</h3>
-                                        </div>
-                                    </div>
-                                    <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #0284C7; letter-spacing: 0.5px; text-transform: uppercase;">Members</h5>
-                                    <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.35;">Rapidly growing community of active global members.</p>
+                                <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                                    <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1K+</h3>
+                                    <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Members</span>
                                 </div>
                             </div>
 
                             <!-- Card 3: $2M+ Global Volume -->
                             <div class="col">
-                                <div class="growth-stat-card h-100 p-3 p-md-4 text-center text-md-start" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1.5px solid rgba(22, 163, 74, 0.2); border-radius: 20px; box-shadow: 0 10px 30px rgba(22, 163, 74, 0.08); transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mb-2 flex-wrap flex-md-nowrap">
-                                        <div class="stat-icon-box rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background: rgba(22, 163, 74, 0.1); color: #16A34A; font-size: 20px;">
-                                            <i class="fas fa-coins"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1000" data-target="2000000" data-format="currency_m" data-prefix="$" data-suffix="M+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">$1,000</h3>
-                                        </div>
-                                    </div>
-                                    <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #16A34A; letter-spacing: 0.5px; text-transform: uppercase;">Global Volume</h5>
-                                    <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.35;">Creating stronger high-value business opportunities.</p>
+                                <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                                    <h3 class="growth-counter font-weight-black mb-2" data-start="1000" data-target="2000000" data-format="currency_m" data-prefix="$" data-suffix="M+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">$1,000</h3>
+                                    <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Global Volume</span>
                                 </div>
                             </div>
 
                             <!-- Card 4: 98% Success Rate -->
                             <div class="col">
-                                <div class="growth-stat-card h-100 p-3 p-md-4 text-center text-md-start" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1.5px solid rgba(101, 163, 13, 0.2); border-radius: 20px; box-shadow: 0 10px 30px rgba(101, 163, 13, 0.08); transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mb-2 flex-wrap flex-md-nowrap">
-                                        <div class="stat-icon-box rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background: rgba(101, 163, 13, 0.1); color: #65A30D; font-size: 20px;">
-                                            <i class="fas fa-chart-line"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="98" data-prefix="" data-suffix="%" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1%</h3>
-                                        </div>
-                                    </div>
-                                    <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #65A30D; letter-spacing: 0.5px; text-transform: uppercase;">Success Rate</h5>
-                                    <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.35;">Consistently turning strategic opportunities into results.</p>
+                                <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                                    <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="98" data-prefix="" data-suffix="%" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1%</h3>
+                                    <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Success Rate</span>
                                 </div>
                             </div>
 
-                            <!-- Card 5: 10K+ Members (Active Network) -->
+                            <!-- Card 5: 10K+ Active Network -->
                             <div class="col">
-                                <div class="growth-stat-card h-100 p-3 p-md-4 text-center text-md-start" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1.5px solid rgba(234, 179, 8, 0.25); border-radius: 20px; box-shadow: 0 10px 30px rgba(234, 179, 8, 0.08); transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mb-2 flex-wrap flex-md-nowrap">
-                                        <div class="stat-icon-box rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background: rgba(234, 179, 8, 0.12); color: #CA8A04; font-size: 20px;">
-                                            <i class="fas fa-user-check"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1K+</h3>
-                                        </div>
-                                    </div>
-                                    <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #CA8A04; letter-spacing: 0.5px; text-transform: uppercase;">Active Network</h5>
-                                    <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.35;">Verified active member network driving ecosystem growth.</p>
+                                <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                                    <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1K+</h3>
+                                    <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Active Network</span>
                                 </div>
                             </div>
 
                             <!-- Card 6: 85%+ Active Community -->
                             <div class="col">
-                                <div class="growth-stat-card h-100 p-3 p-md-4 text-center text-md-start" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1.5px solid rgba(249, 115, 22, 0.2); border-radius: 20px; box-shadow: 0 10px 30px rgba(249, 115, 22, 0.08); transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mb-2 flex-wrap flex-md-nowrap">
-                                        <div class="stat-icon-box rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background: rgba(249, 115, 22, 0.1); color: #F97316; font-size: 20px;">
-                                            <i class="fas fa-bullhorn"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="85" data-prefix="" data-suffix="%+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1%+</h3>
-                                        </div>
-                                    </div>
-                                    <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #F97316; letter-spacing: 0.5px; text-transform: uppercase;">Active Community</h5>
-                                    <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.35;">Highly engaged community delivering stronger results.</p>
+                                <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                                    <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="85" data-prefix="" data-suffix="%+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1%+</h3>
+                                    <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Active Community</span>
                                 </div>
                             </div>
 

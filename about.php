@@ -105,6 +105,144 @@ program</h2>
         </section>
         <!-- about-style-four end -->
 
+        <!-- OUR GROWTH SECTION -->
+        <section id="our-growth-section" class="py-5 position-relative overflow-hidden w-100" style="background: #0b0d14 !important; border-top: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="container position-relative" style="z-index: 5;">
+                
+                <!-- SECTION HEADER -->
+                <div class="text-center mb-4 mb-md-5">
+                    <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 3px; color: #FF4D1A; text-transform: uppercase;">OUR</span>
+                    <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 4vw, 42px); font-weight: 900; letter-spacing: 2px; color: #FFFFFF; text-transform: uppercase; margin-bottom: 4px; line-height: 1.1;">GROWTH</h2>
+                    <div class="d-flex align-items-center justify-content-center gap-2 gap-md-3 mt-1 flex-wrap">
+                        <span style="font-size: 11.5px; font-weight: 700; letter-spacing: 1.5px; color: #94A3B8; text-transform: uppercase;">STRONGER NETWORK</span>
+                        <span style="color: #475569; font-weight: 400; font-size: 13px;">|</span>
+                        <span style="font-size: 11.5px; font-weight: 700; letter-spacing: 1.5px; color: #94A3B8; text-transform: uppercase;">BIGGER TOMORROW</span>
+                    </div>
+                </div>
+
+                <!-- 6 STAT CARDS GRID: 3 per row on Desktop/Laptop/Tab, 2 per row on Mobile -->
+                <div class="row row-cols-2 row-cols-md-3 g-3 g-md-4 max-w-6xl mx-auto" style="max-width: 1100px;">
+                    
+                    <!-- Card 1: 7+ Countries -->
+                    <div class="col">
+                        <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                            <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="7" data-prefix="" data-suffix="+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1+</h3>
+                            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Countries</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: 10K+ Members -->
+                    <div class="col">
+                        <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                            <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1K+</h3>
+                            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Members</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: $2M+ Global Volume -->
+                    <div class="col">
+                        <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                            <h3 class="growth-counter font-weight-black mb-2" data-start="1000" data-target="2000000" data-format="currency_m" data-prefix="$" data-suffix="M+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">$1,000</h3>
+                            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Global Volume</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: 98% Success Rate -->
+                    <div class="col">
+                        <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                            <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="98" data-prefix="" data-suffix="%" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1%</h3>
+                            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Success Rate</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: 10K+ Active Network -->
+                    <div class="col">
+                        <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                            <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1K+</h3>
+                            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Active Network</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 6: 85%+ Active Community -->
+                    <div class="col">
+                        <div class="growth-stat-card h-100 p-4 text-center d-flex flex-column justify-content-center align-items-center" style="background: #151821; border: 1.5px solid #242938; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, border-color 0.3s ease;">
+                            <h3 class="growth-counter font-weight-black mb-2" data-start="1" data-target="85" data-prefix="" data-suffix="%+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(28px, 3.5vw, 42px); font-weight: 900; color: #FF4D1A; line-height: 1.1;">1%+</h3>
+                            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 500; color: #94A3B8; letter-spacing: 0.3px;">Active Community</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const growthSection = document.getElementById('our-growth-section');
+            if (!growthSection) return;
+
+            const counters = growthSection.querySelectorAll('.growth-counter');
+
+            function startCounterAnimation() {
+                counters.forEach(counter => {
+                    const startVal = parseInt(counter.getAttribute('data-start') || '0', 10);
+                    const targetVal = parseInt(counter.getAttribute('data-target'), 10);
+                    const prefix = counter.getAttribute('data-prefix') || '';
+                    const suffix = counter.getAttribute('data-suffix') || '';
+                    const isCurrencyM = counter.getAttribute('data-format') === 'currency_m';
+
+                    const duration = 1100;
+                    const startTime = performance.now();
+
+                    function updateNumber(currentTime) {
+                        const elapsed = currentTime - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        
+                        const easeProgress = 1 - Math.pow(1 - progress, 3);
+                        const currentValue = Math.floor(startVal + (targetVal - startVal) * easeProgress);
+
+                        if (isCurrencyM) {
+                            if (progress < 0.92) {
+                                counter.textContent = prefix + currentValue.toLocaleString();
+                            } else {
+                                counter.textContent = prefix + '2M+';
+                            }
+                        } else {
+                            counter.textContent = prefix + currentValue.toLocaleString() + suffix;
+                        }
+
+                        if (progress < 1) {
+                            requestAnimationFrame(updateNumber);
+                        } else {
+                            if (isCurrencyM) {
+                                counter.textContent = prefix + '2M+';
+                            } else {
+                                counter.textContent = prefix + targetVal.toLocaleString() + suffix;
+                            }
+                        }
+                    }
+
+                    if (isCurrencyM) {
+                        counter.textContent = prefix + startVal.toLocaleString();
+                    } else {
+                        counter.textContent = prefix + startVal + suffix;
+                    }
+                    requestAnimationFrame(updateNumber);
+                });
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        startCounterAnimation();
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            observer.observe(growthSection);
+        });
+        </script>
+
 
         <!-- video-style-two -->
         <section class="video-style-two">
