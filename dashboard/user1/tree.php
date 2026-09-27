@@ -524,11 +524,8 @@ body.bg-theme {
         rootNode.x0 = height / 2;
         rootNode.y0 = isMobile ? 40 : 100;
 
-        // Collapse nodes after first 2 levels initially for clean view
-        if (rootNode.children) {
-            rootNode.children.forEach(collapseSubtree);
-        }
-
+        // Auto expand initial tree structure (do not collapse subtrees)
+        
         // Center Initial Position according to screen size
         const initialScale = isMobile ? 0.72 : 0.92;
         const initialTranslateX = isMobile ? 35 : 110;
@@ -649,10 +646,14 @@ body.bg-theme {
                             const subHierarchy = d3.hierarchy(res.data, child => child.children);
                             d.children = subHierarchy.children;
                             if (d.children) {
-                                d.children.forEach(c => {
-                                    c.parent = d;
-                                    c.depth = d.depth + 1;
-                                });
+                                function assignDepths(node, parentNode) {
+                                    node.parent = parentNode;
+                                    node.depth = parentNode.depth + 1;
+                                    if (node.children) {
+                                        node.children.forEach(c => assignDepths(c, node));
+                                    }
+                                }
+                                d.children.forEach(c => assignDepths(c, d));
                             }
                             d.data.children = res.data.children;
                             updateTree(d);
