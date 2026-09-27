@@ -1,7 +1,5 @@
-const CACHE_NAME = 'ananta-pwa-v3';
+const CACHE_NAME = 'ananta-pwa-v4';
 const STATIC_ASSETS = [
-  '/',
-  '/index.php',
   '/assets/images/pwa-icon.png',
   '/manifest.json'
 ];
