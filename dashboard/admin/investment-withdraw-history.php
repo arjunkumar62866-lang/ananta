@@ -390,13 +390,13 @@ table.dataTable.no-footer {
                     {
                         data: 'act_amount',
                         render: function (data) {
-                            return `<span class="amount-display"><?php echo $hmcurrency; ?>${data}</span>`;
+                            return `<span class="amount-display">${formatAdminCurrency(parseFloat(data || 0))}</span>`;
                         }
                     },
                     {
                         data: 'amount',
                         render: function (data) {
-                            return `<span class="amount-display" style="color: #9333ea;"><?php echo $hmcurrency; ?>${data}</span>`;
+                            return `<span class="amount-display" style="color: #9333ea;">${formatAdminCurrency(parseFloat(data || 0))}</span>`;
                         }
                     },
                     { data: 'type'},

@@ -2891,7 +2891,7 @@ function processAnantaPackageInvestment($user_id, $package_id, $amount_usd, $pdo
 
     try {
         // Lock user row FOR UPDATE
-        $stmtUser = $db->prepare("SELECT userid, pin_wallet, bonus_30_wallet, total_package FROM user WHERE userid = :uid FOR UPDATE");
+        $stmtUser = $db->prepare("SELECT userid, pin_wallet, deposite_wallet, bonus_30_wallet, total_package FROM user WHERE userid = :uid FOR UPDATE");
         $stmtUser->execute([':uid' => $user_id]);
         $uRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
@@ -2900,16 +2900,17 @@ function processAnantaPackageInvestment($user_id, $package_id, $amount_usd, $pdo
             return ['status' => 'error', 'message' => "User {$user_id} not found."];
         }
 
-        $pinWalletBal = (float)$uRow['pin_wallet'];
+        $pinWalletBal = (float)($uRow['deposite_wallet'] ?? $uRow['pin_wallet'] ?? 0);
         if ($pinWalletBal < $inrAmount) {
             if ($inLocalTxn) $db->rollBack();
-            return ['status' => 'error', 'message' => "Insufficient Fund Wallet balance. Required: ₹" . number_format($inrAmount, 2) . " ($" . number_format($realFundUsd, 2) . "), Available: ₹" . number_format($pinWalletBal, 2)];
+            return ['status' => 'error', 'message' => "Insufficient Main Wallet balance. Required: ₹" . number_format($inrAmount, 2) . " ($" . number_format($realFundUsd, 2) . "), Available: ₹" . number_format($pinWalletBal, 2)];
         }
 
-        // 1. Update user pin_wallet & total_package
+        // 1. Update user pin_wallet, deposite_wallet & total_package
         $updUser = $db->prepare("
             UPDATE user SET
-                pin_wallet = pin_wallet - :inr_amt,
+                pin_wallet = GREATEST(0, pin_wallet - :inr_amt),
+                deposite_wallet = GREATEST(0, deposite_wallet - :inr_amt),
                 total_package = total_package + :inr_amt,
                 bonus_30_wallet = bonus_30_wallet + :bonus_usd,
                 upgrade_date = :cdate,

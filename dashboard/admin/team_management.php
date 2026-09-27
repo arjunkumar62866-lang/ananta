@@ -93,11 +93,11 @@ $directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
           </div>
           <div class="col-md-3 mb-3 border-right">
             <span class="text-muted small d-block">LEFT LEG (COUNT / BIZ)</span>
-            <h5 class="mb-0 font-weight-bold text-info"><?php echo $legStats['left_ids_count']; ?> IDs / $<?php echo number_format($legStats['left_business_usd'], 2); ?></h5>
+            <h5 class="mb-0 font-weight-bold text-info"><?php echo $legStats['left_ids_count']; ?> IDs / <?php echo formatCurrency($legStats['left_business_usd']); ?></h5>
           </div>
           <div class="col-md-3 mb-3">
             <span class="text-muted small d-block">RIGHT LEG (COUNT / BIZ)</span>
-            <h5 class="mb-0 font-weight-bold text-warning"><?php echo $legStats['right_ids_count']; ?> IDs / $<?php echo number_format($legStats['right_business_usd'], 2); ?></h5>
+            <h5 class="mb-0 font-weight-bold text-warning"><?php echo $legStats['right_ids_count']; ?> IDs / <?php echo formatCurrency($legStats['right_business_usd']); ?></h5>
           </div>
         </div>
       </div>
@@ -117,7 +117,7 @@ $directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
                 <th class="py-3">Member Name</th>
                 <th class="py-3">Mobile No</th>
                 <th class="py-3">Activation Status ($11)</th>
-                <th class="py-3">Total Investment (₹)</th>
+                <th class="py-3">Total Investment</th>
                 <th class="py-3 px-4">Joining Date</th>
               </tr>
             </thead>
@@ -140,7 +140,7 @@ $directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
                       <?php echo $d['active']=='1'?'ACTIVE':'INACTIVE'; ?>
                     </span>
                   </td>
-                  <td class="font-weight-bold text-success">₹<?php echo number_format((float)$d['total_inv'], 2); ?></td>
+                  <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$d['total_inv']); ?></td>
                   <td class="px-4 small text-muted"><?php echo htmlspecialchars($d['joining_date']); ?></td>
                 </tr>
               <?php endforeach; endif; ?>

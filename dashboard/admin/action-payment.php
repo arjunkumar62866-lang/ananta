@@ -64,8 +64,8 @@ try {
         $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
         $prefixedUid = 'AN' . $cleanUid;
 
-        // Step B: Credit user's Main Wallet fields (deposite_wallet, pin_wallet, and amount) AND update total_deposit
-        $stmtUser = $pdo->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt, amount = amount + :amt, total_deposit = total_deposit + :amt WHERE userid = :userid OR userid = :clean OR userid = :prefixed");
+        // Step B: Credit user's Main Wallet fields (deposite_wallet and pin_wallet) AND update total_deposit
+        $stmtUser = $pdo->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt, total_deposit = total_deposit + :amt WHERE userid = :userid OR userid = :clean OR userid = :prefixed");
         $stmtUser->execute([
             ':amt'      => $amt,
             ':userid'   => $userid,

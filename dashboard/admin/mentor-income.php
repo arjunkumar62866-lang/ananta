@@ -632,7 +632,7 @@ table.dataTable.no-footer {
                     },
                     {
                         data: 'mentor_monthly_income',
-                        render: (data) => '<span style="font-weight:600; color:#475569;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
+                        render: (data) => '<span style="font-weight:600; color:#475569;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
                     },
                     {
                         data: 'mentor_income_rate',
@@ -640,7 +640,7 @@ table.dataTable.no-footer {
                     },
                     {
                         data: 'total_mentor_income',
-                        render: (data) => '<span style="font-weight:700; color:#9333ea;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toFixed(2) + '</span>'
+                        render: (data) => '<span style="font-weight:700; color:#9333ea;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
                     },
                     {
                         data: 'contribution_percentage',
@@ -648,7 +648,7 @@ table.dataTable.no-footer {
                     },
                     {
                         data: 'payout_amount',
-                        render: (data) => '<span style="font-weight:800; color:#10b981;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toFixed(2) + '</span>'
+                        render: (data) => '<span style="font-weight:800; color:#10b981;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
                     },
                     {
                         data: 'status',
@@ -682,9 +682,9 @@ table.dataTable.no-footer {
                         data: 'action',
                         render: (data) => data === 'CREDIT' ? '<span class="badge bg-success">CREDIT (+)</span>' : '<span class="badge bg-danger">DEBIT (-)</span>'
                     },
-                    { data: 'amount', render: (data) => '<?php echo $hmcurrency; ?> ' + parseFloat(data).toFixed(2) },
-                    { data: 'previous_balance', render: (data) => '<?php echo $hmcurrency; ?> ' + parseFloat(data).toFixed(2) },
-                    { data: 'new_balance', render: (data) => '<?php echo $hmcurrency; ?> ' + parseFloat(data).toFixed(2) },
+                    { data: 'amount', render: (data) => formatAdminCurrency(parseFloat(data || 0)) },
+                    { data: 'previous_balance', render: (data) => formatAdminCurrency(parseFloat(data || 0)) },
+                    { data: 'new_balance', render: (data) => formatAdminCurrency(parseFloat(data || 0)) },
                     { data: 'reason' },
                     { data: 'reference', render: (data) => data || '-' },
                     { data: 'created_at' }

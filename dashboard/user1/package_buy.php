@@ -27,6 +27,11 @@ $pkgCodeMap = [
     '5' => 'TOUR'
 ];
 
+$selectedCurrency = getUserCurrency();
+
+// Fetch single source of truth main wallet balance
+$mainBalanceUSD = getUserWalletBalance($userid, $pdo);
+
 $alertMsg = null;
 $alertType = null;
 
@@ -36,14 +41,9 @@ if (isset($_POST["submit"])) {
 
     $package_code = isset($pkgCodeMap[$rawPkgId]) ? $pkgCodeMap[$rawPkgId] : strtoupper($rawPkgId);
 
-    // If user enters amount in INR, convert to USD ($1 = ₹90 factor) if > 5000 and matches INR
-    $amount_usd = $priceInput;
-    if (isset($_POST['currency_mode']) && $_POST['currency_mode'] === 'INR') {
-        $amount_usd = round($priceInput / 90.0, 2);
-    } elseif ($priceInput >= 13000 && !empty($priceInput)) {
-        // High amount input assumes INR if over $1000 equivalent
-        $amount_usd = round($priceInput / 90.0, 2);
-    }
+    // If active currency is INR or form sent INR mode, parse input to USD
+    $currMode = $_POST['currency_mode'] ?? $selectedCurrency;
+    $amount_usd = parseInputToUSD($priceInput, $currMode, $pdo);
 
     $res = processAnantaPackageInvestment($userid, $package_code, $amount_usd, $pdo);
 
@@ -318,8 +318,7 @@ label.form-label, label {
                           <div class="px-3 py-2" style="background: #ffffff; border-radius: 14px; border: 1px solid rgba(2, 132, 199, 0.25); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
                               <span class="text-muted d-block" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Fund Balance</span>
                               <span class="font-weight-bold" style="font-size: 18px; color: #0284c7; font-weight: 800;">
-                                  $<?php echo number_format((float)(($pin_wallet ?? 0) / 90.0), 2); ?>
-                                  <small style="font-size: 12px; color: #64748b;">(₹<?php echo number_format((float)($pin_wallet ?? 0), 2); ?>)</small>
+                                  <?php echo formatCurrency($mainBalanceUSD, $selectedCurrency); ?>
                               </span>
                           </div>
                           <a href="fund-request.php" class="btn btn-outline-success font-weight-bold px-3 py-2" style="border-radius: 12px; font-size: 13px;">
@@ -364,9 +363,9 @@ label.form-label, label {
               $pDeduct = (float)$p['withdrawal_deduction_percent'];
               $pBonus = (float)$p['bonus_percentage'];
 
-              $rangeStr = "$" . number_format($pMin, 0);
+              $rangeStr = formatCurrency($pMin, $selectedCurrency);
               if ($pMax !== null) {
-                  $rangeStr .= " – $" . number_format($pMax, 0);
+                  $rangeStr .= " – " . formatCurrency($pMax, $selectedCurrency);
               } else {
                   $rangeStr .= " – No Limit";
               }
@@ -413,6 +412,7 @@ label.form-label, label {
             <div class="p-4 p-md-5">
 
               <form method="post" id="form-data">
+                <input type="hidden" name="currency_mode" value="<?= htmlspecialchars($selectedCurrency); ?>">
                 
                 <div class="form-group mb-4">
                   <label>User ID</label>
@@ -427,7 +427,7 @@ label.form-label, label {
                           $pCode = strtoupper($p['package_id']);
                           $pMin = (float)$p['min_investment_usd'];
                           $pMax = isset($p['max_investment_usd']) && $p['max_investment_usd'] !== null ? (float)$p['max_investment_usd'] : null;
-                          $rangeLabel = "$" . number_format($pMin, 0) . ($pMax !== null ? " – $" . number_format($pMax, 0) : " – No Limit");
+                          $rangeLabel = formatCurrency($pMin, $selectedCurrency) . ($pMax !== null ? " – " . formatCurrency($pMax, $selectedCurrency) : " – No Limit");
                       ?>
                       <option value="<?= $pCode; ?>" data-min="<?= $pMin; ?>" data-max="<?= $pMax !== null ? $pMax : 'NULL'; ?>" data-lock="<?= (int)$p['lock_period_months']; ?>" data-bonus="<?= (float)$p['bonus_percentage']; ?>" data-deduct="<?= (float)$p['withdrawal_deduction_percent']; ?>">
                           <?= htmlspecialchars($p['package_name']); ?> (<?= $rangeLabel; ?>)
@@ -437,9 +437,9 @@ label.form-label, label {
                 </div>
 
                 <div class="form-group mb-4">
-                  <label>Investment Amount ($ USD)</label>
-                  <input type="number" step="1" name="price" id="price" class="form-control" placeholder="Enter amount in USD (e.g. 145)" required style="height: 48px;" oninput="updateCalcSummary()">
-                  <small class="text-muted mt-1 d-block" id="inr-equivalent-text">Conversion: $1 = ₹90</small>
+                  <label>Investment Amount (<?= getCurrencySymbol($selectedCurrency); ?> <?= $selectedCurrency; ?>)</label>
+                  <input type="number" step="any" name="price" id="price" class="form-control" placeholder="Enter amount in <?= $selectedCurrency; ?>" required style="height: 48px;" oninput="updateCalcSummary()">
+                  <small class="text-muted mt-1 d-block" id="inr-equivalent-text"></small>
                 </div>
 
                 <!-- Live Summary Box -->
@@ -488,7 +488,17 @@ label.form-label, label {
 </div>
 
 <script>
-let currentSelectedCode = '';
+let activeCurr = '<?= $selectedCurrency; ?>';
+let currSymbol = '<?= getCurrencySymbol($selectedCurrency); ?>';
+
+function formatCurrJs(amountUsd) {
+    let amt = parseFloat(amountUsd) || 0;
+    if (activeCurr === 'INR') {
+        let amtInr = amt * 90;
+        return '₹' + amtInr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    return '$' + amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
 
 function selectPackageCard(code, minAmt, maxAmt, lockMonths, bonusPct, deductPct) {
     currentSelectedCode = code;
@@ -500,10 +510,11 @@ function selectPackageCard(code, minAmt, maxAmt, lockMonths, bonusPct, deductPct
     // Set Select dropdown
     $('#package_id').val(code);
 
-    // Auto-set min investment if input is empty
+    // Auto-set min investment in selected currency if input is empty
+    let minDisp = (activeCurr === 'INR') ? (minAmt * 90) : minAmt;
     let curVal = parseFloat($('#price').val()) || 0;
-    if (curVal < minAmt) {
-        $('#price').val(minAmt);
+    if (curVal < minDisp) {
+        $('#price').val(minDisp);
     }
 
     updateCalcSummary();
@@ -516,9 +527,10 @@ function onPackageSelectChange() {
         $('#card-' + code).addClass('selected');
         let opt = $('#package_id option:selected');
         let minAmt = parseFloat(opt.data('min')) || 0;
+        let minDisp = (activeCurr === 'INR') ? (minAmt * 90) : minAmt;
         let curVal = parseFloat($('#price').val()) || 0;
-        if (curVal < minAmt) {
-            $('#price').val(minAmt);
+        if (curVal < minDisp) {
+            $('#price').val(minDisp);
         }
     }
     updateCalcSummary();
@@ -530,11 +542,11 @@ function updateCalcSummary() {
 
     if (!code) {
         $('#sum-pkg-name').text('None Selected');
-        $('#sum-pkg-range').text('$0 – $0');
+        $('#sum-pkg-range').text(formatCurrJs(0) + ' – ' + formatCurrJs(0));
         $('#sum-lock-period').text('0 Months');
         $('#sum-maturity-date').text('N/A');
         $('#bonus-row').attr('style', 'display: none !important');
-        $('#inr-equivalent-text').text('Conversion: $1 = ₹90');
+        $('#inr-equivalent-text').text('');
         return;
     }
 
@@ -544,8 +556,8 @@ function updateCalcSummary() {
     let lockMonths = parseInt(opt.data('lock')) || 48;
     let bonusPct = parseFloat(opt.data('bonus')) || 0;
 
-    let maxStr = (maxAmtRaw !== 'NULL' && maxAmtRaw !== null && maxAmtRaw > 0) ? ('$' + parseFloat(maxAmtRaw).toLocaleString()) : 'No Limit';
-    let rangeStr = '$' + minAmt.toLocaleString() + ' – ' + maxStr;
+    let maxStr = (maxAmtRaw !== 'NULL' && maxAmtRaw !== null && maxAmtRaw > 0) ? formatCurrJs(maxAmtRaw) : 'No Limit';
+    let rangeStr = formatCurrJs(minAmt) + ' – ' + maxStr;
 
     $('#sum-pkg-name').text(pkgName);
     $('#sum-pkg-range').text(rangeStr);
@@ -557,13 +569,18 @@ function updateCalcSummary() {
     let matStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     $('#sum-maturity-date').text(matStr);
 
-    let priceUsd = parseFloat($('#price').val()) || 0;
-    let priceInr = priceUsd * 90;
-    $('#inr-equivalent-text').text('Amount in ₹: ₹' + priceInr.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+    let priceInput = parseFloat($('#price').val()) || 0;
+    if (activeCurr === 'INR') {
+        let priceUsdEquivalent = priceInput / 90.0;
+        $('#inr-equivalent-text').text('Equivalent in USD: $' + priceUsdEquivalent.toFixed(2));
+    } else {
+        let priceInrEquivalent = priceInput * 90.0;
+        $('#inr-equivalent-text').text('Equivalent in INR: ₹' + priceInrEquivalent.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+    }
 
-    if (bonusPct > 0 && priceUsd > 0) {
-        let bonusAmt = priceUsd * (bonusPct / 100.0);
-        $('#sum-bonus-amt').text('$' + bonusAmt.toFixed(2));
+    if (bonusPct > 0 && priceInput > 0) {
+        let bonusAmtUsd = (activeCurr === 'INR' ? (priceInput / 90.0) : priceInput) * (bonusPct / 100.0);
+        $('#sum-bonus-amt').text(formatCurrJs(bonusAmtUsd));
         $('#bonus-row').removeAttr('style');
     } else {
         $('#bonus-row').attr('style', 'display: none !important');

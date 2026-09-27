@@ -606,7 +606,7 @@ table.dataTable.no-footer {
                         });
 
                         $('#statTotalSchedules').text(totalCount);
-                        $('#statTotalCredited').text('<?php echo $hmcurrency; ?> ' + totalCredited.toLocaleString('en-IN', {minimumFractionDigits:2}));
+                        $('#statTotalCredited').text(formatAdminCurrency(totalCredited));
                         $('#statTotalPending').text(pendingCount);
                         $('#statBeneficiaries').text(beneficiaries.size);
 
@@ -621,7 +621,7 @@ table.dataTable.no-footer {
                     },
                     {
                         data: 'beneficiary_wallet',
-                        render: (data) => '<span class="amount-text" style="color:#16a34a; font-weight:700;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toFixed(2) + '</span>'
+                        render: (data) => '<span class="amount-text" style="color:#16a34a; font-weight:700;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
                     },
                     {
                         data: 'source_user_id',
@@ -629,11 +629,11 @@ table.dataTable.no-footer {
                     },
                     {
                         data: 'investment_amount',
-                        render: (data) => '<span style="font-weight:600; color:#475569;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
+                        render: (data) => '<span style="font-weight:600; color:#475569;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
                     },
                     {
                         data: 'installment_amount',
-                        render: (data) => '<span style="font-weight:700; color:#ea580c;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toFixed(2) + '</span>'
+                        render: (data) => '<span style="font-weight:700; color:#ea580c;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
                     },
                     {
                         data: 'installment_month',
@@ -716,7 +716,7 @@ table.dataTable.no-footer {
                                 rowsHtml += `<tr>
                                     <td class="fw-bold"><?php echo $hmpre; ?>${d.userid} (${d.name})</td>
                                     <td><span class="badge ${d.is_active_11usd ? 'bg-success' : 'bg-secondary'}">${d.status_label}</span></td>
-                                    <td class="fw-bold"><?php echo $hmcurrency; ?> ${parseFloat(d.total_investment).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+                                    <td class="fw-bold"><?php echo $hmcurrency; ?> ${formatAdminCurrency(parseFloat(d.total_investment || 0))}</td>
                                     <td>${isQ ? '<span class="badge bg-success"><i class="fa fa-check"></i> QUALIFIED</span>' : '<span class="badge bg-danger"><i class="fa fa-times"></i> INELIGIBLE</span>'}</td>
                                 </tr>`;
                             });
@@ -735,7 +735,7 @@ table.dataTable.no-footer {
 
                 $('#adjustUserIdInput').val(userId);
                 $('#adjustUserIdDisplay').val('<?php echo $hmpre; ?>' + userId);
-                $('#adjustUserWalletDisplay').val('<?php echo $hmcurrency; ?> ' + parseFloat(wallet).toFixed(2));
+                $('#adjustUserWalletDisplay').val(formatAdminCurrency(parseFloat(wallet || 0)));
                 
                 let modal = new bootstrap.Modal(document.getElementById('adjustModal'));
                 modal.show();

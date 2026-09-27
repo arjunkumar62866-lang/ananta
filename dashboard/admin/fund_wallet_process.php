@@ -40,8 +40,8 @@ if(isset($_POST['userid'], $_POST['amount'])) {
             $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$sponserid);
             $prefixedUid = 'AN' . $cleanUid;
 
-            // Update user wallet fields (amount, deposite_wallet, pin_wallet, total_deposit)
-            $stmtUpdate = $pdo->prepare("UPDATE user SET amount = amount + :amount, deposite_wallet = deposite_wallet + :amount, pin_wallet = pin_wallet + :amount, total_deposit = total_deposit + :amount WHERE userid = :userid OR userid = :clean OR userid = :prefixed");
+            // Update user wallet fields (deposite_wallet, pin_wallet, total_deposit)
+            $stmtUpdate = $pdo->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amount, pin_wallet = pin_wallet + :amount, total_deposit = total_deposit + :amount WHERE userid = :userid OR userid = :clean OR userid = :prefixed");
             $stmtUpdate->execute([
                 ':amount'   => $amount,
                 ':userid'   => $sponserid,

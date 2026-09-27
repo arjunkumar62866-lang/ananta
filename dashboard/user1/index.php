@@ -1655,6 +1655,150 @@ body.ananta-user-dashboard {
     setInterval(nextSlide, 3000);
   showSlide(currentIndex);
 </script>
+
+<?php
+// Fetch Promotional Offer Banner from tbl_homest
+$stmtOfferDash = $pdo->prepare("SELECT offer_image FROM tbl_homest WHERE id = 1 LIMIT 1");
+$stmtOfferDash->execute();
+$rowOfferDash = $stmtOfferDash->fetch(PDO::FETCH_ASSOC);
+$userPromoImg = (!empty($rowOfferDash['offer_image']) && file_exists(__DIR__ . '/../img/' . $rowOfferDash['offer_image'])) ? $rowOfferDash['offer_image'] : '';
+?>
+
+<?php if (!empty($userPromoImg)): ?>
+<!-- PROMOTIONAL OFFER AD MODAL POPUP (USER DASHBOARD) -->
+<style>
+.ananta-offer-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeInModal 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes zoomInModalCard {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.ananta-offer-modal-card {
+    position: relative;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(147, 51, 234, 0.25);
+    max-width: 620px;
+    width: 100%;
+    overflow: hidden;
+    animation: zoomInModalCard 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ananta-offer-modal-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 38px;
+    height: 38px;
+    background: #0f172a;
+    color: #ffffff !important;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    z-index: 10;
+    transition: all 0.25s ease;
+}
+
+.ananta-offer-modal-close-btn:hover {
+    background: #ef4444;
+    color: #ffffff !important;
+    transform: scale(1.1) rotate(90deg);
+}
+
+.ananta-offer-modal-body {
+    padding: 10px;
+    text-align: center;
+    background: #ffffff;
+}
+
+.ananta-offer-modal-img {
+    width: 100%;
+    max-height: 72vh;
+    object-fit: contain;
+    border-radius: 18px;
+    display: block;
+}
+
+.ananta-offer-modal-footer {
+    padding: 14px 20px 18px 20px;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+</style>
+
+<div id="anantaUserPromoOfferModal" class="ananta-offer-modal-overlay">
+    <div class="ananta-offer-modal-card">
+        <!-- Close Button (Cut) -->
+        <button type="button" class="ananta-offer-modal-close-btn" onclick="closeAnantaUserPromoOfferModal()" title="Close Offer">
+            &times;
+        </button>
+        
+        <div class="ananta-offer-modal-body">
+            <img src="../img/<?php echo htmlspecialchars($userPromoImg); ?>" alt="Exclusive Promotional Offer" class="ananta-offer-modal-img">
+        </div>
+
+        <div class="ananta-offer-modal-footer">
+            <span style="font-weight: 700; color: #0f172a; font-size: 14px;">
+                <i class="fa fa-gift" style="color: #9333ea; font-size: 18px;"></i> Special Offer
+            </span>
+            <div class="d-flex gap-2">
+                <a href="package_buy.php" class="btn text-white px-4 py-2 font-weight-bold" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; font-size: 13.5px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                    Claim Offer <i class="fa fa-arrow-right ms-1"></i>
+                </a>
+                <button type="button" onclick="closeAnantaUserPromoOfferModal()" class="btn btn-light px-3 py-2 font-weight-bold" style="border-radius: 12px; font-size: 13.5px; color: #64748b; border: 1px solid #cbd5e1;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function closeAnantaUserPromoOfferModal() {
+    const modal = document.getElementById('anantaUserPromoOfferModal');
+    if (modal) {
+        modal.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 250);
+    }
+}
+</script>
+<?php endif; ?>
+
 </body>
 
 <!-- Mirrored from themewagon.github.io/dashtreme/index.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 05 Aug 2025 05:58:57 GMT -->

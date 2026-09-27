@@ -101,7 +101,7 @@
                 </div>
               </div>
               <div class="form-group mb-4">
-                <label>Amount (₹)</label>
+                <label>Amount (<?php echo getCurrencySymbol(); ?>)</label>
                 <input type="number" step="0.01" name="amount" id="amount" class="form-control" placeholder="Enter Amount to Send" required>
               </div>
               <button type="submit" id="submitBtn" class="btn btn-submit-custom w-100">

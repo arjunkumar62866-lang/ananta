@@ -198,24 +198,26 @@ body.bg-theme, body.bg-theme1 {
                                     <label class="d-block mb-3" style="color:#0f172a; font-weight:800;">Current Offer Banner & Preview</label>
                                     
                                     <div class="offer-preview-wrapper">
-                                        <?php if (!empty($row1['offer_image'])) { ?>
-                                            <img src="../img/<?php echo htmlspecialchars($row1['offer_image']); ?>" 
-                                                 class="preview-img-container" id="previewImage" alt="Offer Image Preview"/>
-                                        <?php } else { ?>
-                                            <img src="" id="previewImage" style="display:none;" class="preview-img-container" alt="Offer Image Preview"/>
-                                            <div id="noImgText" class="py-4">
-                                                <i class="fa fa-picture-o text-muted" style="font-size:48px;"></i>
-                                                <p class="mt-2 text-muted font-weight-bold">No offer image currently uploaded</p>
-                                            </div>
-                                        <?php } ?>
+                                        <?php $hasImage = !empty($row1['offer_image']); ?>
+                                        <img src="<?php echo $hasImage ? '../img/' . htmlspecialchars($row1['offer_image']) : ''; ?>" 
+                                             class="preview-img-container" id="previewImage" alt="Offer Image Preview" style="<?php echo $hasImage ? '' : 'display:none;'; ?>"/>
+                                        
+                                        <div id="noImgText" class="py-4" style="<?php echo $hasImage ? 'display:none;' : ''; ?>">
+                                            <i class="fa fa-picture-o text-muted" style="font-size:48px;"></i>
+                                            <p class="mt-2 text-muted font-weight-bold">No offer image currently uploaded</p>
+                                        </div>
 
-                                        <div class="mt-3">
-                                            <label for="fileInput" class="btn btn-outline-primary px-4 py-2" style="border-radius:12px; font-weight:700; border-color:#9333ea; color:#9333ea; cursor:pointer;">
+                                        <div class="mt-3 d-flex flex-wrap justify-content-center gap-2 align-items-center">
+                                            <label for="fileInput" class="btn btn-outline-primary px-4 py-2 mb-0" style="border-radius:12px; font-weight:700; border-color:#9333ea; color:#9333ea; cursor:pointer;">
                                                 <i class="fa fa-upload me-2"></i> Select New Offer Image
                                             </label>
                                             <input type="file" name="qr_codeimage" accept="image/*" class="d-none" id="fileInput">
-                                            <p class="small text-muted mt-2 mb-0" style="font-weight:600;">Allowed formats: JPG, JPEG, PNG, GIF (Recommended size: 800x400px)</p>
+                                            
+                                            <button type="button" id="btnDeleteOffer" class="btn btn-outline-danger px-4 py-2" style="border-radius:12px; font-weight:700; <?php echo $hasImage ? '' : 'display:none;'; ?>">
+                                                <i class="fa fa-trash me-2"></i> Delete Current Offer
+                                            </button>
                                         </div>
+                                        <p class="small text-muted mt-2 mb-0" style="font-weight:600;">Allowed formats: JPG, JPEG, PNG, GIF, WEBP (Recommended size: 800x400px)</p>
                                     </div>
                                 </div>
 
@@ -258,7 +260,7 @@ $(document).ready(function(){
         }
     });
 
-    // Handle form submit with AJAX
+    // Handle form submit with AJAX (Upload)
     $('#offerImageForm').on('submit', function(e){
         e.preventDefault();
         var formData = new FormData(this);
@@ -278,6 +280,11 @@ $(document).ready(function(){
                 $btn.prop('disabled', false).html(originalBtnHtml);
                 if(response.status === 'success'){
                     $('#statusMessage').html('<div class="status-alert status-alert-success"><i class="fa fa-check-circle me-2"></i>' + response.message + '</div>');
+                    if(response.image_name) {
+                        $('#previewImage').attr('src', '../img/' + response.image_name).show();
+                        $('#noImgText').hide();
+                        $('#btnDeleteOffer').show();
+                    }
                 } else {
                     $('#statusMessage').html('<div class="status-alert status-alert-danger"><i class="fa fa-exclamation-triangle me-2"></i>' + response.message + '</div>');
                 }
@@ -285,6 +292,40 @@ $(document).ready(function(){
             error: function(){
                 $btn.prop('disabled', false).html(originalBtnHtml);
                 $('#statusMessage').html('<div class="status-alert status-alert-danger"><i class="fa fa-exclamation-triangle me-2"></i>An error occurred during upload. Please try again.</div>');
+            }
+        });
+    });
+
+    // Handle Delete Offer with AJAX
+    $('#btnDeleteOffer').on('click', function(){
+        if(!confirm('Are you sure you want to delete the current promotional offer banner? It will no longer show on the website.')) {
+            return;
+        }
+
+        var $btn = $(this);
+        var originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i> Deleting...');
+
+        $.ajax({
+            url: 'offer-update-action.php',
+            type: 'POST',
+            data: { action: 'delete' },
+            dataType: 'json',
+            success: function(response){
+                $btn.prop('disabled', false).html(originalHtml);
+                if(response.status === 'success'){
+                    $('#statusMessage').html('<div class="status-alert status-alert-success"><i class="fa fa-check-circle me-2"></i>' + response.message + '</div>');
+                    $('#previewImage').attr('src', '').hide();
+                    $('#noImgText').show();
+                    $('#btnDeleteOffer').hide();
+                    $('#fileInput').val('');
+                } else {
+                    $('#statusMessage').html('<div class="status-alert status-alert-danger"><i class="fa fa-exclamation-triangle me-2"></i>' + response.message + '</div>');
+                }
+            },
+            error: function(){
+                $btn.prop('disabled', false).html(originalHtml);
+                $('#statusMessage').html('<div class="status-alert status-alert-danger"><i class="fa fa-exclamation-triangle me-2"></i>An error occurred while deleting. Please try again.</div>');
             }
         });
     });

@@ -1662,9 +1662,6 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                 $stmtDir->execute([':uid' => $uid]);
                 $directCount = (int)$stmtDir->fetchColumn();
 
-                $downlineIds = getSubtreeDescendantIds($uid, $db);
-                $downlineCount = count($downlineIds);
-
                 $nodePos = !empty($curr['position']) ? $curr['position'] : (!empty($uData['join_side']) ? strtoupper($uData['join_side']) : $initialPosition);
 
                 $results[] = [
@@ -1681,7 +1678,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                     'status'           => ($uData['active'] == 1) ? 'Active' : 'Inactive',
                     'package'          => $uData['latest_package'] ?: ($invUsd > 0 ? 'ANANTA' : 'N/A'),
                     'direct_count'     => $directCount,
-                    'downline_count'   => $downlineCount
+                    'downline_count'   => 0
                 ];
 
                 // Gather children from BOTH tree table AND user table
@@ -1725,6 +1722,30 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                     }
                 }
             }
+        }
+
+        // Calculate downline_count in memory for all results in a single pass
+        if (!empty($results)) {
+            $childrenMap = [];
+            foreach ($results as $item) {
+                if (!empty($item['parent_id'])) {
+                    $childrenMap[$item['parent_id']][] = $item['userid'];
+                }
+            }
+
+            $countDescendantsInMemory = function($nodeId) use (&$countDescendantsInMemory, &$childrenMap) {
+                if (empty($childrenMap[$nodeId])) return 0;
+                $cnt = 0;
+                foreach ($childrenMap[$nodeId] as $childId) {
+                    $cnt += 1 + $countDescendantsInMemory($childId);
+                }
+                return $cnt;
+            };
+
+            foreach ($results as &$item) {
+                $item['downline_count'] = $countDescendantsInMemory($item['userid']);
+            }
+            unset($item);
         }
 
         return $results;
@@ -1963,19 +1984,19 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
 
         // Perform Atomic Debit on Sender
         if ($fromWallet === 'Main Wallet') {
-            $db->prepare("UPDATE user SET deposite_wallet = GREATEST(0, deposite_wallet - :amt), pin_wallet = GREATEST(0, pin_wallet - :amt), amount = GREATEST(0, amount - :amt) WHERE userid = :uid")
+            $db->prepare("UPDATE user SET deposite_wallet = GREATEST(0, deposite_wallet - :amt), pin_wallet = GREATEST(0, pin_wallet - :amt) WHERE userid = :uid")
                 ->execute([':amt' => $amount, ':uid' => $senderId]);
         } else {
             $db->prepare("UPDATE user SET amount = GREATEST(0, amount - :amt) WHERE userid = :uid")
                 ->execute([':amt' => $amount, ':uid' => $senderId]);
         }
 
-        // Perform Atomic Credit on Receiver (Sync deposite_wallet, pin_wallet, amount, total_deposit)
+        // Perform Atomic Credit on Receiver
         if ($toWallet === 'Main Wallet') {
-            $db->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt, amount = amount + :amt, total_deposit = total_deposit + :amt WHERE userid = :uid")
+            $db->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt, total_deposit = total_deposit + :amt WHERE userid = :uid")
                 ->execute([':amt' => $amount, ':uid' => $receiverId]);
         } else {
-            $db->prepare("UPDATE user SET amount = amount + :amt, deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt WHERE userid = :uid")
+            $db->prepare("UPDATE user SET amount = amount + :amt WHERE userid = :uid")
                 ->execute([':amt' => $amount, ':uid' => $receiverId]);
         }
 
@@ -2701,7 +2722,7 @@ if (!function_exists('processAnantaPackageInvestment')) {
 
         try {
             // Lock user row FOR UPDATE
-            $stmtUser = $db->prepare("SELECT userid, pin_wallet, bonus_30_wallet, total_package FROM user WHERE userid = :uid FOR UPDATE");
+            $stmtUser = $db->prepare("SELECT userid, pin_wallet, deposite_wallet, bonus_30_wallet, total_package FROM user WHERE userid = :uid FOR UPDATE");
             $stmtUser->execute([':uid' => $user_id]);
             $uRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
@@ -2710,16 +2731,17 @@ if (!function_exists('processAnantaPackageInvestment')) {
                 return ['status' => 'error', 'message' => "User {$user_id} not found."];
             }
 
-            $pinWalletBal = (float)$uRow['pin_wallet'];
+            $pinWalletBal = (float)($uRow['deposite_wallet'] ?? $uRow['pin_wallet'] ?? 0);
             if ($pinWalletBal < $inrAmount) {
                 if ($inLocalTxn) $db->rollBack();
-                return ['status' => 'error', 'message' => "Insufficient Fund Wallet balance. Required: ₹" . number_format($inrAmount, 2) . " ($" . number_format($realFundUsd, 2) . "), Available: ₹" . number_format($pinWalletBal, 2)];
+                return ['status' => 'error', 'message' => "Insufficient Main Wallet balance. Required: ₹" . number_format($inrAmount, 2) . " ($" . number_format($realFundUsd, 2) . "), Available: ₹" . number_format($pinWalletBal, 2)];
             }
 
-            // 1. Update user pin_wallet & total_package
+            // 1. Update user pin_wallet, deposite_wallet & total_package
             $updUser = $db->prepare("
                 UPDATE user SET
-                    pin_wallet = pin_wallet - :inr_amt,
+                    pin_wallet = GREATEST(0, pin_wallet - :inr_amt),
+                    deposite_wallet = GREATEST(0, deposite_wallet - :inr_amt),
                     total_package = total_package + :inr_amt,
                     bonus_30_wallet = bonus_30_wallet + :bonus_usd,
                     upgrade_date = :cdate,
@@ -3868,7 +3890,7 @@ if (!function_exists('getUserWalletBalance')) {
         $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
         $prefixedUid = 'AN' . $cleanUid;
 
-        $stmt = $db->prepare("SELECT amount FROM user WHERE userid = :uid OR userid = :clean OR userid = :prefixed LIMIT 1");
+        $stmt = $db->prepare("SELECT COALESCE(deposite_wallet, pin_wallet, 0) FROM user WHERE userid = :uid OR userid = :clean OR userid = :prefixed LIMIT 1");
         $stmt->execute([
             ':uid'      => $userid,
             ':clean'    => $cleanUid,

@@ -180,7 +180,7 @@
                     {
                         data: 'amount',
                         render: function (data) {
-                            return `<span style="font-weight:700; color:#16a34a;">₹${data}</span>`;
+                            return `<span style="font-weight:700; color:#16a34a;">${formatAdminCurrency(parseFloat(data || 0))}</span>`;
                         }
                     },
                     { data: 'created_date'},

@@ -345,8 +345,8 @@ body.bg-theme1 {
                                                 <td><span class="badge bg-primary text-white px-2 py-1"><?php echo htmlspecialchars($c['closing_month']); ?></span></td>
                                                 <td><?php echo htmlspecialchars($c['closing_date']); ?></td>
                                                 <td><strong><?php echo htmlspecialchars($c['profit_percentage']); ?>%</strong></td>
-                                                <td><?php echo $hmcurrency . ' ' . number_format($c['total_eligible_investment'], 2); ?></td>
-                                                <td><strong class="text-success"><?php echo $hmcurrency . ' ' . number_format($c['total_profit_paid'], 2); ?></strong></td>
+                                                <td><?php echo formatCurrency($c['total_eligible_investment']); ?></td>
+                                                <td><strong class="text-success"><?php echo formatCurrency($c['total_profit_paid']); ?></strong></td>
                                                 <td><?php echo (int)$c['eligible_user_count']; ?></td>
                                                 <td><span class="badge bg-info text-white px-2 py-1"><?php echo htmlspecialchars($c['processed_by'] ?? 'Admin'); ?></span></td>
                                                 <td><span class="badge bg-success text-white px-2 py-1"><?php echo htmlspecialchars($c['status']); ?></span></td>
@@ -437,9 +437,9 @@ $(document).ready(function(){
                 currentPreviewData = res;
                 $('#prevMonth').text(res.closing_month);
                 $('#prevRate').text(res.profit_percentage + '%');
-                $('#prevInv').text('<?php echo $hmcurrency; ?> ' + Number(res.total_eligible_investment).toLocaleString('en-IN', {minimumFractionDigits: 2}));
-                $('#prevProfit').text('<?php echo $hmcurrency; ?> ' + Number(res.expected_total_profit).toLocaleString('en-IN', {minimumFractionDigits: 2}));
-                $('#prevSharing').text('<?php echo $hmcurrency; ?> ' + Number(res.expected_profit_sharing).toLocaleString('en-IN', {minimumFractionDigits: 2}));
+                $('#prevInv').text(formatAdminCurrency(parseFloat(res.total_eligible_investment || 0)));
+                $('#prevProfit').text(formatAdminCurrency(parseFloat(res.expected_total_profit || 0)));
+                $('#prevSharing').text(formatAdminCurrency(parseFloat(res.expected_profit_sharing || 0)));
                 $('#prevInvCount').text(res.eligible_investment_count);
                 $('#prevUserCount').text(res.eligible_user_count);
 
@@ -459,9 +459,9 @@ $(document).ready(function(){
         let confirmMsg = "Are you sure you want to process Monthly Profit Closing for " + currentPreviewData.closing_month + "?\n\n" +
                          "Closing Date: " + $('#closing_date').val() + "\n" +
                          "Profit Rate: " + currentPreviewData.profit_percentage + "%\n" +
-                         "Eligible Investment: <?php echo $hmcurrency; ?> " + Number(currentPreviewData.total_eligible_investment).toLocaleString('en-IN', {minimumFractionDigits: 2}) + "\n" +
-                         "Profit Generated: <?php echo $hmcurrency; ?> " + Number(currentPreviewData.expected_total_profit).toLocaleString('en-IN', {minimumFractionDigits: 2}) + "\n" +
-                         "Profit Sharing: <?php echo $hmcurrency; ?> " + Number(currentPreviewData.expected_profit_sharing).toLocaleString('en-IN', {minimumFractionDigits: 2}) + "\n" +
+                         "Eligible Investment: " + formatAdminCurrency(parseFloat(currentPreviewData.total_eligible_investment || 0)) + "\n" +
+                         "Profit Generated: " + formatAdminCurrency(parseFloat(currentPreviewData.expected_total_profit || 0)) + "\n" +
+                         "Profit Sharing: " + formatAdminCurrency(parseFloat(currentPreviewData.expected_profit_sharing || 0)) + "\n" +
                          "Eligible Users: " + currentPreviewData.eligible_user_count + "\n" +
                          "Eligible Investments: " + currentPreviewData.eligible_investment_count + "\n\n" +
                          "This action will credit user wallets and cannot be undone.";
@@ -516,9 +516,9 @@ $(document).ready(function(){
                         '<tr><th>Closing Month</th><td><span class="badge bg-primary text-white px-2 py-1">' + c.closing_month + '</span></td></tr>' +
                         '<tr><th>Closing Date</th><td>' + c.closing_date + '</td></tr>' +
                         '<tr><th>Profit Percentage</th><td><strong>' + c.profit_percentage + '%</strong></td></tr>' +
-                        '<tr><th>Total Eligible Investment</th><td><?php echo $hmcurrency; ?> ' + Number(c.total_eligible_investment).toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</td></tr>' +
-                        '<tr><th>Total Profit Generated / Paid</th><td><strong class="text-success"><?php echo $hmcurrency; ?> ' + Number(c.total_profit_paid).toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</strong></td></tr>' +
-                        '<tr><th>Total Profit Sharing Distributed</th><td><strong class="text-info"><?php echo $hmcurrency; ?> ' + Number(res.total_profit_sharing).toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</strong></td></tr>' +
+                        '<tr><th>Total Eligible Investment</th><td>' + formatAdminCurrency(parseFloat(c.total_eligible_investment || 0)) + '</td></tr>' +
+                        '<tr><th>Total Profit Generated / Paid</th><td><strong class="text-success">' + formatAdminCurrency(parseFloat(c.total_profit_paid || 0)) + '</strong></td></tr>' +
+                        '<tr><th>Total Profit Sharing Distributed</th><td><strong class="text-info">' + formatAdminCurrency(parseFloat(res.total_profit_sharing || 0)) + '</strong></td></tr>' +
                         '<tr><th>Eligible Users Count</th><td>' + c.eligible_user_count + '</td></tr>' +
                         '<tr><th>Eligible Investment Records Count</th><td>' + c.eligible_investment_count + '</td></tr>' +
                         '<tr><th>Status</th><td><span class="badge bg-success text-white px-2 py-1">' + c.status + '</span></td></tr>' +

@@ -354,7 +354,7 @@ table.dataTable.no-footer {
                     { 
                         data: 'total_package',
                         render: function(data){
-                            return '₹' + parseFloat(data || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            return '<strong class="text-success">' + formatAdminCurrency(parseFloat(data || 0)) + '</strong>';
                         }
                     },
                     { 

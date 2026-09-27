@@ -353,7 +353,7 @@ table.dataTable.no-footer {
                     {
                         data: 'amount',
                         render: function (data) {
-                            return `<span class="amount-text"><?php echo $hmcurrency; ?>${data}</span>`;
+                            return `<span class="amount-text">${formatAdminCurrency(parseFloat(data || 0))}</span>`;
                         }
                     },
                     { data: 'created_date'}

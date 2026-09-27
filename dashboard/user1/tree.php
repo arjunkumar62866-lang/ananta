@@ -12,7 +12,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
     $sessionUserid = $_SESSION['userid'] ?? $_SESSION['user_id'] ?? '';
     $reqNodeId = !empty($_GET['node_id']) ? trim($_GET['node_id']) : $sessionUserid;
-    $reqDepth = isset($_GET['depth']) ? max(1, min(20, intval($_GET['depth']))) : 10;
+    $reqDepth = isset($_GET['depth']) ? max(1, min(50, intval($_GET['depth']))) : 10;
     $currSelection = getUserCurrency();
 
     if (empty($reqNodeId)) {
@@ -33,6 +33,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     // Recursive function for unlimited horizontal binary tree expansion with currency formatting & real team counts
     function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10) {
         global $pdo, $currSelection;
+        static $branchCache = [];
 
         if (empty($nodeId)) return null;
 
@@ -70,25 +71,31 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         ];
 
         // Calculate Left Team Members & Business
-        $leftMembers = !empty($tree['left_id']) ? getRootBranchTreeDetailed($tree['left_id'], $pdo, 'LEFT') : [];
-        $leftSubtreeDesc = !empty($tree['left_id']) ? getSubtreeDescendantIds($tree['left_id'], $pdo) : [];
-        $leftCount = !empty($tree['left_id']) ? (count($leftSubtreeDesc) + 1) : 0;
+        if (!empty($tree['left_id'])) {
+            if (!isset($branchCache[$tree['left_id']])) {
+                $branchCache[$tree['left_id']] = getRootBranchTreeDetailed($tree['left_id'], $pdo, 'LEFT');
+            }
+            $leftMembers = $branchCache[$tree['left_id']];
+        } else {
+            $leftMembers = [];
+        }
+        $leftCount = count($leftMembers);
         if ($leftCount < intval($tree['leftcount'])) {
             $leftCount = intval($tree['leftcount']);
         }
-        if ($leftCount < count($leftMembers)) {
-            $leftCount = count($leftMembers);
-        }
 
         // Calculate Right Team Members & Business
-        $rightMembers = !empty($tree['right_id']) ? getRootBranchTreeDetailed($tree['right_id'], $pdo, 'RIGHT') : [];
-        $rightSubtreeDesc = !empty($tree['right_id']) ? getSubtreeDescendantIds($tree['right_id'], $pdo) : [];
-        $rightCount = !empty($tree['right_id']) ? (count($rightSubtreeDesc) + 1) : 0;
+        if (!empty($tree['right_id'])) {
+            if (!isset($branchCache[$tree['right_id']])) {
+                $branchCache[$tree['right_id']] = getRootBranchTreeDetailed($tree['right_id'], $pdo, 'RIGHT');
+            }
+            $rightMembers = $branchCache[$tree['right_id']];
+        } else {
+            $rightMembers = [];
+        }
+        $rightCount = count($rightMembers);
         if ($rightCount < intval($tree['rightcount'])) {
             $rightCount = intval($tree['rightcount']);
-        }
-        if ($rightCount < count($rightMembers)) {
-            $rightCount = count($rightMembers);
         }
 
         $leftBusiness = array_sum(array_column($leftMembers, 'investment_usd'));

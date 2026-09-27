@@ -305,8 +305,10 @@ table.dataTable.no-footer {
                                                 <th>Txn ID</th>
                                                 <th>Transaction</th>
                                                 <th>Amount</th>
+                                                <th>Pay Slip</th>
                                                 <th>Status</th>
                                                 <th>Date</th>
+                                                <th>Remark</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -370,16 +372,27 @@ table.dataTable.no-footer {
                     { data: null, render: (data, type, row, meta) => meta.row + 1 },
                     {
                         data: 'userid',
-                        render: function (data) {
-                            return `<a class="user-link" href="user_profile.php?uid=${data}"><?php echo $hmpre; ?>${data}</a>`;
+                        render: function (data, type, row) {
+                            var uname = row.username ? ` (${row.username})` : '';
+                            return `<a class="user-link" href="user_profile.php?uid=${data}"><?php echo $hmpre; ?>${data}${uname}</a>`;
                         }
                     },
                     { data: 'tr_id' },
                     { data: 'subject' },
                     {
                         data: 'amount',
+                        render: function (data, type, row) {
+                            var prefix = (row.mode === 'BEP20') ? '$ ' : '₹ ';
+                            return `<span class="amount-display">${prefix}${parseFloat(data || 0).toFixed(2)}</span>`;
+                        }
+                    },
+                    {
+                        data: 'image',
                         render: function (data) {
-                            return `<span class="amount-display">${formatAdminCurrency(parseFloat(data || 0))}</span>`;
+                            if (!data) return '<span class="text-muted">No Slip</span>';
+                            return `<a href="../img/${data}" target="_blank" title="Click to view full payment slip">
+                                <img src="../img/${data}" height="48" width="48" style="object-fit:cover; border-radius:8px; border:1.5px solid #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.08);" alt="Pay Slip">
+                            </a>`;
                         }
                     },
                     {
@@ -396,7 +409,18 @@ table.dataTable.no-footer {
                             }
                         }
                     },
-                    { data:'date'}
+                    {
+                        data: 'date',
+                        render: function (data, type, row) {
+                            var dt = data || '';
+                            if (row.time) dt += ' ' + row.time;
+                            return dt || 'N/A';
+                        }
+                    },
+                    {
+                        data: 'remark',
+                        render: (data) => `<span style="color: #475569; font-size: 13px;">${data || '-'}</span>`
+                    }
                 ],
                 pageLength: 10,
                 lengthMenu: [5, 10, 25, 50, 100, 1000],

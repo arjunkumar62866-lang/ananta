@@ -125,9 +125,9 @@ foreach ($directMembers as $m) {
                         </thead>
                         <tbody style="font-size: 14px; color: #0f172a;">
                             <?php if (!empty($directMembers)): ?>
-                                <?php foreach ($directMembers as $m): ?>
+                                <?php $sr = 1; foreach ($directMembers as $m): ?>
                                     <tr style="border-bottom: 1px solid #f1f5f9;">
-                                        <td class="py-3 px-4 text-center font-weight-bold" style="color: #475569;"><?php echo $m['sr']; ?></td>
+                                        <td class="py-3 px-4 text-center font-weight-bold" style="color: #475569;"><?php echo $sr++; ?></td>
                                         <td class="py-3 px-3">
                                             <span class="font-weight-bold" style="color: #9333ea;"><?php echo htmlspecialchars($m['userid']); ?></span>
                                         </td>
