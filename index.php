@@ -194,7 +194,7 @@ include "common/header.php";
                                             <i class="fas fa-globe-americas"></i>
                                         </div>
                                         <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-target="7" data-prefix="" data-suffix="+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">0</h3>
+                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="7" data-prefix="" data-suffix="+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1+</h3>
                                         </div>
                                     </div>
                                     <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #1D4ED8; letter-spacing: 0.5px; text-transform: uppercase;">Countries</h5>
@@ -210,7 +210,7 @@ include "common/header.php";
                                             <i class="fas fa-users"></i>
                                         </div>
                                         <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">0</h3>
+                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1K+</h3>
                                         </div>
                                     </div>
                                     <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #0284C7; letter-spacing: 0.5px; text-transform: uppercase;">Members</h5>
@@ -226,7 +226,7 @@ include "common/header.php";
                                             <i class="fas fa-coins"></i>
                                         </div>
                                         <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-target="2" data-prefix="$" data-suffix="M+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">$0</h3>
+                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1000" data-target="2000000" data-format="currency_m" data-prefix="$" data-suffix="M+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">$1,000</h3>
                                         </div>
                                     </div>
                                     <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #16A34A; letter-spacing: 0.5px; text-transform: uppercase;">Global Volume</h5>
@@ -242,7 +242,7 @@ include "common/header.php";
                                             <i class="fas fa-chart-line"></i>
                                         </div>
                                         <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-target="98" data-prefix="" data-suffix="%" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">0</h3>
+                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="98" data-prefix="" data-suffix="%" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1%</h3>
                                         </div>
                                     </div>
                                     <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #65A30D; letter-spacing: 0.5px; text-transform: uppercase;">Success Rate</h5>
@@ -258,7 +258,7 @@ include "common/header.php";
                                             <i class="fas fa-user-check"></i>
                                         </div>
                                         <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">0</h3>
+                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="10" data-prefix="" data-suffix="K+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1K+</h3>
                                         </div>
                                     </div>
                                     <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #CA8A04; letter-spacing: 0.5px; text-transform: uppercase;">Active Network</h5>
@@ -274,7 +274,7 @@ include "common/header.php";
                                             <i class="fas fa-bullhorn"></i>
                                         </div>
                                         <div>
-                                            <h3 class="growth-counter font-weight-black mb-0" data-target="85" data-prefix="" data-suffix="%+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">0</h3>
+                                            <h3 class="growth-counter font-weight-black mb-0" data-start="1" data-target="85" data-prefix="" data-suffix="%+" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 900; color: #0F172A; line-height: 1;">1%+</h3>
                                         </div>
                                     </div>
                                     <h5 class="mb-1 font-weight-bold" style="font-size: 14px; color: #F97316; letter-spacing: 0.5px; text-transform: uppercase;">Active Community</h5>
@@ -292,55 +292,71 @@ include "common/header.php";
         </section>
 
         <script>
-        // Live IntersectionObserver Counter Animation (Restarts from 0 up to target every time section enters screen viewport)
+        // Live IntersectionObserver Counter Animation (Fast counting starting from customized min value up to target)
         document.addEventListener('DOMContentLoaded', function() {
             const growthSection = document.getElementById('our-growth-section');
             if (!growthSection) return;
 
             const counters = growthSection.querySelectorAll('.growth-counter');
-            let isAnimating = false;
 
             function startCounterAnimation() {
                 counters.forEach(counter => {
-                    const target = parseInt(counter.getAttribute('data-target'), 10);
+                    const startVal = parseInt(counter.getAttribute('data-start') || '0', 10);
+                    const targetVal = parseInt(counter.getAttribute('data-target'), 10);
                     const prefix = counter.getAttribute('data-prefix') || '';
                     const suffix = counter.getAttribute('data-suffix') || '';
-                    
-                    let start = 0;
-                    const duration = 1600; // ms
+                    const isCurrencyM = counter.getAttribute('data-format') === 'currency_m';
+
+                    const duration = 1100; // Fast smooth duration = 1.1s
                     const startTime = performance.now();
 
                     function updateNumber(currentTime) {
                         const elapsed = currentTime - startTime;
                         const progress = Math.min(elapsed / duration, 1);
                         
-                        // Ease-out quadratic function
-                        const easeProgress = 1 - (1 - progress) * (1 - progress);
-                        const currentValue = Math.floor(start + (target - start) * easeProgress);
+                        // Fast ease-out cubic curve
+                        const easeProgress = 1 - Math.pow(1 - progress, 3);
+                        const currentValue = Math.floor(startVal + (targetVal - startVal) * easeProgress);
 
-                        counter.textContent = prefix + currentValue.toLocaleString() + suffix;
+                        if (isCurrencyM) {
+                            if (progress < 0.92) {
+                                counter.textContent = prefix + currentValue.toLocaleString();
+                            } else {
+                                counter.textContent = prefix + '2M+';
+                            }
+                        } else {
+                            counter.textContent = prefix + currentValue.toLocaleString() + suffix;
+                        }
 
                         if (progress < 1) {
                             requestAnimationFrame(updateNumber);
                         } else {
-                            counter.textContent = prefix + target.toLocaleString() + suffix;
+                            if (isCurrencyM) {
+                                counter.textContent = prefix + '2M+';
+                            } else {
+                                counter.textContent = prefix + targetVal.toLocaleString() + suffix;
+                            }
                         }
                     }
 
-                    // Reset counter to 0 immediately before starting
-                    counter.textContent = prefix + '0' + suffix;
+                    // Reset counter to start value immediately before animating
+                    if (isCurrencyM) {
+                        counter.textContent = prefix + startVal.toLocaleString();
+                    } else {
+                        counter.textContent = prefix + startVal + suffix;
+                    }
                     requestAnimationFrame(updateNumber);
                 });
             }
 
-            // IntersectionObserver triggers animation whenever section enters the screen
+            // IntersectionObserver triggers fast animation whenever section enters the screen viewport
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         startCounterAnimation();
                     }
                 });
-            }, { threshold: 0.25 });
+            }, { threshold: 0.2 });
 
             observer.observe(growthSection);
         });
