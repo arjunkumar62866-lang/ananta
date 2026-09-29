@@ -12,6 +12,13 @@ RewriteRule . /index.php [L]
 # Custom 404 Page
 ErrorDocument 404 /404.php
 
+# Disable Server Caching for Dynamic PHP Pages
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</IfModule>
+
 # ============================
 # PHP ERROR LOGGING ENABLED
 # ============================
