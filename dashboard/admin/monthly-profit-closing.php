@@ -345,8 +345,8 @@ body.bg-theme1 {
                                                 <td><span class="badge bg-primary text-white px-2 py-1"><?php echo htmlspecialchars($c['closing_month']); ?></span></td>
                                                 <td><?php echo htmlspecialchars($c['closing_date']); ?></td>
                                                 <td><strong><?php echo htmlspecialchars($c['profit_percentage']); ?>%</strong></td>
-                                                <td><?php echo formatCurrency($c['total_eligible_investment']); ?></td>
-                                                <td><strong class="text-success"><?php echo formatCurrency($c['total_profit_paid']); ?></strong></td>
+                                                <td><?php echo formatCurrencyFromINR($c['total_eligible_investment']); ?></td>
+                                                <td><strong class="text-success"><?php echo formatCurrencyFromINR($c['total_profit_paid']); ?></strong></td>
                                                 <td><?php echo (int)$c['eligible_user_count']; ?></td>
                                                 <td><span class="badge bg-info text-white px-2 py-1"><?php echo htmlspecialchars($c['processed_by'] ?? 'Admin'); ?></span></td>
                                                 <td><span class="badge bg-success text-white px-2 py-1"><?php echo htmlspecialchars($c['status']); ?></span></td>

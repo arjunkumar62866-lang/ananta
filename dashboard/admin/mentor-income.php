@@ -607,7 +607,7 @@ table.dataTable.no-footer {
                                 if (row.direct_user_id) directUsers.add(row.direct_user_id);
                             });
 
-                            $('#statTotalPaid').text('<?php echo $hmcurrency; ?> ' + totalPaid.toLocaleString('en-IN', {minimumFractionDigits:2}));
+                            $('#statTotalPaid').text(formatAdminCurrency(totalPaid));
                             $('#statTotalRecords').text(totalRecords);
                             $('#statDirectUsers').text(directUsers.size);
 

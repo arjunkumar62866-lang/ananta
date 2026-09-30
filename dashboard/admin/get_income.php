@@ -1,8 +1,11 @@
 <?php
 require 'common/connection.php'; // Your PDO connection
+require_once 'common/db_method.php';
 header('Content-Type: application/json');
 
 $type = $_GET['type'] ?? 'all';
+$rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+if ($rate <= 0) $rate = 90.0;
 
 switch ($type) {
     case 'level_income':
@@ -63,5 +66,43 @@ switch ($type) {
 $stmt->execute();
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Normalization layer: Ensure all output monetary values represent base USD to prevent duplicate currency conversion
+foreach ($users as &$row) {
+    if (isset($row['amount'])) {
+        $rawInr = (float)$row['amount'];
+        $row['amount_inr'] = round($rawInr, 2);
+        $row['amount_usd'] = round($rawInr / $rate, 2);
+        // Normalize amount to base USD so formatAdminCurrency(amount) performs exactly one conversion
+        $row['amount']     = round($rawInr / $rate, 2);
+    }
+    
+    if (isset($row['installment_amount'])) {
+        $instInr = (float)$row['installment_amount'];
+        $row['installment_amount_inr'] = round($instInr, 2);
+        $row['installment_amount_usd'] = round($instInr / $rate, 2);
+        $row['installment_amount']     = round($instInr / $rate, 2);
+    }
+    if (isset($row['investment_amount'])) {
+        $invInr = (float)$row['investment_amount'];
+        $row['investment_amount_inr'] = round($invInr, 2);
+        $row['investment_amount_usd'] = round($invInr / $rate, 2);
+        $row['investment_amount']     = round($invInr / $rate, 2);
+    }
+    if (isset($row['total_bonus'])) {
+        $tbInr = (float)$row['total_bonus'];
+        $row['total_bonus_inr'] = round($tbInr, 2);
+        $row['total_bonus_usd'] = round($tbInr / $rate, 2);
+        $row['total_bonus']     = round($tbInr / $rate, 2);
+    }
+    if (isset($row['beneficiary_wallet'])) {
+        $bwInr = (float)$row['beneficiary_wallet'];
+        $row['beneficiary_wallet_inr'] = round($bwInr, 2);
+        $row['beneficiary_wallet_usd'] = round($bwInr / $rate, 2);
+        $row['beneficiary_wallet']     = round($bwInr / $rate, 2);
+    }
+}
+unset($row);
+
 echo json_encode($users);
 exit;
+

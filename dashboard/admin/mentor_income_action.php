@@ -137,6 +137,32 @@ switch ($action) {
         $stmt->execute($params);
         $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+        if ($rate <= 0) $rate = 90.0;
+
+        foreach ($schedules as &$s) {
+            $mInc = (float)($s['mentor_monthly_income'] ?? 0);
+            $s['mentor_monthly_income_inr'] = round($mInc, 2);
+            $s['mentor_monthly_income_usd'] = round($mInc / $rate, 2);
+            $s['mentor_monthly_income']     = round($mInc / $rate, 2);
+
+            $totM = (float)($s['total_mentor_income'] ?? 0);
+            $s['total_mentor_income_inr'] = round($totM, 2);
+            $s['total_mentor_income_usd'] = round($totM / $rate, 2);
+            $s['total_mentor_income']     = round($totM / $rate, 2);
+
+            $payM = (float)($s['payout_amount'] ?? 0);
+            $s['payout_amount_inr'] = round($payM, 2);
+            $s['payout_amount_usd'] = round($payM / $rate, 2);
+            $s['payout_amount']     = round($payM / $rate, 2);
+
+            $wM = (float)($s['direct_user_wallet'] ?? 0);
+            $s['direct_user_wallet_inr'] = round($wM, 2);
+            $s['direct_user_wallet_usd'] = round($wM / $rate, 2);
+            $s['direct_user_wallet']     = round($wM / $rate, 2);
+        }
+        unset($s);
+
         echo json_encode([
             'status' => 'success',
             'data' => $schedules
@@ -186,6 +212,27 @@ switch ($action) {
         $stmt = $pdo->prepare($query);
         $stmt->execute($params);
         $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+        if ($rate <= 0) $rate = 90.0;
+
+        foreach ($history as &$h) {
+            $amtInr = (float)($h['amount'] ?? 0);
+            $h['amount_inr'] = round($amtInr, 2);
+            $h['amount_usd'] = round($amtInr / $rate, 2);
+            $h['amount']     = round($amtInr / $rate, 2);
+
+            $prevInr = (float)($h['previous_balance'] ?? 0);
+            $h['previous_balance_inr'] = round($prevInr, 2);
+            $h['previous_balance_usd'] = round($prevInr / $rate, 2);
+            $h['previous_balance']     = round($prevInr / $rate, 2);
+
+            $newInr = (float)($h['new_balance'] ?? 0);
+            $h['new_balance_inr'] = round($newInr, 2);
+            $h['new_balance_usd'] = round($newInr / $rate, 2);
+            $h['new_balance']     = round($newInr / $rate, 2);
+        }
+        unset($h);
 
         echo json_encode([
             'status' => 'success',

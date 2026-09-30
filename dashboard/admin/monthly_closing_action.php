@@ -143,13 +143,22 @@ if ($action === 'preview') {
         }
     }
 
+    $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+    if ($rate <= 0) $rate = 90.0;
+
     echo json_encode([
         'status' => 'success',
         'closing_month' => $closing_month,
         'profit_percentage' => $profit_percentage,
-        'total_eligible_investment' => $total_investment,
-        'expected_total_profit' => round($expected_profit, 2),
-        'expected_profit_sharing' => round($total_profit_sharing, 2),
+        'total_eligible_investment_inr' => round($total_investment, 2),
+        'total_eligible_investment_usd' => round($total_investment / $rate, 2),
+        'total_eligible_investment' => round($total_investment / $rate, 2),
+        'expected_total_profit_inr' => round($expected_profit, 2),
+        'expected_total_profit_usd' => round($expected_profit / $rate, 2),
+        'expected_total_profit' => round($expected_profit / $rate, 2),
+        'expected_profit_sharing_inr' => round($total_profit_sharing, 2),
+        'expected_profit_sharing_usd' => round($total_profit_sharing / $rate, 2),
+        'expected_profit_sharing' => round($total_profit_sharing / $rate, 2),
         'eligible_investment_count' => $investment_count,
         'eligible_user_count' => $user_count
     ]);
@@ -379,10 +388,25 @@ if ($action === 'details') {
     $psStmt->execute([':month' => $closing['closing_month']]);
     $total_sharing = (float)$psStmt->fetchColumn();
 
+    $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+    if ($rate <= 0) $rate = 90.0;
+
+    $closing['total_eligible_investment_inr'] = (float)$closing['total_eligible_investment'];
+    $closing['total_eligible_investment_usd'] = round((float)$closing['total_eligible_investment'] / $rate, 2);
+    $closing['total_eligible_investment']     = round((float)$closing['total_eligible_investment'] / $rate, 2);
+
+    $closing['total_profit_paid_inr']         = (float)$closing['total_profit_paid'];
+    $closing['total_profit_paid_usd']         = round((float)$closing['total_profit_paid'] / $rate, 2);
+    $closing['total_profit_paid']             = round((float)$closing['total_profit_paid'] / $rate, 2);
+
+    $total_sharing_usd                        = round($total_sharing / $rate, 2);
+
     echo json_encode([
         'status' => 'success',
         'closing' => $closing,
-        'total_profit_sharing' => $total_sharing
+        'total_profit_sharing_inr' => round($total_sharing, 2),
+        'total_profit_sharing_usd' => $total_sharing_usd,
+        'total_profit_sharing'     => $total_sharing_usd
     ]);
     exit;
 }

@@ -1556,14 +1556,20 @@ function getQualifiedDirectDetails($userid, $pdoConnection = null) {
             $reason = "Not Qualified (Missing $11 Activation & Investment < ₹13,000)";
         }
 
+        $rate = getUSDToINRRate($db);
+        if ($rate <= 0) $rate = 90.0;
+        $totalInvUsd = round($totalInv / $rate, 2);
+
         $results[] = [
-            'userid'           => $d['userid'],
-            'name'             => $d['name'],
-            'activation_status'=> $isActive ? 'YES' : 'NO',
-            'total_investment' => $totalInv,
-            'is_qualified'     => $isQualified,
+            'userid'               => $d['userid'],
+            'name'                 => $d['name'],
+            'activation_status'    => $isActive ? 'YES' : 'NO',
+            'total_investment_inr' => $totalInv,
+            'total_investment_usd' => $totalInvUsd,
+            'total_investment'     => $totalInvUsd,
+            'is_qualified'         => $isQualified,
             'qualification_status' => $isQualified ? 'QUALIFIED' : 'NOT QUALIFIED',
-            'reason'           => $reason
+            'reason'               => $reason
         ];
     }
 
@@ -3358,6 +3364,14 @@ if (!function_exists('formatCurrency')) {
         $converted = convertCurrency($amountInUSD, $curr, $pdoConnection);
         $symbol = $includeSymbol ? getCurrencySymbol($curr) : '';
         return $symbol . number_format($converted, 2);
+    }
+}
+
+if (!function_exists('formatCurrencyFromINR')) {
+    function formatCurrencyFromINR($amountInINR, $targetCurrency = null, $includeSymbol = true, $pdoConnection = null) {
+        $rate = getUSDToINRRate($pdoConnection);
+        $usd = ($rate > 0) ? ((float)$amountInINR / $rate) : (float)$amountInINR;
+        return formatCurrency($usd, $targetCurrency, $includeSymbol, $pdoConnection);
     }
 }
 

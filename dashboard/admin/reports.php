@@ -31,14 +31,17 @@ $reportData = [];
 $totalSum   = 0.0;
 $totalCount = 0;
 
+$rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+if ($rate <= 0) $rate = 90.0;
+
 switch ($type) {
     case 'daily':
         // Group by Date for Daily Summary
         $sql = "SELECT 
                     DATE(created_date) as report_date,
                     COUNT(DISTINCT user_id) as total_users,
-                    SUM(CASE WHEN subject LIKE '%Investment%' OR subject LIKE '%Package%' OR subject LIKE '%Deposit%' THEN amount ELSE 0 END) as total_investment,
-                    SUM(CASE WHEN subject LIKE '%Income%' OR subject LIKE '%Bonus%' OR subject LIKE '%ROI%' OR subject LIKE '%Reward%' THEN amount ELSE 0 END) as total_income,
+                    SUM(CASE WHEN subject LIKE '%Investment%' OR subject LIKE '%Package%' OR subject LIKE '%Deposit%' THEN (CASE WHEN amount > 500 AND subject NOT LIKE '%$%' THEN amount / {$rate} ELSE amount END) ELSE 0 END) as total_investment,
+                    SUM(CASE WHEN subject LIKE '%Income%' OR subject LIKE '%Bonus%' OR subject LIKE '%ROI%' OR subject LIKE '%Reward%' OR subject LIKE '%Profit%' THEN (amount / {$rate}) ELSE 0 END) as total_income,
                     SUM(CASE WHEN subject LIKE '%Withdraw%' THEN amount ELSE 0 END) as total_withdrawals,
                     COUNT(*) as total_txns
                 FROM tbl_transaction 
@@ -59,8 +62,8 @@ switch ($type) {
         $sql = "SELECT 
                     DATE_FORMAT(created_date, '%Y-%m') as report_month,
                     COUNT(DISTINCT user_id) as total_users,
-                    SUM(CASE WHEN subject LIKE '%Investment%' OR subject LIKE '%Package%' OR subject LIKE '%Deposit%' THEN amount ELSE 0 END) as total_investment,
-                    SUM(CASE WHEN subject LIKE '%Income%' OR subject LIKE '%Bonus%' OR subject LIKE '%ROI%' OR subject LIKE '%Reward%' THEN amount ELSE 0 END) as total_income,
+                    SUM(CASE WHEN subject LIKE '%Investment%' OR subject LIKE '%Package%' OR subject LIKE '%Deposit%' THEN (CASE WHEN amount > 500 AND subject NOT LIKE '%$%' THEN amount / {$rate} ELSE amount END) ELSE 0 END) as total_investment,
+                    SUM(CASE WHEN subject LIKE '%Income%' OR subject LIKE '%Bonus%' OR subject LIKE '%ROI%' OR subject LIKE '%Reward%' OR subject LIKE '%Profit%' THEN (amount / {$rate}) ELSE 0 END) as total_income,
                     SUM(CASE WHEN subject LIKE '%Withdraw%' THEN amount ELSE 0 END) as total_withdrawals,
                     COUNT(*) as total_txns
                 FROM tbl_transaction 
@@ -81,8 +84,8 @@ switch ($type) {
         $sql = "SELECT 
                     YEAR(created_date) as report_year,
                     COUNT(DISTINCT user_id) as total_users,
-                    SUM(CASE WHEN subject LIKE '%Investment%' OR subject LIKE '%Package%' OR subject LIKE '%Deposit%' THEN amount ELSE 0 END) as total_investment,
-                    SUM(CASE WHEN subject LIKE '%Income%' OR subject LIKE '%Bonus%' OR subject LIKE '%ROI%' OR subject LIKE '%Reward%' THEN amount ELSE 0 END) as total_income,
+                    SUM(CASE WHEN subject LIKE '%Investment%' OR subject LIKE '%Package%' OR subject LIKE '%Deposit%' THEN (CASE WHEN amount > 500 AND subject NOT LIKE '%$%' THEN amount / {$rate} ELSE amount END) ELSE 0 END) as total_investment,
+                    SUM(CASE WHEN subject LIKE '%Income%' OR subject LIKE '%Bonus%' OR subject LIKE '%ROI%' OR subject LIKE '%Reward%' OR subject LIKE '%Profit%' THEN (amount / {$rate}) ELSE 0 END) as total_income,
                     SUM(CASE WHEN subject LIKE '%Withdraw%' THEN amount ELSE 0 END) as total_withdrawals,
                     COUNT(*) as total_txns
                 FROM tbl_transaction 
@@ -107,8 +110,10 @@ switch ($type) {
             $params[':usearch'] = $uSearchParam;
         }
         $sql = "SELECT 
-                    u.id, u.userid, u.name, u.mobile, u.amount as investment, u.active, u.joining_date,
-                    COALESCE((SELECT SUM(amount) FROM tbl_transaction WHERE user_id = u.userid AND (subject LIKE '%Income%' OR subject LIKE '%Bonus%' OR subject LIKE '%ROI%')), 0) as total_income,
+                    u.id, u.userid, u.name, u.mobile, 
+                    COALESCE((SELECT SUM(CASE WHEN r.real_fund_usd > 0 THEN r.real_fund_usd ELSE (r.package / {$rate}) END) FROM tbl_roi_one r WHERE r.user_id = u.userid AND r.status = '0'), u.active_investment, u.amount, 0) as investment, 
+                    u.active, u.joining_date,
+                    COALESCE((SELECT SUM(amount / {$rate}) FROM tbl_transaction WHERE user_id = u.userid AND (subject LIKE '%Income%' OR subject LIKE '%Bonus%' OR subject LIKE '%ROI%' OR subject LIKE '%Profit%' OR subject LIKE '%Reward%')), 0) as total_income,
                     COALESCE((SELECT SUM(amount) FROM tbl_transaction WHERE user_id = u.userid AND subject LIKE '%Withdraw%'), 0) as total_withdrawal
                 FROM user u 
                 {$whereClause} 
@@ -130,8 +135,6 @@ switch ($type) {
             $whereClause .= " AND (r.user_id LIKE :usearch OR u.name LIKE :usearch)";
             $params[':usearch'] = $uSearchParam;
         }
-        $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
-        if ($rate <= 0) $rate = 90.0;
         $sql = "SELECT r.id, r.user_id, u.name, 
                        CASE 
                            WHEN r.real_fund_usd > 0 THEN r.real_fund_usd 
@@ -181,7 +184,7 @@ switch ($type) {
             $whereClause .= " AND (t.user_id LIKE :usearch OR u.name LIKE :usearch)";
             $params[':usearch'] = $uSearchParam;
         }
-        $sql = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.status, t.created_date as created_at 
+        $sql = "SELECT t.id, t.user_id, u.name, (t.amount / {$rate}) as amount, t.subject, t.status, t.created_date as created_at 
                 FROM tbl_transaction t 
                 LEFT JOIN user u ON t.user_id = u.userid 
                 {$whereClause} 
@@ -203,10 +206,11 @@ switch ($type) {
             $whereClause .= " AND (u.userid LIKE :usearch OR u.name LIKE :usearch)";
             $params[':usearch'] = $uSearchParam;
         }
-        $sql = "SELECT u.id, u.userid as user_id, u.name, u.amount as self_investment, 
+        $sql = "SELECT u.id, u.userid as user_id, u.name, 
+                       COALESCE((SELECT SUM(CASE WHEN r.real_fund_usd > 0 THEN r.real_fund_usd ELSE (r.package / {$rate}) END) FROM tbl_roi_one r WHERE r.user_id = u.userid AND r.status = '0'), u.active_investment, u.amount, 0) as self_investment, 
                        COALESCE(t.left_id, 'None') as left_volume, 
                        COALESCE(t.right_id, 'None') as right_volume,
-                       COALESCE((SELECT SUM(amount) FROM user WHERE sponserid = u.userid), 0) as total_team_volume,
+                       COALESCE((SELECT SUM(CASE WHEN r.real_fund_usd > 0 THEN r.real_fund_usd ELSE (r.package / {$rate}) END) FROM tbl_roi_one r JOIN user down ON down.userid = r.user_id WHERE down.sponserid = u.userid AND r.status = '0'), (SELECT SUM(amount) FROM user WHERE sponserid = u.userid), 0) as total_team_volume,
                        u.joining_date as created_at
                 FROM user u 
                 LEFT JOIN tree t ON u.userid = t.userid 
@@ -237,13 +241,13 @@ switch ($type) {
         $stmt->execute($params);
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($users as $u) {
-            $totalSum += 990.00; // ₹990 per $11 unlock access
+            $totalSum += 11.00; // $11 base USD unlock access revenue
             $reportData[] = [
                 'id' => $u['id'],
                 'user_id' => $u['user_id'],
                 'name' => $u['name'],
-                'amount' => 990.00,
-                'subject' => '$11 (₹990) Unlock Access Revenue',
+                'amount' => 11.00,
+                'subject' => 'Account Unlock Access Revenue ($11)',
                 'created_at' => $u['created_at']
             ];
         }

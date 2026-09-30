@@ -712,11 +712,11 @@ table.dataTable.no-footer {
                         let rowsHtml = '';
                         if (data.directs && data.directs.length > 0) {
                             data.directs.forEach(d => {
-                                let isQ = d.is_active_11usd && d.total_investment >= 13000;
+                                let isQ = (typeof d.is_qualified !== 'undefined') ? d.is_qualified : (d.is_active_11usd && (d.total_investment_inr || d.total_investment) >= 13000);
                                 rowsHtml += `<tr>
                                     <td class="fw-bold"><?php echo $hmpre; ?>${d.userid} (${d.name})</td>
                                     <td><span class="badge ${d.is_active_11usd ? 'bg-success' : 'bg-secondary'}">${d.status_label}</span></td>
-                                    <td class="fw-bold"><?php echo $hmcurrency; ?> ${formatAdminCurrency(parseFloat(d.total_investment || 0))}</td>
+                                    <td class="fw-bold">${formatAdminCurrency(parseFloat(d.total_investment_usd || d.total_investment || 0))}</td>
                                     <td>${isQ ? '<span class="badge bg-success"><i class="fa fa-check"></i> QUALIFIED</span>' : '<span class="badge bg-danger"><i class="fa fa-times"></i> INELIGIBLE</span>'}</td>
                                 </tr>`;
                             });
@@ -772,9 +772,9 @@ table.dataTable.no-footer {
                                 <td>${row.admin_name || 'Admin #'+row.admin_id}</td>
                                 <td class="fw-bold"><?php echo $hmpre; ?>${row.user_id}</td>
                                 <td>${typeBadge}</td>
-                                <td class="fw-bold"><?php echo $hmcurrency; ?> ${parseFloat(row.amount).toFixed(2)}</td>
-                                <td><?php echo $hmcurrency; ?> ${parseFloat(row.previous_balance).toFixed(2)}</td>
-                                <td class="fw-bold text-success"><?php echo $hmcurrency; ?> ${parseFloat(row.new_balance).toFixed(2)}</td>
+                                <td class="fw-bold">${formatAdminCurrency(parseFloat(row.amount || 0))}</td>
+                                <td>${formatAdminCurrency(parseFloat(row.previous_balance || 0))}</td>
+                                <td class="fw-bold text-success">${formatAdminCurrency(parseFloat(row.new_balance || 0))}</td>
                                 <td>${row.reason}</td>
                                 <td>${row.created_at}</td>
                             </tr>`;

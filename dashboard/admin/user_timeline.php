@@ -49,7 +49,7 @@ try {
 
         $events[] = [
             'type'  => 'INVESTMENT',
-            'title' => "Package Investment: " . ($inv['package_code'] ?: 'Investment') . " (\$" . number_format($usd, 2) . " / ₹" . number_format($inr, 2) . ")",
+            'title' => "Package Investment: " . ($inv['package_code'] ?: 'Investment') . " (" . formatCurrency($usd) . ")",
             'desc'  => "Capital Status: {$statusText} | Package: " . ($inv['package_code'] ?: 'ANANTA_PACKAGE'),
             'time'  => ($inv['date'] ?: date('Y-m-d')) . ' ' . ($inv['time'] ?: '00:00:00'),
             'icon'  => 'fa-line-chart',
@@ -78,7 +78,7 @@ try {
 
         $events[] = [
             'type'  => 'ACTIVATION',
-            'title' => "Unlock Access ({$act['activation_type']}): \$" . number_format($usd, 2) . " (₹" . number_format($inr, 2) . ")",
+            'title' => "Unlock Access ({$act['activation_type']}): " . formatCurrency($usd),
             'desc'  => "{$actRole} | Txn: {$act['transaction_id']} | Status: {$act['status']}",
             'time'  => $act['created_at'],
             'icon'  => 'fa-shield',
@@ -109,7 +109,7 @@ foreach ($stmtTxn->fetchAll(PDO::FETCH_ASSOC) as $t) {
 
     $events[] = [
         'type' => 'TRANSACTION',
-        'title' => "Transaction: {$t['type']} (\$" . number_format($usdVal, 2) . " / ₹" . number_format($inrVal, 2) . ")",
+        'title' => "Transaction: {$t['type']} (" . formatCurrency($usdVal) . ")",
         'desc' => $t['subject'],
         'time' => $t['created_date'] . ' ' . $t['time'],
         'icon' => 'fa-exchange',
@@ -122,7 +122,7 @@ $stmtAudit = $pdo->prepare("SELECT id, action, amount, wallet_type, reason, crea
 $stmtAudit->execute([':uid' => $target_user]);
 foreach ($stmtAudit->fetchAll(PDO::FETCH_ASSOC) as $a) {
     $adjAmt = (float)($a['amount'] ?? 0);
-    $amtLabel = ($adjAmt > 0) ? " (\$" . number_format($adjAmt, 2) . " / ₹" . number_format($adjAmt * $rate, 2) . ")" : "";
+    $amtLabel = ($adjAmt > 0) ? " (" . formatCurrency($adjAmt) . ")" : "";
 
     $events[] = [
         'type' => 'ADMIN_AUDIT',
