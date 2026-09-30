@@ -1,5 +1,11 @@
 <?php
 require_once __DIR__ . '/../dashboard/admin/common/connection.php';
-$stmt = $pdo->query("SELECT userid, name, amount, net_balance, active_investment, total_withdrawal, total_package, package FROM user ORDER BY id ASC LIMIT 15");
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-echo json_encode($rows, JSON_PRETTY_PRINT) . "\n";
+$tables = $pdo->query("SHOW TABLES LIKE '%withdraw%'")->fetchAll(PDO::FETCH_COLUMN);
+echo json_encode($tables, JSON_PRETTY_PRINT) . "\n";
+foreach ($tables as $t) {
+    echo "=== {$t} ===\n";
+    $cols = $pdo->query("DESCRIBE {$t}")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($cols as $c) {
+        echo "{$c['Field']} ({$c['Type']})\n";
+    }
+}
