@@ -2750,13 +2750,40 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
     $totUnlockAcc = (int)$db->query("SELECT COUNT(*) FROM user WHERE active = '1'")->fetchColumn();
     $totRevenueUnlock = round($totUnlockAcc * 990.00, 2); // ₹990 per $11 unlock access
 
-    $stmtBiz      = $db->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one");
+    $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : 90.0;
+    if ($rate <= 0) $rate = 90.0;
+
+    $stmtBiz      = $db->query("
+        SELECT COALESCE(SUM(
+            CASE 
+                WHEN real_fund_usd > 0 THEN real_fund_usd * {$rate}
+                ELSE package 
+            END
+        ), 0) 
+        FROM tbl_roi_one
+    ");
     $totBizInr    = (float)$stmtBiz->fetchColumn();
 
-    $stmtToday    = $db->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one WHERE DATE(date) = CURDATE()");
+    $stmtToday    = $db->query("
+        SELECT COALESCE(SUM(
+            CASE 
+                WHEN real_fund_usd > 0 THEN real_fund_usd * {$rate}
+                ELSE package 
+            END
+        ), 0) 
+        FROM tbl_roi_one WHERE DATE(date) = CURDATE()
+    ");
     $todayBizInr  = (float)$stmtToday->fetchColumn();
 
-    $stmtMonth    = $db->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one WHERE DATE_FORMAT(date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')");
+    $stmtMonth    = $db->query("
+        SELECT COALESCE(SUM(
+            CASE 
+                WHEN real_fund_usd > 0 THEN real_fund_usd * {$rate}
+                ELSE package 
+            END
+        ), 0) 
+        FROM tbl_roi_one WHERE DATE_FORMAT(date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+    ");
     $monthBizInr  = (float)$stmtMonth->fetchColumn();
 
     $totWdPaid    = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE subject LIKE '%Withdraw%' AND type='Credit' AND status=1")->fetchColumn();

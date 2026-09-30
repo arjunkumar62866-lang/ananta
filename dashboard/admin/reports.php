@@ -130,7 +130,14 @@ switch ($type) {
             $whereClause .= " AND (r.user_id LIKE :usearch OR u.name LIKE :usearch)";
             $params[':usearch'] = $uSearchParam;
         }
-        $sql = "SELECT r.id, r.user_id, u.name, r.package as amount, r.percentage, r.date as created_at 
+        $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+        if ($rate <= 0) $rate = 90.0;
+        $sql = "SELECT r.id, r.user_id, u.name, 
+                       CASE 
+                           WHEN r.real_fund_usd > 0 THEN r.real_fund_usd 
+                           ELSE (r.package / {$rate}) 
+                       END as amount, 
+                       r.percentage, r.date as created_at 
                 FROM tbl_roi_one r 
                 LEFT JOIN user u ON r.user_id = u.userid 
                 {$whereClause} 

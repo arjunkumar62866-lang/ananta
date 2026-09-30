@@ -15,12 +15,28 @@ if (!empty($filter_user)) {
 }
 
 // Summary stats
+$usdRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+if ($usdRate <= 0) $usdRate = 90.0;
+
 $totGrowthBalance = (float)$pdo->query("SELECT COALESCE(SUM(profit_income_wallet), 0) FROM user")->fetchColumn();
-$totGrowthPaid    = (float)$pdo->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc")->fetchColumn();
-$totActiveInvest  = (float)$pdo->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one")->fetchColumn();
+$totGrowthPaid    = (float)$pdo->query("
+    SELECT COALESCE(
+        NULLIF(SUM(CAST(amount AS DECIMAL(15,2))), 0),
+        (SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE (type = 'Profit Income' OR subject LIKE '%Profit%') AND status = 1)
+    ) FROM tbl_roiinc
+")->fetchColumn();
+$totActiveInvest  = (float)$pdo->query("
+    SELECT COALESCE(SUM(
+        CASE 
+            WHEN real_fund_usd > 0 THEN real_fund_usd 
+            ELSE (package / {$usdRate}) 
+        END
+    ), 0) 
+    FROM tbl_roi_one
+")->fetchColumn();
 
 // List Growth Packages & Income Credits
-$query = "SELECT r.id, r.user_id, u.name, r.package, r.percentage, r.date, u.profit_income_wallet 
+$query = "SELECT r.id, r.user_id, u.name, r.package, r.real_fund_usd, r.percentage, r.date, u.profit_income_wallet 
           FROM tbl_roi_one r 
           LEFT JOIN user u ON r.user_id = u.userid 
           {$whereClause} 
@@ -116,12 +132,16 @@ $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <tr>
                   <td colspan="7" class="text-center py-5 text-muted">No growth wallet package records found.</td>
                 </tr>
-              <?php else: foreach ($packages as $pkg): ?>
+              <?php else: foreach ($packages as $pkg): 
+                $pkgUsd = (float)(!empty($pkg['real_fund_usd']) && (float)$pkg['real_fund_usd'] > 0
+                    ? $pkg['real_fund_usd']
+                    : ((float)($pkg['package'] ?? 0) / $usdRate));
+              ?>
                 <tr>
                   <td class="px-4 font-weight-bold">#PKG-<?php echo $pkg['id']; ?></td>
                   <td><strong><?php echo htmlspecialchars($pkg['user_id']); ?></strong></td>
                   <td><?php echo htmlspecialchars($pkg['name'] ?? 'N/A'); ?></td>
-                  <td class="font-weight-bold text-primary"><?php echo formatCurrency((float)$pkg['package']); ?></td>
+                  <td class="font-weight-bold text-primary"><?php echo formatCurrency($pkgUsd); ?></td>
                   <td><span class="badge badge-info px-2 py-1"><?php echo htmlspecialchars($pkg['percentage']); ?>% Monthly</span></td>
                   <td class="font-weight-bold text-success"><?php echo formatCurrency((float)($pkg['profit_income_wallet'] ?? 0)); ?></td>
                   <td class="px-4 small text-muted"><?php echo htmlspecialchars($pkg['date']); ?></td>

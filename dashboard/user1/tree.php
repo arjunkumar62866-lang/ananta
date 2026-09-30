@@ -110,12 +110,19 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         return ['count' => $count, 'business_usd' => $business];
     }
 
-    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, $visitedPath = []) {
-        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap;
+    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, $visitedPath = [], &$globalRenderedUsers = []) {
+        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap;
 
         $nodeId = (string)$nodeId;
-        if (empty($nodeId) || !isset($globalUserMap[$nodeId]) || isset($visitedPath[$nodeId])) return null;
+        if (empty($nodeId) || !isset($globalUserMap[$nodeId])) return null;
+
+        // 1. Ancestor Path Cycle Detection (per branch)
+        if (isset($visitedPath[$nodeId])) return null;
         $visitedPath[$nodeId] = true;
+
+        // 2. Global Duplicate Prevention (a user can be rendered only once across the entire tree)
+        if (isset($globalRenderedUsers[$nodeId])) return null;
+        $globalRenderedUsers[$nodeId] = true;
 
         $user = $globalUserMap[$nodeId];
 
@@ -148,36 +155,41 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
-        // Gather Children: Include Binary Left & Right, all underuserid placement downlines, and all direct sponsor referrals
+        // Gather Binary Placement Children (Strictly LEFT and RIGHT slots, following binary placement tree)
         $childrenList = [];
-        if (!empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) {
-            $childrenList[] = ['id' => (string)$user['left_id'], 'side' => 'LEFT'];
-        }
-        if (!empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) {
-            $childrenList[] = ['id' => (string)$user['right_id'], 'side' => 'RIGHT'];
-        }
 
-        $existingChildIds = array_column($childrenList, 'id');
-        if (isset($underUserChildrenMap[$nodeId])) {
+        // 1. LEFT SLOT
+        $leftId = (!empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) 
+            ? (string)$user['left_id'] 
+            : '';
+        if (empty($leftId) && isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
-                if ($cId !== $nodeId && !in_array($cId, $existingChildIds)) {
-                    $side = !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DOWNLINE';
-                    $childrenList[] = ['id' => $cId, 'side' => $side];
-                    $existingChildIds[] = $cId;
+                if ($cId !== $nodeId && strtolower($uc['join_side'] ?? '') === 'left' && !isset($globalRenderedUsers[$cId])) {
+                    $leftId = $cId;
+                    break;
                 }
             }
         }
+        if (!empty($leftId) && !isset($globalRenderedUsers[$leftId])) {
+            $childrenList[] = ['id' => $leftId, 'side' => 'LEFT'];
+        }
 
-        if (isset($sponsorChildrenMap[$nodeId])) {
-            foreach ($sponsorChildrenMap[$nodeId] as $sc) {
-                $cId = (string)$sc['userid'];
-                if ($cId !== $nodeId && !in_array($cId, $existingChildIds)) {
-                    $side = !empty($sc['join_side']) ? strtoupper($sc['join_side']) : 'DIRECT';
-                    $childrenList[] = ['id' => $cId, 'side' => $side];
-                    $existingChildIds[] = $cId;
+        // 2. RIGHT SLOT
+        $rightId = (!empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) 
+            ? (string)$user['right_id'] 
+            : '';
+        if (empty($rightId) && isset($underUserChildrenMap[$nodeId])) {
+            foreach ($underUserChildrenMap[$nodeId] as $uc) {
+                $cId = (string)$uc['userid'];
+                if ($cId !== $nodeId && strtolower($uc['join_side'] ?? '') === 'right' && $cId !== $leftId && !isset($globalRenderedUsers[$cId])) {
+                    $rightId = $cId;
+                    break;
                 }
             }
+        }
+        if (!empty($rightId) && $rightId !== $leftId && !isset($globalRenderedUsers[$rightId])) {
+            $childrenList[] = ['id' => $rightId, 'side' => 'RIGHT'];
         }
 
         $node = [
@@ -200,7 +212,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         if ($currentDepth < $maxDepth) {
             foreach ($childrenList as $cItem) {
-                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath);
+                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers);
                 if ($childNode) {
                     $childNode['position'] = $cItem['side'];
                     $node['children'][] = $childNode;
@@ -211,7 +223,8 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         return $node;
     }
 
-    $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, $reqDepth);
+    $globalRenderedUsers = [];
+    $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, $reqDepth, [], $globalRenderedUsers);
 
     echo json_encode([
         'status' => 'success',
