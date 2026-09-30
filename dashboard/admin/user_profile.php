@@ -271,7 +271,7 @@ $walletsConfig = [
     'net_balance' => [
         'name' => 'Net Balance',
         'key'  => 'net_balance',
-        'val'  => $mainWalletBal,
+        'val'  => (float)($row['net_balance'] ?? 0.00),
         'icon' => 'fa-balance-scale',
         'color' => '#0d9488'
     ],
