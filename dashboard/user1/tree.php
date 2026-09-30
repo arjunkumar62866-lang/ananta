@@ -871,7 +871,7 @@ body.bg-theme {
             <div style="font-size: 12px; margin-bottom: 4px;">
                 <strong>Total Team Business:</strong> <span style="color: #0284c7; font-weight: 700;">${data.total_business_fmt}</span>
             </div>
-            <hr style="margin: 6px 0; border-color: #e2e8f0;">`;
+            <hr style="margin: 6px 0; border-color: #e2e8f0;">
             <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px; color: #334155;">
                 <span>Left Team: <b>${data.leftcount} Members</b> (${data.left_business_fmt})</span>
             </div>
