@@ -12,7 +12,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
     $sessionUserid = $_SESSION['userid'] ?? $_SESSION['user_id'] ?? '';
     $reqNodeId = !empty($_GET['node_id']) ? trim($_GET['node_id']) : $sessionUserid;
-    $reqDepth = isset($_GET['depth']) ? max(1, min(50, intval($_GET['depth']))) : 10;
+    $reqDepth = isset($_GET['depth']) ? max(1, min(50, intval($_GET['depth']))) : 50;
     $currSelection = getUserCurrency();
 
     if (empty($reqNodeId)) {
@@ -588,7 +588,7 @@ body.bg-theme {
 
     // Load Data
     function loadTreeData(searchId) {
-        fetch(`tree.php?api=get_tree&depth=10&node_id=${encodeURIComponent(searchId)}`)
+        fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(searchId)}`)
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'success' && res.data) {
