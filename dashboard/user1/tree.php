@@ -228,12 +228,11 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         }
 
         // 4. Direct Sponsor Referrals (where sponserid = nodeId)
-        // If a direct referral has a placement parent elsewhere in the tree, let them be reached via their binary placement parent if reachable.
         if (isset($sponsorChildrenMap[$nodeId])) {
             foreach ($sponsorChildrenMap[$nodeId] as $sc) {
                 $cId = (string)$sc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    if (!empty($hasPlacementParent[$cId]) && $hasPlacementParent[$cId] !== $nodeId && isset($globalUserMap[$hasPlacementParent[$cId]])) {
+                    if ($nodeId !== $rootUserId && !empty($hasPlacementParent[$cId]) && $hasPlacementParent[$cId] !== $nodeId && isset($globalUserMap[$hasPlacementParent[$cId]])) {
                         continue;
                     }
                     $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
@@ -647,9 +646,14 @@ body.bg-theme {
         rootNode.x0 = height / 2;
         rootNode.y0 = isMobile ? 40 : 100;
 
-        // Clean Step-by-Step View: Only root and its immediate children (depth 1) are open on initial load
+        // Keep root's immediate children (all direct referrals of root) open and visible initially.
+        // Collapse descendants below root's direct referrals (Level 2+ downlines).
         if (rootNode.children) {
-            rootNode.children.forEach(collapseSubtree);
+            rootNode.children.forEach(child => {
+                if (child.children) {
+                    child.children.forEach(collapseSubtree);
+                }
+            });
         }
 
         // Center Initial Position according to screen size

@@ -122,7 +122,7 @@ function fetch_horizontal_binary_tree_diag($nodeId, $currentDepth = 1, $maxDepth
         foreach ($sponsorChildrenMap[$nodeId] as $sc) {
             $cId = (string)$sc['userid'];
             if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                if (!empty($hasPlacementParent[$cId]) && $hasPlacementParent[$cId] !== $nodeId && isset($globalUserMap[$hasPlacementParent[$cId]])) {
+                if ($nodeId !== $rootUserId && !empty($hasPlacementParent[$cId]) && $hasPlacementParent[$cId] !== $nodeId && isset($globalUserMap[$hasPlacementParent[$cId]])) {
                     continue;
                 }
                 $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
