@@ -56,6 +56,28 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         }
     }
 
+    try {
+        $stmtTblSpon = $pdo->query("SELECT sponsor_id, referral_id FROM tbl_sponsor");
+        while ($spRow = $stmtTblSpon->fetch(PDO::FETCH_ASSOC)) {
+            $spId = (string)$spRow['sponsor_id'];
+            $refId = (string)$spRow['referral_id'];
+            if (!empty($spId) && !empty($refId) && isset($globalUserMap[$refId])) {
+                $alreadyAdded = false;
+                if (isset($sponsorChildrenMap[$spId])) {
+                    foreach ($sponsorChildrenMap[$spId] as $existingSc) {
+                        if ((string)$existingSc['userid'] === $refId) {
+                            $alreadyAdded = true;
+                            break;
+                        }
+                    }
+                }
+                if (!$alreadyAdded) {
+                    $sponsorChildrenMap[$spId][] = $globalUserMap[$refId];
+                }
+            }
+        }
+    } catch (Exception $e) {}
+
     $stmtAllInv = $pdo->query("SELECT user_id, COALESCE(SUM(real_fund_usd), COALESCE(SUM(package), 0)) as total_usd FROM tbl_roi_one GROUP BY user_id");
     $globalInvMap = [];
     while ($r = $stmtAllInv->fetch(PDO::FETCH_ASSOC)) {
