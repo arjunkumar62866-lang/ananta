@@ -110,12 +110,12 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         return ['count' => $count, 'business_usd' => $business];
     }
 
-    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, &$visitedTree = []) {
+    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, $visitedPath = []) {
         global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap;
 
         $nodeId = (string)$nodeId;
-        if (empty($nodeId) || !isset($globalUserMap[$nodeId]) || isset($visitedTree[$nodeId])) return null;
-        $visitedTree[$nodeId] = true;
+        if (empty($nodeId) || !isset($globalUserMap[$nodeId]) || isset($visitedPath[$nodeId])) return null;
+        $visitedPath[$nodeId] = true;
 
         $user = $globalUserMap[$nodeId];
 
@@ -200,7 +200,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         if ($currentDepth < $maxDepth) {
             foreach ($childrenList as $cItem) {
-                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedTree);
+                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath);
                 if ($childNode) {
                     $childNode['position'] = $cItem['side'];
                     $node['children'][] = $childNode;
