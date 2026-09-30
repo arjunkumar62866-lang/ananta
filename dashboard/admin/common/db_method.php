@@ -2900,17 +2900,23 @@ function processAnantaPackageInvestment($user_id, $package_id, $amount_usd, $pdo
             return ['status' => 'error', 'message' => "User {$user_id} not found."];
         }
 
-        $pinWalletBal = (float)($uRow['deposite_wallet'] ?? $uRow['pin_wallet'] ?? 0);
-        if ($pinWalletBal < $inrAmount) {
+        $rawBal = (float)($uRow['deposite_wallet'] ?? $uRow['pin_wallet'] ?? 0);
+        $pinWalletBalUsd = $rawBal;
+        if ($pinWalletBalUsd < $realFundUsd && ($rawBal / 90.0) >= $realFundUsd) {
+            $pinWalletBalUsd = round($rawBal / 90.0, 2);
+        }
+        $pinWalletBalInr = round($pinWalletBalUsd * 90.0, 2);
+
+        if ($pinWalletBalUsd < $realFundUsd) {
             if ($inLocalTxn) $db->rollBack();
-            return ['status' => 'error', 'message' => "Insufficient Main Wallet balance. Required: ₹" . number_format($inrAmount, 2) . " ($" . number_format($realFundUsd, 2) . "), Available: ₹" . number_format($pinWalletBal, 2)];
+            return ['status' => 'error', 'message' => "Insufficient Main Wallet balance. Required: ₹" . number_format($inrAmount, 2) . " ($" . number_format($realFundUsd, 2) . "), Available: ₹" . number_format($pinWalletBalInr, 2) . " ($" . number_format($pinWalletBalUsd, 2) . ")"];
         }
 
         // 1. Update user pin_wallet, deposite_wallet & total_package
         $updUser = $db->prepare("
             UPDATE user SET
-                pin_wallet = GREATEST(0, pin_wallet - :inr_amt),
-                deposite_wallet = GREATEST(0, deposite_wallet - :inr_amt),
+                pin_wallet = GREATEST(0, pin_wallet - :deduct_usd),
+                deposite_wallet = GREATEST(0, deposite_wallet - :deduct_usd),
                 total_package = total_package + :inr_amt,
                 bonus_30_wallet = bonus_30_wallet + :bonus_usd,
                 upgrade_date = :cdate,
@@ -2918,6 +2924,7 @@ function processAnantaPackageInvestment($user_id, $package_id, $amount_usd, $pdo
             WHERE userid = :uid
         ");
         $updUser->execute([
+            ':deduct_usd' => $realFundUsd,
             ':inr_amt'   => $inrAmount,
             ':bonus_usd' => $bonusAmtUsd,
             ':cdate'     => $cDate,
