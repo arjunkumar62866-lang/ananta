@@ -169,16 +169,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             }
         }
 
-        if (isset($sponsorChildrenMap[$nodeId])) {
-            foreach ($sponsorChildrenMap[$nodeId] as $sc) {
-                $cId = (string)$sc['userid'];
-                if ($cId !== $nodeId && !in_array($cId, $existingChildIds)) {
-                    $side = !empty($sc['join_side']) ? strtoupper($sc['join_side']) : 'DIRECT';
-                    $childrenList[] = ['id' => $cId, 'side' => $side];
-                    $existingChildIds[] = $cId;
-                }
-            }
-        }
+        // Strict Binary Placement Tree rendering (left_id, right_id, underuserid placement ONLY)
 
         $node = [
             'id'                    => $user['userid'],
