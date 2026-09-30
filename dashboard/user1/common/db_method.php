@@ -2110,6 +2110,14 @@ function ensureP2PTableExists($dbConnection = null) {
               KEY `idx_p2p_ref` (`transfer_ref`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
+
+        $cols = $conn->query("SHOW COLUMNS FROM `tbl_p2p_transfer`")->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('from_wallet', $cols)) {
+            $conn->exec("ALTER TABLE `tbl_p2p_transfer` ADD COLUMN `from_wallet` varchar(50) DEFAULT 'Main Wallet' AFTER `transfer_ref`");
+        }
+        if (!in_array('to_wallet', $cols)) {
+            $conn->exec("ALTER TABLE `tbl_p2p_transfer` ADD COLUMN `to_wallet` varchar(50) DEFAULT 'Net Balance' AFTER `from_wallet`");
+        }
     } catch (PDOException $e) {
         // Fallback
     }
@@ -3588,7 +3596,7 @@ if (!function_exists('processAccountActivation')) {
 
         try {
             // 2. Lock activator user row FOR UPDATE
-            $stmtAct = $db->prepare("SELECT userid, name, amount FROM user WHERE userid = :uid FOR UPDATE");
+            $stmtAct = $db->prepare("SELECT userid, name, amount, deposite_wallet, pin_wallet FROM user WHERE userid = :uid FOR UPDATE");
             $stmtAct->execute([':uid' => $activatorId]);
             $activator = $stmtAct->fetch(PDO::FETCH_ASSOC);
 
@@ -3621,7 +3629,7 @@ if (!function_exists('processAccountActivation')) {
             $activationAmountUSD = 11.00;
             $activationAmountINR = 990.00;
 
-            $activatorBal = (float)$activator['amount'];
+            $activatorBal = (float)($activator['deposite_wallet'] ?? $activator['pin_wallet'] ?? $activator['amount'] ?? 0);
             if ($activatorBal < $activationAmountUSD) {
                 if ($inLocalTxn) $db->rollBack();
                 return [
@@ -3649,9 +3657,14 @@ if (!function_exists('processAccountActivation')) {
             $txnDateStr  = $startDtObj->format('Y-m-d');
             $txnTimeStr  = $startDtObj->format('H:i:s');
 
-            // 6. Deduct $11 from activator wallet
-            $db->prepare("UPDATE user SET amount = amount - :amt WHERE userid = :uid")
-               ->execute([':amt' => $activationAmountUSD, ':uid' => $activatorId]);
+            // 6. Deduct $11 from activator wallet (updating all matching wallet fields safely)
+            $db->prepare("
+                UPDATE user 
+                SET amount = GREATEST(0, amount - :amt),
+                    deposite_wallet = GREATEST(0, deposite_wallet - :amt),
+                    pin_wallet = GREATEST(0, pin_wallet - :amt) 
+                WHERE userid = :uid
+            ")->execute([':amt' => $activationAmountUSD, ':uid' => $activatorId]);
 
             // 7. Update target user active status & dates
             $db->prepare("
