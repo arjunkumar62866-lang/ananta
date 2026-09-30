@@ -3807,6 +3807,9 @@ if (!function_exists('processAdminMoveTeamInTree')) {
                 // Ignore if notification table column schema varies
             }
 
+            // 11. Automatic Instant Tree & Downline Re-indexing for All Users & Uplines
+            rebuildFullTreeAndDownlineIndexes($db);
+
             if ($inLocalTxn) {
                 $db->commit();
             }
@@ -3998,6 +4001,128 @@ function processPermanentUserAccountDeletion($admin_id, $target_user_id, $pdoCon
             'status'  => 'error',
             'message' => 'Account deletion failed. No changes were made. Error: ' . $e->getMessage()
         ];
+    }
+}
+
+if (!function_exists('rebuildFullTreeAndDownlineIndexes')) {
+    function rebuildFullTreeAndDownlineIndexes($dbConnection = null) {
+        global $pdo;
+        $db = $dbConnection ?: $pdo;
+        if (!$db) return;
+
+        try {
+            // 0. Auto-repair missing tree rows & missing left_id/right_id links from user table
+            $allUsers = $db->query("SELECT userid, sponserid, underuserid, join_side FROM user")->fetchAll(PDO::FETCH_ASSOC);
+            $existingTreeUsers = $db->query("SELECT userid FROM tree")->fetchAll(PDO::FETCH_COLUMN);
+            $existingTreeSet = array_flip($existingTreeUsers);
+
+            $insTree = $db->prepare("INSERT INTO tree (userid, left_id, right_id, status, join_side, leftsp, rightsp, leftpv, rightpv, leftcount, rightcount, lefttotal, righttotal) VALUES (:uid, '', '', 1, 'left', 0, 0, 0, 0, 0, 0, 0, 0)");
+            foreach ($allUsers as $u) {
+                if (!isset($existingTreeSet[$u['userid']])) {
+                    $insTree->execute([':uid' => $u['userid']]);
+                    $existingTreeSet[$u['userid']] = true;
+                }
+            }
+
+            $updLeft  = $db->prepare("UPDATE tree SET left_id = :cid WHERE userid = :pid AND (left_id = '' OR left_id IS NULL)");
+            $updRight = $db->prepare("UPDATE tree SET right_id = :cid WHERE userid = :pid AND (right_id = '' OR right_id IS NULL)");
+
+            foreach ($allUsers as $u) {
+                $pId  = (string)$u['underuserid'];
+                $cId  = (string)$u['userid'];
+                $side = strtolower((string)$u['join_side']);
+
+                if (!empty($pId) && !empty($cId) && isset($existingTreeSet[$pId])) {
+                    if ($side === 'left' || $side === 'l') {
+                        $updLeft->execute([':cid' => $cId, ':pid' => $pId]);
+                    } elseif ($side === 'right' || $side === 'r') {
+                        $updRight->execute([':cid' => $cId, ':pid' => $pId]);
+                    }
+                }
+            }
+
+            // 1. Fetch all users from tree table
+            $treeUsers = $db->query("SELECT userid, left_id, right_id FROM tree")->fetchAll(PDO::FETCH_ASSOC);
+            $treeMap = [];
+            foreach ($treeUsers as $u) {
+                $treeMap[$u['userid']] = [
+                    'left'  => $u['left_id'],
+                    'right' => $u['right_id']
+                ];
+            }
+
+            function getSubtreeNodesInternalAdmin($nodeId, &$treeMap) {
+                if (empty($nodeId) || !isset($treeMap[$nodeId])) return [];
+                $nodes = [];
+                $left = $treeMap[$nodeId]['left'];
+                $right = $treeMap[$nodeId]['right'];
+
+                if (!empty($left)) {
+                    $nodes[] = $left;
+                    $nodes = array_merge($nodes, getSubtreeNodesInternalAdmin($left, $treeMap));
+                }
+                if (!empty($right)) {
+                    $nodes[] = $right;
+                    $nodes = array_merge($nodes, getSubtreeNodesInternalAdmin($right, $treeMap));
+                }
+                return array_unique($nodes);
+            }
+
+            // 2. Clean mapping tables
+            $db->exec("TRUNCATE TABLE tbl_userlevel_a");
+            $db->exec("TRUNCATE TABLE tbl_userlevel_b");
+            $db->exec("TRUNCATE TABLE tbl_downline");
+
+            $insLvlA = $db->prepare("INSERT INTO tbl_userlevel_a (sponser_id, downline_id, level, date) VALUES (:sp, :dl, :lvl, NOW())");
+            $insLvlB = $db->prepare("INSERT INTO tbl_userlevel_b (sponser_id, downline_id, level, date) VALUES (:sp, :dl, :lvl, NOW())");
+            $insDown = $db->prepare("INSERT INTO tbl_downline (upline_id, downline_id, date, time) VALUES (:up, :dl, CURDATE(), CURTIME())");
+            $updTreeCount = $db->prepare("UPDATE tree SET leftcount = :lc, rightcount = :rc WHERE userid = :uid");
+
+            foreach ($treeMap as $uid => $children) {
+                $leftId  = $children['left'];
+                $rightId = $children['right'];
+
+                $leftSubtree  = getSubtreeNodesInternalAdmin($leftId, $treeMap);
+                if (!empty($leftId)) array_unshift($leftSubtree, $leftId);
+
+                $rightSubtree = getSubtreeNodesInternalAdmin($rightId, $treeMap);
+                if (!empty($rightId)) array_unshift($rightSubtree, $rightId);
+
+                $leftCount  = count($leftSubtree);
+                $rightCount = count($rightSubtree);
+
+                $updTreeCount->execute([':lc' => $leftCount, ':rc' => $rightCount, ':uid' => $uid]);
+
+                foreach ($leftSubtree as $downlineId) {
+                    $insLvlA->execute([':sp' => $uid, ':dl' => $downlineId, ':lvl' => 1]);
+                    $insDown->execute([':up' => $uid, ':dl' => $downlineId]);
+                }
+
+                foreach ($rightSubtree as $downlineId) {
+                    $insLvlB->execute([':sp' => $uid, ':dl' => $downlineId, ':lvl' => 1]);
+                    $insDown->execute([':up' => $uid, ':dl' => $downlineId]);
+                }
+            }
+
+            // 3. Ensure tbl_sponsor sync
+            $users = $db->query("SELECT userid, sponserid FROM user WHERE sponserid IS NOT NULL AND sponserid != ''")->fetchAll(PDO::FETCH_ASSOC);
+
+            $chkSpon = $db->prepare("SELECT COUNT(*) FROM tbl_sponsor WHERE sponsor_id = :sp AND referral_id = :ref");
+            $insSpon = $db->prepare("INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (:sp, :ref, CURDATE())");
+
+            foreach ($users as $u) {
+                $sp  = $u['sponserid'];
+                $ref = $u['userid'];
+                if (empty($sp) || empty($ref)) continue;
+
+                $chkSpon->execute([':sp' => $sp, ':ref' => $ref]);
+                if ($chkSpon->fetchColumn() == 0) {
+                    $insSpon->execute([':sp' => $sp, ':ref' => $ref]);
+                }
+            }
+        } catch (Exception $e) {
+            // Log error silently
+        }
     }
 }
 
