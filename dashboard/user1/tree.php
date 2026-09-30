@@ -148,28 +148,36 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
-        // Gather Children
+        // Gather Children strictly for Binary 2-Leg Tree (1 Left, 1 Right maximum per node)
         $childrenList = [];
-        if (!empty($user['left_id'])) {
-            $childrenList[] = ['id' => (string)$user['left_id'], 'side' => 'LEFT'];
-        }
-        if (!empty($user['right_id'])) {
-            $childrenList[] = ['id' => (string)$user['right_id'], 'side' => 'RIGHT'];
-        }
 
-        $existingChildIds = array_column($childrenList, 'id');
-        if (isset($underUserChildrenMap[$nodeId])) {
+        // 1. LEFT SLOT
+        $leftChildId = (!empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) ? (string)$user['left_id'] : '';
+        if (empty($leftChildId) && isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
-                $cId = (string)$uc['userid'];
-                if ($cId !== $nodeId && !in_array($cId, $existingChildIds)) {
-                    $side = !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DOWNLINE';
-                    $childrenList[] = ['id' => $cId, 'side' => $side];
-                    $existingChildIds[] = $cId;
+                if (strtolower($uc['join_side'] ?? '') === 'left' && (string)$uc['userid'] !== $nodeId) {
+                    $leftChildId = (string)$uc['userid'];
+                    break;
                 }
             }
         }
+        if (!empty($leftChildId)) {
+            $childrenList[] = ['id' => $leftChildId, 'side' => 'LEFT'];
+        }
 
-        // Strict Binary Placement Tree rendering (left_id, right_id, underuserid placement ONLY)
+        // 2. RIGHT SLOT
+        $rightChildId = (!empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) ? (string)$user['right_id'] : '';
+        if (empty($rightChildId) && isset($underUserChildrenMap[$nodeId])) {
+            foreach ($underUserChildrenMap[$nodeId] as $uc) {
+                if (strtolower($uc['join_side'] ?? '') === 'right' && (string)$uc['userid'] !== $nodeId) {
+                    $rightChildId = (string)$uc['userid'];
+                    break;
+                }
+            }
+        }
+        if (!empty($rightChildId) && $rightChildId !== $leftChildId) {
+            $childrenList[] = ['id' => $rightChildId, 'side' => 'RIGHT'];
+        }
 
         $node = [
             'id'                    => $user['userid'],
