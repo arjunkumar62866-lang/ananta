@@ -123,6 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $query_register = insertUser($pdo, $userData);
 
                     if ($query_register) {
+                        auto_link_new_registration_tree($pdo, $userid, $sponserid1, $sponserid1, $position);
                         insertKYC($pdo, $userid, $aadhar);
 
                         // Trigger Registration & Sponsor Notifications

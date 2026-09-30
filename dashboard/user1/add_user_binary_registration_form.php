@@ -213,6 +213,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $sponserid1, $sponsername, $underuserid, 0, 1, $position, $date, '', $pin, 0, $time, '', '', 0,0, $otpreg
         ];
         $userInsertStmt->execute($params);
+        auto_link_new_registration_tree($pdo, $userid, $sponserid1, $underuserid, $position);
 
         // Insert KYC (minimal)
         insertKYC($pdo, $userid, $aadhar);

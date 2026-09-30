@@ -4689,6 +4689,113 @@ if (!function_exists('markAllNotificationsAsRead')) {
     }
 }
 
+if (!function_exists('auto_link_new_registration_tree')) {
+    function auto_link_new_registration_tree($pdo, $userid, $sponserid, $underuserid, $position) {
+        if (empty($userid) || !$pdo) return;
+        $userid      = trim((string)$userid);
+        $sponserid   = trim((string)$sponserid);
+        $underuserid = !empty($underuserid) ? trim((string)$underuserid) : $sponserid;
+        $position    = strtolower(trim((string)$position));
+        $date        = date("Y-m-d");
+        $time        = date("H:i:s");
+
+        try {
+            // 1. Ensure new user has a row in tree table
+            $stmtCh = $pdo->prepare("SELECT COUNT(*) FROM tree WHERE userid = :uid");
+            $stmtCh->execute([':uid' => $userid]);
+            if ($stmtCh->fetchColumn() == 0) {
+                $pdo->prepare("INSERT INTO tree (userid, left_id, right_id, status, join_side, leftsp, rightsp, leftpv, rightpv, leftcount, rightcount, lefttotal, righttotal) VALUES (:uid, '', '', 1, :side, 0, 0, 0, 0, 0, 0, 0, 0)")
+                    ->execute([':uid' => $userid, ':side' => $position]);
+            }
+
+            // 2. Link parent (underuserid) in tree table
+            if (!empty($underuserid)) {
+                $stmtP = $pdo->prepare("SELECT COUNT(*) FROM tree WHERE userid = :uid");
+                $stmtP->execute([':uid' => $underuserid]);
+                if ($stmtP->fetchColumn() == 0) {
+                    $pdo->prepare("INSERT INTO tree (userid, left_id, right_id, status, join_side, leftsp, rightsp, leftpv, rightpv, leftcount, rightcount, lefttotal, righttotal) VALUES (:uid, '', '', 1, 'left', 0, 0, 0, 0, 0, 0, 0, 0)")
+                        ->execute([':uid' => $underuserid]);
+                }
+
+                if ($position === 'left' || $position === 'l') {
+                    $pdo->prepare("UPDATE tree SET left_id = :uid WHERE userid = :pId AND (left_id = '' OR left_id IS NULL)")
+                        ->execute([':uid' => $userid, ':pId' => $underuserid]);
+                } else {
+                    $pdo->prepare("UPDATE tree SET right_id = :uid WHERE userid = :pId AND (right_id = '' OR right_id IS NULL)")
+                        ->execute([':uid' => $userid, ':pId' => $underuserid]);
+                }
+            }
+
+            // 3. Ensure tbl_sponsor entry exists
+            if (!empty($sponserid)) {
+                $chkS = $pdo->prepare("SELECT COUNT(*) FROM tbl_sponsor WHERE sponsor_id = :sp AND referral_id = :ref");
+                $chkS->execute([':sp' => $sponserid, ':ref' => $userid]);
+                if ($chkS->fetchColumn() == 0) {
+                    $pdo->prepare("INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (:sp, :ref, :dt)")
+                        ->execute([':sp' => $sponserid, ':ref' => $userid, ':dt' => $date]);
+                }
+            }
+
+            // 4. Populate tbl_downline for ALL uplines in the chain
+            $currParent = !empty($underuserid) ? $underuserid : $sponserid;
+            $visitedUplines = [];
+            $level = 1;
+
+            while (!empty($currParent) && !isset($visitedUplines[$currParent])) {
+                $visitedUplines[$currParent] = true;
+
+                // Insert into tbl_downline
+                $chkD = $pdo->prepare("SELECT COUNT(*) FROM tbl_downline WHERE upline_id = :up AND downline_id = :dl");
+                $chkD->execute([':up' => $currParent, ':dl' => $userid]);
+                if ($chkD->fetchColumn() == 0) {
+                    $pdo->prepare("INSERT INTO tbl_downline (upline_id, downline_id, date, time) VALUES (:up, :dl, :dt, :tm)")
+                        ->execute([':up' => $currParent, ':dl' => $userid, ':dt' => $date, ':tm' => $time]);
+                }
+
+                // Insert into tbl_userlevel_a or tbl_userlevel_b
+                if ($position === 'left' || $position === 'l') {
+                    $chkL = $pdo->prepare("SELECT COUNT(*) FROM tbl_userlevel_a WHERE sponser_id = :sp AND downline_id = :dl");
+                    $chkL->execute([':sp' => $currParent, ':dl' => $userid]);
+                    if ($chkL->fetchColumn() == 0) {
+                        $pdo->prepare("INSERT INTO tbl_userlevel_a (sponser_id, downline_id, level, date) VALUES (:sp, :dl, :lvl, :dt)")
+                            ->execute([':sp' => $currParent, ':dl' => $userid, ':lvl' => $level, ':dt' => $date]);
+                    }
+                } else {
+                    $chkR = $pdo->prepare("SELECT COUNT(*) FROM tbl_userlevel_b WHERE sponser_id = :sp AND downline_id = :dl");
+                    $chkR->execute([':sp' => $currParent, ':dl' => $userid]);
+                    if ($chkR->fetchColumn() == 0) {
+                        $pdo->prepare("INSERT INTO tbl_userlevel_b (sponser_id, downline_id, level, date) VALUES (:sp, :dl, :lvl, :dt)")
+                            ->execute([':sp' => $currParent, ':dl' => $userid, ':lvl' => $level, ':dt' => $date]);
+                    }
+                }
+
+                // Update leftcount or rightcount in tree table for upline
+                if ($position === 'left' || $position === 'l') {
+                    $pdo->prepare("UPDATE tree SET leftcount = leftcount + 1 WHERE userid = :uid")
+                        ->execute([':uid' => $currParent]);
+                } else {
+                    $pdo->prepare("UPDATE tree SET rightcount = rightcount + 1 WHERE userid = :uid")
+                        ->execute([':uid' => $currParent]);
+                }
+
+                // Move to next parent up in chain
+                $stmtUp = $pdo->prepare("SELECT underuserid, sponserid FROM user WHERE userid = :uid LIMIT 1");
+                $stmtUp->execute([':uid' => $currParent]);
+                $upRow = $stmtUp->fetch(PDO::FETCH_ASSOC);
+
+                if ($upRow) {
+                    $currParent = !empty($upRow['underuserid']) ? $upRow['underuserid'] : (!empty($upRow['sponserid']) ? $upRow['sponserid'] : null);
+                } else {
+                    break;
+                }
+                $level++;
+            }
+        } catch (Exception $e) {
+            // Log error silently
+        }
+    }
+}
+
 ?>
 
 
