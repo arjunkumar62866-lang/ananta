@@ -194,6 +194,24 @@ $news = $newsdata['news'];
       var formatted = converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       return symbol + formatted;
     };
+
+    window.parseAdminINRToUSD = function(amountInINR) {
+      var amt = parseFloat(amountInINR) || 0;
+      var rate = window.USD_TO_INR_RATE > 0 ? window.USD_TO_INR_RATE : 90;
+      return amt / rate;
+    };
+
+    window.formatAdminCurrencyFromINR = function(amountInINR, includeSymbol) {
+      var usdEquivalent = window.parseAdminINRToUSD(amountInINR);
+      return window.formatAdminCurrency(usdEquivalent, includeSymbol);
+    };
+
+    window.formatAdminAmount = function(amount, sourceCurrency, includeSymbol) {
+      if (typeof includeSymbol === 'undefined') includeSymbol = true;
+      var src = (sourceCurrency || 'USD').toUpperCase();
+      var usdAmount = (src === 'INR') ? window.parseAdminINRToUSD(amount) : (parseFloat(amount) || 0);
+      return window.formatAdminCurrency(usdAmount, includeSymbol);
+    };
   </script>
 </head>
 

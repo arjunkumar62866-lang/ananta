@@ -353,8 +353,9 @@ table.dataTable.no-footer {
                     { data: 'sponsername' },
                     { 
                         data: 'total_package',
-                        render: function(data){
-                            return '<strong class="text-success">' + formatAdminCurrency(parseFloat(data || 0)) + '</strong>';
+                        render: function(data, type, row){
+                            var val = (row && typeof row.total_package_usd !== 'undefined') ? row.total_package_usd : data;
+                            return '<strong class="text-success">' + formatAdminCurrency(parseFloat(val || 0)) + '</strong>';
                         }
                     },
                     { 

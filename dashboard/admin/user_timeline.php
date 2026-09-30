@@ -25,16 +25,91 @@ if (!$user) {
 
 $target_user = $user['userid'];
 
-// Fetch all unified timeline events (Transactions, Audits, Activations, KYC)
+// Fetch all unified timeline events (Transactions, Audits, Activations, Investments, KYC)
 $events = [];
+$rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
 
-// 1. Transactions
-$stmtTxn = $pdo->prepare("SELECT id, amount, subject, type, status, created_date, time FROM tbl_transaction WHERE user_id = :uid ORDER BY id DESC LIMIT 100");
+// 1. Investments & Package Purchases (tbl_roi_one)
+try {
+    $stmtInv = $pdo->prepare("
+        SELECT id, package_code, real_fund_usd, package, date, time, status, capital_withdrawal_status
+        FROM tbl_roi_one 
+        WHERE user_id = :uid OR user_id = :clean
+        ORDER BY id DESC LIMIT 50
+    ");
+    $stmtInv->execute([':uid' => $target_user, ':clean' => $cleanUid]);
+    foreach ($stmtInv->fetchAll(PDO::FETCH_ASSOC) as $inv) {
+        $usd = (float)$inv['real_fund_usd'];
+        $inr = (float)$inv['package'];
+        if ($usd <= 0 && $inr > 0) $usd = round($inr / $rate, 2);
+        if ($inr <= 0 && $usd > 0) $inr = round($usd * $rate, 2);
+
+        $statusText = ($inv['capital_withdrawal_status'] === 'WITHDRAWN' || $inv['status'] == '1') ? 'COMPLETED / WITHDRAWN' : 'ACTIVE';
+        $badgeClass = ($statusText === 'ACTIVE') ? 'badge-success' : 'badge-secondary';
+
+        $events[] = [
+            'type'  => 'INVESTMENT',
+            'title' => "Package Investment: " . ($inv['package_code'] ?: 'Investment') . " (\$" . number_format($usd, 2) . " / ₹" . number_format($inr, 2) . ")",
+            'desc'  => "Capital Status: {$statusText} | Package: " . ($inv['package_code'] ?: 'ANANTA_PACKAGE'),
+            'time'  => ($inv['date'] ?: date('Y-m-d')) . ' ' . ($inv['time'] ?: '00:00:00'),
+            'icon'  => 'fa-line-chart',
+            'badge' => $badgeClass
+        ];
+    }
+} catch (Exception $eInv) {}
+
+// 2. Account Activations & Renewals (tbl_account_activation)
+try {
+    $stmtAct = $pdo->prepare("
+        SELECT transaction_id, activation_type, amount_usd, amount_inr, activator_user_id, target_user_id, status, created_at
+        FROM tbl_account_activation
+        WHERE target_user_id = :uid OR target_user_id = :clean OR activator_user_id = :uid OR activator_user_id = :clean
+        ORDER BY id DESC LIMIT 50
+    ");
+    $stmtAct->execute([':uid' => $target_user, ':clean' => $cleanUid]);
+    foreach ($stmtAct->fetchAll(PDO::FETCH_ASSOC) as $act) {
+        $usd = (float)$act['amount_usd'];
+        $inr = (float)$act['amount_inr'];
+        if ($inr <= 0 && $usd > 0) $inr = round($usd * $rate, 2);
+        if ($usd <= 0 && $inr > 0) $usd = round($inr / $rate, 2);
+
+        $isTarget = ($act['target_user_id'] === $target_user || $act['target_user_id'] === $cleanUid);
+        $actRole = $isTarget ? "Self Account Activated" : "Activated Member {$act['target_user_id']}";
+
+        $events[] = [
+            'type'  => 'ACTIVATION',
+            'title' => "Unlock Access ({$act['activation_type']}): \$" . number_format($usd, 2) . " (₹" . number_format($inr, 2) . ")",
+            'desc'  => "{$actRole} | Txn: {$act['transaction_id']} | Status: {$act['status']}",
+            'time'  => $act['created_at'],
+            'icon'  => 'fa-shield',
+            'badge' => 'badge-info'
+        ];
+    }
+} catch (Exception $eAct) {}
+
+// 3. Transactions (tbl_transaction)
+$stmtTxn = $pdo->prepare("SELECT id, amount, act_amount, subject, type, status, created_date, time FROM tbl_transaction WHERE user_id = :uid ORDER BY id DESC LIMIT 100");
 $stmtTxn->execute([':uid' => $target_user]);
 foreach ($stmtTxn->fetchAll(PDO::FETCH_ASSOC) as $t) {
+    $rawAmt = (float)$t['amount'];
+    // Determine currency representation cleanly
+    $isUnlockFee = (stripos($t['subject'], 'Unlock Access') !== false || stripos($t['subject'], '$11') !== false);
+    if ($isUnlockFee) {
+        $inrVal = $rawAmt;
+        $usdVal = round($inrVal / $rate, 2);
+    } elseif ($rawAmt > 500 && (stripos($t['subject'], 'P2P') !== false || stripos($t['subject'], 'Yield') !== false || stripos($t['subject'], 'Sharing') !== false)) {
+        // Legacy INR transactions
+        $inrVal = $rawAmt;
+        $usdVal = round($inrVal / $rate, 2);
+    } else {
+        // Base USD transactions
+        $usdVal = $rawAmt;
+        $inrVal = round($rawAmt * $rate, 2);
+    }
+
     $events[] = [
         'type' => 'TRANSACTION',
-        'title' => "Transaction: {$t['type']} (₹" . number_format((float)$t['amount'], 2) . ")",
+        'title' => "Transaction: {$t['type']} (\$" . number_format($usdVal, 2) . " / ₹" . number_format($inrVal, 2) . ")",
         'desc' => $t['subject'],
         'time' => $t['created_date'] . ' ' . $t['time'],
         'icon' => 'fa-exchange',
@@ -42,13 +117,16 @@ foreach ($stmtTxn->fetchAll(PDO::FETCH_ASSOC) as $t) {
     ];
 }
 
-// 2. Admin Audits
+// 4. Admin Audits (tbl_admin_audit_log)
 $stmtAudit = $pdo->prepare("SELECT id, action, amount, wallet_type, reason, created_at FROM tbl_admin_audit_log WHERE target_user_id = :uid ORDER BY id DESC LIMIT 100");
 $stmtAudit->execute([':uid' => $target_user]);
 foreach ($stmtAudit->fetchAll(PDO::FETCH_ASSOC) as $a) {
+    $adjAmt = (float)($a['amount'] ?? 0);
+    $amtLabel = ($adjAmt > 0) ? " (\$" . number_format($adjAmt, 2) . " / ₹" . number_format($adjAmt * $rate, 2) . ")" : "";
+
     $events[] = [
         'type' => 'ADMIN_AUDIT',
-        'title' => "Admin Action: {$a['action']} (" . ($a['wallet_type'] ?? 'Account') . ")",
+        'title' => "Admin Action: {$a['action']} (" . ($a['wallet_type'] ?? 'Account') . "){$amtLabel}",
         'desc' => $a['reason'],
         'time' => $a['created_at'],
         'icon' => 'fa-shield',
@@ -56,7 +134,7 @@ foreach ($stmtAudit->fetchAll(PDO::FETCH_ASSOC) as $a) {
     ];
 }
 
-// 3. KYC
+// 5. KYC Status
 try {
     $stmtKyc = $pdo->prepare("SELECT * FROM kyc WHERE userid = :uid ORDER BY id DESC LIMIT 10");
     $stmtKyc->execute([':uid' => $target_user]);

@@ -3277,6 +3277,81 @@ if (!function_exists('convertCurrency')) {
     }
 }
 
+if (!function_exists('parseInputToUSD')) {
+    function parseInputToUSD($inputAmount, $inputCurrency = null, $pdoConnection = null) {
+        $curr = $inputCurrency ? strtoupper(trim($inputCurrency)) : getUserCurrency(null, $pdoConnection);
+        $amt = (float)$inputAmount;
+        if ($curr === 'INR') {
+            $rate = getUSDToINRRate($pdoConnection);
+            return ($rate > 0) ? round($amt / $rate, 2) : $amt;
+        }
+        return round($amt, 2);
+    }
+}
+
+if (!function_exists('getUserActiveInvestmentTotal')) {
+    function getUserActiveInvestmentTotal($userid, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($userid)) {
+            return ['total_usd' => 0.00, 'total_inr' => 0.00, 'active_count' => 0, 'investments' => []];
+        }
+
+        $sql = "
+            SELECT id, package_code, real_fund_usd, package, date, time, count, lock_day, lock_period_months, maturity_date, capital_withdrawal_status, status
+            FROM tbl_roi_one
+            WHERE user_id = :uid 
+              AND status = '0' 
+              AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+            ORDER BY id DESC
+        ";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([':uid' => $userid]);
+        $activeRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalUsd = 0.00;
+        $totalInr = 0.00;
+
+        foreach ($activeRows as $row) {
+            $pkgInr = (float)($row['package'] ?? 0);
+            $pkgUsd = (float)($row['real_fund_usd'] ?? 0);
+            if ($pkgUsd <= 0 && $pkgInr > 0) {
+                $pkgUsd = parseInputToUSD($pkgInr, 'INR', $db);
+            }
+            if ($pkgInr <= 0 && $pkgUsd > 0) {
+                $pkgInr = round($pkgUsd * getUSDToINRRate($db), 2);
+            }
+            $totalUsd += $pkgUsd;
+            $totalInr += $pkgInr;
+        }
+
+        // Fallback: If no records in tbl_roi_one, check user.active_investment or user.total_package
+        if ($totalUsd <= 0 && $totalInr <= 0) {
+            $stmtU = $db->prepare("SELECT active_investment, total_package FROM user WHERE userid = :uid LIMIT 1");
+            $stmtU->execute([':uid' => $userid]);
+            $uRow = $stmtU->fetch(PDO::FETCH_ASSOC);
+            if ($uRow) {
+                $actInv = (float)($uRow['active_investment'] ?? 0);
+                $totPkg = (float)($uRow['total_package'] ?? 0);
+                if ($actInv > 0) {
+                    $totalUsd = $actInv;
+                    $totalInr = round($actInv * getUSDToINRRate($db), 2);
+                } elseif ($totPkg > 0) {
+                    $totalInr = $totPkg;
+                    $totalUsd = parseInputToUSD($totPkg, 'INR', $db);
+                }
+            }
+        }
+
+        return [
+            'total_usd'    => round($totalUsd, 2),
+            'total_inr'    => round($totalInr, 2),
+            'active_count' => count($activeRows),
+            'investments'  => $activeRows
+        ];
+    }
+}
+
 if (!function_exists('formatCurrency')) {
     function formatCurrency($amountInUSD, $targetCurrency = null, $includeSymbol = true, $pdoConnection = null) {
         $curr = $targetCurrency ? strtoupper(trim($targetCurrency)) : getUserCurrency(null, $pdoConnection);
@@ -4180,6 +4255,3 @@ if (!function_exists('getUserWalletBalance')) {
         return round((float)($stmt->fetchColumn() ?: 0), 2);
     }
 }
-
-?>
-
