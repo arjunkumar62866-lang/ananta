@@ -117,7 +117,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         return ['count' => $count, 'business_usd' => $business];
     }
 
-    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, $visitedPath = [], &$globalRenderedUsers = []) {
+    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, $visitedPath = [], &$globalRenderedUsers = [], $rootUserId = '') {
         global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap, $hasPlacementParent;
 
         $nodeId = (string)$nodeId;
@@ -132,6 +132,9 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $globalRenderedUsers[$nodeId] = true;
 
         $user = $globalUserMap[$nodeId];
+        if (empty($rootUserId)) {
+            $rootUserId = $nodeId;
+        }
 
         // Left Branch Stats
         $leftStats = ['count' => 0, 'business_usd' => 0.0];
@@ -225,12 +228,12 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         }
 
         // 4. Direct Sponsor Referrals (where sponserid = nodeId)
-        // If a direct referral has a valid placement parent elsewhere in the tree, let them be rendered under their actual placement parent to maintain genuine binary placement.
+        // If a direct referral has a placement parent elsewhere in the tree, let them be reached via their binary placement parent if reachable.
         if (isset($sponsorChildrenMap[$nodeId])) {
             foreach ($sponsorChildrenMap[$nodeId] as $sc) {
                 $cId = (string)$sc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    if (!empty($hasPlacementParent[$cId]) && $hasPlacementParent[$cId] !== $nodeId) {
+                    if (!empty($hasPlacementParent[$cId]) && $hasPlacementParent[$cId] !== $nodeId && isset($globalUserMap[$hasPlacementParent[$cId]])) {
                         continue;
                     }
                     $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
@@ -245,6 +248,11 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             'active'                => ($user['active'] == '1'),
             'status'                => ($user['active'] == '1') ? 'Active' : 'Inactive',
             'sponserid'             => $user['sponserid'] ?? '',
+            'sponsor_id'            => $user['sponserid'] ?? '',
+            'underuserid'           => $user['underuserid'] ?? '',
+            'placement_parent_id'   => $user['underuserid'] ?? '',
+            'join_side'             => $user['join_side'] ?? '',
+            'is_direct_to_root'     => (!empty($user['sponserid']) && (string)$user['sponserid'] === (string)$rootUserId),
             'joining_date'          => $user['joining_date'] ?? '',
             'mobile'                => $user['mobile'] ?? '',
             'leftcount'             => $leftCount,
@@ -259,7 +267,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         if ($currentDepth < $maxDepth) {
             foreach ($childrenList as $cItem) {
-                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers);
+                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers, $rootUserId);
                 if ($childNode) {
                     $childNode['position'] = $cItem['side'];
                     $node['children'][] = $childNode;
@@ -271,7 +279,23 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     }
 
     $globalRenderedUsers = [];
-    $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, $reqDepth, [], $globalRenderedUsers);
+    $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, $reqDepth, [], $globalRenderedUsers, $reqNodeId);
+
+    // SWEEP PASS: Ensure 100% of direct referrals of root are represented in the tree.
+    // If any direct referral of root was not reached via binary placement downlines, render them directly under root.
+    if ($treeStructure && isset($sponsorChildrenMap[$reqNodeId])) {
+        foreach ($sponsorChildrenMap[$reqNodeId] as $sc) {
+            $dId = (string)$sc['userid'];
+            if ($dId !== $reqNodeId && !isset($globalRenderedUsers[$dId])) {
+                $directNode = fetch_horizontal_binary_tree($dId, 2, $reqDepth, [$reqNodeId => true], $globalRenderedUsers, $reqNodeId);
+                if ($directNode) {
+                    $directNode['position'] = 'DIRECT';
+                    $treeStructure['children'][] = $directNode;
+                }
+            }
+        }
+        $treeStructure['has_children_db'] = count($treeStructure['children']) > 0;
+    }
 
     echo json_encode([
         'status' => 'success',
@@ -826,10 +850,19 @@ body.bg-theme {
 
     // Floating Tooltip Detail
     function showTooltip(event, data) {
+        let directBadge = '';
+        if (data.is_direct_to_root && String(data.id) !== String(rootUserId)) {
+            directBadge = `<div style="background: #e0f2fe; color: #0284c7; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; margin-bottom: 6px; display: inline-block;">★ DIRECT REFERRAL OF ROOT</div><br>`;
+        }
+        const sponsorText = data.sponserid || data.sponsor_id || 'N/A';
+        const placementText = data.underuserid || data.placement_parent_id || 'N/A';
+
         tooltip.innerHTML = `
+            ${directBadge}
             <strong>${data.name}</strong>
             <span style="color: #0284c7; font-weight: 700;">User ID: ${data.id}</span><br>
-            <span>Sponsor ID: ${data.sponserid || 'N/A'}</span><br>
+            <span>Direct Sponsor: <b>${sponsorText}</b></span><br>
+            <span>Placement Parent: <b>${placementText}</b></span><br>
             <span>Status: <b style="color: ${data.active ? '#22c55e' : '#ef4444'};">${data.active ? 'Active' : 'Inactive'}</b></span><br>
             <span>Joining Date: ${data.joining_date || 'N/A'}</span><hr style="margin: 8px 0; border-color: #cbd5e1;">
             <div style="font-size: 12px; margin-bottom: 4px;">
@@ -838,7 +871,7 @@ body.bg-theme {
             <div style="font-size: 12px; margin-bottom: 4px;">
                 <strong>Total Team Business:</strong> <span style="color: #0284c7; font-weight: 700;">${data.total_business_fmt}</span>
             </div>
-            <hr style="margin: 6px 0; border-color: #e2e8f0;">
+            <hr style="margin: 6px 0; border-color: #e2e8f0;">`;
             <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px; color: #334155;">
                 <span>Left Team: <b>${data.leftcount} Members</b> (${data.left_business_fmt})</span>
             </div>
