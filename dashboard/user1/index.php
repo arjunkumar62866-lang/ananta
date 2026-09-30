@@ -290,12 +290,15 @@ $left_total_team = $rowTree['lefttotal'] ?? 0;
 $right_total_team = $rowTree['righttotal'] ?? 0;
     
 
-// get my direct actives
-$my_left_active_directs = getmydirectactiveleft($userid);
-$my_right_active_directs = getmydirectactiveright($userid);
+// get active team in left and right legs (preserve real-time branch count if higher than direct active)
+$direct_left_active = getmydirectactiveleft($userid);
+$direct_right_active = getmydirectactiveright($userid);
+$my_left_active_directs = max($my_left_active_directs ?? 0, intval($direct_left_active));
+$my_right_active_directs = max($my_right_active_directs ?? 0, intval($direct_right_active));
 
-// total team
-$total_team=getActiveDownlineCount($userid);
+// total team downline count (preserve real-time branch total team count if higher than index count)
+$db_downline_count = getActiveDownlineCount($userid);
+$total_team = max($realtimeTotalTeam ?? 0, intval($db_downline_count), intval($total_team ?? 0));
 
 // my direct count
 $my_directs=getmydirect($userid);
