@@ -4135,5 +4135,24 @@ if (!function_exists('rebuildFullTreeAndDownlineIndexes')) {
     }
 }
 
+if (!function_exists('getUserWalletBalance')) {
+    function getUserWalletBalance($userid, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userid) return 0.0;
+
+        $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
+        $prefixedUid = 'AN' . $cleanUid;
+
+        $stmt = $db->prepare("SELECT COALESCE(deposite_wallet, pin_wallet, amount, 0) FROM user WHERE userid = :uid OR userid = :clean OR userid = :prefixed LIMIT 1");
+        $stmt->execute([
+            ':uid'      => $userid,
+            ':clean'    => $cleanUid,
+            ':prefixed' => $prefixedUid
+        ]);
+        return round((float)($stmt->fetchColumn() ?: 0), 2);
+    }
+}
+
 ?>
 

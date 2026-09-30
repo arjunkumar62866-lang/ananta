@@ -143,89 +143,205 @@ if ($kycVal === 2 || $kycVal === 1) {
     $kycBadgeClass = "badge-warning text-dark";
 }
 
-// Map the 12 Wallets to DB columns
+// Fetch User Wallet Balances from Single Source of Truth
+$mainWalletBal = function_exists('getUserWalletBalance') ? getUserWalletBalance($targetUserId, $pdo) : (float)($row['deposite_wallet'] ?? $row['pin_wallet'] ?? $row['amount'] ?? 0.00);
+
+// 1. Profit Income
+$piVal = (float)($row['profit_income_wallet'] ?? 0.00);
+if ($piVal <= 0) {
+    try {
+        $stmtPI = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid");
+        $stmtPI->execute([':uid' => $targetUserId]);
+        $piVal = (float)$stmtPI->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+// 2. Profit Sharing
+$psVal = (float)($row['profit_sharing_wallet'] ?? 0.00);
+if ($psVal <= 0) {
+    try {
+        $stmtPS = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id = :uid");
+        $stmtPS->execute([':uid' => $targetUserId]);
+        $psVal = (float)$stmtPS->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+// 3. Direct Bonus
+$dbVal = (float)($row['direct_bonus_wallet'] ?? 0.00);
+if ($dbVal <= 0) {
+    try {
+        $stmtDB = $pdo->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
+        $stmtDB->execute([':uid' => $targetUserId]);
+        $dbVal = (float)$stmtDB->fetchColumn();
+        if ($dbVal <= 0) {
+            $stmtRoi2 = $pdo->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_two WHERE user_id = :uid");
+            $stmtRoi2->execute([':uid' => $targetUserId]);
+            $dbVal = (float)$stmtRoi2->fetchColumn();
+        }
+    } catch (Exception $e) {}
+}
+
+// 4. Mentor Income
+$miVal = (float)($row['mentor_income_wallet'] ?? 0.00);
+if ($miVal <= 0) {
+    try {
+        $stmtMI = $pdo->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE mentor_id = :uid AND status = 'CREDITED'");
+        $stmtMI->execute([':uid' => $targetUserId]);
+        $miVal = (float)$stmtMI->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+// 5. Rank Reward
+$rrVal = (float)($row['rank_reward_wallet'] ?? 0.00);
+if ($rrVal <= 0) {
+    try {
+        $stmtRR = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid");
+        $stmtRR->execute([':uid' => $targetUserId]);
+        $rrVal = (float)$stmtRR->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+// 6. VIP Club Income
+$vipVal = (float)($row['vip_club_wallet'] ?? 0.00);
+if ($vipVal <= 0) {
+    try {
+        $stmtVip1 = $pdo->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
+        $stmtVip1->execute([':uid' => $targetUserId]);
+        $v1 = (float)$stmtVip1->fetchColumn();
+
+        $stmtVip2 = $pdo->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
+        $stmtVip2->execute([':uid' => $targetUserId]);
+        $v2 = (float)$stmtVip2->fetchColumn();
+
+        $vipVal = round($v1 + $v2, 2);
+    } catch (Exception $e) {}
+}
+
+// 7. Company Turnover Income
+$ctVal = (float)($row['company_turnover_wallet'] ?? 0.00);
+if ($ctVal <= 0) {
+    try {
+        $stmtCT = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Turnover%' OR subject LIKE '%Leadership%')");
+        $stmtCT->execute([':uid' => $targetUserId]);
+        $ctVal = (float)$stmtCT->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+// 8. Active Investment
+$activeInvVal = (float)($row['active_investment'] ?? 0.00);
+if ($activeInvVal <= 0) {
+    try {
+        $stmtInv = $pdo->prepare("SELECT COALESCE(SUM(real_fund_usd), 0), COALESCE(SUM(package), 0) FROM tbl_roi_one WHERE user_id = :uid AND status = '0'");
+        $stmtInv->execute([':uid' => $targetUserId]);
+        $invRow = $stmtInv->fetch(PDO::FETCH_NUM);
+        $invUsd = (float)($invRow[0] ?? 0);
+        $invInr = (float)($invRow[1] ?? 0);
+        if ($invUsd > 0) {
+            $activeInvVal = $invUsd;
+        } elseif ($invInr > 0) {
+            $activeInvVal = function_exists('parseInputToUSD') ? parseInputToUSD($invInr, 'INR', $pdo) : round($invInr / 90.0, 2);
+        } else if (!empty($row['total_package']) && (float)$row['total_package'] > 0) {
+            $activeInvVal = function_exists('parseInputToUSD') ? parseInputToUSD((float)$row['total_package'], 'INR', $pdo) : round((float)$row['total_package'] / 90.0, 2);
+        }
+    } catch (Exception $e) {}
+}
+
+// 9. All Withdrawal
+$totalWdVal = (float)($row['total_withdrawal'] ?? 0.00);
+if ($totalWdVal <= 0) {
+    try {
+        $stmtWd = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Withdraw%' OR type = 'Withdrawal Request')");
+        $stmtWd->execute([':uid' => $targetUserId]);
+        $totalWdVal = (float)$stmtWd->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+// 10. User Growth Total
+$userGrowthVal = round($piVal + $psVal + $dbVal + $miVal + $rrVal + $vipVal + $ctVal, 2);
+
+// Map the 12 Wallets to DB columns / Real-Time Single Source of Truth
 $walletsConfig = [
     'amount' => [
         'name' => 'Main Wallet',
         'key'  => 'amount',
-        'val'  => (float)($row['amount'] ?? 0.00),
+        'val'  => $mainWalletBal,
         'icon' => 'fa-wallet',
         'color' => '#0284c7'
     ],
     'net_balance' => [
         'name' => 'Net Balance',
         'key'  => 'net_balance',
-        'val'  => (float)($row['net_balance'] ?? 0.00),
+        'val'  => $mainWalletBal,
         'icon' => 'fa-balance-scale',
         'color' => '#0d9488'
     ],
     'active_investment' => [
         'name' => 'Active Investment',
         'key'  => 'active_investment',
-        'val'  => (float)($row['active_investment'] ?? 0.00),
+        'val'  => $activeInvVal,
         'icon' => 'fa-line-chart',
         'color' => '#16a34a'
     ],
     'total_withdrawal' => [
         'name' => 'All Withdrawal',
         'key'  => 'total_withdrawal',
-        'val'  => (float)($row['total_withdrawal'] ?? 0.00),
+        'val'  => $totalWdVal,
         'icon' => 'fa-arrow-circle-down',
         'color' => '#ef4444'
     ],
     'profit_income_wallet' => [
         'name' => 'Profit Income',
         'key'  => 'profit_income_wallet',
-        'val'  => (float)($row['profit_income_wallet'] ?? 0.00),
+        'val'  => $piVal,
         'icon' => 'fa-money',
         'color' => '#8b5cf6'
     ],
     'profit_sharing_wallet' => [
         'name' => 'Profit Sharing',
         'key'  => 'profit_sharing_wallet',
-        'val'  => (float)($row['profit_sharing_wallet'] ?? 0.00),
+        'val'  => $psVal,
         'icon' => 'fa-share-alt',
         'color' => '#ec4899'
     ],
     'direct_bonus_wallet' => [
         'name' => 'Direct Bonus',
         'key'  => 'direct_bonus_wallet',
-        'val'  => (float)($row['direct_bonus_wallet'] ?? 0.00),
+        'val'  => $dbVal,
         'icon' => 'fa-gift',
         'color' => '#f59e0b'
     ],
     'mentor_income_wallet' => [
         'name' => 'Mentor Income',
         'key'  => 'mentor_income_wallet',
-        'val'  => (float)($row['mentor_income_wallet'] ?? 0.00),
+        'val'  => $miVal,
         'icon' => 'fa-user-secret',
         'color' => '#6366f1'
     ],
     'rank_reward_wallet' => [
         'name' => 'Rank Reward',
         'key'  => 'rank_reward_wallet',
-        'val'  => (float)($row['rank_reward_wallet'] ?? 0.00),
+        'val'  => $rrVal,
         'icon' => 'fa-trophy',
         'color' => '#eab308'
     ],
     'vip_club_wallet' => [
         'name' => 'VIP Club Income',
         'key'  => 'vip_club_wallet',
-        'val'  => (float)($row['vip_club_wallet'] ?? 0.00),
+        'val'  => $vipVal,
         'icon' => 'fa-star',
         'color' => '#3b82f6'
     ],
     'user_growth_wallet' => [
         'name' => 'User Growth',
         'key'  => 'user_growth_wallet',
-        'val'  => (float)($row['user_growth_wallet'] ?? 0.00),
+        'val'  => $userGrowthVal,
         'icon' => 'fa-level-up',
         'color' => '#10b981'
     ],
     'company_turnover_wallet' => [
         'name' => 'Company Turnover Income',
         'key'  => 'company_turnover_wallet',
-        'val'  => (float)($row['company_turnover_wallet'] ?? 0.00),
+        'val'  => $ctVal,
         'icon' => 'fa-building',
         'color' => '#14b8a6'
     ]
