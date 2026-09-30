@@ -269,9 +269,17 @@ $rewardincome= round((float)($rewardincome ?? 0), 2);
 $totallevelbusiness=gettotallevelbusiness($userid);
 $totallevelbusiness1=$totallevelbusiness;
 
-$roidata=getroionedatanew($userid);
+$roidata = getroionedatanew($userid);
+$roipackage_raw = is_array($roidata) && isset($roidata['package']) ? floatval($roidata['package']) : 0;
+$roipackage_usd = (is_array($roidata) && !empty($roidata['real_fund_usd']) && floatval($roidata['real_fund_usd']) > 0)
+    ? floatval($roidata['real_fund_usd'])
+    : parseInputToUSD($roipackage_raw, 'INR');
 
-$roipackage= is_array($roidata) && isset($roidata['package']) ? $roidata['package'] : 0;
+if ($roipackage_usd <= 0 && !empty($usertotal_package) && floatval($usertotal_package) > 0) {
+    $roipackage_usd = parseInputToUSD(floatval($usertotal_package), 'INR');
+}
+
+$roipackage = $roipackage_usd;
 
 // >=$useramount
 

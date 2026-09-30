@@ -1102,7 +1102,8 @@ function getroionedatanew($userid)
     if ($rowuser) {
         $roionedata = array(
             "level"      => $rowuser['level'],
-            "package"    => $rowuser["package"],
+            "package"       => $rowuser["package"],
+            "real_fund_usd" => $rowuser["real_fund_usd"] ?? 0,
             "percentage" => $rowuser["percentage"],
             "count"      => $rowuser["count"],
             "amount"     => $rowuser["amount"],
