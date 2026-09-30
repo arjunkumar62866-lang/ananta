@@ -160,6 +160,7 @@ foreach ($investments as $inv) {
                             <tr>
                                 <th class="py-3 px-4 text-center">#</th>
                                 <th class="py-3 px-3">Transaction ID</th>
+                                <th class="py-3 px-3">Member</th>
                                 <th class="py-3 px-3 text-right">Amount Debited</th>
                                 <th class="py-3 px-3">Subject / Description</th>
                                 <th class="py-3 px-3 text-center">Date & Time</th>
@@ -171,6 +172,10 @@ foreach ($investments as $inv) {
                                     <tr style="border-bottom: 1px solid #f1f5f9;">
                                         <td class="py-3 px-4 text-center font-weight-bold" style="color: #64748b;"><?php echo $sr++; ?></td>
                                         <td class="py-3 px-3 font-weight-bold" style="color: #0284c7;">#<?php echo $deb['id']; ?></td>
+                                        <td class="py-3 px-3">
+                                            <div class="font-weight-bold" style="color: #0f172a;"><?php echo htmlspecialchars($deb['user_id']); ?></div>
+                                            <div class="small text-muted"><?php echo htmlspecialchars($deb['investor_name'] ?: 'N/A'); ?></div>
+                                        </td>
                                         <td class="py-3 px-3 text-right font-weight-bold" style="color: #dc2626;">
                                             <?php echo formatCurrency(((float)$deb['amount']) / 90, $selectedCurrency); ?>
                                         </td>
@@ -184,7 +189,7 @@ foreach ($investments as $inv) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
+                                    <td colspan="6" class="text-center py-5 text-muted">
                                         <i class="zmdi zmdi-shield-check zmdi-hc-3x d-block mb-2" style="color: #cbd5e1;"></i>
                                         No Unlock Access debit history records found for the selected date range.
                                     </td>

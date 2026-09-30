@@ -1083,35 +1083,141 @@ return date('Y-m-d');
 }
 
 
+function getUserActiveInvestmentTotal($userid, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || empty($userid)) {
+        return ['total_usd' => 0.00, 'total_inr' => 0.00, 'active_count' => 0, 'investments' => []];
+    }
+
+    $sql = "
+        SELECT id, package_code, real_fund_usd, package, date, time, count, lock_day, lock_period_months, maturity_date, capital_withdrawal_status, status
+        FROM tbl_roi_one
+        WHERE user_id = :uid 
+          AND status = '0' 
+          AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+        ORDER BY id DESC
+    ";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([':uid' => $userid]);
+    $activeRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $totalUsd = 0.00;
+    $totalInr = 0.00;
+
+    foreach ($activeRows as $row) {
+        $pkgInr = (float)($row['package'] ?? 0);
+        $pkgUsd = (float)($row['real_fund_usd'] ?? 0);
+        if ($pkgUsd <= 0 && $pkgInr > 0) {
+            $pkgUsd = function_exists('parseInputToUSD') ? parseInputToUSD($pkgInr, 'INR', $db) : round($pkgInr / 90.0, 2);
+        }
+        if ($pkgInr <= 0 && $pkgUsd > 0) {
+            $pkgInr = round($pkgUsd * 90.0, 2);
+        }
+        $totalUsd += $pkgUsd;
+        $totalInr += $pkgInr;
+    }
+
+    // Fallback: If no records in tbl_roi_one, check user.active_investment or user.total_package
+    if ($totalUsd <= 0 && $totalInr <= 0) {
+        $stmtU = $db->prepare("SELECT active_investment, total_package FROM user WHERE userid = :uid LIMIT 1");
+        $stmtU->execute([':uid' => $userid]);
+        $uRow = $stmtU->fetch(PDO::FETCH_ASSOC);
+        if ($uRow) {
+            $actInv = (float)($uRow['active_investment'] ?? 0);
+            $totPkg = (float)($uRow['total_package'] ?? 0);
+            if ($actInv > 0) {
+                $totalUsd = $actInv;
+                $totalInr = round($actInv * 90.0, 2);
+            } elseif ($totPkg > 0) {
+                $totalInr = $totPkg;
+                $totalUsd = function_exists('parseInputToUSD') ? parseInputToUSD($totPkg, 'INR', $db) : round($totPkg / 90.0, 2);
+            }
+        }
+    }
+
+    return [
+        'total_usd'    => round($totalUsd, 2),
+        'total_inr'    => round($totalInr, 2),
+        'active_count' => count($activeRows),
+        'investments'  => $activeRows
+    ];
+}
+
 function getroionedatanew($userid)
 {
     global $pdo;
 
     $sqluser = "SELECT * 
                 FROM tbl_roi_one 
-                WHERE user_id = :userid AND status = '0' 
-                ORDER BY id DESC 
-                LIMIT 1";
+                WHERE user_id = :userid 
+                  AND status = '0' 
+                  AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+                ORDER BY id DESC";
 
     $stmt = $pdo->prepare($sqluser);
     $stmt->execute([':userid' => $userid]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // fetch result
-    $rowuser = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!empty($rows)) {
+        $totalPkg = 0;
+        $totalUsd = 0;
+        foreach ($rows as $r) {
+            $pInr = (float)($r['package'] ?? 0);
+            $pUsd = (float)($r['real_fund_usd'] ?? 0);
+            if ($pUsd <= 0 && $pInr > 0) {
+                $pUsd = function_exists('parseInputToUSD') ? parseInputToUSD($pInr, 'INR', $pdo) : round($pInr / 90.0, 2);
+            }
+            if ($pInr <= 0 && $pUsd > 0) {
+                $pInr = round($pUsd * 90.0, 2);
+            }
+            $totalPkg += $pInr;
+            $totalUsd += $pUsd;
+        }
 
-    if ($rowuser) {
+        $latest = $rows[0];
         $roionedata = array(
-            "level"      => $rowuser['level'],
-            "package"       => $rowuser["package"],
-            "real_fund_usd" => $rowuser["real_fund_usd"] ?? 0,
-            "percentage" => $rowuser["percentage"],
-            "count"      => $rowuser["count"],
-            "amount"     => $rowuser["amount"],
-            "date"       => $rowuser["date"],
-            "time"       => $rowuser["time"], 
-            "status"     => $rowuser["status"],
+            "level"         => $latest['level'],
+            "package"       => $totalPkg,
+            "real_fund_usd" => $totalUsd,
+            "percentage"    => $latest["percentage"],
+            "count"         => $latest["count"],
+            "amount"        => $latest["amount"],
+            "date"          => $latest["date"],
+            "time"          => $latest["time"], 
+            "status"        => $latest["status"],
+            "active_count"  => count($rows),
+            "investments"   => $rows
         );
         return $roionedata;
+    }
+
+    // Fallback if no tbl_roi_one records exist
+    $stmtUser = $pdo->prepare("SELECT active_investment, total_package FROM user WHERE userid = :uid LIMIT 1");
+    $stmtUser->execute([':uid' => $userid]);
+    $uRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+    if ($uRow && ((float)($uRow['active_investment'] ?? 0) > 0 || (float)($uRow['total_package'] ?? 0) > 0)) {
+        $actUsd = (float)($uRow['active_investment'] ?? 0);
+        $totInr = (float)($uRow['total_package'] ?? 0);
+        if ($actUsd <= 0 && $totInr > 0) {
+            $actUsd = function_exists('parseInputToUSD') ? parseInputToUSD($totInr, 'INR', $pdo) : round($totInr / 90.0, 2);
+        }
+        if ($totInr <= 0 && $actUsd > 0) {
+            $totInr = round($actUsd * 90.0, 2);
+        }
+        return array(
+            "level"         => 1,
+            "package"       => $totInr,
+            "real_fund_usd" => $actUsd,
+            "percentage"    => 0,
+            "count"         => 0,
+            "amount"        => 0,
+            "date"          => date('Y-m-d'),
+            "time"          => date('H:i:s'),
+            "status"        => '0',
+            "active_count"  => 1,
+            "investments"   => []
+        );
     }
 
     // return null if no record found
@@ -1658,6 +1764,116 @@ if (!function_exists('getSubtreeDescendantIds')) {
         }
 
         return $descendants;
+    }
+}
+
+/**
+ * Complete Network Downline Resolver.
+ * Gathers all downline descendant user IDs belonging to $userId across both:
+ * 1. The Sponsor Hierarchy (recursive direct and indirect referrals via user.sponserid & tbl_sponsor).
+ * 2. The Placement / Binary Tree (recursive tree placement via tree.left_id/right_id, user.underuserid, tbl_downline, tbl_userlevel_a/b).
+ * Guaranteed cycle-safe via visited lookup set.
+ */
+if (!function_exists('getUserNetworkDownlineIds')) {
+    function getUserNetworkDownlineIds($userId, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || empty($userId)) return [];
+
+        $descendants = [];
+        $visited = [$userId => true];
+
+        // 1. Gather all sponsor-tree downlines (recursive via user.sponserid & tbl_sponsor)
+        $sponsorQueue = [$userId];
+        while (!empty($sponsorQueue)) {
+            $currSponsor = array_shift($sponsorQueue);
+
+            // From user table
+            $stmtU = $db->prepare("SELECT userid FROM user WHERE sponserid = :sp AND userid != :sp");
+            $stmtU->execute([':sp' => $currSponsor]);
+            $directsU = $stmtU->fetchAll(PDO::FETCH_COLUMN);
+
+            // From tbl_sponsor table
+            $stmtSp = $db->prepare("SELECT referral_id FROM tbl_sponsor WHERE sponsor_id = :sp AND referral_id != :sp");
+            $stmtSp->execute([':sp' => $currSponsor]);
+            $directsSp = $stmtSp->fetchAll(PDO::FETCH_COLUMN);
+
+            $directs = array_unique(array_merge($directsU, $directsSp));
+            foreach ($directs as $dId) {
+                $dId = trim((string)$dId);
+                if (!empty($dId) && !isset($visited[$dId])) {
+                    $visited[$dId] = true;
+                    $descendants[] = $dId;
+                    $sponsorQueue[] = $dId;
+                }
+            }
+        }
+
+        // 2. Gather all placement/binary-tree downlines (recursive via tree table, user.underuserid)
+        $placementQueue = [$userId];
+        while (!empty($placementQueue)) {
+            $currPlace = array_shift($placementQueue);
+
+            // From tree table left_id & right_id
+            $stmtT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+            $stmtT->execute([':uid' => $currPlace]);
+            $tRow = $stmtT->fetch(PDO::FETCH_ASSOC);
+            if ($tRow) {
+                foreach (['left_id', 'right_id'] as $k) {
+                    $cId = trim((string)($tRow[$k] ?? ''));
+                    if (!empty($cId) && !isset($visited[$cId])) {
+                        $visited[$cId] = true;
+                        $descendants[] = $cId;
+                        $placementQueue[] = $cId;
+                    }
+                }
+            }
+
+            // From user table underuserid
+            $stmtUnder = $db->prepare("SELECT userid FROM user WHERE underuserid = :uid AND userid != :uid");
+            $stmtUnder->execute([':uid' => $currPlace]);
+            $underUsers = $stmtUnder->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($underUsers as $uId) {
+                $uId = trim((string)$uId);
+                if (!empty($uId) && !isset($visited[$uId])) {
+                    $visited[$uId] = true;
+                    $descendants[] = $uId;
+                    $placementQueue[] = $uId;
+                }
+            }
+        }
+
+        // 3. Also check precomputed tbl_downline
+        try {
+            $stmtDown = $db->prepare("SELECT downline_id FROM tbl_downline WHERE upline_id = :uid");
+            $stmtDown->execute([':uid' => $userId]);
+            $downlineRows = $stmtDown->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($downlineRows as $dlId) {
+                $dlId = trim((string)$dlId);
+                if (!empty($dlId) && !isset($visited[$dlId])) {
+                    $visited[$dlId] = true;
+                    $descendants[] = $dlId;
+                }
+            }
+        } catch (Exception $e) {}
+
+        // 4. Also check tbl_userlevel_a & tbl_userlevel_b
+        foreach (['tbl_userlevel_a', 'tbl_userlevel_b'] as $tbl) {
+            try {
+                $stmtLvl = $db->prepare("SELECT downline_id FROM {$tbl} WHERE sponser_id = :uid");
+                $stmtLvl->execute([':uid' => $userId]);
+                $lvlRows = $stmtLvl->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($lvlRows as $dlId) {
+                    $dlId = trim((string)$dlId);
+                    if (!empty($dlId) && !isset($visited[$dlId])) {
+                        $visited[$dlId] = true;
+                        $descendants[] = $dlId;
+                    }
+                }
+            } catch (Exception $e) {}
+        }
+
+        return array_values(array_unique($descendants));
     }
 }
 
@@ -2331,22 +2547,24 @@ function getUserGrowthBreakdown($userid, $pdoConnection = null) {
 }
 
 /**
- * Requirement #21: Fetch Date-Filtered Fund Statement Data (Including Self + Downline Sponsor Chain).
+ * Requirement #21: Fetch Date-Filtered Fund Statement Data (Including Self + Complete Downline Network).
+ * Gathers applicable business activities (investments & activations) across the user's entire network
+ * using existing sponsor hierarchy and placement tree structures.
  */
 function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$userid) return ['investments' => [], 'unlock_debits' => []];
 
-    // Gather self + all downline IDs in sponsor/placement chain
-    $downlineIds = getSubtreeDescendantIds($userid, $db);
-    $allTargetUserIds = array_unique(array_merge([$userid], $downlineIds));
+    // Gather self + all downline IDs across complete sponsor & placement network
+    $downlineIds = getUserNetworkDownlineIds($userid, $db);
+    $allTargetUserIds = array_values(array_unique(array_merge([$userid], $downlineIds)));
 
     if (empty($allTargetUserIds)) {
         return ['investments' => [], 'unlock_debits' => []];
     }
 
-    // Build SQL for investments (Self + Downline Team)
+    // Build SQL for investments (Self + Downline Network)
     $inPlaceholders = implode(',', array_fill(0, count($allTargetUserIds), '?'));
     $sqlInv = "
         SELECT 
@@ -2384,9 +2602,19 @@ function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pd
     $stmtInv->execute($paramsInv);
     $investments = $stmtInv->fetchAll(PDO::FETCH_ASSOC);
 
-    // Build SQL for unlock access debit history (Self + Downline Team)
+    // Normalize investments to ensure real_fund_usd is never 0 if package (INR) is present
+    foreach ($investments as &$inv) {
+        $usd = (float)($inv['real_fund_usd'] ?? 0);
+        $inr = (float)($inv['package'] ?? 0);
+        if ($usd <= 0 && $inr > 0) {
+            $inv['real_fund_usd'] = function_exists('parseInputToUSD') ? parseInputToUSD($inr, 'INR', $db) : round($inr / 90.0, 2);
+        }
+    }
+    unset($inv);
+
+    // Build SQL for unlock access debit history (Self + Downline Network)
     $sqlDeb = "
-        SELECT 
+        SELECT DISTINCT
             t.id, 
             t.user_id,
             u.name as investor_name,
@@ -2396,10 +2624,11 @@ function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pd
             t.time 
         FROM tbl_transaction t
         LEFT JOIN user u ON u.userid = t.user_id
-        WHERE t.user_id IN ($inPlaceholders) 
+        LEFT JOIN tbl_account_activation a ON a.activator_user_id = t.user_id AND DATE(a.created_at) = DATE(t.created_date)
+        WHERE (t.user_id IN ($inPlaceholders) OR a.target_user_id IN ($inPlaceholders)) 
           AND (t.subject LIKE '%Unlock Access%' OR t.subject LIKE '%Activation%')
     ";
-    $paramsDeb = array_values($allTargetUserIds);
+    $paramsDeb = array_merge(array_values($allTargetUserIds), array_values($allTargetUserIds));
 
     if ($fromDate && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fromDate)) {
         $sqlDeb .= " AND DATE(t.created_date) >= ?";

@@ -90,28 +90,44 @@ switch ($action) {
         $stmtWdPend->execute([':uid' => $user_id]);
         $totWdPend = (float)$stmtWdPend->fetchColumn();
 
-        // 4. Active Investment Details
+        // 4. Active Investment Details (Total Active Investment across all active packages)
         $stmtInv = $pdo->prepare("
-            SELECT id, package, date, count, lock_day, status
+            SELECT id, package, real_fund_usd, date, count, lock_day, status
             FROM tbl_roi_one
-            WHERE user_id = :uid AND status = '0'
-            ORDER BY id DESC LIMIT 1
+            WHERE user_id = :uid 
+              AND status = '0'
+              AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+            ORDER BY id DESC
         ");
         $stmtInv->execute([':uid' => $user_id]);
-        $activeInv = $stmtInv->fetch(PDO::FETCH_ASSOC);
+        $activeInvs = $stmtInv->fetchAll(PDO::FETCH_ASSOC);
 
         $invDetails = null;
-        if ($activeInv) {
-            $pkgInr = (float)$activeInv['package'];
-            $pkgUsd = round($pkgInr / 90.0, 2);
+        if (!empty($activeInvs)) {
+            $totalPkgInr = 0.00;
+            $totalPkgUsd = 0.00;
+            foreach ($activeInvs as $invRow) {
+                $pInr = (float)$invRow['package'];
+                $pUsd = (float)($invRow['real_fund_usd'] ?? 0);
+                if ($pUsd <= 0 && $pInr > 0) {
+                    $pUsd = round($pInr / 90.0, 2);
+                }
+                if ($pInr <= 0 && $pUsd > 0) {
+                    $pInr = round($pUsd * 90.0, 2);
+                }
+                $totalPkgInr += $pInr;
+                $totalPkgUsd += $pUsd;
+            }
+            $latestInv = $activeInvs[0];
             $invDetails = [
-                'investment_id'   => $activeInv['id'],
-                'package_inr'     => $pkgInr,
-                'package_usd'     => $pkgUsd,
-                'activation_date' => $activeInv['date'],
-                'lock_day'        => (int)$activeInv['lock_day'],
-                'months_paid'     => (int)$activeInv['count'],
-                'status'          => ($uRow['active'] == '1') ? 'ACTIVE' : 'INACTIVE'
+                'investment_id'   => $latestInv['id'],
+                'package_inr'     => $totalPkgInr,
+                'package_usd'     => $totalPkgUsd,
+                'activation_date' => $latestInv['date'],
+                'lock_day'        => (int)$latestInv['lock_day'],
+                'months_paid'     => (int)$latestInv['count'],
+                'status'          => ($uRow['active'] == '1') ? 'ACTIVE' : 'INACTIVE',
+                'active_count'    => count($activeInvs)
             ];
         }
 

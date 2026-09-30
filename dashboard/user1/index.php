@@ -270,13 +270,17 @@ $totallevelbusiness=gettotallevelbusiness($userid);
 $totallevelbusiness1=$totallevelbusiness;
 
 $roidata = getroionedatanew($userid);
-$roipackage_raw = is_array($roidata) && isset($roidata['package']) ? floatval($roidata['package']) : 0;
-$roipackage_usd = (is_array($roidata) && !empty($roidata['real_fund_usd']) && floatval($roidata['real_fund_usd']) > 0)
-    ? floatval($roidata['real_fund_usd'])
-    : parseInputToUSD($roipackage_raw, 'INR');
+$activeInvData = getUserActiveInvestmentTotal($userid, $pdo);
+$roipackage_raw = (float)($activeInvData['total_inr'] ?? ($roidata['package'] ?? 0));
+$roipackage_usd = (float)($activeInvData['total_usd'] ?? ($roidata['real_fund_usd'] ?? 0));
+
+if ($roipackage_usd <= 0 && $roipackage_raw > 0) {
+    $roipackage_usd = parseInputToUSD($roipackage_raw, 'INR');
+}
 
 if ($roipackage_usd <= 0 && !empty($usertotal_package) && floatval($usertotal_package) > 0) {
     $roipackage_usd = parseInputToUSD(floatval($usertotal_package), 'INR');
+    $roipackage_raw = floatval($usertotal_package);
 }
 
 $roipackage = $roipackage_usd;
