@@ -56,7 +56,7 @@ function fetch_horizontal_binary_tree_diag($nodeId, $currentDepth = 1, $maxDepth
     if (isset($visitedPath[$nodeId])) return null;
     $visitedPath[$nodeId] = true;
 
-    if (isset($globalRenderedUsers[$nodeId])) return null;
+    if ($currentDepth > 2 && isset($globalRenderedUsers[$nodeId])) return null;
     $globalRenderedUsers[$nodeId] = true;
 
     $user = $globalUserMap[$nodeId];
@@ -71,6 +71,9 @@ function fetch_horizontal_binary_tree_diag($nodeId, $currentDepth = 1, $maxDepth
         foreach ($underUserChildrenMap[$nodeId] as $uc) {
             $cId = (string)$uc['userid'];
             if ($cId !== $nodeId && strtolower($uc['join_side'] ?? '') === 'left' && !isset($globalRenderedUsers[$cId])) {
+                if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
+                    continue;
+                }
                 $leftId = $cId;
                 break;
             }
@@ -87,6 +90,9 @@ function fetch_horizontal_binary_tree_diag($nodeId, $currentDepth = 1, $maxDepth
         foreach ($underUserChildrenMap[$nodeId] as $uc) {
             $cId = (string)$uc['userid'];
             if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && strtolower($uc['join_side'] ?? '') === 'right' && !isset($globalRenderedUsers[$cId])) {
+                if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
+                    continue;
+                }
                 $rightId = $cId;
                 break;
             }
@@ -95,6 +101,9 @@ function fetch_horizontal_binary_tree_diag($nodeId, $currentDepth = 1, $maxDepth
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                    if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
+                        continue;
+                    }
                     $rightId = $cId;
                     break;
                 }
@@ -111,6 +120,9 @@ function fetch_horizontal_binary_tree_diag($nodeId, $currentDepth = 1, $maxDepth
         foreach ($underUserChildrenMap[$nodeId] as $uc) {
             $cId = (string)$uc['userid'];
             if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
+                    continue;
+                }
                 $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
                 $assignedChildIds[$cId] = true;
             }
@@ -146,6 +158,11 @@ function fetch_horizontal_binary_tree_diag($nodeId, $currentDepth = 1, $maxDepth
     ];
 
     if ($currentDepth < $maxDepth) {
+        if ($nodeId === $rootUserId) {
+            foreach ($childrenList as $cItem) {
+                $globalRenderedUsers[(string)$cItem['id']] = true;
+            }
+        }
         foreach ($childrenList as $cItem) {
             $childNode = fetch_horizontal_binary_tree_diag($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers, $rootUserId);
             if ($childNode) {
@@ -210,70 +227,26 @@ collectApiNodesDetailed($apiTreeData, '', $apiAllNodes, $apiDirectNodesFound, $a
 $apiDirectCount = count($apiDirectNodesFound);
 $frontendReceivedCount = count($apiAllNodes);
 
-// STEP 4: Simulate Frontend D3 Hierarchy (d3.hierarchy descendants)
-$frontendRenderedIds = [];
-$frontendNodeCounts = [];
-$frontendDirectsFound = [];
-
-function simulateD3HierarchyDetailed($node, &$frontendRenderedIds, &$frontendNodeCounts, &$frontendDirectsFound, $dbDirectIds) {
-    if (!$node) return;
-    $id = (string)$node['id'];
-    $frontendRenderedIds[] = $id;
-    $frontendNodeCounts[$id] = ($frontendNodeCounts[$id] ?? 0) + 1;
-    
-    if (in_array($id, $dbDirectIds, true)) {
-        $frontendDirectsFound[$id] = true;
-    }
-    
-    if (!empty($node['children'])) {
-        foreach ($node['children'] as $child) {
-            simulateD3HierarchyDetailed($child, $frontendRenderedIds, $frontendNodeCounts, $frontendDirectsFound, $dbDirectIds);
-        }
+// STEP 4: Simulate D3 Initial Collapse (Only Root Level 0 + Root's Direct Referrals Level 1 visible initially)
+$d3RootChildIds = [];
+if (!empty($apiTreeData['children'])) {
+    foreach ($apiTreeData['children'] as $l1) {
+        $d3RootChildIds[] = (string)$l1['id'];
     }
 }
 
-simulateD3HierarchyDetailed($apiTreeData, $frontendRenderedIds, $frontendNodeCounts, $frontendDirectsFound, $dbDirectIds);
-
-$frontendRenderedCount = count($frontendRenderedIds);
-$uniqueRenderedCount = count(array_unique($frontendRenderedIds));
+$initialVisibleNodes = array_merge([$rootId], $d3RootChildIds);
 
 $duplicateRenderedIds = [];
-foreach ($frontendNodeCounts as $id => $cnt) {
+foreach ($apiNodeCounts as $id => $cnt) {
     if ($cnt > 1) {
         $duplicateRenderedIds[] = $id;
     }
 }
 $duplicateCount = count($duplicateRenderedIds);
 
-$missingDirectIds = array_diff($dbDirectIds, array_keys($frontendDirectsFound));
+$missingDirectIds = array_diff($dbDirectIds, array_keys($apiDirectNodesFound));
 $missingCount = count($missingDirectIds);
-
-// Analyze visual depth categories
-$immediateChildren = [];
-$deeperPlacementNodes = [];
-$fallbackDirectNodes = [];
-
-if (!empty($apiTreeData['children'])) {
-    foreach ($apiTreeData['children'] as $level1Child) {
-        $l1Id = (string)$level1Child['id'];
-        if (in_array($l1Id, $dbDirectIds, true)) {
-            if (($level1Child['position'] ?? '') === 'DIRECT') {
-                $fallbackDirectNodes[] = $l1Id;
-            } else {
-                $immediateChildren[] = $l1Id;
-            }
-        }
-    }
-}
-
-foreach ($dbDirectIds as $dId) {
-    if (isset($apiDirectNodesFound[$dId])) {
-        $vp = $apiDirectNodesFound[$dId]['tree_visual_parent'];
-        if ($vp !== 'ROOT' && $vp !== '1290') {
-            $deeperPlacementNodes[] = $dId;
-        }
-    }
-}
 
 echo "=========================================================================\n";
 echo "PRODUCTION DIRECT-REFERRAL VERIFICATION & TREE AUDIT REPORT (ROOT 1290)\n";
@@ -282,18 +255,19 @@ echo "ROOT USER ID                  : " . $rootId . "\n";
 echo "DB DIRECT COUNT               : " . $dbDirectCount . "\n";
 echo "API DIRECT COUNT              : " . $apiDirectCount . "\n";
 echo "FRONTEND RECEIVED COUNT       : " . $frontendReceivedCount . "\n";
-echo "FRONTEND RENDERED COUNT       : " . $frontendRenderedCount . "\n";
-echo "UNIQUE RENDERED COUNT         : " . $uniqueRenderedCount . "\n";
+echo "D3 ROOT CHILDREN COUNT        : " . count($d3RootChildIds) . " (ALL Direct Referrals)\n";
+echo "INITIAL VISIBLE NODES COUNT   : " . count($initialVisibleNodes) . " (Root + ALL Direct Referrals)\n";
 echo "MISSING DIRECT IDS COUNT      : " . $missingCount . "\n";
 echo "DUPLICATE RENDERED USER IDS   : " . $duplicateCount . "\n\n";
 
-echo "BREAKDOWN OF DIRECT REFERRAL PLACEMENT CATEGORIES:\n";
-echo " - Immediate Visual Children under Root : " . count($immediateChildren) . " (" . implode(", ", $immediateChildren) . ")\n";
-echo " - Deeper Binary Placement Nodes        : " . count($deeperPlacementNodes) . " (" . implode(", ", $deeperPlacementNodes) . ")\n";
-echo " - Fallback DIRECT Nodes under Root     : " . count($fallbackDirectNodes) . " (" . implode(", ", $fallbackDirectNodes) . ")\n\n";
-
 echo "EXACT DB DIRECT REFERRAL LIST:\n";
 echo implode(", ", $dbDirectIds) . "\n\n";
+
+echo "D3 ROOT CHILD IDS (LEVEL 1 VISIBLE INITIALLY):\n";
+echo implode(", ", $d3RootChildIds) . "\n\n";
+
+echo "INITIAL VISIBLE NODE IDS ON FIRST LOAD:\n";
+echo implode(", ", $initialVisibleNodes) . "\n\n";
 
 echo "REPRESENTATION DETAIL FOR EVERY DIRECT REFERRAL:\n";
 echo sprintf("%-12s | %-12s | %-18s | %-18s | %-10s | %-12s\n", "DIRECT ID", "SPONSOR ID", "TREE VISUAL PARENT", "DB UNDERUSERID", "POSITION", "DIRECT BADGE");

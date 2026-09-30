@@ -128,7 +128,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $visitedPath[$nodeId] = true;
 
         // 2. Global Duplicate Prevention (a user can be rendered only once across the entire tree)
-        if (isset($globalRenderedUsers[$nodeId])) return null;
+        if ($currentDepth > 2 && isset($globalRenderedUsers[$nodeId])) return null;
         $globalRenderedUsers[$nodeId] = true;
 
         $user = $globalUserMap[$nodeId];
@@ -277,6 +277,11 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         ];
 
         if ($currentDepth < $maxDepth) {
+            if ($nodeId === $rootUserId) {
+                foreach ($childrenList as $cItem) {
+                    $globalRenderedUsers[(string)$cItem['id']] = true;
+                }
+            }
             foreach ($childrenList as $cItem) {
                 $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers, $rootUserId);
                 if ($childNode) {
