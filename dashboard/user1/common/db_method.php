@@ -687,23 +687,79 @@ function getmydirectactiveleft($sponsorId)
 function getActiveDownlineCount($sponsorId)
 {
     global $pdo;
+    if (empty($sponsorId)) return 0;
 
-    $sql = "
-        SELECT COUNT(DISTINCT u.userid) AS total
-        FROM user u
-        INNER JOIN (
-            SELECT downline_id FROM tbl_userlevel_a WHERE sponser_id = :sponsor_id
-            UNION ALL
-            SELECT downline_id FROM tbl_userlevel_b WHERE sponser_id = :sponsor_id
-        ) d ON d.downline_id = u.userid
-        
-    ";
+    // Real-time BFS over the tree table — always accurate regardless of index table state
+    try {
+        $stmtTree = $pdo->query("SELECT userid, left_id, right_id FROM tree");
+        $treeMap  = [];
+        while ($row = $stmtTree->fetch(PDO::FETCH_ASSOC)) {
+            $treeMap[(string)$row['userid']] = [
+                'left'  => (string)($row['left_id'] ?? ''),
+                'right' => (string)($row['right_id'] ?? '')
+            ];
+        }
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':sponsor_id', $sponsorId, PDO::PARAM_INT);
-    $stmt->execute();
+        $sponsorIdStr = (string)$sponsorId;
+        if (!isset($treeMap[$sponsorIdStr])) {
+            // Sponsor not in tree — fallback to index tables
+            throw new Exception('not in tree');
+        }
 
-    return $stmt->fetchColumn() ?: 0;
+        // BFS traversal from sponsor's two immediate children
+        $queue   = [];
+        $visited = [];
+        $lId = $treeMap[$sponsorIdStr]['left'];
+        $rId = $treeMap[$sponsorIdStr]['right'];
+        if (!empty($lId)) $queue[] = $lId;
+        if (!empty($rId)) $queue[] = $rId;
+
+        while (!empty($queue)) {
+            $cur = array_shift($queue);
+            if (empty($cur) || isset($visited[$cur])) continue;
+            $visited[$cur] = true;
+            if (isset($treeMap[$cur])) {
+                $cl = $treeMap[$cur]['left'];
+                $cr = $treeMap[$cur]['right'];
+                if (!empty($cl) && !isset($visited[$cl])) $queue[] = $cl;
+                if (!empty($cr) && !isset($visited[$cr])) $queue[] = $cr;
+            }
+        }
+
+        $treeCount = count($visited);
+
+        // Also count via index tables for union accuracy
+        $sqlIdx = "
+            SELECT COUNT(DISTINCT d.downline_id) AS total
+            FROM (
+                SELECT downline_id FROM tbl_userlevel_a WHERE sponser_id = :sponsor_id
+                UNION
+                SELECT downline_id FROM tbl_userlevel_b WHERE sponser_id = :sponsor_id2
+            ) d
+        ";
+        $stmtIdx = $pdo->prepare($sqlIdx);
+        $stmtIdx->execute([':sponsor_id' => $sponsorId, ':sponsor_id2' => $sponsorId]);
+        $idxCount = (int)($stmtIdx->fetchColumn() ?: 0);
+
+        // Return whichever is larger (tree traversal is the ground truth)
+        return max($treeCount, $idxCount);
+
+    } catch (Exception $ex) {
+        // Fallback to index tables only
+        $sql = "
+            SELECT COUNT(DISTINCT u.userid) AS total
+            FROM user u
+            INNER JOIN (
+                SELECT downline_id FROM tbl_userlevel_a WHERE sponser_id = :sponsor_id
+                UNION ALL
+                SELECT downline_id FROM tbl_userlevel_b WHERE sponser_id = :sponsor_id
+            ) d ON d.downline_id = u.userid
+        ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':sponsor_id', $sponsorId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchColumn() ?: 0;
+    }
 }
 
 

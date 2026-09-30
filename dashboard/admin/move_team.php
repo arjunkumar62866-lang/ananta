@@ -52,10 +52,14 @@ $presetUserId = trim($_GET['user_id'] ?? '');
           <h3 class="mb-1 text-white font-weight-bold"><i class="fa fa-sitemap mr-2"></i> Move Team & Subtree Placement</h3>
           <p class="mb-0 text-white-50 small">Re-attach a user and their complete downline team to a new parent position with zero data corruption or circular tree loops.</p>
         </div>
-        <div>
+        <div class="d-flex flex-wrap gap-2">
           <a href="all_user.php" class="btn btn-light font-weight-bold px-3 py-2" style="border-radius: 10px;">
             <i class="fa fa-users mr-1"></i> Members Directory
           </a>
+          <button type="button" id="btnForceSyncTree" class="btn font-weight-bold px-3 py-2" onclick="forceSyncDashboard()"
+                  style="border-radius: 10px; background: #fbbf24; color: #1e3a5f; border: none;">
+            <i class="fa fa-refresh mr-1"></i> Force Sync Dashboard Counts
+          </button>
         </div>
       </div>
     </div>
@@ -469,6 +473,41 @@ function executeMoveTeamInTree() {
             $('#btnExecuteMove').prop('disabled', false).html('<i class="fa fa-check-circle me-1"></i> Confirm & Move Team');
         }
     });
+}
+
+function forceSyncDashboard() {
+    var btn = document.getElementById('btnForceSyncTree');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Syncing...';
+
+    fetch('sync_tree.php', { method: 'GET' })
+        .then(function(resp) { return resp.text(); })
+        .then(function(txt) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-check-circle mr-1"></i> Sync Complete!';
+            btn.style.background = '#16a34a';
+            btn.style.color = '#fff';
+
+            // Show popup with output
+            var win = window.open('', '_blank', 'width=750,height=500,scrollbars=yes');
+            if (win) {
+                win.document.write('<pre style="font-family:monospace;font-size:13px;padding:20px;background:#0f172a;color:#a3e635;">' + txt.replace(/</g,'&lt;') + '</pre>');
+                win.document.title = 'Tree Sync Output';
+            }
+
+            setTimeout(function() {
+                btn.innerHTML = '<i class="fa fa-refresh mr-1"></i> Force Sync Dashboard Counts';
+                btn.style.background = '#fbbf24';
+                btn.style.color = '#1e3a5f';
+            }, 4000);
+        })
+        .catch(function(err) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-exclamation-triangle mr-1"></i> Sync Failed';
+            btn.style.background = '#dc2626';
+            btn.style.color = '#fff';
+            alert('Sync Error: ' + err);
+        });
 }
 </script>
 

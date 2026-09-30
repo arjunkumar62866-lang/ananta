@@ -4004,6 +4004,25 @@ function processPermanentUserAccountDeletion($admin_id, $target_user_id, $pdoCon
     }
 }
 
+// Standalone helper — declared outside to prevent fatal "Cannot redeclare" on multiple calls
+if (!function_exists('getSubtreeNodesInternalAdmin')) {
+    function getSubtreeNodesInternalAdmin($nodeId, &$treeMap) {
+        if (empty($nodeId) || !isset($treeMap[$nodeId])) return [];
+        $nodes = [];
+        $left  = $treeMap[$nodeId]['left'];
+        $right = $treeMap[$nodeId]['right'];
+        if (!empty($left)) {
+            $nodes[] = $left;
+            $nodes = array_merge($nodes, getSubtreeNodesInternalAdmin($left, $treeMap));
+        }
+        if (!empty($right)) {
+            $nodes[] = $right;
+            $nodes = array_merge($nodes, getSubtreeNodesInternalAdmin($right, $treeMap));
+        }
+        return array_unique($nodes);
+    }
+}
+
 if (!function_exists('rebuildFullTreeAndDownlineIndexes')) {
     function rebuildFullTreeAndDownlineIndexes($dbConnection = null) {
         global $pdo;
@@ -4049,23 +4068,6 @@ if (!function_exists('rebuildFullTreeAndDownlineIndexes')) {
                     'left'  => $u['left_id'],
                     'right' => $u['right_id']
                 ];
-            }
-
-            function getSubtreeNodesInternalAdmin($nodeId, &$treeMap) {
-                if (empty($nodeId) || !isset($treeMap[$nodeId])) return [];
-                $nodes = [];
-                $left = $treeMap[$nodeId]['left'];
-                $right = $treeMap[$nodeId]['right'];
-
-                if (!empty($left)) {
-                    $nodes[] = $left;
-                    $nodes = array_merge($nodes, getSubtreeNodesInternalAdmin($left, $treeMap));
-                }
-                if (!empty($right)) {
-                    $nodes[] = $right;
-                    $nodes = array_merge($nodes, getSubtreeNodesInternalAdmin($right, $treeMap));
-                }
-                return array_unique($nodes);
             }
 
             // 2. Clean mapping tables

@@ -161,8 +161,14 @@ if ($directbusinesstotalright <= 0 && floatval($right_total) > 0) {
 }
 $directbusinesstotal = $directbusinesstotalleft + $directbusinesstotalright;
 
-// Calculate active team members in Left & Right branches
-$my_left_active_directs = count(array_filter($leftBranchMembers, function($m) { return ($m['status'] === 'Active'); }));
+// Override $total_team with real-time branch count (always accurate — tree traversal, not indexed tables)
+$realtimeTotalTeam = count($leftBranchMembers) + count($rightBranchMembers);
+if ($realtimeTotalTeam > $total_team) {
+    $total_team = $realtimeTotalTeam;
+}
+
+// Calculate active team members in Left & Right branches (real-time from branch arrays)
+$my_left_active_directs  = count(array_filter($leftBranchMembers,  function($m) { return ($m['status'] === 'Active'); }));
 $my_right_active_directs = count(array_filter($rightBranchMembers, function($m) { return ($m['status'] === 'Active'); }));
 
 // Fallback to tree count if active filter is 0
