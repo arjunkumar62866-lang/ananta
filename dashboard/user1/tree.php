@@ -40,6 +40,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     ");
     $globalUserMap = [];
     $underUserChildrenMap = [];
+    $sponsorChildrenMap = [];
     while ($row = $stmtAllUsers->fetch(PDO::FETCH_ASSOC)) {
         $uid = (string)$row['userid'];
         $globalUserMap[$uid] = $row;
@@ -47,6 +48,11 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $pId = !empty($row['underuserid']) ? (string)$row['underuserid'] : '';
         if (!empty($pId)) {
             $underUserChildrenMap[$pId][] = $row;
+        }
+
+        $spId = !empty($row['sponserid']) ? (string)$row['sponserid'] : '';
+        if (!empty($spId)) {
+            $sponsorChildrenMap[$spId][] = $row;
         }
     }
 
@@ -83,7 +89,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     }
 
     function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, &$visitedTree = []) {
-        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap;
+        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap;
 
         $nodeId = (string)$nodeId;
         if (empty($nodeId) || !isset($globalUserMap[$nodeId]) || isset($visitedTree[$nodeId])) return null;
@@ -135,6 +141,17 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && !in_array($cId, $existingChildIds)) {
                     $side = !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DOWNLINE';
+                    $childrenList[] = ['id' => $cId, 'side' => $side];
+                    $existingChildIds[] = $cId;
+                }
+            }
+        }
+
+        if (isset($sponsorChildrenMap[$nodeId])) {
+            foreach ($sponsorChildrenMap[$nodeId] as $sc) {
+                $cId = (string)$sc['userid'];
+                if ($cId !== $nodeId && !in_array($cId, $existingChildIds)) {
+                    $side = !empty($sc['join_side']) ? strtoupper($sc['join_side']) : 'DIRECT';
                     $childrenList[] = ['id' => $cId, 'side' => $side];
                     $existingChildIds[] = $cId;
                 }

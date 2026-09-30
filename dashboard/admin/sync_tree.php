@@ -10,6 +10,36 @@ header('Content-Type: text/plain');
 echo "=== STARTING PRODUCTION TREE RESYNCHRONIZATION ===\n\n";
 
 try {
+    // 0. Auto-repair missing tree rows & missing left_id/right_id links from user table
+    $allUsers = $pdo->query("SELECT userid, sponserid, underuserid, join_side FROM user")->fetchAll(PDO::FETCH_ASSOC);
+    $existingTreeUsers = $pdo->query("SELECT userid FROM tree")->fetchAll(PDO::FETCH_COLUMN);
+    $existingTreeSet = array_flip($existingTreeUsers);
+
+    $insTree = $pdo->prepare("INSERT INTO tree (userid, left_id, right_id, status, join_side, leftsp, rightsp, leftpv, rightpv, leftcount, rightcount, lefttotal, righttotal) VALUES (:uid, '', '', 1, 'left', 0, 0, 0, 0, 0, 0, 0, 0)");
+    foreach ($allUsers as $u) {
+        if (!isset($existingTreeSet[$u['userid']])) {
+            $insTree->execute([':uid' => $u['userid']]);
+            $existingTreeSet[$u['userid']] = true;
+        }
+    }
+
+    $updLeft  = $pdo->prepare("UPDATE tree SET left_id = :cid WHERE userid = :pid AND (left_id = '' OR left_id IS NULL)");
+    $updRight = $pdo->prepare("UPDATE tree SET right_id = :cid WHERE userid = :pid AND (right_id = '' OR right_id IS NULL)");
+
+    foreach ($allUsers as $u) {
+        $pId  = (string)$u['underuserid'];
+        $cId  = (string)$u['userid'];
+        $side = strtolower((string)$u['join_side']);
+
+        if (!empty($pId) && !empty($cId) && isset($existingTreeSet[$pId])) {
+            if ($side === 'left' || $side === 'l') {
+                $updLeft->execute([':cid' => $cId, ':pid' => $pId]);
+            } elseif ($side === 'right' || $side === 'r') {
+                $updRight->execute([':cid' => $cId, ':pid' => $pId]);
+            }
+        }
+    }
+
     // 1. Fetch all users from tree table
     $treeUsers = $pdo->query("SELECT userid, left_id, right_id FROM tree")->fetchAll(PDO::FETCH_ASSOC);
     $treeMap = [];
