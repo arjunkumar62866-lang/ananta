@@ -177,6 +177,9 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && strtolower($uc['join_side'] ?? '') === 'left' && !isset($globalRenderedUsers[$cId])) {
+                    if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
+                        continue;
+                    }
                     $leftId = $cId;
                     break;
                 }
@@ -196,6 +199,9 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && strtolower($uc['join_side'] ?? '') === 'right' && !isset($globalRenderedUsers[$cId])) {
+                    if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
+                        continue;
+                    }
                     $rightId = $cId;
                     break;
                 }
@@ -205,6 +211,9 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
                 foreach ($underUserChildrenMap[$nodeId] as $uc) {
                     $cId = (string)$uc['userid'];
                     if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                        if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
+                            continue;
+                        }
                         $rightId = $cId;
                         break;
                     }
@@ -221,6 +230,9 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                    if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
+                        continue;
+                    }
                     $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
                     $assignedChildIds[$cId] = true;
                 }
@@ -646,14 +658,10 @@ body.bg-theme {
         rootNode.x0 = height / 2;
         rootNode.y0 = isMobile ? 40 : 100;
 
-        // Keep root's immediate children (all direct referrals of root) open and visible initially.
-        // Collapse descendants below root's direct referrals (Level 2+ downlines).
+        // Level 0 (Root) and Level 1 (All root direct referrals) are 100% visible on initial load.
+        // All Level 2+ descendants below root direct referrals are collapsed into _children.
         if (rootNode.children) {
-            rootNode.children.forEach(child => {
-                if (child.children) {
-                    child.children.forEach(collapseSubtree);
-                }
-            });
+            rootNode.children.forEach(collapseSubtree);
         }
 
         // Center Initial Position according to screen size
