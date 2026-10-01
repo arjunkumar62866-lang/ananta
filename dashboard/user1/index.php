@@ -295,11 +295,6 @@ $left_total_team = $rowTree['lefttotal'] ?? 0;
 $right_total_team = $rowTree['righttotal'] ?? 0;
     
 
-// get active team in left and right legs (preserve real-time branch count if higher than direct active)
-$direct_left_active = getmydirectactiveleft($userid);
-$direct_right_active = getmydirectactiveright($userid);
-$my_left_active_directs = max($my_left_active_directs ?? 0, intval($direct_left_active));
-$my_right_active_directs = max($my_right_active_directs ?? 0, intval($direct_right_active));
 
 // total team downline count (preserve real-time branch total team count if higher than index count)
 $db_downline_count = getActiveDownlineCount($userid);
@@ -1112,70 +1107,70 @@ body.ananta-user-dashboard {
                         </div>
                     </div>
 
-                    <!-- Direct Positions Container (6 visible on laptop, 3 visible on mobile, scrollable) -->
-                    <div class="row g-2 flex-nowrap overflow-auto py-1" style="scrollbar-width: thin; min-height: 200px;">
+                    <!-- Direct Positions Container (Clean scrollable row with minimum gaps) -->
+                    <div class="d-flex flex-nowrap overflow-auto py-1" style="gap: 10px; scrollbar-width: thin; min-height: 180px;">
                         <?php for ($idx = 0; $idx < $display_card_count; $idx++): 
                             $slotNum = $idx + 1;
                             $cardData = $direct_cards[$idx] ?? null;
                         ?>
-                            <div class="col-4 col-sm-4 col-lg-2" style="flex: 0 0 auto;">
-                                <div class="card border-0 h-100 text-center p-2 p-sm-3" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 16px; transition: transform 0.2s, border-color 0.2s;">
-                                    <span class="font-weight-bold mb-1 d-block text-truncate" style="color: #0f172a; font-size: 13px;" title="<?php echo htmlspecialchars($cardData['name'] ?? ('Direct ' . $slotNum)); ?>">
+                            <div style="flex: 0 0 auto; width: 118px;">
+                                <div class="card border-0 h-100 text-center p-2" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 16px; transition: transform 0.2s, border-color 0.2s; min-height: 170px;">
+                                    <span class="font-weight-bold mb-0 d-block text-truncate" style="color: #0f172a; font-size: 12.5px;" title="<?php echo htmlspecialchars($cardData['name'] ?? ('Direct ' . $slotNum)); ?>">
                                         <?php echo !empty($cardData['name']) ? htmlspecialchars($cardData['name']) : ('Direct ' . $slotNum); ?>
                                     </span>
                                     <?php if (!empty($cardData['userid'])): ?>
-                                        <span class="small d-block text-muted mb-2 font-weight-semibold" style="font-size: 11px;"><?php echo htmlspecialchars($cardData['userid']); ?></span>
+                                        <span class="small d-block text-muted mb-2 font-weight-semibold text-truncate" style="font-size: 10.5px;"><?php echo htmlspecialchars($cardData['userid']); ?></span>
                                     <?php else: ?>
-                                        <span class="small d-block text-muted mb-2 font-weight-semibold" style="font-size: 11px;">Slot <?php echo $slotNum; ?></span>
+                                        <span class="small d-block text-muted mb-2 font-weight-semibold" style="font-size: 10.5px;">Slot <?php echo $slotNum; ?></span>
                                     <?php endif; ?>
                                     
                                     <?php if ($cardData && $cardData['status'] === 'ACTIVE'): ?>
                                         <!-- Active / Green Circular Status -->
-                                        <div class="position-relative mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 76px; height: 76px;">
-                                            <svg width="76" height="76" viewBox="0 0 76 76" style="transform: rotate(-90deg);">
+                                        <div class="position-relative mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px;">
+                                            <svg width="58" height="58" viewBox="0 0 76 76" style="transform: rotate(-90deg);">
                                                 <circle cx="38" cy="38" r="32" stroke="#e2e8f0" stroke-width="6" fill="none"/>
                                                 <circle cx="38" cy="38" r="32" stroke="#22c55e" stroke-width="6" fill="none" stroke-dasharray="201" stroke-dashoffset="0" stroke-linecap="round"/>
                                             </svg>
-                                            <div class="position-absolute rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px; background: #22c55e; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.35);">
-                                                <i class="zmdi zmdi-check" style="font-size: 18px; font-weight: bold;"></i>
+                                            <div class="position-absolute rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 26px; height: 26px; background: #22c55e; box-shadow: 0 3px 8px rgba(34, 197, 94, 0.35);">
+                                                <i class="zmdi zmdi-check" style="font-size: 15px; font-weight: bold;"></i>
                                             </div>
                                         </div>
-                                        <div>
-                                            <span class="badge w-100 py-2 px-1 font-weight-bold d-inline-flex align-items-center justify-content-center text-nowrap" style="background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 100px; font-size: 11.5px; white-space: nowrap;">
+                                        <div class="mt-auto">
+                                            <span class="badge w-100 py-1 px-1 font-weight-bold d-inline-flex align-items-center justify-content-center text-truncate" style="background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 100px; font-size: 10px;">
                                                 <i class="zmdi zmdi-check-circle mr-1"></i> Active
                                             </span>
                                         </div>
 
                                     <?php elseif ($cardData && $cardData['status'] === 'REGISTRATION_ONLY'): ?>
                                         <!-- Registration Only / Red Circular Status -->
-                                        <div class="position-relative mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 76px; height: 76px;">
-                                            <svg width="76" height="76" viewBox="0 0 76 76" style="transform: rotate(-90deg);">
+                                        <div class="position-relative mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px;">
+                                            <svg width="58" height="58" viewBox="0 0 76 76" style="transform: rotate(-90deg);">
                                                 <circle cx="38" cy="38" r="32" stroke="#e2e8f0" stroke-width="6" fill="none"/>
                                                 <circle cx="38" cy="38" r="32" stroke="#ef4444" stroke-width="6" fill="none" stroke-dasharray="201" stroke-dashoffset="65" stroke-linecap="round"/>
                                             </svg>
-                                            <div class="position-absolute rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px; background: #ef4444; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);">
-                                                <span style="font-weight: 900; font-size: 16px; line-height: 1;">!</span>
+                                            <div class="position-absolute rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 26px; height: 26px; background: #ef4444; box-shadow: 0 3px 8px rgba(239, 68, 68, 0.35);">
+                                                <span style="font-weight: 900; font-size: 14px; line-height: 1;">!</span>
                                             </div>
                                         </div>
-                                        <div>
-                                            <span class="badge w-100 py-2 px-1 font-weight-bold d-inline-flex align-items-center justify-content-center text-nowrap" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 100px; font-size: 10.5px; white-space: nowrap;">
-                                                <i class="zmdi zmdi-alert-circle mr-1"></i> Registration Only
+                                        <div class="mt-auto">
+                                            <span class="badge w-100 py-1 px-1 font-weight-bold d-inline-flex align-items-center justify-content-center text-truncate" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 100px; font-size: 9.5px;" title="Registration Only">
+                                                <i class="zmdi zmdi-alert-circle mr-1"></i> Reg. Only
                                             </span>
                                         </div>
 
                                     <?php else: ?>
                                         <!-- Empty / Not Registered Neutral Grey Circular Status -->
-                                        <div class="position-relative mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 76px; height: 76px;">
-                                            <svg width="76" height="76" viewBox="0 0 76 76">
+                                        <div class="position-relative mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px;">
+                                            <svg width="58" height="58" viewBox="0 0 76 76">
                                                 <circle cx="38" cy="38" r="32" stroke="#e2e8f0" stroke-width="6" fill="none"/>
                                             </svg>
-                                            <div class="position-absolute rounded-circle d-flex align-items-center justify-content-center text-muted" style="width: 32px; height: 32px; background: #f1f5f9;">
-                                                <i class="zmdi zmdi-account" style="font-size: 18px; color: #94a3b8;"></i>
+                                            <div class="position-absolute rounded-circle d-flex align-items-center justify-content-center text-muted" style="width: 26px; height: 26px; background: #f1f5f9;">
+                                                <i class="zmdi zmdi-account" style="font-size: 15px; color: #94a3b8;"></i>
                                             </div>
                                         </div>
-                                        <div>
-                                            <span class="badge w-100 py-2 px-1 font-weight-bold d-inline-flex align-items-center justify-content-center text-nowrap" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 100px; font-size: 10.5px; white-space: nowrap;">
-                                                <i class="zmdi zmdi-minus-circle-outline mr-1"></i> Not Registered
+                                        <div class="mt-auto">
+                                            <span class="badge w-100 py-1 px-1 font-weight-bold d-inline-flex align-items-center justify-content-center text-truncate" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 100px; font-size: 9.5px;">
+                                                <i class="zmdi zmdi-minus-circle-outline mr-1"></i> Not Reg.
                                             </span>
                                         </div>
                                     <?php endif; ?>
