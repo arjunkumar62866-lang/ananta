@@ -1421,7 +1421,7 @@ body.ananta-user-dashboard {
                             <span class="font-weight-bold text-truncate" style="color: #334155; font-size: 14px;">Mentor Income</span>
                         </div>
                         <h3 class="font-weight-bold mb-1 text-truncate" style="color: #0f172a; font-size: 20px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                            <?php echo formatCurrency($generation_income, $selectedCurrency); ?>
+                            <?php echo formatCurrency($mentor_income_wallet, $selectedCurrency); ?>
                         </h3>
                         <!-- <div class="d-flex align-items-center justify-content-between mt-1">
                             <span class="small font-weight-bold" style="color: #16a34a; font-size: 12.5px;">+4.9%</span>

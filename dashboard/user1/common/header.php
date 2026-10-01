@@ -84,6 +84,7 @@ $pending_geninc = $rowheader['pending_geninc'];
 $profit_income_wallet = $rowheader['profit_income_wallet'] ?? 0;
 $profit_sharing_wallet = $rowheader['profit_sharing_wallet'] ?? 0;
 $direct_bonus_wallet = $rowheader['direct_bonus_wallet'] ?? 0;
+$mentor_income_wallet = round((float)($rowheader['mentor_income_wallet'] ?? 0), 2);
 
 
 
