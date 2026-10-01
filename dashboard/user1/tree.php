@@ -117,7 +117,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         return ['count' => $count, 'business_usd' => $business];
     }
 
-    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 10, $visitedPath = [], &$globalRenderedUsers = [], $rootUserId = '') {
+    function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 50, $visitedPath = [], &$globalRenderedUsers = [], $parentNodeId = '') {
         global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap, $hasPlacementParent;
 
         $nodeId = (string)$nodeId;
@@ -127,14 +127,10 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         if (isset($visitedPath[$nodeId])) return null;
         $visitedPath[$nodeId] = true;
 
-        // 2. Global Duplicate Prevention (a user can be rendered only once across the entire tree)
-        if ($currentDepth > 2 && isset($globalRenderedUsers[$nodeId])) return null;
+        // 2. Global Duplicate Prevention
         $globalRenderedUsers[$nodeId] = true;
 
         $user = $globalUserMap[$nodeId];
-        if (empty($rootUserId)) {
-            $rootUserId = $nodeId;
-        }
 
         // Left Branch Stats
         $leftStats = ['count' => 0, 'business_usd' => 0.0];
@@ -165,6 +161,15 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
+        // Helper check: A node should only claim a candidate as a placement child if candidate is sponsored by nodeId OR candidate's sponsor is not in the tree
+        $canClaimPlacementChild = function($cId) use ($nodeId, $globalUserMap) {
+            if (!isset($globalUserMap[$cId])) return false;
+            $sp = (string)($globalUserMap[$cId]['sponserid'] ?? '');
+            if ($sp === $nodeId) return true;
+            if (empty($sp) || !isset($globalUserMap[$sp])) return true;
+            return false;
+        };
+
         // Gather Children (Binary Placement Left & Right + Direct Referrals with Zero Duplicates)
         $childrenList = [];
         $assignedChildIds = [];
@@ -177,17 +182,18 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && strtolower($uc['join_side'] ?? '') === 'left' && !isset($globalRenderedUsers[$cId])) {
-                    if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
-                        continue;
+                    if ($canClaimPlacementChild($cId)) {
+                        $leftId = $cId;
+                        break;
                     }
-                    $leftId = $cId;
-                    break;
                 }
             }
         }
         if (!empty($leftId) && !isset($globalRenderedUsers[$leftId])) {
-            $childrenList[] = ['id' => $leftId, 'side' => 'LEFT'];
-            $assignedChildIds[$leftId] = true;
+            if ($canClaimPlacementChild($leftId)) {
+                $childrenList[] = ['id' => $leftId, 'side' => 'LEFT'];
+                $assignedChildIds[$leftId] = true;
+            }
         }
 
         // 2. RIGHT SLOT (At most 1)
@@ -195,63 +201,59 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             ? (string)$user['right_id'] 
             : '';
         if (empty($rightId) && isset($underUserChildrenMap[$nodeId])) {
-            // First try join_side = right
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && strtolower($uc['join_side'] ?? '') === 'right' && !isset($globalRenderedUsers[$cId])) {
-                    if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
-                        continue;
-                    }
-                    $rightId = $cId;
-                    break;
-                }
-            }
-            // If right slot still empty, take next unassigned placement child with underuserid = nodeId
-            if (empty($rightId)) {
-                foreach ($underUserChildrenMap[$nodeId] as $uc) {
-                    $cId = (string)$uc['userid'];
-                    if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                        if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
-                            continue;
-                        }
+                    if ($canClaimPlacementChild($cId)) {
                         $rightId = $cId;
                         break;
                     }
                 }
             }
+            if (empty($rightId)) {
+                foreach ($underUserChildrenMap[$nodeId] as $uc) {
+                    $cId = (string)$uc['userid'];
+                    if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                        if ($canClaimPlacementChild($cId)) {
+                            $rightId = $cId;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         if (!empty($rightId) && !isset($globalRenderedUsers[$rightId]) && !isset($assignedChildIds[$rightId])) {
-            $childrenList[] = ['id' => $rightId, 'side' => 'RIGHT'];
-            $assignedChildIds[$rightId] = true;
+            if ($canClaimPlacementChild($rightId)) {
+                $childrenList[] = ['id' => $rightId, 'side' => 'RIGHT'];
+                $assignedChildIds[$rightId] = true;
+            }
         }
 
-        // 3. Additional placement children (if parent has >2 users with underuserid = nodeId)
+        // 3. Additional placement children (where underuserid = nodeId)
         if (isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    if ($nodeId !== $rootUserId && !empty($uc['sponserid']) && (string)$uc['sponserid'] === (string)$rootUserId) {
-                        continue;
+                    if ($canClaimPlacementChild($cId)) {
+                        $childrenList[] = ['id' => $cId, 'side' => !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DIRECT'];
+                        $assignedChildIds[$cId] = true;
                     }
+                }
+            }
+        }
+
+        // 4. ALL Direct Sponsor Referrals (where sponserid = nodeId)
+        if (isset($sponsorChildrenMap[$nodeId])) {
+            foreach ($sponsorChildrenMap[$nodeId] as $sc) {
+                $cId = (string)$sc['userid'];
+                if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
                     $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
                     $assignedChildIds[$cId] = true;
                 }
             }
         }
 
-        // 4. Direct Sponsor Referrals (where sponserid = nodeId)
-        if (isset($sponsorChildrenMap[$nodeId])) {
-            foreach ($sponsorChildrenMap[$nodeId] as $sc) {
-                $cId = (string)$sc['userid'];
-                if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    if ($nodeId !== $rootUserId && !empty($hasPlacementParent[$cId]) && $hasPlacementParent[$cId] !== $nodeId && isset($globalUserMap[$hasPlacementParent[$cId]])) {
-                        continue;
-                    }
-                    $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
-                    $assignedChildIds[$cId] = true;
-                }
-            }
-        }
+        $isDirectToParent = (!empty($user['sponserid']) && !empty($parentNodeId) && (string)$user['sponserid'] === (string)$parentNodeId);
 
         $node = [
             'id'                    => $user['userid'],
@@ -263,7 +265,8 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             'underuserid'           => $user['underuserid'] ?? '',
             'placement_parent_id'   => $user['underuserid'] ?? '',
             'join_side'             => $user['join_side'] ?? '',
-            'is_direct_to_root'     => (!empty($user['sponserid']) && (string)$user['sponserid'] === (string)$rootUserId),
+            'is_direct_referral'    => $isDirectToParent,
+            'is_direct_to_root'     => $isDirectToParent,
             'joining_date'          => $user['joining_date'] ?? '',
             'mobile'                => $user['mobile'] ?? '',
             'leftcount'             => $leftCount,
@@ -277,13 +280,13 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         ];
 
         if ($currentDepth < $maxDepth) {
-            if ($nodeId === $rootUserId) {
-                foreach ($childrenList as $cItem) {
-                    $globalRenderedUsers[(string)$cItem['id']] = true;
-                }
-            }
+            // Pre-mark all children in childrenList so no sibling branch can swallow nodeId's children
             foreach ($childrenList as $cItem) {
-                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers, $rootUserId);
+                $globalRenderedUsers[(string)$cItem['id']] = true;
+            }
+
+            foreach ($childrenList as $cItem) {
+                $childNode = fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers, $nodeId);
                 if ($childNode) {
                     $childNode['position'] = $cItem['side'];
                     $node['children'][] = $childNode;
@@ -295,23 +298,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     }
 
     $globalRenderedUsers = [];
-    $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, $reqDepth, [], $globalRenderedUsers, $reqNodeId);
-
-    // SWEEP PASS: Ensure 100% of direct referrals of root are represented in the tree.
-    // If any direct referral of root was not reached via binary placement downlines, render them directly under root.
-    if ($treeStructure && isset($sponsorChildrenMap[$reqNodeId])) {
-        foreach ($sponsorChildrenMap[$reqNodeId] as $sc) {
-            $dId = (string)$sc['userid'];
-            if ($dId !== $reqNodeId && !isset($globalRenderedUsers[$dId])) {
-                $directNode = fetch_horizontal_binary_tree($dId, 2, $reqDepth, [$reqNodeId => true], $globalRenderedUsers, $reqNodeId);
-                if ($directNode) {
-                    $directNode['position'] = 'DIRECT';
-                    $treeStructure['children'][] = $directNode;
-                }
-            }
-        }
-        $treeStructure['has_children_db'] = count($treeStructure['children']) > 0;
-    }
+    $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, $reqDepth, [], $globalRenderedUsers, '');
 
     echo json_encode([
         'status' => 'success',
