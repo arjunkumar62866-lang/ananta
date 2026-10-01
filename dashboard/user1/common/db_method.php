@@ -1893,7 +1893,8 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || empty($startChildId)) return [];
 
-        $startChildId = (string)$startChildId;
+        $startChildId = trim((string)$startChildId);
+        $cleanStartChildId = (stripos($startChildId, 'AN') === 0) ? trim(substr($startChildId, 2)) : $startChildId;
 
         // Bulk load all users, tree nodes, investments, and direct count in single queries
         $stmtUsers = $db->query("
@@ -1909,16 +1910,35 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         $underMap = [];
         $directMap = [];
         while ($r = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
-            $uid = (string)$r['userid'];
+            $uid = trim((string)$r['userid']);
             $userMap[$uid] = $r;
-            $sp = !empty($r['sponserid']) ? (string)$r['sponserid'] : '';
+            $cleanUid = (stripos($uid, 'AN') === 0) ? trim(substr($uid, 2)) : $uid;
+            if ($cleanUid !== $uid) {
+                $userMap[$cleanUid] = $r;
+            } else {
+                $userMap['AN' . $uid] = $r;
+            }
+
+            $sp = !empty($r['sponserid']) ? trim((string)$r['sponserid']) : '';
             if ($sp !== '') {
                 $directMap[$sp] = ($directMap[$sp] ?? 0) + 1;
+                $cleanSp = (stripos($sp, 'AN') === 0) ? trim(substr($sp, 2)) : $sp;
+                if ($cleanSp !== $sp) {
+                    $directMap[$cleanSp] = ($directMap[$cleanSp] ?? 0) + 1;
+                }
             }
-            $pId = !empty($r['underuserid']) ? (string)$r['underuserid'] : '';
+            $pId = !empty($r['underuserid']) ? trim((string)$r['underuserid']) : '';
             if ($pId !== '') {
                 $underMap[$pId][] = $r;
+                $cleanPid = (stripos($pId, 'AN') === 0) ? trim(substr($pId, 2)) : $pId;
+                if ($cleanPid !== $pId) {
+                    $underMap[$cleanPid][] = $r;
+                }
             }
+        }
+
+        if (!isset($userMap[$startChildId]) && isset($userMap[$cleanStartChildId])) {
+            $startChildId = $cleanStartChildId;
         }
 
         if (!isset($userMap[$startChildId])) {
@@ -2115,7 +2135,8 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || empty($userid)) return [];
 
-    $userid = (string)$userid;
+    $userid = trim((string)$userid);
+    $cleanUserid = (stripos($userid, 'AN') === 0) ? trim(substr($userid, 2)) : $userid;
     $teamType = strtoupper(trim($teamType));
 
     if ($teamType === 'MY_DIRECT') {
@@ -2137,12 +2158,12 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 (SELECT r2.package_code FROM tbl_roi_one r2 WHERE r2.user_id = u.userid ORDER BY r2.id DESC LIMIT 1) as latest_package
             FROM user u
             LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
-            WHERE u.sponserid = :userid 
+            WHERE u.sponserid = :userid OR u.sponserid = :cleanid
             GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active, u.status, u.total_package, u.package, u.amount, u.join_side
             ORDER BY u.joining_date DESC
         ";
         $stmt = $db->prepare($sql);
-        $stmt->execute([':userid' => $userid]);
+        $stmt->execute([':userid' => $userid, ':cleanid' => $cleanUserid]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $members = [];
@@ -2200,28 +2221,45 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
         $treeMap = [];
         $underMap = [];
         while ($r = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
-            $uid = (string)$r['userid'];
+            $uid = trim((string)$r['userid']);
             $treeMap[$uid] = $r;
-            $pId = !empty($r['underuserid']) ? (string)$r['underuserid'] : '';
+            $cUid = (stripos($uid, 'AN') === 0) ? trim(substr($uid, 2)) : $uid;
+            if ($cUid !== $uid) {
+                $treeMap[$cUid] = $r;
+            } else {
+                $treeMap['AN' . $uid] = $r;
+            }
+
+            $pId = !empty($r['underuserid']) ? trim((string)$r['underuserid']) : '';
             if ($pId !== '') {
                 $underMap[$pId][] = $r;
+                $cPid = (stripos($pId, 'AN') === 0) ? trim(substr($pId, 2)) : $pId;
+                if ($cPid !== $pId) {
+                    $underMap[$cPid][] = $r;
+                }
             }
         }
 
         $targetSide = ($teamType === 'LEFT') ? 'LEFT' : 'RIGHT';
         $rootChildId = '';
 
-        if (isset($treeMap[$userid])) {
-            $uRow = $treeMap[$userid];
+        if (!isset($treeMap[$userid]) && isset($treeMap[$cleanUserid])) {
+            $effectiveUserId = $cleanUserid;
+        } else {
+            $effectiveUserId = $userid;
+        }
+
+        if (isset($treeMap[$effectiveUserId])) {
+            $uRow = $treeMap[$effectiveUserId];
             if ($targetSide === 'LEFT') {
-                $rootChildId = !empty($uRow['left_id']) && isset($treeMap[(string)$uRow['left_id']]) ? (string)$uRow['left_id'] : '';
+                $rootChildId = !empty($uRow['left_id']) && (isset($treeMap[(string)$uRow['left_id']]) || isset($treeMap[trim(substr((string)$uRow['left_id'], 2))])) ? (string)$uRow['left_id'] : '';
             } else {
-                $rootChildId = !empty($uRow['right_id']) && isset($treeMap[(string)$uRow['right_id']]) ? (string)$uRow['right_id'] : '';
+                $rootChildId = !empty($uRow['right_id']) && (isset($treeMap[(string)$uRow['right_id']]) || isset($treeMap[trim(substr((string)$uRow['right_id'], 2))])) ? (string)$uRow['right_id'] : '';
             }
         }
 
-        if (empty($rootChildId) && isset($underMap[$userid])) {
-            foreach ($underMap[$userid] as $uc) {
+        if (empty($rootChildId) && isset($underMap[$effectiveUserId])) {
+            foreach ($underMap[$effectiveUserId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if (strtolower($uc['join_side'] ?? '') === strtolower($targetSide)) {
                     $rootChildId = $cId;
