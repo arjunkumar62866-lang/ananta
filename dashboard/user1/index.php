@@ -410,7 +410,7 @@ $inactive_team = ($left_total_team + $right_total_team)-($left_team + $right_tea
 // --- Direct Referral Slots Backend Logic (6 Slots) ---
 $direct_slots = array_fill(0, 6, null);
 try {
-    $stmtDirects = $pdo->prepare("SELECT id, userid, name, active, total_package FROM user WHERE sponserid = :userid ORDER BY id ASC LIMIT 6");
+    $stmtDirects = $pdo->prepare("SELECT id, userid, name, active, status, package, total_package FROM user WHERE sponserid = :userid ORDER BY id ASC LIMIT 6");
     $stmtDirects->execute([':userid' => $userid]);
     $fetched_directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
 
@@ -418,14 +418,21 @@ try {
         $d = $fetched_directs[$i];
         $d_userid = $d['userid'];
         $d_active = (int)($d['active'] ?? 0);
+        $d_status = (int)($d['status'] ?? 0);
+        $d_package = (float)($d['package'] ?? 0);
         $d_total_package = (float)($d['total_package'] ?? 0);
 
-        // Check investment completed ($145 / active investment record in tbl_roi_one or package >= 145 or total_package > 0)
-        $stmtRoiCheck = $pdo->prepare("SELECT COUNT(*) FROM tbl_roi_one WHERE user_id = :uid");
-        $stmtRoiCheck->execute([':uid' => $d_userid]);
-        $has_investment = ($stmtRoiCheck->fetchColumn() > 0) || ($d_total_package > 0);
+        // Check investment completed in tbl_roi_one or total_package / package > 0
+        $has_investment = false;
+        try {
+            $stmtRoiCheck = $pdo->prepare("SELECT COUNT(*) FROM tbl_roi_one WHERE user_id = :uid");
+            $stmtRoiCheck->execute([':uid' => $d_userid]);
+            $has_investment = ($stmtRoiCheck->fetchColumn() > 0);
+        } catch (PDOException $ex) {
+            $has_investment = false;
+        }
 
-        if ($d_active == 1 && $has_investment) {
+        if ($d_active == 1 || $d_status == 1 || $d_package > 0 || $d_total_package > 0 || $has_investment) {
             $slot_status = 'ACTIVE'; // Active / Green
         } else {
             $slot_status = 'REGISTRATION_ONLY'; // Registered but missing active account or investment
