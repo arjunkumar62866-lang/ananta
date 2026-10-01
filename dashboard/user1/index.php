@@ -400,27 +400,34 @@ $inactive_team = ($left_total_team + $right_total_team)-($left_team + $right_tea
 //         }
 //     }
 // }
-// --- Direct Referral Slots Backend Logic (6 Slots) ---
-$direct_slots = array_fill(0, 6, null);
+// --- Direct Referral Cards Backend Logic (All Directs, minimum 6 visual slots) ---
+$direct_cards = [];
+$total_directs_count = 0;
 try {
-    $stmtDirects = $pdo->prepare("SELECT id, userid, name, active, status, package, total_package FROM user WHERE sponserid = :userid ORDER BY id ASC LIMIT 6");
+    // Fetch ALL direct referrals sponsored by this user
+    $stmtDirects = $pdo->prepare("SELECT id, userid, name, active, status, package, total_package FROM user WHERE sponserid = :userid ORDER BY id ASC");
     $stmtDirects->execute([':userid' => $userid]);
     $fetched_directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
+    $total_directs_count = count($fetched_directs);
 
-    for ($i = 0; $i < count($fetched_directs); $i++) {
-        $d = $fetched_directs[$i];
+    foreach ($fetched_directs as $d) {
         $d_userid = $d['userid'];
         $d_active = (int)($d['active'] ?? 0);
-        $d_status = (int)($d['status'] ?? 0);
         $d_package = (float)($d['package'] ?? 0);
         $d_total_package = (float)($d['total_package'] ?? 0);
 
-        // Check investment completed in tbl_roi_one or total_package / package > 0
+        // Check investment completed in tbl_roi_one or tbl_roi_two
         $has_investment = false;
         try {
             $stmtRoiCheck = $pdo->prepare("SELECT COUNT(*) FROM tbl_roi_one WHERE user_id = :uid");
             $stmtRoiCheck->execute([':uid' => $d_userid]);
-            $has_investment = ($stmtRoiCheck->fetchColumn() > 0);
+            $cnt1 = (int)$stmtRoiCheck->fetchColumn();
+
+            $stmtRoiTwoCheck = $pdo->prepare("SELECT COUNT(*) FROM tbl_roi_two WHERE user_id = :uid");
+            $stmtRoiTwoCheck->execute([':uid' => $d_userid]);
+            $cnt2 = (int)$stmtRoiTwoCheck->fetchColumn();
+
+            $has_investment = ($cnt1 > 0 || $cnt2 > 0);
         } catch (PDOException $ex) {
             $has_investment = false;
         }
@@ -428,18 +435,22 @@ try {
         if ($d_active == 1 || $d_package > 0 || $d_total_package > 0 || $has_investment) {
             $slot_status = 'ACTIVE'; // Active / Green
         } else {
-            $slot_status = 'REGISTRATION_ONLY'; // Registered but missing active account or investment
+            $slot_status = 'REGISTRATION_ONLY'; // Registered but missing active account or investment (Red)
         }
 
-        $direct_slots[$i] = [
+        $direct_cards[] = [
             'userid' => $d_userid,
-            'name' => $d['name'],
+            'name'   => $d['name'],
             'status' => $slot_status
         ];
     }
 } catch (PDOException $e) {
     // Fallback gracefully on exception
 }
+
+// Display at least 6 cards (pad empty slots if direct count < 6)
+$display_card_count = max(6, count($direct_cards));
+
 
 ?>
 <style>
@@ -1092,26 +1103,33 @@ body.ananta-user-dashboard {
                             </div>
                             <div>
                                 <h4 class="mb-0 font-weight-bold" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px;">Directs</h4>
-                                <span class="text-muted small font-weight-semibold" style="font-size: 13px;">Your 6 Direct Positions</span>
+                                <span class="text-muted small font-weight-semibold" style="font-size: 13px;">Direct Referral Members Status</span>
                             </div>
                         </div>
                         <div class="px-3 py-1 text-right" style="background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px;">
                             <span class="d-block text-muted" style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Directs</span>
-                            <span class="font-weight-bold" style="color: #0f172a; font-size: 16px;">6</span>
+                            <span class="font-weight-bold" style="color: #0f172a; font-size: 16px;"><?php echo (int)$total_directs_count; ?></span>
                         </div>
                     </div>
 
-                    <!-- 6 Direct Positions Container (1 horizontal row on desktop/laptop) -->
+                    <!-- Direct Positions Container (Scrollable row for all direct members) -->
                     <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-6 g-2 flex-nowrap overflow-auto py-1" style="scrollbar-width: thin; min-height: 200px;">
-                        <?php for ($idx = 0; $idx < 6; $idx++): 
+                        <?php for ($idx = 0; $idx < $display_card_count; $idx++): 
                             $slotNum = $idx + 1;
-                            $slotData = $direct_slots[$idx] ?? null;
+                            $cardData = $direct_cards[$idx] ?? null;
                         ?>
-                            <div class="col" style="min-width: 145px; flex: 1;">
+                            <div class="col" style="min-width: 145px; flex: 0 0 auto;">
                                 <div class="card border-0 h-100 text-center p-2 p-sm-3" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 16px; transition: transform 0.2s, border-color 0.2s;">
-                                    <span class="font-weight-bold mb-3 d-block" style="color: #0f172a; font-size: 14px;">Direct <?php echo $slotNum; ?></span>
+                                    <span class="font-weight-bold mb-1 d-block text-truncate" style="color: #0f172a; font-size: 13px;" title="<?php echo htmlspecialchars($cardData['name'] ?? ('Direct ' . $slotNum)); ?>">
+                                        <?php echo !empty($cardData['name']) ? htmlspecialchars($cardData['name']) : ('Direct ' . $slotNum); ?>
+                                    </span>
+                                    <?php if (!empty($cardData['userid'])): ?>
+                                        <span class="small d-block text-muted mb-2 font-weight-semibold" style="font-size: 11px;"><?php echo htmlspecialchars($cardData['userid']); ?></span>
+                                    <?php else: ?>
+                                        <span class="small d-block text-muted mb-2 font-weight-semibold" style="font-size: 11px;">Slot <?php echo $slotNum; ?></span>
+                                    <?php endif; ?>
                                     
-                                    <?php if ($slotData && $slotData['status'] === 'ACTIVE'): ?>
+                                    <?php if ($cardData && $cardData['status'] === 'ACTIVE'): ?>
                                         <!-- Active / Green Circular Status -->
                                         <div class="position-relative mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 76px; height: 76px;">
                                             <svg width="76" height="76" viewBox="0 0 76 76" style="transform: rotate(-90deg);">
@@ -1128,7 +1146,7 @@ body.ananta-user-dashboard {
                                             </span>
                                         </div>
 
-                                    <?php elseif ($slotData && $slotData['status'] === 'REGISTRATION_ONLY'): ?>
+                                    <?php elseif ($cardData && $cardData['status'] === 'REGISTRATION_ONLY'): ?>
                                         <!-- Registration Only / Red Circular Status -->
                                         <div class="position-relative mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 76px; height: 76px;">
                                             <svg width="76" height="76" viewBox="0 0 76 76" style="transform: rotate(-90deg);">
