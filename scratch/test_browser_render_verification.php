@@ -16,7 +16,7 @@ function getExpectedDirectIDs($userid, $pdo) {
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
-// Helper: Get expected DB placement subtree IDs
+// Helper: Get expected DB placement subtree IDs (using both tree table & user.underuserid)
 function getExpectedPlacementIDs($startUserid, $pdo) {
     if (empty($startUserid)) return [];
     
@@ -30,32 +30,60 @@ function getExpectedPlacementIDs($startUserid, $pdo) {
         $visited[$curr] = true;
         $result[] = (string)$curr;
 
+        // 1. tree table links
         $stmt = $pdo->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid");
         $stmt->execute(['uid' => $curr]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row) {
-            if (!empty($row['left_id'])) $queue[] = $row['left_id'];
-            if (!empty($row['right_id'])) $queue[] = $row['right_id'];
+            if (!empty($row['left_id'])) $queue[] = (string)$row['left_id'];
+            if (!empty($row['right_id'])) $queue[] = (string)$row['right_id'];
+        }
+
+        // 2. user table underuserid links
+        $stmt2 = $pdo->prepare("SELECT userid FROM user WHERE underuserid = :uid AND userid != :uid");
+        $stmt2->execute(['uid' => $curr]);
+        $underChildren = $stmt2->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($underChildren as $cId) {
+            if (!empty($cId)) {
+                $queue[] = (string)$cId;
+            }
         }
     }
     sort($result);
-    return $result;
+    return array_values(array_unique($result));
 }
 
 // Helper: Get expected left team DB IDs
 function getExpectedLeftTeamIDs($userid, $pdo) {
+    $leftId = null;
     $stmt = $pdo->prepare("SELECT left_id FROM tree WHERE userid = :uid");
     $stmt->execute(['uid' => $userid]);
     $leftId = $stmt->fetchColumn();
+
+    if (empty($leftId)) {
+        $stmt2 = $pdo->prepare("SELECT userid FROM user WHERE underuserid = :uid AND LOWER(join_side) = 'left' AND userid != :uid LIMIT 1");
+        $stmt2->execute(['uid' => $userid]);
+        $leftId = $stmt2->fetchColumn();
+    }
+
     return getExpectedPlacementIDs($leftId, $pdo);
 }
 
 // Helper: Get expected right team DB IDs
 function getExpectedRightTeamIDs($userid, $pdo) {
+    $rightId = null;
     $stmt = $pdo->prepare("SELECT right_id FROM tree WHERE userid = :uid");
     $stmt->execute(['uid' => $userid]);
     $rightId = $stmt->fetchColumn();
+
+    if (empty($rightId)) {
+        $stmt2 = $pdo->prepare("SELECT userid FROM user WHERE underuserid = :uid AND LOWER(join_side) = 'right' AND userid != :uid LIMIT 1");
+        $stmt2->execute(['uid' => $userid]);
+        $rightId = $stmt2->fetchColumn();
+    }
+
     return getExpectedPlacementIDs($rightId, $pdo);
 }
 

@@ -432,7 +432,7 @@ try {
             $has_investment = false;
         }
 
-        if ($d_active == 1 || $d_status == 1 || $d_package > 0 || $d_total_package > 0 || $has_investment) {
+        if ($d_active == 1 || $d_package > 0 || $d_total_package > 0 || $has_investment) {
             $slot_status = 'ACTIVE'; // Active / Green
         } else {
             $slot_status = 'REGISTRATION_ONLY'; // Registered but missing active account or investment

@@ -621,23 +621,22 @@ function getmydirect($direct)
 function getmydirectactive($direct)
 {
     global $pdo;
-    $sql = "SELECT COUNT(*) as alluser 
-            FROM user tbsign  
-            INNER JOIN tbl_sponsor tbspon 
-            ON tbspon.referral_id = tbsign.userid  
-            WHERE tbspon.sponsor_id = :sponsor_id 
-            AND tbsign.active = '1'";
+    if (empty($direct)) return 0;
+
+    $sql = "
+        SELECT COUNT(DISTINCT u.userid) AS total
+        FROM user u
+        WHERE (u.sponserid = :sp1 OR u.userid IN (SELECT referral_id FROM tbl_sponsor WHERE sponsor_id = :sp2))
+          AND (
+            u.active = 1 OR u.active = '1'
+            OR COALESCE(u.total_package, 0) > 0 OR COALESCE(u.package, 0) > 0 OR COALESCE(u.amount, 0) > 0
+            OR u.userid IN (SELECT user_id FROM tbl_roi_one UNION SELECT user_id FROM tbl_roi_two)
+          )
+    ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':sponsor_id', $direct, PDO::PARAM_STR);
-    $stmt->execute();
-
-    if ($stmt->rowCount() > 0) {
-        $rowac = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $rowac['alluser'];
-    }
-
-    return 0; // If no records found
+    $stmt->execute([':sp1' => $direct, ':sp2' => $direct]);
+    return (int)($stmt->fetchColumn() ?: 0);
 }
 
 function getmydirectactiveright($sponsorId)
@@ -2119,6 +2118,10 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 COALESCE(u.`rank`, 'Member') as `rank`,
                 u.joining_date,
                 u.active,
+                u.status,
+                COALESCE(u.total_package, 0) as user_total_package,
+                COALESCE(u.package, 0) as user_package,
+                COALESCE(u.amount, 0) as user_amount,
                 u.join_side,
                 COALESCE(SUM(r.package), 0) as total_investment_inr,
                 COALESCE(SUM(r.real_fund_usd), 0) as total_investment_usd,
@@ -2127,7 +2130,7 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
             FROM user u
             LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
             WHERE u.sponserid = :userid 
-            GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active, u.join_side
+            GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active, u.status, u.total_package, u.package, u.amount, u.join_side
             ORDER BY u.joining_date DESC
         ";
         $stmt = $db->prepare($sql);
@@ -2137,15 +2140,30 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
         $members = [];
         $sr = 1;
         foreach ($rows as $r) {
-            $invInr = (float)($r['total_investment_inr'] ?? 0);
-            $invUsd = (float)($r['total_investment_usd'] ?? 0);
+            $uId = (string)$r['userid'];
+            $invInr1 = (float)($r['total_investment_inr'] ?? 0);
+            $invUsd1 = (float)($r['total_investment_usd'] ?? 0);
+
+            // Also check tbl_roi_two
+            $invInr2 = 0;
+            try {
+                $stmtRoi2 = $db->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_two WHERE user_id = :uid");
+                $stmtRoi2->execute([':uid' => $uId]);
+                $invInr2 = (float)$stmtRoi2->fetchColumn();
+            } catch (Exception $exRoi2) {}
+
+            $userPkgInr = max((float)($r['user_total_package'] ?? 0), (float)($r['user_package'] ?? 0), (float)($r['user_amount'] ?? 0));
+            $invInr = max($invInr1, $invInr2, $userPkgInr);
+            $invUsd = $invUsd1;
             if ($invUsd <= 0 && $invInr > 0) {
                 $invUsd = parseInputToUSD($invInr, 'INR', $db);
             }
 
+            $isActive = ((int)$r['active'] === 1 || (string)$r['active'] === '1' || $invUsd > 0 || $invInr > 0);
+
             // Direct count for direct member
             $stmtDir = $db->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :uid");
-            $stmtDir->execute([':uid' => $r['userid']]);
+            $stmtDir->execute([':uid' => $uId]);
             $directCount = (int)$stmtDir->fetchColumn();
 
             $members[] = [
@@ -2155,9 +2173,9 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 'rank'             => $r['rank'],
                 'joining_date'     => $r['joining_date'],
                 'investment_date'  => $r['latest_investment_date'] ?: 'N/A',
-                'investment_inr'   => $invInr,
-                'investment_usd'   => $invUsd,
-                'status'           => ($r['active'] == 1) ? 'Active' : 'Inactive',
+                'investment_inr'   => $isActive ? $invInr : 0.00,
+                'investment_usd'   => $isActive ? $invUsd : 0.00,
+                'status'           => $isActive ? 'Active' : 'Inactive',
                 'package'          => $r['latest_package'] ?: ($invUsd > 0 ? 'ANANTA' : 'N/A'),
                 'position'         => !empty($r['join_side']) ? strtoupper($r['join_side']) : 'DIRECT',
                 'direct_count'     => $directCount,
