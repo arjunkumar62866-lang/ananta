@@ -54,13 +54,49 @@ if (!empty($forceUid)) {
     $userid = (string)$sessionUserId;
     echo "Using session userid: {$userid}\n";
 } else {
-    // Find the user with the most downline
-    $stmt = $pdo->query("SELECT u.userid, u.name, 
-        (SELECT COUNT(*) FROM user u2 WHERE u2.underuserid = u.userid) as dc 
-        FROM user u HAVING dc > 0 ORDER BY dc DESC LIMIT 1");
-    $top = $stmt->fetch(PDO::FETCH_ASSOC);
-    $userid = (string)$top['userid'];
-    echo "No session — using top user: {$userid} ({$top['name']})\n";
+    // Find users who have active members in their team
+    echo "Scanning database for users with active downline members...\n";
+    $candidates = $pdo->query("SELECT u.userid, u.name FROM user u LIMIT 500")->fetchAll(PDO::FETCH_ASSOC);
+    $foundUser = null;
+    $userStats = [];
+    foreach ($candidates as $cand) {
+        $cId = $cand['userid'];
+        $leftMembers = getRootBranchTreeDetailed(getUserTreeData($cId)['left'] ?? '', $pdo, 'LEFT');
+        $rightMembers = getRootBranchTreeDetailed(getUserTreeData($cId)['right'] ?? '', $pdo, 'RIGHT');
+        $leftActive = count(array_filter($leftMembers, function($m) { return $m['status'] === 'Active'; }));
+        $rightActive = count(array_filter($rightMembers, function($m) { return $m['status'] === 'Active'; }));
+        $leftTotal = count($leftMembers);
+        $rightTotal = count($rightMembers);
+        if ($leftTotal > 0 || $rightTotal > 0) {
+            $userStats[] = [
+                'userid' => $cId,
+                'name' => $cand['name'],
+                'left_active' => $leftActive,
+                'left_total' => $leftTotal,
+                'right_active' => $rightActive,
+                'right_total' => $rightTotal
+            ];
+            if (($leftActive > 0 || $rightActive > 0) && !$foundUser) {
+                $foundUser = $cId;
+            }
+        }
+    }
+    
+    echo "Found " . count($userStats) . " users with downlines:\n";
+    usort($userStats, function($a, $b) {
+        return ($b['left_active'] + $b['right_active']) <=> ($a['left_active'] + $a['right_active']);
+    });
+    foreach (array_slice($userStats, 0, 10) as $stat) {
+        echo "  User ID: {$stat['userid']} ({$stat['name']}) -> Left: {$stat['left_active']}/{$stat['left_total']}, Right: {$stat['right_active']}/{$stat['right_total']}\n";
+    }
+
+    if ($foundUser) {
+        $userid = (string)$foundUser;
+        echo "\nSelected top user with active members: {$userid}\n";
+    } else {
+        $userid = !empty($userStats) ? (string)$userStats[0]['userid'] : '821867';
+        echo "\nNo users with active members found in top scan, using: {$userid}\n";
+    }
 }
 
 echo "\nFINAL TEST USER ID: {$userid}\n\n";
