@@ -18,6 +18,9 @@ if (!isset($_GET['key']) || $_GET['key'] !== $DIAG_KEY) {
 // Allow specifying user ID via ?uid= parameter
 $forceUid = isset($_GET['uid']) ? trim($_GET['uid']) : '';
 
+if (function_exists('opcache_reset')) {
+    @opcache_reset();
+}
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 header('Content-Type: text/plain; charset=utf-8');
