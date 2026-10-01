@@ -1886,13 +1886,9 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || empty($startChildId)) return [];
 
-        static $memoCache = [];
-        $cacheKey = $startChildId . '_' . $initialPosition;
-        if (isset($memoCache[$cacheKey])) {
-            return $memoCache[$cacheKey];
-        }
+        $startChildId = (string)$startChildId;
 
-        // Bulk load all users, tree nodes, investments, and direct count in 2 single queries
+        // Bulk load all users, tree nodes, investments, and direct count in single queries
         $stmtUsers = $db->query("
             SELECT 
                 u.userid, u.name, COALESCE(u.`rank`, 'Member') as `rank`, u.joining_date, u.active, u.join_side, u.sponserid, u.underuserid,
@@ -1910,10 +1906,14 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             if ($sp !== '') {
                 $directMap[$sp] = ($directMap[$sp] ?? 0) + 1;
             }
-            $pId = !empty($r['underuserid']) ? (string)$r['underuserid'] : ($sp !== '' ? $sp : '');
+            $pId = !empty($r['underuserid']) ? (string)$r['underuserid'] : '';
             if ($pId !== '') {
                 $underMap[$pId][] = $r;
             }
+        }
+
+        if (!isset($userMap[$startChildId])) {
+            return [];
         }
 
         $stmtInv = $db->query("
@@ -1930,7 +1930,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         $results = [];
         $queue = [
             [
-                'userid'    => (string)$startChildId,
+                'userid'    => $startChildId,
                 'parent_id' => '',
                 'position'  => strtoupper($initialPosition),
                 'level'     => 1
@@ -1973,23 +1973,59 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                 'downline_count'   => 0
             ];
 
-            // Gather children
+            // Gather placement children
             $children = [];
-            if (!empty($uData['left_id'])) {
-                $children[] = ['id' => (string)$uData['left_id'], 'side' => 'LEFT'];
+            $assignedChildIds = [];
+
+            // 1. LEFT SLOT
+            $leftId = (!empty($uData['left_id']) && isset($userMap[(string)$uData['left_id']])) ? (string)$uData['left_id'] : '';
+            if (empty($leftId) && isset($underMap[$uid])) {
+                foreach ($underMap[$uid] as $uc) {
+                    $cId = (string)$uc['userid'];
+                    if ($cId !== $uid && strtolower($uc['join_side'] ?? '') === 'left' && !isset($visited[$cId])) {
+                        $leftId = $cId;
+                        break;
+                    }
+                }
             }
-            if (!empty($uData['right_id'])) {
-                $children[] = ['id' => (string)$uData['right_id'], 'side' => 'RIGHT'];
+            if (!empty($leftId) && !isset($visited[$leftId])) {
+                $children[] = ['id' => $leftId, 'side' => 'LEFT'];
+                $assignedChildIds[$leftId] = true;
             }
 
-            $existingChildIds = array_column($children, 'id');
+            // 2. RIGHT SLOT
+            $rightId = (!empty($uData['right_id']) && isset($userMap[(string)$uData['right_id']])) ? (string)$uData['right_id'] : '';
+            if (empty($rightId) && isset($underMap[$uid])) {
+                foreach ($underMap[$uid] as $uc) {
+                    $cId = (string)$uc['userid'];
+                    if ($cId !== $uid && !isset($assignedChildIds[$cId]) && strtolower($uc['join_side'] ?? '') === 'right' && !isset($visited[$cId])) {
+                        $rightId = $cId;
+                        break;
+                    }
+                }
+                if (empty($rightId)) {
+                    foreach ($underMap[$uid] as $uc) {
+                        $cId = (string)$uc['userid'];
+                        if ($cId !== $uid && !isset($assignedChildIds[$cId]) && !isset($visited[$cId])) {
+                            $rightId = $cId;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!empty($rightId) && !isset($visited[$rightId]) && !isset($assignedChildIds[$rightId])) {
+                $children[] = ['id' => $rightId, 'side' => 'RIGHT'];
+                $assignedChildIds[$rightId] = true;
+            }
+
+            // 3. Additional placement children (where underuserid = uid)
             if (isset($underMap[$uid])) {
                 foreach ($underMap[$uid] as $uc) {
                     $cId = (string)$uc['userid'];
-                    if ($cId !== $uid && !in_array($cId, $existingChildIds) && !isset($visited[$cId])) {
+                    if ($cId !== $uid && !isset($assignedChildIds[$cId]) && !isset($visited[$cId])) {
                         $side = !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DOWNLINE';
                         $children[] = ['id' => $cId, 'side' => $side];
-                        $existingChildIds[] = $cId;
+                        $assignedChildIds[$cId] = true;
                     }
                 }
             }
@@ -2030,7 +2066,6 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             unset($item);
         }
 
-        $memoCache[$cacheKey] = $results;
         return $results;
     }
 }
@@ -2041,10 +2076,10 @@ if (!function_exists('getRootBranchTreeDetailed')) {
 function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
-    if (!$db || !$userid) return [];
+    if (!$db || empty($userid)) return [];
 
+    $userid = (string)$userid;
     $teamType = strtoupper(trim($teamType));
-    $members = [];
 
     if ($teamType === 'MY_DIRECT') {
         $sql = "
@@ -2062,7 +2097,6 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
             FROM user u
             LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
             WHERE u.sponserid = :userid 
-               OR u.userid IN (SELECT referral_id FROM tbl_sponsor WHERE sponsor_id = :userid)
             GROUP BY u.userid, u.name, u.`rank`, u.joining_date, u.active, u.join_side
             ORDER BY u.joining_date DESC
         ";
@@ -2070,6 +2104,7 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
         $stmt->execute([':userid' => $userid]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $members = [];
         $sr = 1;
         foreach ($rows as $r) {
             $invInr = (float)($r['total_investment_inr'] ?? 0);
@@ -2078,12 +2113,10 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 $invUsd = parseInputToUSD($invInr, 'INR', $db);
             }
 
-            // Direct count and downline count for direct member
+            // Direct count for direct member
             $stmtDir = $db->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :uid");
             $stmtDir->execute([':uid' => $r['userid']]);
             $directCount = (int)$stmtDir->fetchColumn();
-
-            $downlineIds = getSubtreeDescendantIds($r['userid'], $db);
 
             $members[] = [
                 'sr'               => $sr++,
@@ -2096,76 +2129,59 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 'investment_usd'   => $invUsd,
                 'status'           => ($r['active'] == 1) ? 'Active' : 'Inactive',
                 'package'          => $r['latest_package'] ?: ($invUsd > 0 ? 'ANANTA' : 'N/A'),
-                'position'         => strtoupper($r['join_side'] ?: 'LEFT'),
+                'position'         => !empty($r['join_side']) ? strtoupper($r['join_side']) : 'DIRECT',
                 'direct_count'     => $directCount,
-                'downline_count'   => count($downlineIds)
+                'downline_count'   => 0
             ];
         }
+        return $members;
     } elseif ($teamType === 'LEFT' || $teamType === 'RIGHT') {
-        // 1. Check tree table for root child
-        $stmtRoot = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
-        $stmtRoot->execute([':uid' => $userid]);
-        $tRoot = $stmtRoot->fetch(PDO::FETCH_ASSOC);
-
-        $rootChildId = ($teamType === 'LEFT') ? ($tRoot['left_id'] ?? '') : ($tRoot['right_id'] ?? '');
-
-        if (!empty($rootChildId)) {
-            $members = getRootBranchTreeDetailed($rootChildId, $db, $teamType);
+        $stmtUsers = $db->query("
+            SELECT u.userid, u.join_side, u.underuserid, t.left_id, t.right_id 
+            FROM user u 
+            LEFT JOIN tree t ON t.userid = u.userid
+        ");
+        $treeMap = [];
+        $underMap = [];
+        while ($r = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (string)$r['userid'];
+            $treeMap[$uid] = $r;
+            $pId = !empty($r['underuserid']) ? (string)$r['underuserid'] : '';
+            if ($pId !== '') {
+                $underMap[$pId][] = $r;
+            }
         }
 
-        // 2. Also check tbl_userlevel_a (for LEFT) or tbl_userlevel_b (for RIGHT) to catch any missing downlines
-        $lvlTable = ($teamType === 'LEFT') ? 'tbl_userlevel_a' : 'tbl_userlevel_b';
-        try {
-            $stmtLvl = $db->prepare("SELECT DISTINCT downline_id, level FROM {$lvlTable} WHERE sponser_id = :uid ORDER BY level ASC");
-            $stmtLvl->execute([':uid' => $userid]);
-            $lvlRows = $stmtLvl->fetchAll(PDO::FETCH_ASSOC);
+        $targetSide = ($teamType === 'LEFT') ? 'LEFT' : 'RIGHT';
+        $rootChildId = '';
 
-            $existingMemberIds = array_column($members, 'userid');
+        if (isset($treeMap[$userid])) {
+            $uRow = $treeMap[$userid];
+            if ($targetSide === 'LEFT') {
+                $rootChildId = !empty($uRow['left_id']) && isset($treeMap[(string)$uRow['left_id']]) ? (string)$uRow['left_id'] : '';
+            } else {
+                $rootChildId = !empty($uRow['right_id']) && isset($treeMap[(string)$uRow['right_id']]) ? (string)$uRow['right_id'] : '';
+            }
+        }
 
-            foreach ($lvlRows as $lItem) {
-                $downId = $lItem['downline_id'];
-                if ($downId !== $userid && !in_array($downId, $existingMemberIds)) {
-                    $subMembers = getRootBranchTreeDetailed($downId, $db, $teamType);
-                    if (!empty($subMembers)) {
-                        foreach ($subMembers as $sm) {
-                            if (!in_array($sm['userid'], $existingMemberIds)) {
-                                $members[] = $sm;
-                                $existingMemberIds[] = $sm['userid'];
-                            }
-                        }
-                    } else {
-                        // Direct fetch user row
-                        $stmtDirectU = $db->prepare("SELECT userid, name, active, joining_date, join_side FROM user WHERE userid = :uid LIMIT 1");
-                        $stmtDirectU->execute([':uid' => $downId]);
-                        $uRow = $stmtDirectU->fetch(PDO::FETCH_ASSOC);
-                        if ($uRow) {
-                            $members[] = [
-                                'userid'           => $uRow['userid'],
-                                'name'             => $uRow['name'],
-                                'rank'             => 'Member',
-                                'level'            => intval($lItem['level']),
-                                'parent_id'        => $userid,
-                                'position'         => strtoupper($teamType),
-                                'joining_date'     => $uRow['joining_date'],
-                                'investment_date'  => 'N/A',
-                                'investment_inr'   => 0,
-                                'investment_usd'   => 0,
-                                'status'           => ($uRow['active'] == 1) ? 'Active' : 'Inactive',
-                                'package'          => 'N/A',
-                                'direct_count'     => 0,
-                                'downline_count'   => 0
-                            ];
-                            $existingMemberIds[] = $uRow['userid'];
-                        }
-                    }
+        if (empty($rootChildId) && isset($underMap[$userid])) {
+            foreach ($underMap[$userid] as $uc) {
+                $cId = (string)$uc['userid'];
+                if (strtolower($uc['join_side'] ?? '') === strtolower($targetSide)) {
+                    $rootChildId = $cId;
+                    break;
                 }
             }
-        } catch (Exception $e) {
-            // Fallback if table doesn't exist
         }
+
+        if (empty($rootChildId)) {
+            return [];
+        }
+
+        return getRootBranchTreeDetailed($rootChildId, $db, $targetSide);
     }
 
-    return $members;
+    return [];
 }
 
 /**
