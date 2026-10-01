@@ -171,13 +171,6 @@ if ($realtimeTotalTeam > $total_team) {
 $my_left_active_directs  = count(array_filter($leftBranchMembers,  function($m) { return ($m['status'] === 'Active'); }));
 $my_right_active_directs = count(array_filter($rightBranchMembers, function($m) { return ($m['status'] === 'Active'); }));
 
-// Fallback to tree count if active filter is 0
-if ($my_left_active_directs <= 0 && intval($left_active) > 0) {
-    $my_left_active_directs = intval($left_active);
-}
-if ($my_right_active_directs <= 0 && intval($right_active) > 0) {
-    $my_right_active_directs = intval($right_active);
-}
 
 // Reward achiever check 
 rank_reward($userid);

@@ -651,7 +651,11 @@ function getmydirectactiveright($sponsorId)
             FROM tbl_userlevel_b 
             WHERE sponser_id = :sponsor_id
         ) d ON d.downline_id = u.userid
-        WHERE u.active = 1
+        WHERE (
+            u.active = 1 OR u.active = '1'
+            OR COALESCE(u.total_package, 0) > 0 OR COALESCE(u.package, 0) > 0 OR COALESCE(u.amount, 0) > 0
+            OR u.userid IN (SELECT user_id FROM tbl_roi_one UNION SELECT user_id FROM tbl_roi_two)
+        )
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -672,7 +676,11 @@ function getmydirectactiveleft($sponsorId)
             FROM tbl_userlevel_a 
             WHERE sponser_id = :sponsor_id
         ) d ON d.downline_id = u.userid
-        WHERE u.active = 1
+        WHERE (
+            u.active = 1 OR u.active = '1'
+            OR COALESCE(u.total_package, 0) > 0 OR COALESCE(u.package, 0) > 0 OR COALESCE(u.amount, 0) > 0
+            OR u.userid IN (SELECT user_id FROM tbl_roi_one UNION SELECT user_id FROM tbl_roi_two)
+        )
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -1982,7 +1990,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             $directCount = $directMap[$uid] ?? 0;
             $nodePos = !empty($curr['position']) ? $curr['position'] : (!empty($uData['join_side']) ? strtoupper($uData['join_side']) : $initialPosition);
 
-            $isActive = ($uData['active'] == 1 || (string)$uData['active'] === '1' || strtolower((string)($uData['status'] ?? '')) === '1' || strtolower((string)($uData['status'] ?? '')) === 'active' || $invUsd > 0 || $invInr > 0);
+            $isActive = ($uData['active'] == 1 || (string)$uData['active'] === '1' || strtolower((string)($uData['status'] ?? '')) === 'active' || $invUsd > 0 || $invInr > 0);
             $nodeStatus = $isActive ? 'Active' : 'Inactive';
 
             $results[] = [
