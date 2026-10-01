@@ -145,31 +145,21 @@ include 'common/header.php';
 $isAccountActive = (isset($idactive) && ((string)$idactive === '1' || (int)$idactive === 1)) || (isset($status) && strtolower((string)$status) === 'active');
 
 
-// Get real-time accurate Left & Right branch downline data using single source of truth getRootBranchTreeDetailed()
-$leftBranchMembers = !empty($leftid) ? getRootBranchTreeDetailed($leftid, $pdo, 'LEFT') : [];
-$rightBranchMembers = !empty($rightid) ? getRootBranchTreeDetailed($rightid, $pdo, 'RIGHT') : [];
+// Get real-time accurate Left & Right branch downline data using single source of truth getUserTeamMembersDetailed()
+$leftBranchMembers  = getUserTeamMembersDetailed($userid, 'LEFT', $pdo);
+$rightBranchMembers = getUserTeamMembersDetailed($userid, 'RIGHT', $pdo);
 
-$directbusinesstotalleft = array_sum(array_column($leftBranchMembers, 'investment_usd'));
+$directbusinesstotalleft  = array_sum(array_column($leftBranchMembers,  'investment_usd'));
 $directbusinesstotalright = array_sum(array_column($rightBranchMembers, 'investment_usd'));
+$directbusinesstotal      = $directbusinesstotalleft + $directbusinesstotalright;
 
-// Fallback to tree.lefttotal / righttotal (converted to USD) if investment sum is 0
-if ($directbusinesstotalleft <= 0 && floatval($left_total) > 0) {
-    $directbusinesstotalleft = parseInputToUSD(floatval($left_total), 'INR');
-}
-if ($directbusinesstotalright <= 0 && floatval($right_total) > 0) {
-    $directbusinesstotalright = parseInputToUSD(floatval($right_total), 'INR');
-}
-$directbusinesstotal = $directbusinesstotalleft + $directbusinesstotalright;
-
-// Override $total_team with real-time branch count (always accurate — tree traversal, not indexed tables)
+// Real-time binary branch member count (always accurate — tree traversal single source of truth)
 $realtimeTotalTeam = count($leftBranchMembers) + count($rightBranchMembers);
-if ($realtimeTotalTeam > $total_team) {
-    $total_team = $realtimeTotalTeam;
-}
+$total_team        = $realtimeTotalTeam;
 
 // Calculate active team members in Left & Right branches (real-time from branch arrays)
-$my_left_active_directs  = count(array_filter($leftBranchMembers,  function($m) { return ($m['status'] === 'Active'); }));
-$my_right_active_directs = count(array_filter($rightBranchMembers, function($m) { return ($m['status'] === 'Active'); }));
+$my_left_active_directs  = count(array_filter($leftBranchMembers,  function($m) { return (($m['status'] ?? '') === 'Active'); }));
+$my_right_active_directs = count(array_filter($rightBranchMembers, function($m) { return (($m['status'] ?? '') === 'Active'); }));
 
 
 // Reward achiever check 
@@ -296,9 +286,8 @@ $right_total_team = $rowTree['righttotal'] ?? 0;
     
 
 
-// total team downline count (preserve real-time branch total team count if higher than index count)
-$db_downline_count = getActiveDownlineCount($userid);
-$total_team = max($realtimeTotalTeam ?? 0, intval($db_downline_count), intval($total_team ?? 0));
+// total team downline count (single source of truth real-time binary branch count)
+$total_team = $realtimeTotalTeam;
 
 // my direct count
 $my_directs=getmydirect($userid);
