@@ -1891,7 +1891,9 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         // Bulk load all users, tree nodes, investments, and direct count in single queries
         $stmtUsers = $db->query("
             SELECT 
-                u.userid, u.name, COALESCE(u.`rank`, 'Member') as `rank`, u.joining_date, u.active, u.join_side, u.sponserid, u.underuserid,
+                u.userid, u.name, COALESCE(u.`rank`, 'Member') as `rank`, u.joining_date, u.active, u.status,
+                COALESCE(u.total_package, 0) as user_total_package, COALESCE(u.package, 0) as user_package, COALESCE(u.amount, 0) as user_amount,
+                u.join_side, u.sponserid, u.underuserid,
                 t.left_id, t.right_id
             FROM user u
             LEFT JOIN tree t ON t.userid = u.userid
@@ -1927,6 +1929,30 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             $invMap[(string)$r['user_id']] = $r;
         }
 
+        try {
+            $stmtInv2 = $db->query("
+                SELECT r.user_id, COALESCE(SUM(r.package), 0) as total_inr, MAX(r.date) as latest_date
+                FROM tbl_roi_two r
+                GROUP BY r.user_id
+            ");
+            while ($r2 = $stmtInv2->fetch(PDO::FETCH_ASSOC)) {
+                $uid2 = (string)$r2['user_id'];
+                if (!isset($invMap[$uid2])) {
+                    $invMap[$uid2] = [
+                        'total_inr'   => (float)$r2['total_inr'],
+                        'total_usd'   => 0,
+                        'latest_date' => $r2['latest_date'],
+                        'latest_pkg'  => 'ANANTA'
+                    ];
+                } else {
+                    $invMap[$uid2]['total_inr'] += (float)$r2['total_inr'];
+                    if (empty($invMap[$uid2]['latest_date'])) {
+                        $invMap[$uid2]['latest_date'] = $r2['latest_date'];
+                    }
+                }
+            }
+        } catch (Exception $exInv2) {}
+
         $results = [];
         $queue = [
             [
@@ -1947,7 +1973,8 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             $uData = $userMap[$uid];
             $invData = $invMap[$uid] ?? [];
 
-            $invInr = (float)($invData['total_inr'] ?? 0);
+            $userPkgInr = max((float)($uData['user_total_package'] ?? 0), (float)($uData['user_package'] ?? 0), (float)($uData['user_amount'] ?? 0));
+            $invInr = max((float)($invData['total_inr'] ?? 0), $userPkgInr);
             $invUsd = (float)($invData['total_usd'] ?? 0);
             if ($invUsd <= 0 && $invInr > 0) {
                 $invUsd = parseInputToUSD($invInr, 'INR', $db);
@@ -1955,6 +1982,9 @@ if (!function_exists('getRootBranchTreeDetailed')) {
 
             $directCount = $directMap[$uid] ?? 0;
             $nodePos = !empty($curr['position']) ? $curr['position'] : (!empty($uData['join_side']) ? strtoupper($uData['join_side']) : $initialPosition);
+
+            $isActive = ($uData['active'] == 1 || (string)$uData['active'] === '1' || strtolower((string)($uData['status'] ?? '')) === '1' || strtolower((string)($uData['status'] ?? '')) === 'active' || $invUsd > 0 || $invInr > 0);
+            $nodeStatus = $isActive ? 'Active' : 'Inactive';
 
             $results[] = [
                 'userid'           => $uid,
@@ -1967,7 +1997,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
                 'investment_date'  => $invData['latest_date'] ?? 'N/A',
                 'investment_inr'   => $invInr,
                 'investment_usd'   => $invUsd,
-                'status'           => ($uData['active'] == 1) ? 'Active' : 'Inactive',
+                'status'           => $nodeStatus,
                 'package'          => $invData['latest_pkg'] ?? ($invUsd > 0 ? 'ANANTA' : 'N/A'),
                 'direct_count'     => $directCount,
                 'downline_count'   => 0

@@ -4166,15 +4166,18 @@ if (!function_exists('rebuildFullTreeAndDownlineIndexes')) {
                 }
             }
 
-            $updLeft  = $db->prepare("UPDATE tree SET left_id = :cid WHERE userid = :pid AND (left_id = '' OR left_id IS NULL)");
-            $updRight = $db->prepare("UPDATE tree SET right_id = :cid WHERE userid = :pid AND (right_id = '' OR right_id IS NULL)");
+            // Reset tree left_id and right_id so moved user relationships are cleanly re-established
+            $db->exec("UPDATE tree SET left_id = '', right_id = ''");
+
+            $updLeft  = $db->prepare("UPDATE tree SET left_id  = :cid WHERE userid = :pid");
+            $updRight = $db->prepare("UPDATE tree SET right_id = :cid WHERE userid = :pid");
 
             foreach ($allUsers as $u) {
-                $pId  = (string)$u['underuserid'];
-                $cId  = (string)$u['userid'];
-                $side = strtolower((string)$u['join_side']);
+                $pId  = (string)($u['underuserid'] ?? '');
+                $cId  = (string)($u['userid'] ?? '');
+                $side = strtolower((string)($u['join_side'] ?? ''));
 
-                if (!empty($pId) && !empty($cId) && isset($existingTreeSet[$pId])) {
+                if (!empty($pId) && !empty($cId) && $pId !== $cId && isset($existingTreeSet[$pId])) {
                     if ($side === 'left' || $side === 'l') {
                         $updLeft->execute([':cid' => $cId, ':pid' => $pId]);
                     } elseif ($side === 'right' || $side === 'r') {
