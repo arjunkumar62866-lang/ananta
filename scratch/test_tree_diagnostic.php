@@ -4,12 +4,9 @@ include_once("common/connection.php");
 include_once("common/db_method.php");
 
 // -------------------------------------------------------------------------
-// RECURSIVE MULTI-NODE TREE DIAGNOSTIC TEST (GENERIC, DYNAMIC, ALL USERS)
+// RECURSIVE ALL-USERS COMPREHENSIVE DIRECT REFERRAL & DOWNLINE AUDIT
 // -------------------------------------------------------------------------
 
-$rootId = "1290";
-
-// Include exact tree.php pre-loading maps logic
 $stmtAllUsers = $pdo->query("
     SELECT 
         u.userid, u.name, u.active, u.status, u.package, u.sponserid, u.underuserid, u.join_side, u.joining_date, u.mobile, COALESCE(u.amount, 0) as user_amount,
@@ -59,8 +56,7 @@ while ($r = $stmtAllInv->fetch(PDO::FETCH_ASSOC)) {
 
 $currSelection = "USD";
 
-// Exact production fetch_horizontal_binary_tree implementation
-function test_fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 50, $visitedPath = [], &$globalRenderedUsers = [], $parentNodeId = '') {
+function test_fetch_tree($nodeId, $currentDepth = 1, $maxDepth = 50, $visitedPath = [], &$globalRenderedUsers = [], $parentNodeId = '') {
     global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap;
 
     $nodeId = (string)$nodeId;
@@ -175,7 +171,7 @@ function test_fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth
         }
 
         foreach ($childrenList as $cItem) {
-            $childNode = test_fetch_horizontal_binary_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers, $nodeId);
+            $childNode = test_fetch_tree($cItem['id'], $currentDepth + 1, $maxDepth, $visitedPath, $globalRenderedUsers, $nodeId);
             if ($childNode) {
                 $childNode['position'] = $cItem['side'];
                 $node['children'][] = $childNode;
@@ -186,98 +182,71 @@ function test_fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth
     return $node;
 }
 
-// Test multiple users dynamically: Root, and several users down the tree
-$nodesToTest = [$rootId];
-if (isset($sponsorChildrenMap[$rootId])) {
-    foreach ($sponsorChildrenMap[$rootId] as $sc) {
-        $nodesToTest[] = (string)$sc['userid'];
-        // Also add 2nd level children if available
-        $scId = (string)$sc['userid'];
-        if (isset($sponsorChildrenMap[$scId])) {
-            foreach ($sponsorChildrenMap[$scId] as $sc2) {
-                $nodesToTest[] = (string)$sc2['userid'];
-            }
-        }
-    }
-}
-$nodesToTest = array_unique(array_filter($nodesToTest));
-
 echo "=========================================================================\n";
-echo "RECURSIVE ALL-USERS DIRECT REFERRAL REPRESENTATION VERIFICATION REPORT\n";
+echo "DATABASE-WIDE AUDIT FOR ALL USERS WITH DIRECT REFERRALS\n";
 echo "=========================================================================\n";
 
-$overallFailures = 0;
+$failedCount = 0;
+$testedCount = 0;
 
-foreach ($nodesToTest as $testUid) {
-    // 1. Get DB direct count & IDs for $testUid
+foreach ($globalUserMap as $uid => $uData) {
     $dbDirectIds = [];
-    if (isset($sponsorChildrenMap[$testUid])) {
-        foreach ($sponsorChildrenMap[$testUid] as $sc) {
-            if ((string)$sc['userid'] !== $testUid) {
+    if (isset($sponsorChildrenMap[$uid])) {
+        foreach ($sponsorChildrenMap[$uid] as $sc) {
+            if ((string)$sc['userid'] !== (string)$uid) {
                 $dbDirectIds[] = (string)$sc['userid'];
             }
         }
     }
-    $dbDirectCount = count($dbDirectIds);
+    
+    if (count($dbDirectIds) === 0) continue; // Skip users with 0 directs
 
-    // 2. Generate tree rooted at $testUid
+    $testedCount++;
     $renderedUsers = [];
-    $tree = test_fetch_horizontal_binary_tree($testUid, 1, 50, [], $renderedUsers, '');
+    $userTree = test_fetch_tree($uid, 1, 50, [], $renderedUsers, '');
 
-    // 3. Count direct referrals represented under $testUid
-    $representedDirectIds = [];
-    $allSubtreeNodeIds = [];
-    $duplicateMap = [];
+    $immediateChildIds = array_map(function($c) { return (string)$c['id']; }, $userTree['children']);
+    
+    // Check missing direct referrals
+    $missingDirects = array_diff($dbDirectIds, $immediateChildIds);
 
-    $collectSubtree = function($n) use (&$collectSubtree, &$allSubtreeNodeIds, &$duplicateMap) {
+    // Check duplicates in tree
+    $allNodeIds = [];
+    $dupMap = [];
+    $collect = function($n) use (&$collect, &$allNodeIds, &$dupMap) {
         if (!$n) return;
         $id = (string)$n['id'];
-        $allSubtreeNodeIds[] = $id;
-        $duplicateMap[$id] = ($duplicateMap[$id] ?? 0) + 1;
-        if (!empty($n['children'])) {
-            foreach ($n['children'] as $child) {
-                $collectSubtree($child);
-            }
-        }
+        $allNodeIds[] = $id;
+        $dupMap[$id] = ($dupMap[$id] ?? 0) + 1;
+        foreach ($n['children'] as $ch) $collect($ch);
     };
-    $collectSubtree($tree);
+    $collect($userTree);
 
-    // Direct referrals represented under $testUid must exist somewhere in $testUid's subtree
-    foreach ($dbDirectIds as $dId) {
-        if (in_array($dId, $allSubtreeNodeIds, true)) {
-            $representedDirectIds[] = $dId;
-        }
+    $dups = [];
+    foreach ($dupMap as $id => $cnt) {
+        if ($cnt > 1) $dups[] = $id;
     }
 
-    $missingDirectIds = array_diff($dbDirectIds, $representedDirectIds);
-    $missingCount = count($missingDirectIds);
-    
-    $duplicates = [];
-    foreach ($duplicateMap as $id => $c) {
-        if ($c > 1) $duplicates[] = $id;
-    }
-    $dupCount = count($duplicates);
+    $status = (count($missingDirects) === 0 && count($dups) === 0) ? "PASS" : "FAIL";
+    if ($status === "FAIL") $failedCount++;
 
-    $status = ($missingCount === 0 && $dupCount === 0) ? "PASS" : "FAIL";
-    if ($status === "FAIL") $overallFailures++;
-
-    echo sprintf("USER %-10s | DB DIRECTS: %-3d | TREE REPRESENTED: %-3d | MISSING: %-3d | DUPLICATES: %-3d | STATUS: %s\n",
-        $testUid,
-        $dbDirectCount,
-        count($representedDirectIds),
-        $missingCount,
-        $dupCount,
+    echo sprintf("USER %-12s | DB DIRECTS: %-3d | TREE DIRECTS: %-3d | MISSING: %-3d | DUPLICATES: %-3d | STATUS: %s\n",
+        $uid,
+        count($dbDirectIds),
+        count($immediateChildIds),
+        count($missingDirects),
+        count($dups),
         $status
     );
 
-    if ($missingCount > 0) {
-        echo "  --> MISSING DIRECT REFERRALS FOR {$testUid}: " . implode(", ", $missingDirectIds) . "\n";
+    if (count($missingDirects) > 0) {
+        echo "  --> MISSING: " . implode(", ", $missingDirects) . "\n";
     }
-    if ($dupCount > 0) {
-        echo "  --> DUPLICATE USER IDS FOR {$testUid}: " . implode(", ", $duplicates) . "\n";
+    if (count($dups) > 0) {
+        echo "  --> DUPLICATES: " . implode(", ", $dups) . "\n";
     }
 }
 
 echo "=========================================================================\n";
-echo "OVERALL VERIFICATION RESULT: " . ($overallFailures === 0 ? "100% PASS (ALL USERS RECURSIVELY VERIFIED)" : "FAIL ({$overallFailures} USERS FAILED)") . "\n";
+echo sprintf("TOTAL TESTED SPONSOR USERS: %d | PASSED: %d | FAILED: %d\n", $testedCount, $testedCount - $failedCount, $failedCount);
 echo "=========================================================================\n";

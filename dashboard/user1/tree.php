@@ -772,7 +772,7 @@ body.bg-theme {
                 updateTree(d);
             } else if (d.data.has_children_db) {
                 // Fetch deeper downlines dynamically via AJAX for Unlimited Depth
-                fetch(`tree.php?api=get_tree&depth=10&node_id=${encodeURIComponent(d.data.id)}`)
+                fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(d.data.id)}`)
                     .then(res => res.json())
                     .then(res => {
                         if (res.status === 'success' && res.data && res.data.children && res.data.children.length > 0) {
