@@ -1112,13 +1112,13 @@ body.ananta-user-dashboard {
                         </div>
                     </div>
 
-                    <!-- Direct Positions Container (Scrollable row for all direct members) -->
-                    <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-6 g-2 flex-nowrap overflow-auto py-1" style="scrollbar-width: thin; min-height: 200px;">
+                    <!-- Direct Positions Container (6 visible on laptop, 3 visible on mobile, scrollable) -->
+                    <div class="row g-2 flex-nowrap overflow-auto py-1" style="scrollbar-width: thin; min-height: 200px;">
                         <?php for ($idx = 0; $idx < $display_card_count; $idx++): 
                             $slotNum = $idx + 1;
                             $cardData = $direct_cards[$idx] ?? null;
                         ?>
-                            <div class="col" style="min-width: 145px; flex: 0 0 auto;">
+                            <div class="col-4 col-sm-4 col-lg-2" style="flex: 0 0 auto;">
                                 <div class="card border-0 h-100 text-center p-2 p-sm-3" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 16px; transition: transform 0.2s, border-color 0.2s;">
                                     <span class="font-weight-bold mb-1 d-block text-truncate" style="color: #0f172a; font-size: 13px;" title="<?php echo htmlspecialchars($cardData['name'] ?? ('Direct ' . $slotNum)); ?>">
                                         <?php echo !empty($cardData['name']) ? htmlspecialchars($cardData['name']) : ('Direct ' . $slotNum); ?>
