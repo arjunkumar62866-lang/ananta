@@ -28,6 +28,23 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
             </div>
         </div>
 
+        <!-- Main Total User Growth Banner Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%) !important; border-radius: 20px; color: #ffffff !important;">
+                    <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap">
+                        <div>
+                            <span class="d-block text-white-50 font-weight-bold uppercase mb-1" style="font-size: 12px; letter-spacing: 0.5px;">TOTAL USER GROWTH (7 INCOMES)</span>
+                            <h2 class="mb-0 text-white font-weight-bold" style="font-size: 34px;"><?php echo formatCurrency($growth["total_user_growth"] ?? 0); ?></h2>
+                        </div>
+                        <div class="mt-2 mt-sm-0">
+                            <span class="badge badge-light p-2 font-weight-bold" style="color: #4338ca; border-radius: 10px; font-size: 13px;">Live Credited Ledger Sum</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 7 Category Summary Cards -->
         <div class="row g-3">
             <div class="col-12 col-md-4 col-lg-3 mb-3">

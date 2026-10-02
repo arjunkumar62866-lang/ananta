@@ -12,13 +12,9 @@ if (!isset($_SESSION['userid'])) {
 $userid = $_SESSION['userid'];
 
 // Fetch Company Turnover Income history
-$table = "tbl_daily_levelinc";
-$turnoverTotal = incometotalnew($pdo, $table, $userid, 'Company Turnover Income');
-$turnoverTotal = round((float)($turnoverTotal ?? 0), 2);
-
-$stmt = $pdo->prepare("SELECT * FROM $table WHERE user_id = :userid AND (subject LIKE '%Turnover%' OR subject LIKE '%Company%') ORDER BY id DESC");
-$stmt->execute([':userid' => $userid]);
-$history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$summary = getUserIncomeWalletSummary($userid, $pdo);
+$turnoverTotal = $summary['company_turnover'] ?? 0;
+$history = getUserIncomeWalletHistory($userid, 'COMPANY_TURNOVER', null, null, $pdo);
 ?>
 
 <div class="content-wrapper py-4" style="background-color: #faf9f6 !important;">

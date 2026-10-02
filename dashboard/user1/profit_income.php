@@ -12,13 +12,9 @@ if (!isset($_SESSION['userid'])) {
 $userid = $_SESSION['userid'];
 
 // Fetch Profit Income history
-$table = "tbl_daily_levelinc";
-$profitTotal = incometotalnew($pdo, $table, $userid, 'Profit Income');
-$profitTotal = round((float)($profitTotal ?? 0), 2);
-
-$stmt = $pdo->prepare("SELECT * FROM $table WHERE user_id = :userid AND subject LIKE '%Profit%' ORDER BY id DESC");
-$stmt->execute([':userid' => $userid]);
-$history = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$summary = getUserIncomeWalletSummary($userid, $pdo);
+$profitTotal = $summary['profit_income'] ?? 0;
+$history = getUserIncomeWalletHistory($userid, 'PROFIT_INCOME', null, null, $pdo);
 ?>
 
 <div class="content-wrapper py-4" style="background-color: #faf9f6 !important;">

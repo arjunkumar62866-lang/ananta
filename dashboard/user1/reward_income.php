@@ -6,9 +6,9 @@
 include 'common/header.php'; 
 
 // Calculate Total Reward Income for header stat
-$table = "tbl_transaction";
-$reward_income_total = incometotalnew($pdo, $table, $userid, 'Reward Income');
-$reward_income_total = round((float)($reward_income_total ?? 0), 2);
+$summary = getUserIncomeWalletSummary($userid, $pdo);
+$reward_income_total = $summary['rank_reward'] ?? 0;
+$history = getUserIncomeWalletHistory($userid, 'RANK_REWARD', null, null, $pdo);
 ?>
 
 <style>

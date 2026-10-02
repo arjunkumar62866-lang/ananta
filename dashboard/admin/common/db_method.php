@@ -4197,9 +4197,9 @@ if (!function_exists('rebuildFullTreeAndDownlineIndexes')) {
             }
 
             // 2. Clean mapping tables
-            $db->exec("TRUNCATE TABLE tbl_userlevel_a");
-            $db->exec("TRUNCATE TABLE tbl_userlevel_b");
-            $db->exec("TRUNCATE TABLE tbl_downline");
+            $db->exec("DELETE FROM tbl_userlevel_a");
+            $db->exec("DELETE FROM tbl_userlevel_b");
+            $db->exec("DELETE FROM tbl_downline");
 
             $insLvlA = $db->prepare("INSERT INTO tbl_userlevel_a (sponser_id, downline_id, level, date) VALUES (:sp, :dl, :lvl, NOW())");
             $insLvlB = $db->prepare("INSERT INTO tbl_userlevel_b (sponser_id, downline_id, level, date) VALUES (:sp, :dl, :lvl, NOW())");

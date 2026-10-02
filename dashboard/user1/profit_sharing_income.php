@@ -6,9 +6,9 @@
 include 'common/header.php'; 
 
 // Calculate Total Profit Sharing Income for header stat
-$table = "tbl_daily_levelinc";
-$profit_sharing_total = incometotalnew($pdo, $table, $userid, 'Profit Sharing Income');
-$profit_sharing_total = round((float)($profit_sharing_total ?? 0), 2);
+$summary = getUserIncomeWalletSummary($userid, $pdo);
+$profit_sharing_total = $summary['profit_sharing'] ?? 0;
+$history = getUserIncomeWalletHistory($userid, 'PROFIT_SHARING', null, null, $pdo);
 ?>
 
 <style>

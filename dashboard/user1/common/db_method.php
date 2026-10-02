@@ -1,4 +1,13 @@
 <?php
+if (!function_exists("getUserNormalizedIds")) {
+    function getUserNormalizedIds($userid) {
+        if (!$userid) return [];
+        $cleanId = preg_replace("/[^0-9]/", "", (string)$userid);
+        $anId = !empty($cleanId) ? "AN" . $cleanId : "";
+        return array_values(array_unique(array_filter([$userid, $cleanId, $anId])));
+    }
+}
+
 require_once 'common/connection.php'; 
 
 if (!function_exists('newtime')) {
@@ -2586,72 +2595,37 @@ function getUserGrowthBreakdown($userid, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$userid) return [];
 
-    // Lock user row for fresh balance reads
-    $stmtU = $db->prepare("SELECT profit_income_wallet, profit_sharing_wallet, direct_bonus_wallet, mentor_income_wallet, vip_club_wallet FROM user WHERE userid = :uid");
-    $stmtU->execute([':uid' => $userid]);
-    $u = $stmtU->fetch(PDO::FETCH_ASSOC) ?: [];
-
-    // 1. Profit Income History
-    $stmtPI = $db->prepare("SELECT id, amount, created_date, time, subject FROM tbl_transaction WHERE user_id = :uid AND (type = 'Profit Income' OR subject LIKE '%Profit Income%') ORDER BY id DESC");
-    $stmtPI->execute([':uid' => $userid]);
-    $piHistory = $stmtPI->fetchAll(PDO::FETCH_ASSOC);
-
-    // 2. Profit Sharing Income History
-    $stmtPS = $db->prepare("SELECT id, amount, created_date, time, subject FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Profit Sharing%') ORDER BY id DESC");
-    $stmtPS->execute([':uid' => $userid]);
-    $psHistory = $stmtPS->fetchAll(PDO::FETCH_ASSOC);
-
-    // 3. Direct Bonus History
-    $stmtDB = $db->prepare("SELECT id, investment_id, source_user_id, investment_amount, total_bonus, installment_amount, installment_number, installment_month, status, credited_at FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid ORDER BY id DESC");
-    $stmtDB->execute([':uid' => $userid]);
-    $dbHistory = $stmtDB->fetchAll(PDO::FETCH_ASSOC);
-
-    // 4. Mentor Income History
-    $stmtMI = $db->prepare("SELECT id, mentor_id as mentor_user_id, direct_user_id as source_user_id, contribution_percentage, payout_amount as total_payout_amount, closing_month, status, credited_at FROM tbl_mentor_income_schedule WHERE mentor_id = :uid ORDER BY id DESC");
-    $stmtMI->execute([':uid' => $userid]);
-    $miHistory = $stmtMI->fetchAll(PDO::FETCH_ASSOC);
-
-    // 5. Rank Reward History
-    $stmtRR = $db->prepare("SELECT id, amount, created_date, time, subject FROM tbl_rewardinc WHERE user_id = :uid ORDER BY id DESC");
-    $stmtRR->execute([':uid' => $userid]);
-    $rrHistory = $stmtRR->fetchAll(PDO::FETCH_ASSOC);
-
-    // 6. VIP Club History
-    $stmtVIP = $db->prepare("SELECT id, vip_level, weaker_leg_business, reward_amount, reward_status, qualified_at FROM tbl_vip_user_qualification WHERE user_id = :uid ORDER BY id DESC");
-    $stmtVIP->execute([':uid' => $userid]);
-    $vipHistory = $stmtVIP->fetchAll(PDO::FETCH_ASSOC);
-
-    // 7. Company Turnover History
-    $stmtCT = $db->prepare("SELECT id, amount, created_date, time, subject FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Turnover%' ORDER BY id DESC");
-    $stmtCT->execute([':uid' => $userid]);
-    $ctHistory = $stmtCT->fetchAll(PDO::FETCH_ASSOC);
+    $summary = getUserIncomeWalletSummary($userid, $db);
 
     return [
-        'profit_income' => [
-            'total_balance' => (float)($u['profit_income_wallet'] ?? 0),
-            'history'       => $piHistory
+        "total_user_growth" => $summary["total_income_balance"] ?? 0,
+        "profit_income" => [
+            "total_balance" => $summary["profit_income"] ?? 0,
+            "history"       => getUserIncomeWalletHistory($userid, "PROFIT_INCOME", null, null, $db)
         ],
-        'profit_sharing' => [
-            'total_balance' => (float)($u['profit_sharing_wallet'] ?? 0),
-            'history'       => $psHistory
+        "profit_sharing" => [
+            "total_balance" => $summary["profit_sharing"] ?? 0,
+            "history"       => getUserIncomeWalletHistory($userid, "PROFIT_SHARING", null, null, $db)
         ],
-        'direct_bonus' => [
-            'total_balance' => (float)($u['direct_bonus_wallet'] ?? 0),
-            'history'       => $dbHistory
+        "direct_bonus" => [
+            "total_balance" => $summary["direct_bonus"] ?? 0,
+            "history"       => getUserIncomeWalletHistory($userid, "DIRECT_BONUS", null, null, $db)
         ],
-        'mentor_income' => [
-            'total_balance' => (float)($u['mentor_income_wallet'] ?? 0),
-            'history'       => $miHistory
+        "mentor_income" => [
+            "total_balance" => $summary["mentor_income"] ?? 0,
+            "history"       => getUserIncomeWalletHistory($userid, "MENTOR_INCOME", null, null, $db)
         ],
-        'rank_reward' => [
-            'history'       => $rrHistory
+        "rank_reward" => [
+            "total_balance" => $summary["rank_reward"] ?? 0,
+            "history"       => getUserIncomeWalletHistory($userid, "RANK_REWARD", null, null, $db)
         ],
-        'vip_club' => [
-            'total_balance' => (float)($u['vip_club_wallet'] ?? 0),
-            'history'       => $vipHistory
+        "vip_club" => [
+            "total_balance" => $summary["vip_club"] ?? 0,
+            "history"       => getUserIncomeWalletHistory($userid, "VIP_CLUB", null, null, $db)
         ],
-        'company_turnover' => [
-            'history'       => $ctHistory
+        "company_turnover" => [
+            "total_balance" => $summary["company_turnover"] ?? 0,
+            "history"       => getUserIncomeWalletHistory($userid, "COMPANY_TURNOVER", null, null, $db)
         ]
     ];
 }
@@ -4378,101 +4352,101 @@ if (!function_exists('getUserIncomeWalletSummary')) {
     function getUserIncomeWalletSummary($userid, $pdoConnection = null) {
         global $pdo;
         $db = $pdoConnection ?: $pdo;
-        if (!$db || !$userid) {
-            return [
-                'total_income_balance' => 0.0,
-                'profit_income'        => 0.0,
-                'profit_sharing'       => 0.0,
-                'direct_bonus'         => 0.0,
-                'mentor_income'        => 0.0,
-                'rank_reward'          => 0.0,
-                'vip_club'             => 0.0,
-                'company_turnover'     => 0.0
-            ];
-        }
+        if (!$db || !$userid) return [
+            'total_income_balance' => 0,
+            'profit_income'        => 0,
+            'profit_sharing'       => 0,
+            'direct_bonus'         => 0,
+            'mentor_income'        => 0,
+            'rank_reward'          => 0,
+            'vip_club'             => 0,
+            'company_turnover'     => 0
+        ];
 
-        // Fetch user wallet column values from DB
-        $stmtU = $db->prepare("SELECT profit_income_wallet, profit_sharing_wallet, direct_bonus_wallet, mentor_income_wallet, vip_club_wallet FROM user WHERE userid = :uid LIMIT 1");
-        $stmtU->execute([':uid' => $userid]);
-        $u = $stmtU->fetch(PDO::FETCH_ASSOC) ?: [];
+        $ids = getUserNormalizedIds($userid);
+        $inClause = implode(',', array_fill(0, count($ids), '?'));
 
-        // 1. Profit Income (Check user table + tbl_roiinc + tbl_transaction)
-        $stmtPI1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid");
-        $stmtPI1->execute([':uid' => $userid]);
+        // 1. Profit Income (Sum of tbl_roiinc + tbl_transaction)
+        $stmtPI1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id IN ($inClause)");
+        $stmtPI1->execute($ids);
         $pi1 = (float)$stmtPI1->fetchColumn();
 
-        $stmtPI2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (type = 'Profit Income' OR subject LIKE '%Profit Income%')");
-        $stmtPI2->execute([':uid' => $userid]);
+        $stmtPI2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type = 'Profit Income' OR subject LIKE '%Profit Income%')");
+        $stmtPI2->execute($ids);
         $pi2 = (float)$stmtPI2->fetchColumn();
 
-        $profitInc = max((float)($u['profit_income_wallet'] ?? 0), $pi1, $pi2);
+        $profitInc = max($pi1, $pi2);
 
-        // 2. Profit Sharing (Check user table + tbl_daily_levelinc + tbl_transaction)
-        $stmtPS1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id = :uid");
-        $stmtPS1->execute([':uid' => $userid]);
+        // 2. Profit Sharing (Sum of tbl_daily_levelinc + tbl_transaction)
+        $stmtPS1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id IN ($inClause)");
+        $stmtPS1->execute($ids);
         $ps1 = (float)$stmtPS1->fetchColumn();
 
-        $stmtPS2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Profit Sharing%'");
-        $stmtPS2->execute([':uid' => $userid]);
+        $stmtPS2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Profit Sharing%'");
+        $stmtPS2->execute($ids);
         $ps2 = (float)$stmtPS2->fetchColumn();
 
-        $profitShare = max((float)($u['profit_sharing_wallet'] ?? 0), $ps1, $ps2);
+        $profitShare = max($ps1, $ps2);
 
-        // 3. Direct Bonus (Check user table + tbl_roi_two + tbl_direct_bonus_schedule)
-        $stmtDB1 = $db->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_two WHERE user_id = :uid");
-        $stmtDB1->execute([':uid' => $userid]);
+        // 3. Direct Bonus (Sum of CREDITED tbl_direct_bonus_schedule + tbl_roi_two + tbl_transaction)
+        $stmtDB1 = $db->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtDB1->execute($ids);
         $db1 = (float)$stmtDB1->fetchColumn();
 
-        $stmtDB2 = $db->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
-        $stmtDB2->execute([':uid' => $userid]);
+        $stmtDB2 = $db->prepare("SELECT COALESCE(SUM(CAST(package AS DECIMAL(15,2))), 0) FROM tbl_roi_two WHERE user_id IN ($inClause)");
+        $stmtDB2->execute($ids);
         $db2 = (float)$stmtDB2->fetchColumn();
 
-        $directBon = max((float)($u['direct_bonus_wallet'] ?? 0), $db1, $db2);
+        $stmtDB3 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Direct Bonus%'");
+        $stmtDB3->execute($ids);
+        $db3 = (float)$stmtDB3->fetchColumn();
 
-        // 4. Mentor Income (Check user table + tbl_transaction + tbl_mentor_income_schedule)
-        $stmtMI1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Generation Income Payout%'");
-        $stmtMI1->execute([':uid' => $userid]);
+        $directBon = max($db1, $db2, $db3);
+
+        // 4. Mentor Income (Sum of CREDITED tbl_mentor_income_schedule + tbl_transaction)
+        $stmtMI1 = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE mentor_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtMI1->execute($ids);
         $mi1 = (float)$stmtMI1->fetchColumn();
 
-        $stmtMI2 = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE (mentor_id = :uid OR direct_user_id = :uid) AND status = 'CREDITED'");
-        $stmtMI2->execute([':uid' => $userid]);
+        $stmtMI2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Mentor Income%'");
+        $stmtMI2->execute($ids);
         $mi2 = (float)$stmtMI2->fetchColumn();
 
-        $mentorInc = max((float)($u['mentor_income_wallet'] ?? 0), $mi1, $mi2);
+        $mentorInc = max($mi1, $mi2);
 
-        // 5. Rank Reward (Check tbl_transaction + tbl_rewardinc)
-        $stmtRR1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Reward Income%'");
-        $stmtRR1->execute([':uid' => $userid]);
+        // 5. Rank Reward (Sum of tbl_rewardinc + tbl_transaction)
+        $stmtRR1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id IN ($inClause)");
+        $stmtRR1->execute($ids);
         $rr1 = (float)$stmtRR1->fetchColumn();
 
-        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid");
-        $stmtRR2->execute([':uid' => $userid]);
+        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Reward Income%'");
+        $stmtRR2->execute($ids);
         $rr2 = (float)$stmtRR2->fetchColumn();
 
         $rankRew = max($rr1, $rr2);
 
-        // 6. VIP Club (Check user table + tbl_transaction + tbl_vip_user_qualification + tbl_vip_monthly_schedule)
-        $stmtVIP1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Ranking Income Payout%'");
-        $stmtVIP1->execute([':uid' => $userid]);
+        // 6. VIP Club (Sum of CREDITED tbl_vip_user_qualification + tbl_vip_monthly_schedule + tbl_transaction)
+        $stmtVIP1 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id IN ($inClause) AND reward_status = 'CREDITED'");
+        $stmtVIP1->execute($ids);
         $vip1 = (float)$stmtVIP1->fetchColumn();
 
-        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
-        $stmtVIP2->execute([':uid' => $userid]);
+        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtVIP2->execute($ids);
         $vip2 = (float)$stmtVIP2->fetchColumn();
 
-        $stmtVIP3 = $db->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
-        $stmtVIP3->execute([':uid' => $userid]);
+        $stmtVIP3 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (subject LIKE '%VIP%' OR subject LIKE '%Ranking%')");
+        $stmtVIP3->execute($ids);
         $vip3 = (float)$stmtVIP3->fetchColumn();
 
-        $vipClub = max((float)($u['vip_club_wallet'] ?? 0), $vip1, ($vip2 + $vip3));
+        $vipClub = max(($vip1 + $vip2), $vip3);
 
-        // 7. Company Turnover (Check tbl_transaction + tbl_vip_monthly_schedule)
-        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover%')");
-        $stmtCT1->execute([':uid' => $userid]);
+        // 7. Company Turnover (Sum of CREDITED turnover_payout in tbl_vip_monthly_schedule + turnover in tbl_transaction)
+        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (subject LIKE '%Turnover%' OR subject LIKE '%Company%')");
+        $stmtCT1->execute($ids);
         $ct1 = (float)$stmtCT1->fetchColumn();
 
-        $stmtCT2 = $db->prepare("SELECT COALESCE(SUM(turnover_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
-        $stmtCT2->execute([':uid' => $userid]);
+        $stmtCT2 = $db->prepare("SELECT COALESCE(SUM(turnover_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtCT2->execute($ids);
         $ct2 = (float)$stmtCT2->fetchColumn();
 
         $turnover = max($ct1, $ct2);
@@ -4498,153 +4472,156 @@ if (!function_exists('getUserIncomeWalletHistory')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userid) return [];
 
+        $ids = getUserNormalizedIds($userid);
+        $inClause = implode(',', array_fill(0, count($ids), '?'));
+
         $allHistory = [];
 
-        // 1. Profit Income from tbl_transaction
+        // 1. Profit Income
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'PROFIT_INCOME') {
-            $sql = "SELECT id, 'Profit Income' as income_type, amount, created_date, time, subject, '1' as status FROM tbl_transaction WHERE user_id = :uid AND (type = 'Profit Income' OR subject LIKE '%Profit Income%')";
-            $params = [':uid' => $userid];
-            if (!empty($fromDate) && !empty($toDate)) {
-                $sql .= " AND created_date >= :from_date AND created_date <= :to_date";
-                $params[':from_date'] = $fromDate;
-                $params[':to_date']   = $toDate;
-            }
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sql1 = "SELECT id, 'Profit Income' as income_type, amount, created_date, time, subject FROM tbl_roiinc WHERE user_id IN ($inClause)";
+            if (!empty($fromDate) && !empty($toDate)) $sql1 .= " AND created_date >= '$fromDate' AND created_date <= '$toDate'";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->execute($ids);
+            foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $allHistory[] = [
-                    'id'           => $row['id'],
+                    'id'           => 'ROI_' . $row['id'],
                     'income_type'  => 'Profit Income',
                     'amount'       => (float)$row['amount'],
                     'created_date' => $row['created_date'],
-                    'time'         => $row['time'],
-                    'subject'      => $row['subject'],
+                    'time'         => $row['time'] ?: '00:00:00',
+                    'subject'      => $row['subject'] ?: 'Daily Profit Income',
                     'status'       => 'Credited',
-                    'sort_date'    => $row['created_date'] . ' ' . $row['time']
+                    'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
+                ];
+            }
+
+            $sql2 = "SELECT id, 'Profit Income' as income_type, amount, created_date, time, subject FROM tbl_transaction WHERE user_id IN ($inClause) AND (type = 'Profit Income' OR subject LIKE '%Profit Income%')";
+            if (!empty($fromDate) && !empty($toDate)) $sql2 .= " AND created_date >= '$fromDate' AND created_date <= '$toDate'";
+            $stmt2 = $db->prepare($sql2);
+            $stmt2->execute($ids);
+            foreach ($stmt2->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $allHistory[] = [
+                    'id'           => 'TRX_' . $row['id'],
+                    'income_type'  => 'Profit Income',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $row['created_date'],
+                    'time'         => $row['time'] ?: '00:00:00',
+                    'subject'      => $row['subject'] ?: 'Profit Income Payout',
+                    'status'       => 'Credited',
+                    'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
                 ];
             }
         }
 
-        // 2. Profit Sharing from tbl_transaction
+        // 2. Profit Sharing
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'PROFIT_SHARING') {
-            $sql = "SELECT id, 'Profit Sharing' as income_type, amount, created_date, time, subject, '1' as status FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Profit Sharing%'";
-            $params = [':uid' => $userid];
-            if (!empty($fromDate) && !empty($toDate)) {
-                $sql .= " AND created_date >= :from_date AND created_date <= :to_date";
-                $params[':from_date'] = $fromDate;
-                $params[':to_date']   = $toDate;
-            }
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sql1 = "SELECT id, 'Profit Sharing' as income_type, amount, created_date, time, subject FROM tbl_daily_levelinc WHERE user_id IN ($inClause)";
+            if (!empty($fromDate) && !empty($toDate)) $sql1 .= " AND created_date >= '$fromDate' AND created_date <= '$toDate'";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->execute($ids);
+            foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $allHistory[] = [
-                    'id'           => $row['id'],
+                    'id'           => 'PS_' . $row['id'],
                     'income_type'  => 'Profit Sharing',
                     'amount'       => (float)$row['amount'],
                     'created_date' => $row['created_date'],
-                    'time'         => $row['time'],
-                    'subject'      => $row['subject'],
+                    'time'         => $row['time'] ?: '00:00:00',
+                    'subject'      => $row['subject'] ?: 'Profit Sharing Income',
                     'status'       => 'Credited',
-                    'sort_date'    => $row['created_date'] . ' ' . $row['time']
+                    'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
+                ];
+            }
+
+            $sql2 = "SELECT id, 'Profit Sharing' as income_type, amount, created_date, time, subject FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Profit Sharing%'";
+            if (!empty($fromDate) && !empty($toDate)) $sql2 .= " AND created_date >= '$fromDate' AND created_date <= '$toDate'";
+            $stmt2 = $db->prepare($sql2);
+            $stmt2->execute($ids);
+            foreach ($stmt2->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $allHistory[] = [
+                    'id'           => 'TRX_' . $row['id'],
+                    'income_type'  => 'Profit Sharing',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $row['created_date'],
+                    'time'         => $row['time'] ?: '00:00:00',
+                    'subject'      => $row['subject'] ?: 'Profit Sharing Payout',
+                    'status'       => 'Credited',
+                    'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
                 ];
             }
         }
 
-        // 3. Direct Bonus from tbl_direct_bonus_schedule
+        // 3. Direct Bonus
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'DIRECT_BONUS') {
-            $sql = "SELECT id, 'Direct Bonus' as income_type, installment_amount as amount, installment_month, source_user_id, installment_number, status, credited_at FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid";
-            $params = [':uid' => $userid];
-            if (!empty($fromDate) && !empty($toDate)) {
-                $sql .= " AND credited_at >= :from_date AND credited_at <= :to_date_end";
-                $params[':from_date'] = $fromDate . ' 00:00:00';
-                $params[':to_date_end'] = $toDate . ' 23:59:59';
-            }
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sql1 = "SELECT id, 'Direct Bonus' as income_type, installment_amount as amount, installment_month, source_user_id, installment_number, status, credited_at FROM tbl_direct_bonus_schedule WHERE beneficiary_id IN ($inClause)";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->execute($ids);
+            foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $dtStr = $row['credited_at'] ?: ($row['installment_month'] . '-01 00:00:00');
                 $dParts = explode(' ', $dtStr);
                 $allHistory[] = [
-                    'id'           => $row['id'],
+                    'id'           => 'DB_' . $row['id'],
                     'income_type'  => 'Direct Bonus',
                     'amount'       => (float)$row['amount'],
                     'created_date' => $dParts[0],
                     'time'         => $dParts[1] ?? '00:00:00',
-                    'subject'      => "Direct Bonus Installment #" . $row['installment_number'] . " from User " . $row['source_user_id'] . " (" . $row['installment_month'] . ")",
+                    'subject'      => "Direct Bonus Installment #" . $row['installment_number'] . " from User " . $row['source_user_id'],
                     'status'       => $row['status'],
                     'sort_date'    => $dtStr
                 ];
             }
         }
 
-        // 4. Mentor Income from tbl_mentor_income_schedule
+        // 4. Mentor Income
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'MENTOR_INCOME') {
-            $sql = "SELECT id, 'Mentor Income' as income_type, payout_amount as amount, closing_month, direct_user_id, contribution_percentage, status, credited_at FROM tbl_mentor_income_schedule WHERE mentor_id = :uid";
-            $params = [':uid' => $userid];
-            if (!empty($fromDate) && !empty($toDate)) {
-                $sql .= " AND credited_at >= :from_date AND credited_at <= :to_date_end";
-                $params[':from_date'] = $fromDate . ' 00:00:00';
-                $params[':to_date_end'] = $toDate . ' 23:59:59';
-            }
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sql1 = "SELECT id, 'Mentor Income' as income_type, payout_amount as amount, closing_month, direct_user_id, contribution_percentage, status, credited_at FROM tbl_mentor_income_schedule WHERE mentor_id IN ($inClause)";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->execute($ids);
+            foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $dtStr = $row['credited_at'] ?: ($row['closing_month'] . '-01 00:00:00');
                 $dParts = explode(' ', $dtStr);
                 $allHistory[] = [
-                    'id'           => $row['id'],
+                    'id'           => 'MI_' . $row['id'],
                     'income_type'  => 'Mentor Income',
                     'amount'       => (float)$row['amount'],
                     'created_date' => $dParts[0],
                     'time'         => $dParts[1] ?? '00:00:00',
-                    'subject'      => "Mentor Income (" . $row['contribution_percentage'] . "%) from Direct User " . $row['direct_user_id'] . " (" . $row['closing_month'] . ")",
+                    'subject'      => "Mentor Income (" . $row['contribution_percentage'] . "%) from User " . $row['direct_user_id'],
                     'status'       => $row['status'],
                     'sort_date'    => $dtStr
                 ];
             }
         }
 
-        // 5. Rank Reward from tbl_rewardinc
+        // 5. Rank Reward
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'RANK_REWARD') {
-            $sql = "SELECT id, 'Rank Reward' as income_type, amount, created_date, time, subject, status FROM tbl_rewardinc WHERE user_id = :uid";
-            $params = [':uid' => $userid];
-            if (!empty($fromDate) && !empty($toDate)) {
-                $sql .= " AND created_date >= :from_date AND created_date <= :to_date";
-                $params[':from_date'] = $fromDate;
-                $params[':to_date']   = $toDate;
-            }
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sql1 = "SELECT id, 'Rank Reward' as income_type, amount, created_date, time, subject FROM tbl_rewardinc WHERE user_id IN ($inClause)";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->execute($ids);
+            foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $allHistory[] = [
-                    'id'           => $row['id'],
+                    'id'           => 'RR_' . $row['id'],
                     'income_type'  => 'Rank Reward',
                     'amount'       => (float)$row['amount'],
                     'created_date' => $row['created_date'],
-                    'time'         => $row['time'],
-                    'subject'      => $row['subject'],
-                    'status'       => ($row['status'] == 1) ? 'Achieved' : 'Pending',
-                    'sort_date'    => $row['created_date'] . ' ' . $row['time']
+                    'time'         => $row['time'] ?: '00:00:00',
+                    'subject'      => $row['subject'] ?: 'Rank Reward Income',
+                    'status'       => 'Credited',
+                    'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
                 ];
             }
         }
 
-        // 6. VIP Club from tbl_vip_user_qualification
+        // 6. VIP Club
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'VIP_CLUB') {
-            $sql = "SELECT id, 'VIP Club' as income_type, reward_amount as amount, qualified_at, vip_level, reward_status FROM tbl_vip_user_qualification WHERE user_id = :uid";
-            $params = [':uid' => $userid];
-            if (!empty($fromDate) && !empty($toDate)) {
-                $sql .= " AND qualified_at >= :from_date AND qualified_at <= :to_date_end";
-                $params[':from_date'] = $fromDate . ' 00:00:00';
-                $params[':to_date_end'] = $toDate . ' 23:59:59';
-            }
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sql1 = "SELECT id, 'VIP Club' as income_type, reward_amount as amount, qualified_at, vip_level, reward_status FROM tbl_vip_user_qualification WHERE user_id IN ($inClause)";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->execute($ids);
+            foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $dtStr = $row['qualified_at'] ?: date('Y-m-d H:i:s');
                 $dParts = explode(' ', $dtStr);
                 $allHistory[] = [
-                    'id'           => $row['id'],
+                    'id'           => 'VIP_' . $row['id'],
                     'income_type'  => 'VIP Club',
                     'amount'       => (float)$row['amount'],
                     'created_date' => $dParts[0],
@@ -4656,27 +4633,21 @@ if (!function_exists('getUserIncomeWalletHistory')) {
             }
         }
 
-        // 7. Company Turnover from tbl_transaction
+        // 7. Company Turnover
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'COMPANY_TURNOVER') {
-            $sql = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject, status FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Turnover%'";
-            $params = [':uid' => $userid];
-            if (!empty($fromDate) && !empty($toDate)) {
-                $sql .= " AND created_date >= :from_date AND created_date <= :to_date";
-                $params[':from_date'] = $fromDate;
-                $params[':to_date']   = $toDate;
-            }
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sql1 = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject FROM tbl_transaction WHERE user_id IN ($inClause) AND (subject LIKE '%Turnover%' OR subject LIKE '%Company%')";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->execute($ids);
+            foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $allHistory[] = [
-                    'id'           => $row['id'],
+                    'id'           => 'CT_' . $row['id'],
                     'income_type'  => 'Company Turnover',
                     'amount'       => (float)$row['amount'],
                     'created_date' => $row['created_date'],
-                    'time'         => $row['time'],
-                    'subject'      => $row['subject'],
+                    'time'         => $row['time'] ?: '00:00:00',
+                    'subject'      => $row['subject'] ?: 'Company Turnover Dividend',
                     'status'       => 'Credited',
-                    'sort_date'    => $row['created_date'] . ' ' . $row['time']
+                    'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
                 ];
             }
         }
@@ -4686,7 +4657,7 @@ if (!function_exists('getUserIncomeWalletHistory')) {
             $tA = strtotime($a['sort_date'] ?? '1970-01-01');
             $tB = strtotime($b['sort_date'] ?? '1970-01-01');
             if ($tA === $tB) {
-                return $b['id'] - $a['id'];
+                return strcmp((string)$b['id'], (string)$a['id']);
             }
             return $tB - $tA;
         });

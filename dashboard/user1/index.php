@@ -209,16 +209,8 @@ $leadership_income_income = incometotalnew($pdo, $table,$userid,'Leadership Inco
 $leadership_income_income= round((float)($leadership_income_income ?? 0), 2);
 
 // User Growth Combined Total (7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor/Generation Income, VIP Club/Ranking Income, Company Turnover/Leadership, Rank Reward)
-$user_growth_total = round(
-    (float)$profit_income_wallet +
-    (float)$profit_sharing_income +
-    (float)$direct_bonus +
-    (float)$generation_income +
-    (float)$ranking_income +
-    (float)($leadership_income_income ?? 0) +
-    (float)$reward_income,
-    2
-);
+$user_growth_breakdown_data = getUserGrowthBreakdown($userid, $pdo);
+$user_growth_total = round((float)($user_growth_breakdown_data["total_user_growth"] ?? 0), 2);
 
 // direct income
 $table="tbl_levelinc";
