@@ -162,12 +162,8 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
         // Helper check: A node should only claim a candidate as a placement child if candidate is sponsored by nodeId OR candidate's sponsor is not in the tree
-        $canClaimPlacementChild = function($cId) use ($nodeId, $globalUserMap) {
-            if (!isset($globalUserMap[$cId])) return false;
-            $sp = (string)($globalUserMap[$cId]['sponserid'] ?? '');
-            if ($sp === $nodeId) return true;
-            if (empty($sp) || !isset($globalUserMap[$sp])) return true;
-            return false;
+        $canClaimPlacementChild = function($cId) use ($globalUserMap) {
+            return isset($globalUserMap[$cId]);
         };
 
         // Gather Children (Binary Placement Left & Right + Direct Referrals with Zero Duplicates)
