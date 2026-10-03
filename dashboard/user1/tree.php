@@ -91,7 +91,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $globalInvMap[(string)$r['user_id']] = (float)$r['total_usd'];
     }
 
-    function calcBranchStatsFast($startNodeId, &$globalUserMap, &$globalInvMap, $visited = []) {
+    function calcBranchStatsFast($startNodeId, &$globalUserMap, &$globalInvMap, &$underUserChildrenMap, &$visited = []) {
         if (empty($startNodeId) || !isset($globalUserMap[$startNodeId]) || isset($visited[$startNodeId])) {
             return ['count' => 0, 'business_usd' => 0.0];
         }
@@ -105,11 +105,20 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         }
 
         $cList = [];
-        if (!empty($u['left_id'])) $cList[] = (string)$u['left_id'];
-        if (!empty($u['right_id'])) $cList[] = (string)$u['right_id'];
+        if (!empty($u['left_id']) && isset($globalUserMap[(string)$u['left_id']])) $cList[] = (string)$u['left_id'];
+        if (!empty($u['right_id']) && isset($globalUserMap[(string)$u['right_id']])) $cList[] = (string)$u['right_id'];
+
+        if (isset($underUserChildrenMap[$startNodeId])) {
+            foreach ($underUserChildrenMap[$startNodeId] as $uc) {
+                $cId = (string)$uc['userid'];
+                if ($cId !== $startNodeId && !in_array($cId, $cList) && isset($globalUserMap[$cId])) {
+                    $cList[] = $cId;
+                }
+            }
+        }
 
         foreach ($cList as $cId) {
-            $sub = calcBranchStatsFast($cId, $globalUserMap, $globalInvMap, $visited);
+            $sub = calcBranchStatsFast($cId, $globalUserMap, $globalInvMap, $underUserChildrenMap, $visited);
             $count += $sub['count'];
             $business += $sub['business_usd'];
         }
@@ -134,8 +143,24 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         // Left Branch Stats
         $leftStats = ['count' => 0, 'business_usd' => 0.0];
-        if (!empty($user['left_id'])) {
-            $leftStats = calcBranchStatsFast((string)$user['left_id'], $globalUserMap, $globalInvMap);
+        $leftVisited = [];
+        $leftRoots = [];
+        if (!empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) {
+            $leftRoots[] = (string)$user['left_id'];
+        }
+        if (isset($underUserChildrenMap[$nodeId])) {
+            foreach ($underUserChildrenMap[$nodeId] as $uc) {
+                $cId = (string)$uc['userid'];
+                $side = strtolower($uc['join_side'] ?? '');
+                if ($cId !== $nodeId && !in_array($cId, $leftRoots) && ($side === 'left' || $side === 'l')) {
+                    $leftRoots[] = $cId;
+                }
+            }
+        }
+        foreach ($leftRoots as $lrId) {
+            $s = calcBranchStatsFast($lrId, $globalUserMap, $globalInvMap, $underUserChildrenMap, $leftVisited);
+            $leftStats['count'] += $s['count'];
+            $leftStats['business_usd'] += $s['business_usd'];
         }
         $leftCount = max(intval($user['leftcount'] ?? 0), $leftStats['count']);
         $leftBusiness = $leftStats['business_usd'];
@@ -145,8 +170,24 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         // Right Branch Stats
         $rightStats = ['count' => 0, 'business_usd' => 0.0];
-        if (!empty($user['right_id'])) {
-            $rightStats = calcBranchStatsFast((string)$user['right_id'], $globalUserMap, $globalInvMap);
+        $rightVisited = [];
+        $rightRoots = [];
+        if (!empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) {
+            $rightRoots[] = (string)$user['right_id'];
+        }
+        if (isset($underUserChildrenMap[$nodeId])) {
+            foreach ($underUserChildrenMap[$nodeId] as $uc) {
+                $cId = (string)$uc['userid'];
+                $side = strtolower($uc['join_side'] ?? '');
+                if ($cId !== $nodeId && !in_array($cId, $rightRoots) && ($side === 'right' || $side === 'r')) {
+                    $rightRoots[] = $cId;
+                }
+            }
+        }
+        foreach ($rightRoots as $rrId) {
+            $s = calcBranchStatsFast($rrId, $globalUserMap, $globalInvMap, $underUserChildrenMap, $rightVisited);
+            $rightStats['count'] += $s['count'];
+            $rightStats['business_usd'] += $s['business_usd'];
         }
         $rightCount = max(intval($user['rightcount'] ?? 0), $rightStats['count']);
         $rightBusiness = $rightStats['business_usd'];

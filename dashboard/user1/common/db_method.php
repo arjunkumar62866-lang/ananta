@@ -2062,13 +2062,10 @@ if (!function_exists('getUserNetworkDownlineIds')) {
  * Helper to fetch complete root-based subtree with node level, parent ID, relative position, business, and counts.
  */
 if (!function_exists('getRootBranchTreeDetailed')) {
-    function getRootBranchTreeDetailed($startChildId, $pdoConnection = null, $initialPosition = 'LEFT') {
+    function getRootBranchTreeDetailed($startChildIds, $pdoConnection = null, $initialPosition = 'LEFT') {
         global $pdo;
         $db = $pdoConnection ?: $pdo;
-        if (!$db || empty($startChildId)) return [];
-
-        $startChildId = trim((string)$startChildId);
-        $cleanStartChildId = (stripos($startChildId, 'AN') === 0) ? trim(substr($startChildId, 2)) : $startChildId;
+        if (!$db || empty($startChildIds)) return [];
 
         // Bulk load all users, tree nodes, investments, and direct count in single queries
         $stmtUsers = $db->query("
@@ -2111,11 +2108,19 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             }
         }
 
-        if (!isset($userMap[$startChildId]) && isset($userMap[$cleanStartChildId])) {
-            $startChildId = $cleanStartChildId;
+        $childList = is_array($startChildIds) ? $startChildIds : (!empty($startChildIds) ? [$startChildIds] : []);
+        $validStartIds = [];
+        foreach ($childList as $scId) {
+            $scId = trim((string)$scId);
+            $cleanScId = (stripos($scId, 'AN') === 0) ? trim(substr($scId, 2)) : $scId;
+            if (!isset($userMap[$scId]) && isset($userMap[$cleanScId])) {
+                $scId = $cleanScId;
+            }
+            if (isset($userMap[$scId]) && !in_array($scId, $validStartIds)) {
+                $validStartIds[] = $scId;
+            }
         }
-
-        if (!isset($userMap[$startChildId])) {
+        if (empty($validStartIds)) {
             return [];
         }
 
@@ -2160,14 +2165,15 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         } catch (Exception $exInv2) {}
 
         $results = [];
-        $queue = [
-            [
-                'userid'    => $startChildId,
+        $queue = [];
+        foreach ($validStartIds as $vId) {
+            $queue[] = [
+                'userid'    => $vId,
                 'parent_id' => '',
                 'position'  => strtoupper($initialPosition),
                 'level'     => 1
-            ]
-        ];
+            ];
+        }
         $visited = [];
 
         while (!empty($queue)) {
@@ -2431,30 +2437,37 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
             $effectiveUserId = $userid;
         }
 
+        $targetSideLower = strtolower($targetSide);
+        $rootChildIds = [];
+
+        // 1. Direct child from tree table
         if (isset($treeMap[$effectiveUserId])) {
             $uRow = $treeMap[$effectiveUserId];
-            if ($targetSide === 'LEFT') {
-                $rootChildId = !empty($uRow['left_id']) && (isset($treeMap[(string)$uRow['left_id']]) || isset($treeMap[trim(substr((string)$uRow['left_id'], 2))])) ? (string)$uRow['left_id'] : '';
-            } else {
-                $rootChildId = !empty($uRow['right_id']) && (isset($treeMap[(string)$uRow['right_id']]) || isset($treeMap[trim(substr((string)$uRow['right_id'], 2))])) ? (string)$uRow['right_id'] : '';
+            $treeChild = ($targetSide === 'LEFT') ? ($uRow['left_id'] ?? '') : ($uRow['right_id'] ?? '');
+            $treeChild = trim((string)$treeChild);
+            if (!empty($treeChild) && $treeChild !== $effectiveUserId && (isset($treeMap[$treeChild]) || isset($treeMap[trim(substr($treeChild, 2))]))) {
+                $rootChildIds[] = $treeChild;
             }
         }
 
-        if (empty($rootChildId) && isset($underMap[$effectiveUserId])) {
+        // 2. Direct placement children from underMap with matching side
+        if (isset($underMap[$effectiveUserId])) {
             foreach ($underMap[$effectiveUserId] as $uc) {
-                $cId = (string)$uc['userid'];
-                if (strtolower($uc['join_side'] ?? '') === strtolower($targetSide)) {
-                    $rootChildId = $cId;
-                    break;
+                $cId = trim((string)$uc['userid']);
+                $side = strtolower($uc['join_side'] ?? '');
+                if ($cId !== $effectiveUserId && !in_array($cId, $rootChildIds)) {
+                    if ($side === $targetSideLower || ($targetSideLower === 'left' && $side === 'l') || ($targetSideLower === 'right' && $side === 'r')) {
+                        $rootChildIds[] = $cId;
+                    }
                 }
             }
         }
 
-        if (empty($rootChildId)) {
+        if (empty($rootChildIds)) {
             return [];
         }
 
-        return getRootBranchTreeDetailed($rootChildId, $db, $targetSide);
+        return getRootBranchTreeDetailed($rootChildIds, $db, $targetSide);
     }
 
     return [];
