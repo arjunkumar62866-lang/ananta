@@ -3,32 +3,43 @@ $token = $_GET['t'] ?? '';
 if ($token !== 'ananta_diag_2025') { http_response_code(403); die('Forbidden'); }
 header('Content-Type: text/plain; charset=utf-8');
 require_once __DIR__ . '/dashboard/user1/common/connection.php';
-echo "=== PRODUCTION DB DIAGNOSTIC ===\n";
+
+echo "=== PRODUCTION FIX: user table 224891 underuserid + join_side ===\n";
 echo "Time: " . date('Y-m-d H:i:s') . "\n\n";
-echo "=== 1. USER TABLE: 540599 ===\n";
-$r = $pdo->query("SELECT userid, sponserid, underuserid, join_side, status FROM user WHERE userid = '540599'")->fetchAll(PDO::FETCH_ASSOC);
-echo empty($r) ? "540599 NOT FOUND in user table.\n" : print_r($r, true);
-echo "\n=== 2. TREE TABLE: 540599 ===\n";
-$r2 = $pdo->query("SELECT userid, left_id, right_id, join_side FROM tree WHERE userid = '540599'")->fetchAll(PDO::FETCH_ASSOC);
-echo empty($r2) ? "540599 NOT FOUND in tree table.\n" : print_r($r2, true);
-echo "\n=== 3. WHO IS PARENT OF 224891 IN TREE TABLE ===\n";
-$r3 = $pdo->query("SELECT userid, left_id, right_id FROM tree WHERE left_id = '224891' OR right_id = '224891'")->fetchAll(PDO::FETCH_ASSOC);
-if (empty($r3)) { echo "224891 has NO parent in tree table.\n"; }
-else {
-    foreach ($r3 as $row) {
-        $side = ($row['left_id'] == '224891') ? 'LEFT' : 'RIGHT';
-        echo "Parent: " . $row['userid'] . " -> " . $side . " -> 224891\n";
+
+// BEFORE STATE
+echo "--- BEFORE ---\n";
+$before = $pdo->query("SELECT userid, sponserid, underuserid, join_side FROM user WHERE userid = '224891'")->fetch(PDO::FETCH_ASSOC);
+print_r($before);
+
+// Confirm tree table source of truth
+echo "\n--- tree table: 540599 left_id ---\n";
+$tree540 = $pdo->query("SELECT userid, left_id, right_id FROM tree WHERE userid = '540599'")->fetch(PDO::FETCH_ASSOC);
+print_r($tree540);
+
+// VERIFY: 224891 is indeed left child of 540599
+if ($tree540 && $tree540['left_id'] == '224891') {
+    echo "\nVERIFIED: 224891 is LEFT child of 540599 in tree table.\n";
+    echo "Fixing user table: underuserid=540599, join_side=left ...\n";
+
+    $stmt = $pdo->prepare("UPDATE user SET underuserid = '540599', join_side = 'left' WHERE userid = '224891'");
+    $result = $stmt->execute();
+    $affected = $stmt->rowCount();
+
+    echo "UPDATE result: " . ($result ? "SUCCESS" : "FAILED") . "\n";
+    echo "Rows affected: $affected\n";
+
+    echo "\n--- AFTER ---\n";
+    $after = $pdo->query("SELECT userid, sponserid, underuserid, join_side FROM user WHERE userid = '224891'")->fetch(PDO::FETCH_ASSOC);
+    print_r($after);
+
+    if ($after['underuserid'] == '540599' && $after['join_side'] == 'left') {
+        echo "\nFIX CONFIRMED: underuserid=540599, join_side=left\n";
+    } else {
+        echo "\nWARNING: Values not updated as expected!\n";
     }
-    echo "Total parents: " . count($r3) . "\n";
-    echo (count($r3) > 1) ? "!! DUPLICATE DETECTED !!\n" : "CLEAN - Only 1 parent.\n";
+} else {
+    echo "\nERROR: tree table does NOT confirm 224891 as left child of 540599. Aborting fix.\n";
 }
-echo "\n=== 4. TREE TABLE: 789260 ===\n";
-$r4 = $pdo->query("SELECT userid, left_id, right_id FROM tree WHERE userid = '789260'")->fetchAll(PDO::FETCH_ASSOC);
-echo empty($r4) ? "789260 NOT FOUND in tree.\n" : print_r($r4, true);
-echo "\n=== 5. TREE TABLE: 540599 as parent ===\n";
-$r5 = $pdo->query("SELECT userid, left_id, right_id FROM tree WHERE userid = '540599'")->fetchAll(PDO::FETCH_ASSOC);
-echo empty($r5) ? "540599 NOT FOUND as parent in tree.\n" : print_r($r5, true);
-echo "\n=== 6. USER TABLE: 224891 ===\n";
-$r6 = $pdo->query("SELECT userid, sponserid, underuserid, join_side FROM user WHERE userid = '224891'")->fetchAll(PDO::FETCH_ASSOC);
-echo empty($r6) ? "224891 NOT FOUND.\n" : print_r($r6, true);
+
 echo "\n=== DONE ===\n";
