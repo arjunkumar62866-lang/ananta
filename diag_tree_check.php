@@ -4,62 +4,79 @@ if ($token !== 'ananta_diag_2025') { http_response_code(403); die('Forbidden'); 
 header('Content-Type: text/plain; charset=utf-8');
 require_once __DIR__ . '/dashboard/user1/common/connection.php';
 
-echo "=== GLOBAL TREE vs USER TABLE MISMATCH AUDIT ===\n";
+echo "=== GLOBAL BATCH FIX: Sync user.underuserid + user.join_side FROM tree table ===\n";
 echo "Time: " . date('Y-m-d H:i:s') . "\n\n";
 
-// Find all users who appear as left_id or right_id in tree table
-// Then check if their user.underuserid matches the actual tree parent
+// Get all mismatched users using tree as source of truth
 $sql = "
     SELECT 
         u.userid,
-        u.underuserid AS user_underuserid,
-        u.join_side AS user_join_side,
-        t.userid AS tree_parent,
-        CASE WHEN t.left_id = u.userid THEN 'left' ELSE 'right' END AS tree_side
+        u.underuserid AS old_underuserid,
+        u.join_side AS old_join_side,
+        t.userid AS correct_parent,
+        CASE WHEN t.left_id = u.userid THEN 'left' ELSE 'right' END AS correct_side
     FROM user u
     JOIN tree t ON (t.left_id = u.userid OR t.right_id = u.userid)
     WHERE u.underuserid != t.userid
        OR u.join_side != CASE WHEN t.left_id = u.userid THEN 'left' ELSE 'right' END
+       OR u.join_side = '' OR u.join_side IS NULL
     ORDER BY u.userid
 ";
 
 $mismatches = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
-echo "=== MISMATCHED USERS (user.underuserid != tree parent) ===\n";
-if (empty($mismatches)) {
-    echo "ALL CLEAN - No mismatches found!\n";
-} else {
-    echo "FOUND " . count($mismatches) . " MISMATCH(ES):\n\n";
-    foreach ($mismatches as $m) {
-        echo "userid: " . $m['userid'] . "\n";
-        echo "  user.underuserid = " . $m['user_underuserid'] . " (WRONG)\n";
-        echo "  user.join_side   = " . $m['user_join_side'] . " (WRONG)\n";
-        echo "  tree parent      = " . $m['tree_parent'] . " (CORRECT)\n";
-        echo "  tree side        = " . $m['tree_side'] . " (CORRECT)\n";
-        echo "---\n";
+echo "Total mismatches to fix: " . count($mismatches) . "\n\n";
+
+$fixed = 0;
+$failed = 0;
+
+foreach ($mismatches as $m) {
+    $stmt = $pdo->prepare(
+        "UPDATE user SET underuserid = ?, join_side = ? WHERE userid = ?"
+    );
+    $result = $stmt->execute([$m['correct_parent'], $m['correct_side'], $m['userid']]);
+    $rows = $stmt->rowCount();
+
+    if ($result && $rows > 0) {
+        echo "FIXED: userid=" . $m['userid'] 
+            . " | underuserid: " . $m['old_underuserid'] . " -> " . $m['correct_parent']
+            . " | join_side: '" . $m['old_join_side'] . "' -> " . $m['correct_side'] . "\n";
+        $fixed++;
+    } else {
+        echo "SKIP/FAIL: userid=" . $m['userid'] . " (rows=" . $rows . ")\n";
+        $failed++;
     }
 }
 
-// Also check duplicate parents (same child in 2 parents)
-echo "\n=== DUPLICATE PARENT CHECK (same child in 2+ tree nodes) ===\n";
-$dupSql = "
-    SELECT child_id, COUNT(*) as parent_count, GROUP_CONCAT(parent_id) as parents
-    FROM (
-        SELECT left_id AS child_id, userid AS parent_id FROM tree WHERE left_id != '' AND left_id IS NOT NULL
-        UNION ALL
-        SELECT right_id AS child_id, userid AS parent_id FROM tree WHERE right_id != '' AND right_id IS NOT NULL
-    ) all_children
-    GROUP BY child_id
-    HAVING COUNT(*) > 1
-";
-$dups = $pdo->query($dupSql)->fetchAll(PDO::FETCH_ASSOC);
-if (empty($dups)) {
-    echo "ALL CLEAN - No duplicate parents!\n";
+echo "\n=== SUMMARY ===\n";
+echo "Fixed: $fixed\n";
+echo "Skipped/Failed: $failed\n";
+
+// Post-fix verification
+echo "\n=== POST-FIX VERIFICATION ===\n";
+$verify = $pdo->query("
+    SELECT COUNT(*) as cnt FROM user u
+    JOIN tree t ON (t.left_id = u.userid OR t.right_id = u.userid)
+    WHERE u.underuserid != t.userid
+       OR u.join_side != CASE WHEN t.left_id = u.userid THEN 'left' ELSE 'right' END
+       OR u.join_side = '' OR u.join_side IS NULL
+")->fetch(PDO::FETCH_ASSOC);
+
+$remaining = $verify['cnt'];
+if ($remaining == 0) {
+    echo "ALL CLEAN - 0 mismatches remaining!\n";
 } else {
-    echo "FOUND " . count($dups) . " DUPLICATE(S):\n";
-    foreach ($dups as $d) {
-        echo "child: " . $d['child_id'] . " has " . $d['parent_count'] . " parents: " . $d['parents'] . "\n";
-    }
+    echo "WARNING: $remaining mismatches still remaining.\n";
 }
+
+// Duplicate check
+$dups = $pdo->query("
+    SELECT child_id, COUNT(*) as cnt FROM (
+        SELECT left_id AS child_id FROM tree WHERE left_id != '' AND left_id IS NOT NULL
+        UNION ALL
+        SELECT right_id AS child_id FROM tree WHERE right_id != '' AND right_id IS NOT NULL
+    ) x GROUP BY child_id HAVING COUNT(*) > 1
+")->fetchAll(PDO::FETCH_ASSOC);
+echo "Duplicate parent check: " . (empty($dups) ? "ALL CLEAN - No duplicates!" : "FOUND " . count($dups) . " DUPLICATES!") . "\n";
 
 echo "\n=== DONE ===\n";
