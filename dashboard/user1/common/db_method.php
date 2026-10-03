@@ -2005,11 +2005,11 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             }
             $pId = !empty($r['underuserid']) ? trim((string)$r['underuserid']) : '';
             if ($pId !== '') {
-                $underMap[$pId][] = $r;
                 $cleanPid = (stripos($pId, 'AN') === 0) ? trim(substr($pId, 2)) : $pId;
-                if ($cleanPid !== $pId) {
-                    $underMap[$cleanPid][] = $r;
-                }
+                $anPid = (stripos($pId, 'AN') === 0) ? $pId : 'AN' . $pId;
+                $underMap[$pId][] = $r;
+                $underMap[$cleanPid][] = $r;
+                $underMap[$anPid][] = $r;
             }
         }
 
@@ -2029,7 +2029,12 @@ if (!function_exists('getRootBranchTreeDetailed')) {
         ");
         $invMap = [];
         while ($r = $stmtInv->fetch(PDO::FETCH_ASSOC)) {
-            $invMap[(string)$r['user_id']] = $r;
+            $uIdStr = trim((string)$r['user_id']);
+            $cleanU = (stripos($uIdStr, 'AN') === 0) ? trim(substr($uIdStr, 2)) : $uIdStr;
+            $anU    = (stripos($uIdStr, 'AN') === 0) ? $uIdStr : 'AN' . $uIdStr;
+            $invMap[$uIdStr] = $r;
+            $invMap[$cleanU] = $r;
+            $invMap[$anU]    = $r;
         }
 
         try {
@@ -2086,7 +2091,8 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             $directCount = $directMap[$uid] ?? 0;
             $nodePos = !empty($curr['position']) ? $curr['position'] : (!empty($uData['join_side']) ? strtoupper($uData['join_side']) : $initialPosition);
 
-            $isActive = ($uData['active'] == 1 || (string)$uData['active'] === '1' || strtolower((string)($uData['status'] ?? '')) === 'active' || $invUsd > 0 || $invInr > 0);
+            $hasActiveInvestment = ($invUsd > 0 || $invInr > 0);
+            $isActive = $hasActiveInvestment;
             $nodeStatus = $isActive ? 'Active' : 'Inactive';
 
             $results[] = [
@@ -2264,7 +2270,8 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 $invUsd = parseInputToUSD($invInr, 'INR', $db);
             }
 
-            $isActive = ((int)$r['active'] === 1 || (string)$r['active'] === '1' || $invUsd > 0 || $invInr > 0);
+            $hasActiveInvestment = ($invUsd > 0 || $invInr > 0);
+            $isActive = $hasActiveInvestment;
 
             // Direct count for direct member
             $stmtDir = $db->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :uid");
