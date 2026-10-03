@@ -1,23 +1,30 @@
 <?php
-// Live Diagnostic Script
 header('Content-Type: text/plain; charset=utf-8');
-@ini_set('max_execution_time', 60);
+@ini_set('max_execution_time', 120);
 
 if (function_exists('opcache_reset')) {
-    opcache_reset();
+    @opcache_reset();
     echo "OPCache Reset: SUCCESS\n\n";
 }
 
-require_once __DIR__ . '/dashboard/user1/connection.php' ?: __DIR__ . '/dashboard/user1/common/connection.php';
-require_once __DIR__ . '/dashboard/user1/common/db_method.php';
-require_once __DIR__ . '/dashboard/admin/common/db_method.php';
+if (file_exists(__DIR__ . '/dashboard/user1/common/connection.php')) {
+    require_once __DIR__ . '/dashboard/user1/common/connection.php';
+}
+if (file_exists(__DIR__ . '/dashboard/user1/common/db_method.php')) {
+    require_once __DIR__ . '/dashboard/user1/common/db_method.php';
+}
+if (file_exists(__DIR__ . '/dashboard/admin/common/db_method.php')) {
+    require_once __DIR__ . '/dashboard/admin/common/db_method.php';
+}
 
 global $pdo;
 
 echo "=== 1. TREE CLEANUP ===\n";
 try {
-    $c = cleanupGlobalTreeDuplicates($pdo);
-    echo "Cleanup done. Removed duplicates: {$c}\n\n";
+    if (function_exists('cleanupGlobalTreeDuplicates')) {
+        $c = cleanupGlobalTreeDuplicates($pdo);
+        echo "Cleanup done. Removed duplicates: {$c}\n\n";
+    }
 } catch (Throwable $e) {
     echo "Cleanup error: " . $e->getMessage() . "\n\n";
 }
@@ -58,4 +65,4 @@ foreach ($targetIds as $tid) {
     }
 }
 
-echo "\n=== COMPLETE ===\n";
+echo "\n=== DIAGNOSTIC COMPLETE ===\n";
