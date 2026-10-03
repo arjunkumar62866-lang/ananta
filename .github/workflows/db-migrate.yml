@@ -1,4 +1,4 @@
-name: Production DB Migrations
+name: Production Deployment and DB Migrations
 
 on:
   push:
@@ -6,18 +6,18 @@ on:
       - main
 
 concurrency:
-  group: production-db-migration
+  group: production-deployment
   cancel-in-progress: false
 
 jobs:
-  migrate:
+  deploy_and_migrate:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Wait for Hostinger deployment
-        run: sleep 60
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Configure SSH and Run Migrations
+      - name: Configure SSH and Deploy to Hostinger
         env:
           SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
           HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
@@ -31,7 +31,7 @@ jobs:
           printf '%s\n' "$SSH_KEY" > ~/.ssh/hostinger_key
           chmod 600 ~/.ssh/hostinger_key
 
-          # Clean environment variables (trim whitespace / hidden carriage returns)
+          # Clean environment variables
           CLEAN_HOST=$(echo "$HOSTINGER_HOST" | tr -d '\r\n ')
           CLEAN_PORT=$(echo "$HOSTINGER_PORT" | tr -d '\r\n ')
           CLEAN_USER=$(echo "$HOSTINGER_USER" | tr -d '\r\n ')
@@ -39,14 +39,38 @@ jobs:
           # Populate known_hosts
           ssh-keyscan -p "$CLEAN_PORT" "$CLEAN_HOST" >> ~/.ssh/known_hosts
 
-          # Test SSH connection first
+          # Test SSH connection
           echo "Testing SSH connection to $CLEAN_USER@$CLEAN_HOST:$CLEAN_PORT..."
           ssh \
             -i ~/.ssh/hostinger_key \
             -p "$CLEAN_PORT" \
             -o StrictHostKeyChecking=yes \
             "$CLEAN_USER@$CLEAN_HOST" \
-            'echo HOSTINGER_SSH_OK'
+            'echo HOSTINGER_SSH_CONNECTED_OK'
+
+          # Check if Hostinger is a git repository and sync if possible
+          echo "Checking Git status on Hostinger..."
+          ssh \
+            -i ~/.ssh/hostinger_key \
+            -p "$CLEAN_PORT" \
+            -o StrictHostKeyChecking=yes \
+            "$CLEAN_USER@$CLEAN_HOST" \
+            'cd /home/u914531711/domains/anantamtptl.com/public_html && if [ -d .git ]; then echo "GIT FOUND: Pulling latest..."; git fetch origin main && git reset --hard origin/main; else echo "NO .GIT in public_html"; fi'
+
+          # Sync all files to Hostinger (preserving connection credentials and logs)
+          echo "Deploying repository files via rsync..."
+          rsync -avz \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'error.log' \
+            --exclude '*.log' \
+            --exclude 'common/connection.php' \
+            --exclude 'dashboard/admin/common/connection.php' \
+            --exclude 'dashboard/user1/common/connection.php' \
+            --exclude 'dashboard/use r/common/connection.php' \
+            --exclude 'dashboard1 1/' \
+            -e "ssh -i ~/.ssh/hostinger_key -p $CLEAN_PORT -o StrictHostKeyChecking=yes" \
+            ./ "$CLEAN_USER@$CLEAN_HOST:/home/u914531711/domains/anantamtptl.com/public_html/"
 
           # Run database migrations on Hostinger
           echo "Executing production database migrations..."
@@ -56,3 +80,12 @@ jobs:
             -o StrictHostKeyChecking=yes \
             "$CLEAN_USER@$CLEAN_HOST" \
             'cd /home/u914531711/domains/anantamtptl.com/public_html && php database/migration.php migrate'
+
+          # Run deep diagnostic script on Hostinger
+          echo "Executing deep diagnostic script on Hostinger..."
+          ssh \
+            -i ~/.ssh/hostinger_key \
+            -p "$CLEAN_PORT" \
+            -o StrictHostKeyChecking=yes \
+            "$CLEAN_USER@$CLEAN_HOST" \
+            'cd /home/u914531711/domains/anantamtptl.com/public_html && php dashboard/user1/diag_deep.php key=aX9zK7mQ'

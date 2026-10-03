@@ -1,6 +1,8 @@
 <?php
 // TEMPORARY PROTECTED DEEP DIAGNOSTIC - DELETE AFTER USE
-if (($_GET['key'] ?? '') !== 'aX9zK7mQ') { http_response_code(403); die('Forbidden'); }
+$isCli = (php_sapi_name() === "cli");
+$key = $_GET["key"] ?? ($argv[1] ?? "");
+if (!$isCli && $key !== "aX9zK7mQ") { http_response_code(403); die("Forbidden\n"); }
 header('Content-Type: text/plain; charset=utf-8');
 @ini_set('max_execution_time', 120);
 error_reporting(E_ALL);
