@@ -130,6 +130,7 @@ if (!function_exists('sponser')) {
         }
     }
 }
+if (!function_exists('rank_reward')) {
 
 
 function rank_reward($userid)
@@ -246,6 +247,8 @@ function rank_reward($userid)
 
     return false; // no reward matched
 }
+}
+if (!function_exists('getmydirectidleft')) {
 
 
 
@@ -272,6 +275,8 @@ function getmydirectidleft($userid)
         return 0;
     }
 }
+}
+if (!function_exists('getmydirectidright')) {
 
 
 function getmydirectidright($userid)
@@ -295,6 +300,7 @@ function getmydirectidright($userid)
     } catch (PDOException $e) {
         return 0;
     }
+}
 }
 
 // function getmydirectidleft($userid, $side)
@@ -337,6 +343,7 @@ function getmydirectidright($userid)
 //         return 0;
 //     }
 // }
+if (!function_exists('getUserTreeData')) {
 
 
 
@@ -368,6 +375,7 @@ function getUserTreeData($userid)
     }
 
     return null; // return null if no user found
+}
 }
 
 
@@ -408,6 +416,7 @@ function getHomeSettings($pdo)
     return null;
 }
 }
+if (!function_exists('loginUser')) {
 
 
 function loginUser($userid, $password, $pdo)
@@ -464,6 +473,7 @@ function loginUser($userid, $password, $pdo)
         'status' => false,
         'message' => 'Invalid User ID / Password'
     ];
+}
 }
 
 
@@ -532,6 +542,7 @@ if (!function_exists('insertSponsor')) {
         return $stmt->execute([$sponsorId, $referralId, $createdDate]);
     }
 }
+if (!function_exists('insertUser')) {
 
 function insertUser($pdo, $data) 
 {
@@ -556,6 +567,8 @@ function insertUser($pdo, $data)
     $stmt = $pdo->prepare($sql);
     return $stmt->execute($data);
 }
+}
+if (!function_exists('insertKYC')) {
 
 function insertKYC($pdo, $userId, $aadhar) {
     $sql = "INSERT INTO kyc (
@@ -567,6 +580,8 @@ function insertKYC($pdo, $userId, $aadhar) {
     $stmt = $pdo->prepare($sql);
     return $stmt->execute([$userId, $aadhar]);
 }
+}
+if (!function_exists('insertUserLevel')) {
 
 function insertUserLevel($pdo, $sponsorId, $userId, $level) 
 {
@@ -574,6 +589,8 @@ function insertUserLevel($pdo, $sponsorId, $userId, $level)
     $stmt = $pdo->prepare($sql);
     return $stmt->execute([$sponsorId, $userId, $level]);
 }
+}
+if (!function_exists('getMetaInfo')) {
 
 
 
@@ -598,6 +615,8 @@ function getMetaInfo($pdo)
         ];
     }
 }
+}
+if (!function_exists('getuserdatabysponserid')) {
 
 
 
@@ -641,6 +660,8 @@ function getuserdatabysponserid($userid)
 
     return null;
 }
+}
+if (!function_exists('checkuseridregister')) {
 
 function checkuseridregister($mysponsernew)
 {
@@ -656,6 +677,8 @@ function checkuseridregister($mysponsernew)
         return 0;
     }
 }
+}
+if (!function_exists('getmysponserid')) {
 
 function getmysponserid($userid)
 {
@@ -672,6 +695,8 @@ function getmysponserid($userid)
 
     return null; // If no sponsor found
 }
+}
+if (!function_exists('getmydirect')) {
 
 
 function getmydirect($direct)
@@ -694,6 +719,8 @@ function getmydirect($direct)
 
     return 0; // If no records found
 }
+}
+if (!function_exists('getmydirectactive')) {
 function getmydirectactive($direct)
 {
     global $pdo;
@@ -714,6 +741,8 @@ function getmydirectactive($direct)
     $stmt->execute([':sp1' => $direct, ':sp2' => $direct]);
     return (int)($stmt->fetchColumn() ?: 0);
 }
+}
+if (!function_exists('getmydirectactiveright')) {
 
 function getmydirectactiveright($sponsorId)
 {
@@ -740,6 +769,8 @@ function getmydirectactiveright($sponsorId)
 
     return (int)$stmt->fetchColumn();
 }
+}
+if (!function_exists('getmydirectactiveleft')) {
 function getmydirectactiveleft($sponsorId)
 {
     global $pdo;
@@ -765,6 +796,8 @@ function getmydirectactiveleft($sponsorId)
 
     return (int)$stmt->fetchColumn();
 }
+}
+if (!function_exists('getActiveDownlineCount')) {
 
 
 function getActiveDownlineCount($sponsorId)
@@ -844,6 +877,8 @@ function getActiveDownlineCount($sponsorId)
         return $stmt->fetchColumn() ?: 0;
     }
 }
+}
+if (!function_exists('insert_userlevel_a')) {
 
 
 function insert_userlevel_a($sponserid, $downlineid, $level)
@@ -860,6 +895,8 @@ function insert_userlevel_a($sponserid, $downlineid, $level)
 
     $stmt->execute();
 }
+}
+if (!function_exists('insert_userlevel_b')) {
 function insert_userlevel_b($sponserid, $downlineid, $level)
 {
     global $pdo;
@@ -874,6 +911,8 @@ function insert_userlevel_b($sponserid, $downlineid, $level)
 
     $stmt->execute();
 }
+}
+if (!function_exists('incometotalnew')) {
 
 function incometotalnew($pdo, $table, $userid, $subject)
 {
@@ -892,6 +931,8 @@ function incometotalnew($pdo, $table, $userid, $subject)
 
     return $row ? $row['totalamount'] : 0;
 }
+}
+if (!function_exists('incometotalnew_exact_subject')) {
 
 function incometotalnew_exact_subject($pdo, $table, $userid, $subject)
 {
@@ -910,6 +951,8 @@ function incometotalnew_exact_subject($pdo, $table, $userid, $subject)
 
     return $row ? $row['totalamount'] : 0;
 }
+}
+if (!function_exists('incometotalnewdate')) {
 
 
 
@@ -931,6 +974,8 @@ function incometotalnewdate($date, $table, $userid, $subject)
         }
     }
 }
+}
+if (!function_exists('getlevelDirectbusiness')) {
 
 
 function getlevelDirectbusiness($userid, $level)
@@ -949,6 +994,8 @@ function getlevelDirectbusiness($userid, $level)
         }
     }
 }
+}
+if (!function_exists('getlevelbusiness')) {
 
 function getlevelbusiness($userid, $level)
 {
@@ -977,6 +1024,8 @@ function getlevelbusiness($userid, $level)
 
     return $stmt->fetchColumn() ?: 0;
 }
+}
+if (!function_exists('leftLevelBusiness')) {
 
 function leftLevelBusiness($userid, $level)
 {
@@ -998,6 +1047,8 @@ function leftLevelBusiness($userid, $level)
 
     return $stmt->fetchColumn() ?: 0;
 }
+}
+if (!function_exists('rightLevelBusiness')) {
 
 function rightLevelBusiness($userid, $level)
 {
@@ -1019,6 +1070,8 @@ function rightLevelBusiness($userid, $level)
 
     return $stmt->fetchColumn() ?: 0;
 }
+}
+if (!function_exists('gettotallevelbusiness')) {
 
 
 
@@ -1051,6 +1104,8 @@ function gettotallevelbusiness($userid)
 
     return $totallevelbusiness;
 }
+}
+if (!function_exists('gettotallevelbusinessleft')) {
 function gettotallevelbusinessleft($userid)
 {
     global $pdo; 
@@ -1079,6 +1134,8 @@ function gettotallevelbusinessleft($userid)
 
     return $totallevelbusiness;
 }
+}
+if (!function_exists('gettotallevelbusinessright')) {
 function gettotallevelbusinessright($userid)
 {
     global $pdo; 
@@ -1107,6 +1164,8 @@ function gettotallevelbusinessright($userid)
 
     return $totallevelbusiness;
 }
+}
+if (!function_exists('getnews')) {
 
 function getnews()
 {
@@ -1124,6 +1183,8 @@ function getnews()
         }
     }
 }
+}
+if (!function_exists('updatenonworkwallet')) {
 
 
 function updatenonworkwallet($sponsorcode, $newamount,$pdo)
@@ -1143,6 +1204,8 @@ function updatenonworkwallet($sponsorcode, $newamount,$pdo)
         return false;
     }
 }
+}
+if (!function_exists('webtistime')) {
 
 
 function webtistime()
@@ -1154,6 +1217,8 @@ function webtistime()
 
 return date('h:i a');
 }
+}
+if (!function_exists('webtisdate')) {
 
 function webtisdate()
 {
@@ -1164,6 +1229,8 @@ function webtisdate()
 
 return date('Y-m-d');
 }
+}
+if (!function_exists('getUserActiveInvestmentTotal')) {
 
 
 function getUserActiveInvestmentTotal($userid, $pdoConnection = null) {
@@ -1226,6 +1293,8 @@ function getUserActiveInvestmentTotal($userid, $pdoConnection = null) {
         'investments'  => $activeRows
     ];
 }
+}
+if (!function_exists('getroionedatanew')) {
 
 function getroionedatanew($userid)
 {
@@ -1306,12 +1375,16 @@ function getroionedatanew($userid)
     // return null if no record found
     return null;
 }
+}
+if (!function_exists('getpercent')) {
 
 function getpercent($amount,$percent)
 {
     $registrtionamont=$amount*$percent/100;
     return $registrtionamont;
 }
+}
+if (!function_exists('getpercentage')) {
 
 function getpercentage()
 {
@@ -1338,6 +1411,8 @@ function getpercentage()
 
     return null; 
 }
+}
+if (!function_exists('updatedatabysponserid')) {
 
 
 function updatedatabysponserid($userid, $amount, $transactionamount)
@@ -1359,6 +1434,8 @@ function updatedatabysponserid($userid, $amount, $transactionamount)
         return false;
     }
 }
+}
+if (!function_exists('insert_transction')) {
 
 function insert_transction($table, $userid, $amount, $trasction_type, $time, $cdtype)
 {
@@ -1385,6 +1462,8 @@ function insert_transction($table, $userid, $amount, $trasction_type, $time, $cd
         echo "Error inserting transaction: " . $e->getMessage();
     }
 }
+}
+if (!function_exists('getroionedata')) {
 
 
 
@@ -1419,8 +1498,10 @@ function getroionedata($userid)
 
     return null;
 }
+}
 
 // Count only active descendants
+if (!function_exists('getSubtreeCount')) {
 function getSubtreeCount($pdo, $userid) {
     if (!$userid) return 0;
 
@@ -1455,6 +1536,8 @@ function getSubtreeCount($pdo, $userid) {
 
     return $count;
 }
+}
+if (!function_exists('activateUser')) {
 
 function activateUser($pdo, $userid) {
     // mark this user as active
@@ -1463,6 +1546,8 @@ function activateUser($pdo, $userid) {
     // update counts up the chain
     updateParentCounts($pdo, $userid);
 }
+}
+if (!function_exists('updateTreeCounts')) {
 
 
 
@@ -1507,6 +1592,8 @@ function updateTreeCounts($pdo, $userid) {
         }
     }
 }
+}
+if (!function_exists('getUnderId')) {
 
 
 
@@ -1519,6 +1606,8 @@ function getUnderId($pdo, $userid){
     $r = $stmt->fetch(PDO::FETCH_ASSOC);
     return $r ? $r['userid'] : null;
 }
+}
+if (!function_exists('getUnderIdPlace')) {
 
 function getUnderIdPlace($pdo, $userid){
     $stmt = $pdo->prepare("SELECT * FROM tree WHERE left_id = :uid OR right_id = :uid");
@@ -1527,6 +1616,8 @@ function getUnderIdPlace($pdo, $userid){
     if(!$r) return null;
     return ($r['left_id'] == $userid) ? "left" : "right";
 }
+}
+if (!function_exists('find_parent')) {
 
 
 function find_parent($sponser, $side, $pdo) {
@@ -1554,6 +1645,7 @@ function find_parent($sponser, $side, $pdo) {
         return $sponser;
     }
 }
+}
 
 
 /****************========================================
@@ -1579,6 +1671,7 @@ if (!defined('REQUIRED_QUALIFIED_DIRECTS')) {
  * 1. Has active access / user.active = '1'
  * 2. Has total active investment (SUM of tbl_roi_one packages) >= ₹13,000
  */
+if (!function_exists('getQualifiedDirectCount')) {
 function getQualifiedDirectCount($userid, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -1601,12 +1694,14 @@ function getQualifiedDirectCount($userid, $pdoConnection = null) {
     
     return $stmt->rowCount();
 }
+}
 
 /**
  * Generate 10-month Direct Bonus Schedule for an eligible investment.
  * Direct Bonus = Eligible Investment * 6% divided into 10 monthly installments.
  * Only generated if investment >= ₹13,000 and user has active access.
  */
+if (!function_exists('generateDirectBonusSchedule')) {
 function generateDirectBonusSchedule($investment_id, $source_user_id, $investment_amount, $investment_date = null, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -1668,11 +1763,13 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
 
     return true;
 }
+}
 
 /**
  * Process Direct Bonus Monthly Closing Installments.
  * Executed during admin Monthly Profit Closing.
  */
+if (!function_exists('processDirectBonusInstallments')) {
 function processDirectBonusInstallments($closing_month, $closing_date = null, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -1757,6 +1854,7 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
         'total_paid'     => round($totalPaid, 2),
         'eligible_users' => count($beneficiariesPaid)
     ];
+}
 }
 
 if (!defined('MIN_QUALIFIED_INVESTMENT')) {
@@ -2212,6 +2310,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
 /**
  * Detailed Team Member Fetcher (MY_DIRECT, LEFT, RIGHT).
  */
+if (!function_exists('getUserTeamMembersDetailed')) {
 function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -2360,10 +2459,12 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
 
     return [];
 }
+}
 
 /**
  * Requirement #21: Process P2P Fund Transfer.
  */
+if (!function_exists('processP2PTransfer')) {
 function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -2550,10 +2651,12 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         return ['status' => 'error', 'message' => 'P2P Transfer Error: ' . $e->getMessage()];
     }
 }
+}
 
 /**
  * Auto-provision tbl_p2p_transfer database table if missing on production/Hostinger.
  */
+if (!function_exists('ensureP2PTableExists')) {
 function ensureP2PTableExists($dbConnection = null) {
     global $pdo;
     $conn = $dbConnection ?: $pdo;
@@ -2588,10 +2691,12 @@ function ensureP2PTableExists($dbConnection = null) {
         // Fallback
     }
 }
+}
 
 /**
  * Requirement #21: Fetch P2P Transfer History (Sent).
  */
+if (!function_exists('getUserP2PTransferHistory')) {
 function getUserP2PTransferHistory($userid, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -2624,10 +2729,12 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
         return [];
     }
 }
+}
 
 /**
  * Requirement #21: Fetch P2P Received Report.
  */
+if (!function_exists('getUserP2PReceivedReport')) {
 function getUserP2PReceivedReport($userid, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -2660,10 +2767,12 @@ function getUserP2PReceivedReport($userid, $pdoConnection = null) {
         return [];
     }
 }
+}
 
 /**
  * Requirement #21: Fetch 7-Category User Growth Breakdown.
  */
+if (!function_exists('getUserGrowthBreakdown')) {
 function getUserGrowthBreakdown($userid, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -2703,12 +2812,14 @@ function getUserGrowthBreakdown($userid, $pdoConnection = null) {
         ]
     ];
 }
+}
 
 /**
  * Requirement #21: Fetch Date-Filtered Fund Statement Data (Including Self + Complete Downline Network).
  * Gathers applicable business activities (investments & activations) across the user's entire network
  * using existing sponsor hierarchy and placement tree structures.
  */
+if (!function_exists('getUserFundStatementData')) {
 function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
@@ -2807,10 +2918,12 @@ function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pd
         'unlock_debits' => $unlockDebits
     ];
 }
+}
 
 /**
  * Requirement #21: BEP20 Address Save & Update.
  */
+if (!function_exists('updateUserBEP20Address')) {
 function updateUserBEP20Address($userid, $bep20Address, $txnKey = null, $pdoConnection = null) {
     global $pdo;
     if ($txnKey instanceof PDO && $pdoConnection === null) {
@@ -2846,10 +2959,12 @@ function updateUserBEP20Address($userid, $bep20Address, $txnKey = null, $pdoConn
         'bep20_address' => $bep20Address
     ];
 }
+}
 
 /**
  * Requirement #21: Unified INR & BEP20 Withdrawal Processor with Security Controls.
  */
+if (!function_exists('processUserWithdrawalRequest')) {
 function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnKey = null, $pdoConnection = null) {
     global $pdo;
     if ($txnKey instanceof PDO && $pdoConnection === null) {
@@ -2976,6 +3091,7 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
         }
         return ['status' => 'error', 'message' => 'Withdrawal Error: ' . $e->getMessage()];
     }
+}
 }
 
 /**
