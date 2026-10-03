@@ -1,4 +1,71 @@
 <?php
+
+if (!function_exists('cleanUserId')) {
+    function cleanUserId($userid) {
+        if (empty($userid)) return '';
+        $str = trim((string)$userid);
+        if (preg_match('/^(AN|ANANTA)([0-9]+)$/i', $str, $matches)) {
+            return $matches[2];
+        }
+        return $str;
+    }
+}
+
+if (!function_exists('cleanupGlobalTreeDuplicates')) {
+    function cleanupGlobalTreeDuplicates($pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db) return;
+
+        $stmt = $db->query('SELECT userid, left_id, right_id FROM tree');
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $childParentMap = [];
+        foreach ($rows as $r) {
+            $pId = (string)$r['userid'];
+            $l   = (string)($r['left_id'] ?? '');
+            $rId = (string)($r['right_id'] ?? '');
+
+            if (!empty($l)) {
+                $childParentMap[$l][] = ['parent' => $pId, 'slot' => 'left_id'];
+            }
+            if (!empty($rId) && $rId !== $l) {
+                $childParentMap[$rId][] = ['parent' => $pId, 'slot' => 'right_id'];
+            }
+        }
+
+        $userRows = $db->query('SELECT userid, underuserid, join_side FROM user')->fetchAll(PDO::FETCH_ASSOC);
+        $userAuthMap = [];
+        foreach ($userRows as $u) {
+            $uid = (string)$u['userid'];
+            $cleanU = preg_replace('/^(AN|ANANTA)/i', '', $uid);
+            $userAuthMap[$uid] = $u;
+            $userAuthMap[$cleanU] = $u;
+        }
+
+        $updClear = $db->prepare('UPDATE tree SET left_id = IF(left_id = :cid, "", left_id), right_id = IF(right_id = :cid, "", right_id) WHERE userid = :pid');
+
+        foreach ($childParentMap as $cId => $parents) {
+            if (count($parents) > 1) {
+                $uAuth = $userAuthMap[$cId] ?? null;
+                $authParent = $uAuth ? (string)($uAuth['underuserid'] ?? '') : '';
+                $cleanAuthParent = preg_replace('/^(AN|ANANTA)/i', '', $authParent);
+
+                foreach ($parents as $pInfo) {
+                    $pId = $pInfo['parent'];
+                    $cleanPId = preg_replace('/^(AN|ANANTA)/i', '', $pId);
+
+                    if (!empty($authParent) && ($pId === $authParent || $cleanPId === $cleanAuthParent)) {
+                        // Keep authoritative parent
+                    } else {
+                        $updClear->execute([':cid' => $cId, ':pid' => $pId]);
+                    }
+                }
+            }
+        }
+    }
+}
+
 if (!function_exists("getUserNormalizedIds")) {
     function getUserNormalizedIds($userid) {
         if (!$userid) return [];
