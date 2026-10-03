@@ -73,7 +73,7 @@ Press `Ctrl + C` in your terminal window running the server.
 #### Commit & Push Code Updates to GitHub:
 ```bash
 git add .
-git commit -m "Tree fix again problem on the tree side fix done"
+git commit -m "Fix binary tree duplicate placement and live business overview"
 git push origin main
 ```
 *(Hostinger automatically deploys code pushed to `main`, and GitHub Actions executes pending database migrations safely).*
