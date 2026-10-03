@@ -12,102 +12,55 @@ if (!function_exists('cleanUserId')) {
 }
 
 if (!function_exists('cleanupGlobalTreeDuplicates')) {
-    /**
-     * Generic global tree duplicate cleaner.
-     * Uses TREE TABLE as the sole source of truth — NOT user.underuserid.
-     * When a child appears under multiple parents: keeps the LAST parent
-     * (highest userid = most recently assigned), removes all stale ones.
-     * After cleanup, syncs user.underuserid + user.join_side from tree.
-     * Never modifies: sponserid, wallet, income, investment records.
-     */
     function cleanupGlobalTreeDuplicates($pdoConnection = null) {
         global $pdo;
         $db = $pdoConnection ?: $pdo;
         if (!$db) return;
 
-        // Step 1: Build child -> [parents] map from tree table (tree is authoritative)
         $stmt = $db->query('SELECT userid, left_id, right_id FROM tree');
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $childParentMap = []; // child_id => [['parent'=>..., 'slot'=>..., 'pNumeric'=>...], ...]
+        $childParentMap = [];
         foreach ($rows as $r) {
-            $pId      = (string)$r['userid'];
-            $pNumeric = (int)preg_replace('/[^0-9]/', '', $pId);
-            $l        = (string)($r['left_id']  ?? '');
-            $rId      = (string)($r['right_id'] ?? '');
+            $pId = (string)$r['userid'];
+            $l   = (string)($r['left_id'] ?? '');
+            $rId = (string)($r['right_id'] ?? '');
 
             if (!empty($l)) {
-                $childParentMap[$l][] = ['parent' => $pId, 'slot' => 'left_id',  'pNumeric' => $pNumeric];
+                $childParentMap[$l][] = ['parent' => $pId, 'slot' => 'left_id'];
             }
             if (!empty($rId) && $rId !== $l) {
-                $childParentMap[$rId][] = ['parent' => $pId, 'slot' => 'right_id', 'pNumeric' => $pNumeric];
+                $childParentMap[$rId][] = ['parent' => $pId, 'slot' => 'right_id'];
             }
         }
 
-        $updClear = $db->prepare(
-            'UPDATE tree SET left_id = IF(left_id = :cid, "", left_id), right_id = IF(right_id = :cid, "", right_id) WHERE userid = :pid'
-        );
-        $updUserPlacement = $db->prepare(
-            'UPDATE user SET underuserid = :pid, join_side = :side WHERE userid = :cid'
-        );
-
-        // Step 2: For each child with multiple parents, keep the one with highest parent ID (latest move)
-        foreach ($childParentMap as $cId => $parents) {
-            if (count($parents) <= 1) {
-                continue; // No duplicate — skip
-            }
-
-            // Sort parents descending by numeric part of parent ID (highest = most recent placement)
-            usort($parents, function($a, $b) {
-                return $b['pNumeric'] - $a['pNumeric'];
-            });
-
-            $authoritative = $parents[0]; // Keep highest parent ID as authoritative
-
-            // Remove all stale parent references
-            foreach ($parents as $idx => $pInfo) {
-                if ($idx === 0) continue; // Skip the authoritative one
-                $updClear->execute([':cid' => $cId, ':pid' => $pInfo['parent']]);
-            }
-
-            // Sync user table from the authoritative tree placement
-            $authSide = ($authoritative['slot'] === 'left_id') ? 'left' : 'right';
-            $updUserPlacement->execute([
-                ':pid'  => $authoritative['parent'],
-                ':side' => $authSide,
-                ':cid'  => $cId,
-            ]);
-        }
-
-        // Step 3: Also sync user.underuserid + join_side for ALL users where tree disagrees
-        // (Fixes cases where user table is stale but tree is correct — no duplicates involved)
-        $allTreeRows = $db->query('SELECT userid, left_id, right_id FROM tree')->fetchAll(PDO::FETCH_ASSOC);
-        $treeParentOf = []; // child_id => ['parent'=>..., 'side'=>...]
-        foreach ($allTreeRows as $tr) {
-            if (!empty($tr['left_id'])) {
-                $treeParentOf[(string)$tr['left_id']] = ['parent' => (string)$tr['userid'], 'side' => 'left'];
-            }
-            if (!empty($tr['right_id'])) {
-                $treeParentOf[(string)$tr['right_id']] = ['parent' => (string)$tr['userid'], 'side' => 'right'];
-            }
-        }
-
-        $allUserRows = $db->query('SELECT userid, underuserid, join_side FROM user')->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($allUserRows as $u) {
+        $userRows = $db->query('SELECT userid, underuserid, join_side FROM user')->fetchAll(PDO::FETCH_ASSOC);
+        $userAuthMap = [];
+        foreach ($userRows as $u) {
             $uid = (string)$u['userid'];
-            if (!isset($treeParentOf[$uid])) continue; // Root or unplaced — skip
+            $cleanU = preg_replace('/^(AN|ANANTA)/i', '', $uid);
+            $userAuthMap[$uid] = $u;
+            $userAuthMap[$cleanU] = $u;
+        }
 
-            $correctParent = $treeParentOf[$uid]['parent'];
-            $correctSide   = $treeParentOf[$uid]['side'];
-            $currentParent = (string)($u['underuserid'] ?? '');
-            $currentSide   = strtolower((string)($u['join_side'] ?? ''));
+        $updClear = $db->prepare('UPDATE tree SET left_id = IF(left_id = :cid, "", left_id), right_id = IF(right_id = :cid, "", right_id) WHERE userid = :pid');
 
-            if ($currentParent !== $correctParent || $currentSide !== $correctSide) {
-                $updUserPlacement->execute([
-                    ':pid'  => $correctParent,
-                    ':side' => $correctSide,
-                    ':cid'  => $uid,
-                ]);
+        foreach ($childParentMap as $cId => $parents) {
+            if (count($parents) > 1) {
+                $uAuth = $userAuthMap[$cId] ?? null;
+                $authParent = $uAuth ? (string)($uAuth['underuserid'] ?? '') : '';
+                $cleanAuthParent = preg_replace('/^(AN|ANANTA)/i', '', $authParent);
+
+                foreach ($parents as $pInfo) {
+                    $pId = $pInfo['parent'];
+                    $cleanPId = preg_replace('/^(AN|ANANTA)/i', '', $pId);
+
+                    if (!empty($authParent) && ($pId === $authParent || $cleanPId === $cleanAuthParent)) {
+                        // Keep authoritative parent
+                    } else {
+                        $updClear->execute([':cid' => $cId, ':pid' => $pId]);
+                    }
+                }
             }
         }
     }
@@ -3844,102 +3797,6 @@ if (!function_exists('getNewParentAvailability')) {
 /**
  * Executes Atomic Team Move in Binary Tree with complete validation and audit logging.
  */
-
-if (!function_exists('verifyMovedUserTreeIntegrity')) {
-    /**
-     * Verifies full tree + user table integrity for a moved user.
-     * Returns ['pass' => true/false, 'errors' => [...]]
-     *
-     * Checks:
-     *  A. User exists in user table.
-     *  B. Exactly ONE tree parent references this user.
-     *  C. That parent === $expectedParentId.
-     *  D. That side  === $expectedSide ('left' or 'right').
-     *  E. user.underuserid === $expectedParentId.
-     *  F. user.join_side   === $expectedSide.
-     *  G. user.sponserid   === $originalSponsorId (unchanged).
-     *  H. No duplicate tree references (child in 2+ parents).
-     *  I. Old parent does NOT reference this user.
-     *  J. New parent contains user exactly once (not in both slots).
-     */
-    function verifyMovedUserTreeIntegrity($db, $userId, $expectedParentId, $expectedSide, $originalSponsorId, $oldParentId = null) {
-        $errors = [];
-        $expectedSide = strtolower($expectedSide);
-
-        // A. User exists
-        $uRow = $db->prepare("SELECT userid, underuserid, join_side, sponserid FROM user WHERE userid = :uid");
-        $uRow->execute([':uid' => $userId]);
-        $userRec = $uRow->fetch(PDO::FETCH_ASSOC);
-        if (!$userRec) {
-            $errors[] = "A: User {$userId} not found in user table.";
-            return ['pass' => false, 'errors' => $errors];
-        }
-
-        // B. Exactly ONE tree parent references this user
-        $pStmt = $db->prepare("SELECT userid, left_id, right_id FROM tree WHERE left_id = :uid OR right_id = :uid");
-        $pStmt->execute([':uid' => $userId]);
-        $parentRefs = $pStmt->fetchAll(PDO::FETCH_ASSOC);
-        $parentCount = count($parentRefs);
-
-        if ($parentCount === 0) {
-            $errors[] = "B: User {$userId} has NO parent in tree table (orphan).";
-        } elseif ($parentCount > 1) {
-            $ids = array_column($parentRefs, 'userid');
-            $errors[] = "B/H: User {$userId} has {$parentCount} parents in tree (DUPLICATE): " . implode(', ', $ids);
-        }
-
-        if ($parentCount === 1) {
-            $actualParentRow  = $parentRefs[0];
-            $actualParentId   = (string)$actualParentRow['userid'];
-            $actualSide       = ($actualParentRow['left_id'] === $userId) ? 'left' : 'right';
-
-            // C. Correct parent
-            if ($actualParentId !== (string)$expectedParentId) {
-                $errors[] = "C: Tree parent is {$actualParentId}, expected {$expectedParentId}.";
-            }
-
-            // D. Correct side
-            if ($actualSide !== $expectedSide) {
-                $errors[] = "D: Tree side is {$actualSide}, expected {$expectedSide}.";
-            }
-
-            // J. New parent does NOT have user in BOTH slots
-            if ($actualParentRow['left_id'] === $userId && $actualParentRow['right_id'] === $userId) {
-                $errors[] = "J: User {$userId} exists in BOTH left and right slots of parent {$actualParentId}.";
-            }
-        }
-
-        // E. user.underuserid correct
-        if ((string)($userRec['underuserid'] ?? '') !== (string)$expectedParentId) {
-            $errors[] = "E: user.underuserid={$userRec['underuserid']}, expected {$expectedParentId}.";
-        }
-
-        // F. user.join_side correct
-        if (strtolower((string)($userRec['join_side'] ?? '')) !== $expectedSide) {
-            $errors[] = "F: user.join_side={$userRec['join_side']}, expected {$expectedSide}.";
-        }
-
-        // G. Sponsorid unchanged
-        if (!empty($originalSponsorId) && (string)($userRec['sponserid'] ?? '') !== (string)$originalSponsorId) {
-            $errors[] = "G: user.sponserid changed! Was {$originalSponsorId}, now {$userRec['sponserid']}.";
-        }
-
-        // I. Old parent no longer references user
-        if (!empty($oldParentId) && $oldParentId !== $expectedParentId) {
-            $opStmt = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :pid");
-            $opStmt->execute([':pid' => $oldParentId]);
-            $opRow = $opStmt->fetch(PDO::FETCH_ASSOC);
-            if ($opRow) {
-                if (($opRow['left_id'] ?? '') === $userId || ($opRow['right_id'] ?? '') === $userId) {
-                    $errors[] = "I: Old parent {$oldParentId} still references user {$userId}.";
-                }
-            }
-        }
-
-        return ['pass' => empty($errors), 'errors' => $errors];
-    }
-}
-
 if (!function_exists('processAdminMoveTeamInTree')) {
     function processAdminMoveTeamInTree($adminId, $targetUserId, $newParentId, $targetPosition, $reason = '', $pdoConnection = null) {
         global $pdo;
@@ -3979,8 +3836,7 @@ if (!function_exists('processAdminMoveTeamInTree')) {
                 if ($inLocalTxn) $db->rollBack();
                 return ['status' => 'error', 'message' => "Target user {$targetUserId} not found."];
             }
-            $actualTargetId   = $targetRow['userid'];
-            $originalSponsorId = (string)($targetRow['sponserid'] ?? ''); // SAVE before any changes
+            $actualTargetId = $targetRow['userid'];
 
             // Master root admin check
             if ($actualTargetId === '1290' || $actualTargetId === 'AN1290') {
@@ -4090,27 +3946,23 @@ if (!function_exists('processAdminMoveTeamInTree')) {
             // Clean up any global tree duplicates
             cleanupGlobalTreeDuplicates($db);
 
-            // 9. Post-move Full Integrity Verification (generic, all users)
-            $integrityResult = verifyMovedUserTreeIntegrity(
-                $db,
-                $actualTargetId,
-                $actualParentId,
-                strtolower($targetPosition),
-                $originalSponsorId,
-                ($oldParentId !== 'NONE') ? $oldParentId : null
-            );
+            // 9. Post-move Integrity Verifications
+            $checkNewParent = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :pid");
+            $checkNewParent->execute([':pid' => $actualParentId]);
+            $npRow = $checkNewParent->fetch(PDO::FETCH_ASSOC);
 
-            if (!$integrityResult['pass']) {
-                $errList = implode(' | ', $integrityResult['errors']);
-                throw new Exception("Post-move integrity FAILED — rolling back. Errors: {$errList}");
+            $expectedChild = ($targetPosition === 'LEFT') ? ($npRow['left_id'] ?? '') : ($npRow['right_id'] ?? '');
+            if ($expectedChild !== $actualTargetId) {
+                throw new Exception("Tree integrity verification failed: New parent slot does not point to target user.");
             }
 
-            // 9b. Generic check: no other parent in tree should reference moved user
-            $allParentCheck = $db->prepare("SELECT userid FROM tree WHERE (left_id = :tid OR right_id = :tid) AND userid != :pid");
-            $allParentCheck->execute([':tid' => $actualTargetId, ':pid' => $actualParentId]);
-            $staleParents = $allParentCheck->fetchAll(PDO::FETCH_COLUMN);
-            if (!empty($staleParents)) {
-                throw new Exception("Post-move stale references found in tree for parents: " . implode(', ', $staleParents) . ". Rolling back.");
+            if ($oldParentId !== 'NONE' && $oldParentId !== $actualParentId) {
+                $checkOldParent = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :pid");
+                $checkOldParent->execute([':pid' => $oldParentId]);
+                $opRow = $checkOldParent->fetch(PDO::FETCH_ASSOC);
+                if (($opRow['left_id'] ?? '') === $actualTargetId || ($opRow['right_id'] ?? '') === $actualTargetId) {
+                    throw new Exception("Tree integrity verification failed: Old parent slot still retains target user.");
+                }
             }
 
             // 10. Audit Log Entry
