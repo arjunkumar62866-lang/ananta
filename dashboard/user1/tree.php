@@ -374,9 +374,15 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     $globalRenderedUsers = [];
     $treeStructure = fetch_horizontal_binary_tree($reqNodeId, 1, $reqDepth, [], $globalRenderedUsers, '');
 
+    $stmtDirectCount = $pdo->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :sid OR sponserid = :clean");
+    $cleanReq = (stripos($reqNodeId, 'AN') === 0) ? trim(substr($reqNodeId, 2)) : $reqNodeId;
+    $stmtDirectCount->execute([':sid' => $reqNodeId, ':clean' => $cleanReq]);
+    $totalDirectCount = (int)$stmtDirectCount->fetchColumn();
+
     echo json_encode([
-        'status' => 'success',
-        'data'   => $treeStructure
+        'status'       => 'success',
+        'direct_count' => $totalDirectCount,
+        'data'         => $treeStructure
     ]);
     exit;
 }
@@ -410,6 +416,11 @@ if (isset($_GET['search-id']) && !empty(trim($_GET['search-id']))) {
         $search = $foundUser['userid'];
     }
 }
+
+$clean_search = (stripos($search, 'AN') === 0) ? trim(substr($search, 2)) : $search;
+$stmtDirectCount = $pdo->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :sid OR sponserid = :clean");
+$stmtDirectCount->execute([':sid' => $search, ':clean' => $clean_search]);
+$rootDirectCount = (int)$stmtDirectCount->fetchColumn();
 ?>
 
 <!DOCTYPE html>
@@ -602,6 +613,7 @@ body.bg-theme {
                         <div>
                             <h4 class="font-weight-bold mb-1" style="color: #0f172a !important;">
                                 <i class="fa fa-sitemap mr-2" style="color: #0284c7;"></i> Binary Tree View
+                                <span class="badge ml-2" id="toolbar-direct-count" style="background: #e0f2fe; color: #0284c7; font-size: 13px; font-weight: 700; border-radius: 8px; padding: 4px 10px;">Direct Referrals: <?php echo $rootDirectCount; ?></span>
                             </h4>
                             <p class="mb-0 small" style="color: #64748b !important; font-weight: 600;">
                                 Mobile & Desktop 360° Touch Drag/Pan Canvas. Click nodes to Expand/Collapse. Green = Active, Red = Inactive, <span style="color: #0284c7; font-weight: 800;">★ DIRECT</span> (Blue Ring & Tag) = Direct Referral of Root.
@@ -688,10 +700,14 @@ body.bg-theme {
 
     // Load Data
     function loadTreeData(searchId) {
-        fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(searchId)}`)
+        fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(searchId)}&root_id=${encodeURIComponent(searchId)}`)
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'success' && res.data) {
+                    if (res.direct_count !== undefined) {
+                        const badge = document.getElementById('toolbar-direct-count');
+                        if (badge) badge.textContent = `Direct Referrals: ${res.direct_count}`;
+                    }
                     initHorizontalD3Tree(res.data);
                 } else {
                     alert(res.message || 'Failed to load tree data');
