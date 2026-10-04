@@ -12,6 +12,8 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
     $sessionUserid = $_SESSION['userid'] ?? $_SESSION['user_id'] ?? '';
     $reqNodeId = !empty($_GET['node_id']) ? trim($_GET['node_id']) : $sessionUserid;
+    $treeRootId = !empty($_GET['root_id']) ? trim($_GET['root_id']) : $reqNodeId;
+    $cleanTreeRootId = (stripos($treeRootId, 'AN') === 0) ? trim(substr($treeRootId, 2)) : $treeRootId;
     $reqDepth = isset($_GET['depth']) ? max(1, min(50, intval($_GET['depth']))) : 50;
     $currSelection = getUserCurrency();
 
@@ -139,7 +141,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     }
 
     function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 50, $visitedPath = [], &$globalRenderedUsers = [], $parentNodeId = '') {
-        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap, $hasPlacementParent, $reqNodeId;
+        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap, $hasPlacementParent, $reqNodeId, $cleanTreeRootId, $treeRootId;
 
         $nodeId = (string)$nodeId;
         if (empty($nodeId) || !isset($globalUserMap[$nodeId])) return null;
@@ -325,7 +327,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $cleanSpId = (stripos($spId, 'AN') === 0) ? trim(substr($spId, 2)) : $spId;
 
         $isDirectToParent = (!empty($spId) && !empty($parentNodeId) && ($cleanSpId === (string)$parentNodeId || $spId === (string)$parentNodeId));
-        $isDirectToRoot   = (!empty($spId) && ($cleanSpId === (string)$cleanReqNodeId || $spId === (string)$reqNodeId));
+        $isDirectToRoot   = (!empty($spId) && ($cleanSpId === (string)$cleanTreeRootId || $spId === (string)$treeRootId));
 
         $node = [
             'id'                    => $user['userid'],
@@ -522,6 +524,19 @@ body.bg-theme {
     fill: #ef4444; /* Bright Red */
 }
 
+.node-circle.direct-referral-node {
+    stroke: #0284c7 !important;
+    stroke-width: 2.8px !important;
+}
+
+.node-direct-badge {
+    font-size: 10.5px;
+    font-weight: 800;
+    fill: #0284c7;
+    font-family: system-ui, -apple-system, sans-serif;
+    letter-spacing: 0.3px;
+}
+
 .tree-node:hover .node-circle {
     transform: scale(1.35);
 }
@@ -589,7 +604,7 @@ body.bg-theme {
                                 <i class="fa fa-sitemap mr-2" style="color: #0284c7;"></i> Binary Tree View
                             </h4>
                             <p class="mb-0 small" style="color: #64748b !important; font-weight: 600;">
-                                Mobile & Desktop 360° Touch Drag/Pan Canvas. Click nodes to Expand/Collapse. Green = Active, Red = Inactive.
+                                Mobile & Desktop 360° Touch Drag/Pan Canvas. Click nodes to Expand/Collapse. Green = Active, Red = Inactive, <span style="color: #0284c7; font-weight: 800;">★ DIRECT</span> (Blue Ring & Tag) = Direct Referral of Root.
                             </p>
                         </div>
 
@@ -808,7 +823,13 @@ body.bg-theme {
 
         // Circle Junction
         nodeEnter.append('circle')
-            .attr('class', d => d.data.active ? 'node-circle active-node' : 'node-circle inactive-node')
+            .attr('class', d => {
+                let cls = d.data.active ? 'node-circle active-node' : 'node-circle inactive-node';
+                if (d.data.is_direct_to_root && String(d.data.id) !== String(rootUserId)) {
+                    cls += ' direct-referral-node';
+                }
+                return cls;
+            })
             .attr('r', 6.5);
 
         // Toggle Sign (+ / -) above node circle
@@ -825,15 +846,23 @@ body.bg-theme {
             .attr('dy', -2)
             .text(d => d.data.name);
 
-        // User ID & Position Text
-        nodeEnter.append('text')
+        // User ID & Position Text with Visible DIRECT Tag
+        const idText = nodeEnter.append('text')
             .attr('class', 'node-id-text')
             .attr('dx', 14)
-            .attr('dy', 14)
+            .attr('dy', 14);
+
+        idText.append('tspan')
+            .attr('class', 'node-id-val')
             .text(d => {
                 const pos = d.data.position ? ` (${d.data.position})` : '';
                 return `${d.data.id}${pos}`;
             });
+
+        idText.append('tspan')
+            .attr('class', 'node-direct-badge')
+            .attr('dx', 6)
+            .text(d => (d.data.is_direct_to_root && String(d.data.id) !== String(rootUserId)) ? '★ DIRECT' : '');
 
         // Click / Tap Event (UNLIMITED EXPANSION & STRICT SINGLE-LEVEL TOGGLE)
         nodeEnter.on('click', (event, d) => {
@@ -854,7 +883,7 @@ body.bg-theme {
                 updateTree(d);
             } else if (d.data.has_children_db) {
                 // Fetch deeper downlines dynamically via AJAX for Unlimited Depth
-                fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(d.data.id)}`)
+                fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(d.data.id)}&root_id=${encodeURIComponent(rootUserId)}`)
                     .then(res => res.json())
                     .then(res => {
                         if (res.status === 'success' && res.data && res.data.children && res.data.children.length > 0) {
@@ -907,10 +936,19 @@ body.bg-theme {
             .attr('transform', d => `translate(${d.y}, ${d.x})`);
 
         nodeUpdate.select('circle')
-            .attr('class', d => d.data.active ? 'node-circle active-node' : 'node-circle inactive-node');
+            .attr('class', d => {
+                let cls = d.data.active ? 'node-circle active-node' : 'node-circle inactive-node';
+                if (d.data.is_direct_to_root && String(d.data.id) !== String(rootUserId)) {
+                    cls += ' direct-referral-node';
+                }
+                return cls;
+            });
 
         nodeUpdate.select('.node-toggle-sign')
             .text(d => (d.children || d._children || d.data.has_children_db) ? (d.children ? '-' : '+') : '');
+
+        nodeUpdate.select('.node-direct-badge')
+            .text(d => (d.data.is_direct_to_root && String(d.data.id) !== String(rootUserId)) ? '★ DIRECT' : '');
 
         // Node Exit
         nodeSelection.exit()
