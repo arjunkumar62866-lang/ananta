@@ -229,14 +229,35 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
         // Gather Children for this Node:
-        // 1. Authoritative Binary Placement children (underuserid == nodeId)
-        // 2. Direct Referral children (sponserid == nodeId) whose underuserid is NOT another child sponsored by nodeId
+        // 1. ALL Direct Referral children (sponserid == nodeId)
+        // 2. Any Placement children (underuserid == nodeId)
         $childrenList = [];
         $assignedChildIds = [];
 
         $cleanNodeId = (stripos($nodeId, 'AN') === 0) ? trim(substr($nodeId, 2)) : $nodeId;
 
-        // Step 1: Add direct placement children (where underuserid == nodeId)
+        // Step 1: Add ALL direct referrals (where sponserid == nodeId)
+        $directCandidates = [];
+        if (isset($sponsorChildrenMap[$nodeId])) {
+            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$nodeId]);
+        }
+        if ($cleanNodeId !== $nodeId && isset($sponsorChildrenMap[$cleanNodeId])) {
+            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$cleanNodeId]);
+        }
+
+        foreach ($directCandidates as $sc) {
+            $cId = (string)$sc['userid'];
+            if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                $assignedChildIds[$cId] = true;
+                $side = !empty($sc['join_side']) ? strtoupper(trim($sc['join_side'])) : '';
+                $childrenList[] = [
+                    'id'   => $cId,
+                    'side' => !empty($side) ? $side : 'DIRECT'
+                ];
+            }
+        }
+
+        // Step 2: Also add any placement children (where underuserid == nodeId) if not already added
         if (isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
@@ -262,45 +283,6 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
                     ];
                 }
             }
-        }
-
-        // Step 2: Add direct referrals (where sponserid == nodeId)
-        // If candidate's placement parent is another child sponsored by nodeId, candidate will attach under that placement parent!
-        $directCandidates = [];
-        if (isset($sponsorChildrenMap[$nodeId])) {
-            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$nodeId]);
-        }
-        if ($cleanNodeId !== $nodeId && isset($sponsorChildrenMap[$cleanNodeId])) {
-            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$cleanNodeId]);
-        }
-
-        foreach ($directCandidates as $sc) {
-            $cId = (string)$sc['userid'];
-            if ($cId === $nodeId || isset($assignedChildIds[$cId]) || isset($globalRenderedUsers[$cId])) {
-                continue;
-            }
-
-            // Check if candidate has an underuserid that is ALSO sponsored by nodeId
-            $pId = !empty($sc['underuserid']) ? trim((string)$sc['underuserid']) : '';
-            $cleanPId = (stripos($pId, 'AN') === 0) ? trim(substr($pId, 2)) : $pId;
-            if (!empty($pId) && $pId !== $nodeId && $cleanPId !== $cleanNodeId) {
-                $parentUser = $globalUserMap[$pId] ?? ($globalUserMap[$cleanPId] ?? null);
-                if ($parentUser) {
-                    $parentSpId = !empty($parentUser['sponserid']) ? trim((string)$parentUser['sponserid']) : '';
-                    $cleanParentSpId = (stripos($parentSpId, 'AN') === 0) ? trim(substr($parentSpId, 2)) : $parentSpId;
-                    if ($cleanParentSpId === $cleanNodeId || $parentSpId === $nodeId) {
-                        // Defer this candidate to its placement parent!
-                        continue;
-                    }
-                }
-            }
-
-            $assignedChildIds[$cId] = true;
-            $side = !empty($sc['join_side']) ? strtoupper(trim($sc['join_side'])) : '';
-            $childrenList[] = [
-                'id'   => $cId,
-                'side' => !empty($side) ? $side : 'DIRECT'
-            ];
         }
 
         // Has children in DB: TRUE if node has ANY team members in left or right, or placement children, or direct children
@@ -813,7 +795,7 @@ body.bg-theme {
         // A. RENDER HORIZONTAL CURVED BEZIER LINKS
         // -------------------------------------------------------------
         const linkSelection = gCanvas.selectAll('path.tree-link')
-            .data(links, d => d.target.data.id);
+            .data(links, d => (d.target.parent ? d.target.parent.data.id + '_' + d.target.data.id : d.target.data.id));
 
         linkSelection.enter()
             .append('path')
@@ -840,7 +822,7 @@ body.bg-theme {
         // B. RENDER NODES (CIRCLE JUNCTION + NAME & ID TEXT)
         // -------------------------------------------------------------
         const nodeSelection = gCanvas.selectAll('g.tree-node')
-            .data(nodes, d => d.data.id);
+            .data(nodes, d => (d.parent ? d.parent.data.id + '_' + d.data.id : d.data.id));
 
         const nodeEnter = nodeSelection.enter()
             .append('g')
