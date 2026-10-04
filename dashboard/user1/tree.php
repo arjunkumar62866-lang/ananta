@@ -49,34 +49,46 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $uid = (string)$row['userid'];
         $globalUserMap[$uid] = $row;
 
-        $pId = !empty($row['underuserid']) ? (string)$row['underuserid'] : '';
+        $pId = !empty($row['underuserid']) ? trim((string)$row['underuserid']) : '';
         if (!empty($pId)) {
             $underUserChildrenMap[$pId][] = $row;
+            $cleanPId = (stripos($pId, 'AN') === 0) ? trim(substr($pId, 2)) : $pId;
+            if ($cleanPId !== $pId) {
+                $underUserChildrenMap[$cleanPId][] = $row;
+            }
         }
 
-        $spId = !empty($row['sponserid']) ? (string)$row['sponserid'] : '';
+        $spId = !empty($row['sponserid']) ? trim((string)$row['sponserid']) : '';
         if (!empty($spId)) {
             $sponsorChildrenMap[$spId][] = $row;
+            $cleanSpId = (stripos($spId, 'AN') === 0) ? trim(substr($spId, 2)) : $spId;
+            if ($cleanSpId !== $spId) {
+                $sponsorChildrenMap[$cleanSpId][] = $row;
+            }
         }
     }
 
     try {
         $stmtTblSpon = $pdo->query("SELECT sponsor_id, referral_id FROM tbl_sponsor");
         while ($spRow = $stmtTblSpon->fetch(PDO::FETCH_ASSOC)) {
-            $spId = (string)$spRow['sponsor_id'];
-            $refId = (string)$spRow['referral_id'];
+            $spId = trim((string)$spRow['sponsor_id']);
+            $refId = trim((string)$spRow['referral_id']);
             if (!empty($spId) && !empty($refId) && isset($globalUserMap[$refId])) {
-                $alreadyAdded = false;
-                if (isset($sponsorChildrenMap[$spId])) {
-                    foreach ($sponsorChildrenMap[$spId] as $existingSc) {
-                        if ((string)$existingSc['userid'] === $refId) {
-                            $alreadyAdded = true;
-                            break;
+                $cleanSpId = (stripos($spId, 'AN') === 0) ? trim(substr($spId, 2)) : $spId;
+                $keys = array_unique([$spId, $cleanSpId]);
+                foreach ($keys as $k) {
+                    $alreadyAdded = false;
+                    if (isset($sponsorChildrenMap[$k])) {
+                        foreach ($sponsorChildrenMap[$k] as $existingSc) {
+                            if ((string)$existingSc['userid'] === $refId) {
+                                $alreadyAdded = true;
+                                break;
+                            }
                         }
                     }
-                }
-                if (!$alreadyAdded) {
-                    $sponsorChildrenMap[$spId][] = $globalUserMap[$refId];
+                    if (!$alreadyAdded) {
+                        $sponsorChildrenMap[$k][] = $globalUserMap[$refId];
+                    }
                 }
             }
         }
@@ -216,101 +228,67 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
-        // Helper check: A node should only claim a candidate as a placement child if candidate is sponsored by nodeId OR candidate's sponsor is not in the tree
-        $canClaimPlacementChild = function($cId) use ($globalUserMap) {
-            return isset($globalUserMap[$cId]);
-        };
-
-        // Gather Children (Binary Placement Left & Right + Direct Referrals with Zero Duplicates)
+        // Gather Direct Referral Children for this Node (ALL users where sponserid == nodeId)
+        // With live authoritative binary placement side (LEFT/RIGHT) and placement parent preserved
         $childrenList = [];
         $assignedChildIds = [];
 
-        // 1. LEFT SLOT (At most 1)
-        // Authoritative source: user.underuserid = nodeId AND user.join_side = LEFT
-        $leftId = '';
-        if (isset($underUserChildrenMap[$nodeId])) {
-            foreach ($underUserChildrenMap[$nodeId] as $uc) {
-                $cId = (string)$uc['userid'];
-                if ($cId !== $nodeId && strtolower($uc['join_side'] ?? '') === 'left' && !isset($globalRenderedUsers[$cId])) {
-                    if ($canClaimPlacementChild($cId)) {
-                        $leftId = $cId;
-                        break;
-                    }
-                }
-            }
+        $cleanNodeId = (stripos($nodeId, 'AN') === 0) ? trim(substr($nodeId, 2)) : $nodeId;
+        $directCandidates = [];
+        if (isset($sponsorChildrenMap[$nodeId])) {
+            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$nodeId]);
         }
-        // Fallback to tree.left_id only if no left child found in user table, and candidate has underuserid == nodeId (or empty) and join_side != right
-        if (empty($leftId) && !empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) {
-            $leftCandidate = (string)$user['left_id'];
-            $candUnder = (string)($globalUserMap[$leftCandidate]['underuserid'] ?? '');
-            $candSide = strtolower($globalUserMap[$leftCandidate]['join_side'] ?? '');
-            if (($candUnder === $nodeId || empty($candUnder)) && $candSide !== 'right' && !isset($globalRenderedUsers[$leftCandidate])) {
-                if ($canClaimPlacementChild($leftCandidate)) {
-                    $leftId = $leftCandidate;
-                }
-            }
-        }
-        if (!empty($leftId) && !isset($globalRenderedUsers[$leftId])) {
-            $childrenList[] = ['id' => $leftId, 'side' => 'LEFT'];
-            $assignedChildIds[$leftId] = true;
+        if ($cleanNodeId !== $nodeId && isset($sponsorChildrenMap[$cleanNodeId])) {
+            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$cleanNodeId]);
         }
 
-        // 2. RIGHT SLOT (At most 1)
-        // Authoritative source: user.underuserid = nodeId AND user.join_side = RIGHT
-        $rightId = '';
-        if (isset($underUserChildrenMap[$nodeId])) {
-            foreach ($underUserChildrenMap[$nodeId] as $uc) {
-                $cId = (string)$uc['userid'];
-                if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && strtolower($uc['join_side'] ?? '') === 'right' && !isset($globalRenderedUsers[$cId])) {
-                    if ($canClaimPlacementChild($cId)) {
-                        $rightId = $cId;
-                        break;
-                    }
-                }
+        foreach ($directCandidates as $sc) {
+            $cId = (string)$sc['userid'];
+            if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                $assignedChildIds[$cId] = true;
+                // Preserve actual authoritative binary placement side: LEFT or RIGHT
+                $side = !empty($sc['join_side']) ? strtoupper(trim($sc['join_side'])) : '';
+                $childrenList[] = [
+                    'id'   => $cId,
+                    'side' => !empty($side) ? $side : 'DIRECT'
+                ];
             }
-        }
-        // Fallback to tree.right_id only if no right child found, and candidate has underuserid == nodeId (or empty) and join_side != left
-        if (empty($rightId) && !empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) {
-            $rightCandidate = (string)$user['right_id'];
-            $candUnder = (string)($globalUserMap[$rightCandidate]['underuserid'] ?? '');
-            $candSide = strtolower($globalUserMap[$rightCandidate]['join_side'] ?? '');
-            if (($candUnder === $nodeId || empty($candUnder)) && $candSide !== 'left' && !isset($globalRenderedUsers[$rightCandidate]) && !isset($assignedChildIds[$rightCandidate])) {
-                if ($canClaimPlacementChild($rightCandidate)) {
-                    $rightId = $rightCandidate;
-                }
-            }
-        }
-        if (!empty($rightId) && !isset($globalRenderedUsers[$rightId]) && !isset($assignedChildIds[$rightId])) {
-            $childrenList[] = ['id' => $rightId, 'side' => 'RIGHT'];
-            $assignedChildIds[$rightId] = true;
         }
 
-        // 3. Additional placement children (where underuserid = nodeId)
+        // Also include any placement children (where underuserid == nodeId) if not already added
         if (isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    if ($canClaimPlacementChild($cId)) {
-                        $childrenList[] = ['id' => $cId, 'side' => !empty($uc['join_side']) ? strtoupper($uc['join_side']) : 'DIRECT'];
-                        $assignedChildIds[$cId] = true;
-                    }
+                    $assignedChildIds[$cId] = true;
+                    $side = !empty($uc['join_side']) ? strtoupper(trim($uc['join_side'])) : '';
+                    $childrenList[] = [
+                        'id'   => $cId,
+                        'side' => !empty($side) ? $side : 'DIRECT'
+                    ];
+                }
+            }
+        }
+        if ($cleanNodeId !== $nodeId && isset($underUserChildrenMap[$cleanNodeId])) {
+            foreach ($underUserChildrenMap[$cleanNodeId] as $uc) {
+                $cId = (string)$uc['userid'];
+                if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                    $assignedChildIds[$cId] = true;
+                    $side = !empty($uc['join_side']) ? strtoupper(trim($uc['join_side'])) : '';
+                    $childrenList[] = [
+                        'id'   => $cId,
+                        'side' => !empty($side) ? $side : 'DIRECT'
+                    ];
                 }
             }
         }
 
-        // 4. Fallback for unplaced orphan users ONLY (where underuserid is empty or not in globalUserMap)
-        // In a binary placement tree, sponsored users who have a placement parent must NEVER be stolen by their sponsor!
-        if (isset($sponsorChildrenMap[$nodeId])) {
-            foreach ($sponsorChildrenMap[$nodeId] as $sc) {
-                $cId = (string)$sc['userid'];
-                $hasValidParent = (!empty($sc['underuserid']) && isset($globalUserMap[(string)$sc['underuserid']]));
-                if (!$hasValidParent && $cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    if ($canClaimPlacementChild($cId)) {
-                        $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
-                        $assignedChildIds[$cId] = true;
-                    }
-                }
-            }
+        $hasChildrenInDb = false;
+        if ((isset($sponsorChildrenMap[$nodeId]) && count($sponsorChildrenMap[$nodeId]) > 0) ||
+            (isset($sponsorChildrenMap[$cleanNodeId]) && count($sponsorChildrenMap[$cleanNodeId]) > 0) ||
+            (isset($underUserChildrenMap[$nodeId]) && count($underUserChildrenMap[$nodeId]) > 0) ||
+            ($cleanNodeId !== $nodeId && isset($underUserChildrenMap[$cleanNodeId]) && count($underUserChildrenMap[$cleanNodeId]) > 0)) {
+            $hasChildrenInDb = true;
         }
 
         $cleanReqNodeId = (stripos($reqNodeId, 'AN') === 0) ? trim(substr($reqNodeId, 2)) : $reqNodeId;
@@ -548,6 +526,12 @@ body.bg-theme {
     font-weight: 800;
     fill: #000000;
     font-family: system-ui, -apple-system, sans-serif;
+    cursor: pointer;
+    transition: fill 0.15s ease;
+}
+
+.node-name-text:hover {
+    fill: #0284c7;
 }
 
 .node-id-text {
@@ -555,6 +539,11 @@ body.bg-theme {
     font-weight: 600;
     fill: #64748b;
     font-family: system-ui, -apple-system, sans-serif;
+    cursor: pointer;
+}
+
+.node-id-text:hover {
+    fill: #0f172a;
 }
 
 .node-toggle-sign {
@@ -563,6 +552,7 @@ body.bg-theme {
     fill: #0284c7;
     text-anchor: middle;
     user-select: none;
+    cursor: pointer;
 }
 
 /* Hover Detail Tooltip */
@@ -575,7 +565,7 @@ body.bg-theme {
     padding: 14px 16px;
     width: 260px;
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
-    pointer-events: none;
+    pointer-events: auto;
     display: none;
     font-size: 12.5px;
     color: #0f172a;
@@ -617,7 +607,7 @@ body.bg-theme {
                             <!-- Search Input -->
                             <form id="tree-search-form" action="tree.php" method="GET" class="d-flex align-items-center">
                                 <div class="input-group" style="width: 240px;">
-                                    <input type="text" name="search-id" class="form-control" placeholder="Search User ID..." value="<?php echo htmlspecialchars($search); ?>" required style="border-radius: 10px 0 0 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #0f172a;">
+                                    <input type="text" name="search-id" id="search-id-input" class="form-control" placeholder="Search User ID..." value="<?php echo htmlspecialchars($search); ?>" required style="border-radius: 10px 0 0 10px; border: 1px solid #cbd5e1; font-weight: 700; color: #0f172a;">
                                     <button type="submit" class="btn" style="background: #0f172a; color: #ffffff !important; border-radius: 0 10px 10px 0; font-weight: 700;">
                                         <i class="fa fa-search"></i>
                                     </button>
@@ -872,10 +862,7 @@ body.bg-theme {
             .attr('dx', 6)
             .text(d => (d.data.is_direct_to_root && String(d.data.id) !== String(rootUserId)) ? '★ DIRECT' : '');
 
-        // Click / Tap Event (UNLIMITED EXPANSION & STRICT SINGLE-LEVEL TOGGLE)
-        nodeEnter.on('click', (event, d) => {
-            event.stopPropagation();
-            
+        function toggleNodeExpansion(d) {
             if (d.children) {
                 // Collapse this node's branch
                 d._children = d.children;
@@ -887,14 +874,12 @@ body.bg-theme {
                 d._children = null;
                 updateTree(d);
             } else if (d.data.has_children_db) {
-                // Fetch deeper downlines dynamically via AJAX for Unlimited Depth
+                // Fetch deeper direct downlines dynamically via AJAX
                 fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(d.data.id)}&root_id=${encodeURIComponent(rootUserId)}`)
                     .then(res => res.json())
                     .then(res => {
                         if (res.status === 'success' && res.data && res.data.children && res.data.children.length > 0) {
                             d.data.children = res.data.children;
-                            
-                            // Build subHierarchy for target node directly
                             const subHierarchy = d3.hierarchy(res.data, child => child.children);
                             d.children = subHierarchy.children;
                             if (d.children) {
@@ -913,7 +898,6 @@ body.bg-theme {
                                     collapseSubtree(c);
                                 });
                             }
-
                             updateTree(d);
                         } else {
                             d.data.has_children_db = false;
@@ -924,6 +908,32 @@ body.bg-theme {
                         console.error('Failed to load deeper downlines:', err);
                     });
             }
+        }
+
+        // Click on Circle or Toggle Sign: Expand / Collapse single level
+        nodeEnter.select('.node-circle').on('click', (event, d) => {
+            event.stopPropagation();
+            toggleNodeExpansion(d);
+        });
+        nodeEnter.select('.node-toggle-sign').on('click', (event, d) => {
+            event.stopPropagation();
+            toggleNodeExpansion(d);
+        });
+
+        // Click on Name or ID: Switch that user as Main Root View
+        nodeEnter.select('.node-name-text').on('click', (event, d) => {
+            event.stopPropagation();
+            window.setAsTreeRoot(d.data.id);
+        });
+        nodeEnter.select('.node-id-text').on('click', (event, d) => {
+            event.stopPropagation();
+            window.setAsTreeRoot(d.data.id);
+        });
+
+        // Double click anywhere on node card: Switch as Main Root View
+        nodeEnter.on('dblclick', (event, d) => {
+            event.stopPropagation();
+            window.setAsTreeRoot(d.data.id);
         });
 
         // Hover / Touch Tooltip Handlers
@@ -985,6 +995,7 @@ body.bg-theme {
         }
         const sponsorText = data.sponserid || data.sponsor_id || 'N/A';
         const placementText = data.underuserid || data.placement_parent_id || 'N/A';
+        const placementSide = data.join_side ? data.join_side.toUpperCase() : (data.position || 'N/A');
 
         tooltip.innerHTML = `
             ${directBadge}
@@ -992,6 +1003,7 @@ body.bg-theme {
             <span style="color: #0284c7; font-weight: 700;">User ID: ${data.id}</span><br>
             <span>Direct Sponsor: <b>${sponsorText}</b></span><br>
             <span>Placement Parent: <b>${placementText}</b></span><br>
+            <span>Placement Side: <b>${placementSide}</b></span><br>
             <span>Status: <b style="color: ${data.active ? '#22c55e' : '#ef4444'};">${data.active ? 'Active' : 'Inactive'}</b></span><br>
             <span>Joining Date: ${data.joining_date || 'N/A'}</span><hr style="margin: 8px 0; border-color: #cbd5e1;">
             <div style="font-size: 12px; margin-bottom: 4px;">
@@ -1007,6 +1019,10 @@ body.bg-theme {
             <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px; color: #334155; margin-top: 2px;">
                 <span>Right Team: <b>${data.rightcount} Members</b> (${data.right_business_fmt})</span>
             </div>
+            <hr style="margin: 8px 0; border-color: #cbd5e1;">
+            <button type="button" class="btn-make-root" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 8px; padding: 7px 12px; font-weight: 700; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(2,132,199,0.25);" onclick="window.setAsTreeRoot('${data.id}')">
+                <span>View as Main Root &rarr;</span>
+            </button>
         `;
 
         const bounds = container.getBoundingClientRect();
@@ -1014,13 +1030,21 @@ body.bg-theme {
         const mouseY = (event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : bounds.top + bounds.height / 2)) - bounds.top;
 
         tooltip.style.left = Math.min(bounds.width - 270, Math.max(10, mouseX + 15)) + 'px';
-        tooltip.style.top = Math.min(bounds.height - 220, Math.max(10, mouseY + 15)) + 'px';
+        tooltip.style.top = Math.min(bounds.height - 250, Math.max(10, mouseY + 15)) + 'px';
         tooltip.style.display = 'block';
     }
 
     function hideTooltip() {
         tooltip.style.display = 'none';
     }
+
+    window.setAsTreeRoot = function(newRootId) {
+        if (!newRootId) return;
+        const searchInput = document.getElementById('search-id-input') || document.querySelector('input[name="search-id"]');
+        if (searchInput) searchInput.value = newRootId;
+        hideTooltip();
+        loadTreeData(newRootId);
+    };
 
     // Controls Event Listeners
     document.getElementById('btn-zoom-in').addEventListener('click', () => {
