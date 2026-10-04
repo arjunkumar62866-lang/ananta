@@ -228,34 +228,15 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
-        // Gather Direct Referral Children for this Node (ALL users where sponserid == nodeId)
-        // With live authoritative binary placement side (LEFT/RIGHT) and placement parent preserved
+        // Gather Children for this Node:
+        // 1. Authoritative Binary Placement children (underuserid == nodeId)
+        // 2. Direct Referral children (sponserid == nodeId) whose underuserid is NOT another child sponsored by nodeId
         $childrenList = [];
         $assignedChildIds = [];
 
         $cleanNodeId = (stripos($nodeId, 'AN') === 0) ? trim(substr($nodeId, 2)) : $nodeId;
-        $directCandidates = [];
-        if (isset($sponsorChildrenMap[$nodeId])) {
-            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$nodeId]);
-        }
-        if ($cleanNodeId !== $nodeId && isset($sponsorChildrenMap[$cleanNodeId])) {
-            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$cleanNodeId]);
-        }
 
-        foreach ($directCandidates as $sc) {
-            $cId = (string)$sc['userid'];
-            if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                $assignedChildIds[$cId] = true;
-                // Preserve actual authoritative binary placement side: LEFT or RIGHT
-                $side = !empty($sc['join_side']) ? strtoupper(trim($sc['join_side'])) : '';
-                $childrenList[] = [
-                    'id'   => $cId,
-                    'side' => !empty($side) ? $side : 'DIRECT'
-                ];
-            }
-        }
-
-        // Also include any placement children (where underuserid == nodeId) if not already added
+        // Step 1: Add direct placement children (where underuserid == nodeId)
         if (isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
@@ -283,11 +264,58 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             }
         }
 
+        // Step 2: Add direct referrals (where sponserid == nodeId)
+        // If candidate's placement parent is another child sponsored by nodeId, candidate will attach under that placement parent!
+        $directCandidates = [];
+        if (isset($sponsorChildrenMap[$nodeId])) {
+            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$nodeId]);
+        }
+        if ($cleanNodeId !== $nodeId && isset($sponsorChildrenMap[$cleanNodeId])) {
+            $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$cleanNodeId]);
+        }
+
+        foreach ($directCandidates as $sc) {
+            $cId = (string)$sc['userid'];
+            if ($cId === $nodeId || isset($assignedChildIds[$cId]) || isset($globalRenderedUsers[$cId])) {
+                continue;
+            }
+
+            // Check if candidate has an underuserid that is ALSO sponsored by nodeId
+            $pId = !empty($sc['underuserid']) ? trim((string)$sc['underuserid']) : '';
+            $cleanPId = (stripos($pId, 'AN') === 0) ? trim(substr($pId, 2)) : $pId;
+            if (!empty($pId) && $pId !== $nodeId && $cleanPId !== $cleanNodeId) {
+                $parentUser = $globalUserMap[$pId] ?? ($globalUserMap[$cleanPId] ?? null);
+                if ($parentUser) {
+                    $parentSpId = !empty($parentUser['sponserid']) ? trim((string)$parentUser['sponserid']) : '';
+                    $cleanParentSpId = (stripos($parentSpId, 'AN') === 0) ? trim(substr($parentSpId, 2)) : $parentSpId;
+                    if ($cleanParentSpId === $cleanNodeId || $parentSpId === $nodeId) {
+                        // Defer this candidate to its placement parent!
+                        continue;
+                    }
+                }
+            }
+
+            $assignedChildIds[$cId] = true;
+            $side = !empty($sc['join_side']) ? strtoupper(trim($sc['join_side'])) : '';
+            $childrenList[] = [
+                'id'   => $cId,
+                'side' => !empty($side) ? $side : 'DIRECT'
+            ];
+        }
+
+        // Has children in DB: TRUE if node has ANY team members in left or right, or placement children, or direct children
         $hasChildrenInDb = false;
-        if ((isset($sponsorChildrenMap[$nodeId]) && count($sponsorChildrenMap[$nodeId]) > 0) ||
-            (isset($sponsorChildrenMap[$cleanNodeId]) && count($sponsorChildrenMap[$cleanNodeId]) > 0) ||
+        if (
+            $leftCount > 0 ||
+            $rightCount > 0 ||
+            !empty($user['left_id']) ||
+            !empty($user['right_id']) ||
+            count($childrenList) > 0 ||
             (isset($underUserChildrenMap[$nodeId]) && count($underUserChildrenMap[$nodeId]) > 0) ||
-            ($cleanNodeId !== $nodeId && isset($underUserChildrenMap[$cleanNodeId]) && count($underUserChildrenMap[$cleanNodeId]) > 0)) {
+            ($cleanNodeId !== $nodeId && isset($underUserChildrenMap[$cleanNodeId]) && count($underUserChildrenMap[$cleanNodeId]) > 0) ||
+            (isset($sponsorChildrenMap[$nodeId]) && count($sponsorChildrenMap[$nodeId]) > 0) ||
+            ($cleanNodeId !== $nodeId && isset($sponsorChildrenMap[$cleanNodeId]) && count($sponsorChildrenMap[$cleanNodeId]) > 0)
+        ) {
             $hasChildrenInDb = true;
         }
 
@@ -318,7 +346,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             'left_business_fmt'     => formatCurrency($leftBusiness, $currSelection),
             'right_business_fmt'    => formatCurrency($rightBusiness, $currSelection),
             'total_business_fmt'    => formatCurrency($totalBusiness, $currSelection),
-            'has_children_db'       => count($childrenList) > 0,
+            'has_children_db'       => $hasChildrenInDb,
             'children'              => []
         ];
 
@@ -830,12 +858,24 @@ body.bg-theme {
             })
             .attr('r', 6.5);
 
+        function nodeHasChildren(d) {
+            if (d.children && d.children.length > 0) return true;
+            if (d._children && d._children.length > 0) return true;
+            if (d.data) {
+                if (d.data.has_children_db) return true;
+                if (parseInt(d.data.leftcount || 0) > 0) return true;
+                if (parseInt(d.data.rightcount || 0) > 0) return true;
+                if (d.data.children && d.data.children.length > 0) return true;
+            }
+            return false;
+        }
+
         // Toggle Sign (+ / -) above node circle
         nodeEnter.append('text')
             .attr('class', 'node-toggle-sign')
             .attr('dy', -9)
             .attr('dx', 0)
-            .text(d => (d.children || d._children || d.data.has_children_db) ? (d.children ? '-' : '+') : '');
+            .text(d => nodeHasChildren(d) ? (d.children ? '-' : '+') : '');
 
         // User Name Text
         nodeEnter.append('text')
@@ -863,17 +903,17 @@ body.bg-theme {
             .text(d => (d.data.is_direct_to_root && String(d.data.id) !== String(rootUserId)) ? '★ DIRECT' : '');
 
         function toggleNodeExpansion(d) {
-            if (d.children) {
+            if (d.children && d.children.length > 0) {
                 // Collapse this node's branch
                 d._children = d.children;
                 d.children = null;
                 updateTree(d);
-            } else if (d._children) {
+            } else if (d._children && d._children.length > 0) {
                 // Expand this node's branch
                 d.children = d._children;
                 d._children = null;
                 updateTree(d);
-            } else if (d.data.has_children_db) {
+            } else if (nodeHasChildren(d)) {
                 // Fetch deeper direct downlines dynamically via AJAX
                 fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(d.data.id)}&root_id=${encodeURIComponent(rootUserId)}`)
                     .then(res => res.json())
@@ -910,7 +950,8 @@ body.bg-theme {
             }
         }
 
-        // Click on Circle or Toggle Sign: Expand / Collapse single level
+        // Click on Circle, Toggle Sign, Name, ID, or double click:
+        // ALWAYS Toggle Expansion inline right on the canvas (NEVER switch root or make a separate tree!)
         nodeEnter.select('.node-circle').on('click', (event, d) => {
             event.stopPropagation();
             toggleNodeExpansion(d);
@@ -919,21 +960,17 @@ body.bg-theme {
             event.stopPropagation();
             toggleNodeExpansion(d);
         });
-
-        // Click on Name or ID: Switch that user as Main Root View
         nodeEnter.select('.node-name-text').on('click', (event, d) => {
             event.stopPropagation();
-            window.setAsTreeRoot(d.data.id);
+            toggleNodeExpansion(d);
         });
         nodeEnter.select('.node-id-text').on('click', (event, d) => {
             event.stopPropagation();
-            window.setAsTreeRoot(d.data.id);
+            toggleNodeExpansion(d);
         });
-
-        // Double click anywhere on node card: Switch as Main Root View
         nodeEnter.on('dblclick', (event, d) => {
             event.stopPropagation();
-            window.setAsTreeRoot(d.data.id);
+            toggleNodeExpansion(d);
         });
 
         // Hover / Touch Tooltip Handlers
@@ -960,7 +997,7 @@ body.bg-theme {
             });
 
         nodeUpdate.select('.node-toggle-sign')
-            .text(d => (d.children || d._children || d.data.has_children_db) ? (d.children ? '-' : '+') : '');
+            .text(d => nodeHasChildren(d) ? (d.children ? '-' : '+') : '');
 
         nodeUpdate.select('.node-direct-badge')
             .text(d => (d.data.is_direct_to_root && String(d.data.id) !== String(rootUserId)) ? '★ DIRECT' : '');
