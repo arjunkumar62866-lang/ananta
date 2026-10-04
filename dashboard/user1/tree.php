@@ -139,7 +139,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
     }
 
     function fetch_horizontal_binary_tree($nodeId, $currentDepth = 1, $maxDepth = 50, $visitedPath = [], &$globalRenderedUsers = [], $parentNodeId = '') {
-        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap, $hasPlacementParent;
+        global $currSelection, $globalUserMap, $globalInvMap, $underUserChildrenMap, $sponsorChildrenMap, $hasPlacementParent, $reqNodeId;
 
         $nodeId = (string)$nodeId;
         if (empty($nodeId) || !isset($globalUserMap[$nodeId])) return null;
