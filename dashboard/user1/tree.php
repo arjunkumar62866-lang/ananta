@@ -20,15 +20,17 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         exit;
     }
 
-    // Verify User Exists
-    $stmt = $pdo->prepare("SELECT userid, name, active, status, package, sponserid, joining_date, mobile FROM user WHERE userid = :uid LIMIT 1");
-    $stmt->execute([':uid' => $reqNodeId]);
+    // Verify User Exists (normalizing numeric vs AN-prefixed ID)
+    $cleanNodeId = (stripos($reqNodeId, 'AN') === 0) ? trim(substr($reqNodeId, 2)) : $reqNodeId;
+    $stmt = $pdo->prepare("SELECT userid, name, active, status, package, sponserid, joining_date, mobile FROM user WHERE userid = :uid OR userid = :clean LIMIT 1");
+    $stmt->execute([':uid' => $reqNodeId, ':clean' => $cleanNodeId]);
     $rootUserData = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$rootUserData) {
         echo json_encode(['status' => 'error', 'message' => 'User ID not found in database']);
         exit;
     }
+    $reqNodeId = (string)$rootUserData['userid'];
 
     // Pre-load all users, tree placement, and investments into memory maps for ultra-fast, zero-timeout execution
     $stmtAllUsers = $pdo->query("
@@ -279,13 +281,17 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             }
         }
 
-        // 4. ALL Direct Sponsor Referrals (where sponserid = nodeId)
+        // 4. Fallback for unplaced orphan users ONLY (where underuserid is empty or not in globalUserMap)
+        // In a binary placement tree, sponsored users who have a placement parent must NEVER be stolen by their sponsor!
         if (isset($sponsorChildrenMap[$nodeId])) {
             foreach ($sponsorChildrenMap[$nodeId] as $sc) {
                 $cId = (string)$sc['userid'];
-                if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
-                    $assignedChildIds[$cId] = true;
+                $hasValidParent = (!empty($sc['underuserid']) && isset($globalUserMap[(string)$sc['underuserid']]));
+                if (!$hasValidParent && $cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
+                    if ($canClaimPlacementChild($cId)) {
+                        $childrenList[] = ['id' => $cId, 'side' => 'DIRECT'];
+                        $assignedChildIds[$cId] = true;
+                    }
                 }
             }
         }
@@ -353,14 +359,24 @@ date_default_timezone_set('Asia/Kolkata');
 $search = $userid;
 if (isset($_GET['search-id']) && !empty(trim($_GET['search-id']))) {
     $search_id = trim($_GET['search-id']);
-    $stmt = $pdo->prepare("SELECT userid FROM user WHERE userid = :userid LIMIT 1");
-    $stmt->execute([':userid' => $search_id]);
+    $clean_search_id = (stripos($search_id, 'AN') === 0) ? trim(substr($search_id, 2)) : $search_id;
+    $stmt = $pdo->prepare("SELECT userid FROM user WHERE userid = :userid OR userid = :clean LIMIT 1");
+    $stmt->execute([':userid' => $search_id, ':clean' => $clean_search_id]);
+    $foundUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($stmt->rowCount() > 0) {
-        $search = $search_id;
+    if ($foundUser) {
+        $search = $foundUser['userid'];
     } else {
         echo "<script>alert('User ID not found in database');window.location.assign('tree.php');</script>";
         exit;
+    }
+} else {
+    $clean_uid = (stripos($userid, 'AN') === 0) ? trim(substr($userid, 2)) : $userid;
+    $stmt = $pdo->prepare("SELECT userid FROM user WHERE userid = :userid OR userid = :clean LIMIT 1");
+    $stmt->execute([':userid' => $userid, ':clean' => $clean_uid]);
+    $foundUser = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($foundUser) {
+        $search = $foundUser['userid'];
     }
 }
 ?>
