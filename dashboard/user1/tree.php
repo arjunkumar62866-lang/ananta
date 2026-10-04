@@ -226,17 +226,9 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $assignedChildIds = [];
 
         // 1. LEFT SLOT (At most 1)
-        $leftCandidate = (!empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) 
-            ? (string)$user['left_id'] 
-            : '';
+        // Authoritative source: user.underuserid = nodeId AND user.join_side = LEFT
         $leftId = '';
-        if (!empty($leftCandidate)) {
-            $candUnder = (string)($globalUserMap[$leftCandidate]['underuserid'] ?? '');
-            if (empty($candUnder) || $candUnder === $nodeId) {
-                $leftId = $leftCandidate;
-            }
-        }
-        if (empty($leftId) && isset($underUserChildrenMap[$nodeId])) {
+        if (isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && strtolower($uc['join_side'] ?? '') === 'left' && !isset($globalRenderedUsers[$cId])) {
@@ -247,25 +239,26 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
                 }
             }
         }
-        if (!empty($leftId) && !isset($globalRenderedUsers[$leftId])) {
-            if ($canClaimPlacementChild($leftId)) {
-                $childrenList[] = ['id' => $leftId, 'side' => 'LEFT'];
-                $assignedChildIds[$leftId] = true;
+        // Fallback to tree.left_id only if no left child found in user table, and candidate has underuserid == nodeId (or empty) and join_side != right
+        if (empty($leftId) && !empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) {
+            $leftCandidate = (string)$user['left_id'];
+            $candUnder = (string)($globalUserMap[$leftCandidate]['underuserid'] ?? '');
+            $candSide = strtolower($globalUserMap[$leftCandidate]['join_side'] ?? '');
+            if (($candUnder === $nodeId || empty($candUnder)) && $candSide !== 'right' && !isset($globalRenderedUsers[$leftCandidate])) {
+                if ($canClaimPlacementChild($leftCandidate)) {
+                    $leftId = $leftCandidate;
+                }
             }
+        }
+        if (!empty($leftId) && !isset($globalRenderedUsers[$leftId])) {
+            $childrenList[] = ['id' => $leftId, 'side' => 'LEFT'];
+            $assignedChildIds[$leftId] = true;
         }
 
         // 2. RIGHT SLOT (At most 1)
-        $rightCandidate = (!empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) 
-            ? (string)$user['right_id'] 
-            : '';
+        // Authoritative source: user.underuserid = nodeId AND user.join_side = RIGHT
         $rightId = '';
-        if (!empty($rightCandidate)) {
-            $candUnder = (string)($globalUserMap[$rightCandidate]['underuserid'] ?? '');
-            if (empty($candUnder) || $candUnder === $nodeId) {
-                $rightId = $rightCandidate;
-            }
-        }
-        if (empty($rightId) && isset($underUserChildrenMap[$nodeId])) {
+        if (isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
                 if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && strtolower($uc['join_side'] ?? '') === 'right' && !isset($globalRenderedUsers[$cId])) {
@@ -275,23 +268,21 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
                     }
                 }
             }
-            if (empty($rightId)) {
-                foreach ($underUserChildrenMap[$nodeId] as $uc) {
-                    $cId = (string)$uc['userid'];
-                    if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                        if ($canClaimPlacementChild($cId)) {
-                            $rightId = $cId;
-                            break;
-                        }
-                    }
+        }
+        // Fallback to tree.right_id only if no right child found, and candidate has underuserid == nodeId (or empty) and join_side != left
+        if (empty($rightId) && !empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) {
+            $rightCandidate = (string)$user['right_id'];
+            $candUnder = (string)($globalUserMap[$rightCandidate]['underuserid'] ?? '');
+            $candSide = strtolower($globalUserMap[$rightCandidate]['join_side'] ?? '');
+            if (($candUnder === $nodeId || empty($candUnder)) && $candSide !== 'left' && !isset($globalRenderedUsers[$rightCandidate]) && !isset($assignedChildIds[$rightCandidate])) {
+                if ($canClaimPlacementChild($rightCandidate)) {
+                    $rightId = $rightCandidate;
                 }
             }
         }
         if (!empty($rightId) && !isset($globalRenderedUsers[$rightId]) && !isset($assignedChildIds[$rightId])) {
-            if ($canClaimPlacementChild($rightId)) {
-                $childrenList[] = ['id' => $rightId, 'side' => 'RIGHT'];
-                $assignedChildIds[$rightId] = true;
-            }
+            $childrenList[] = ['id' => $rightId, 'side' => 'RIGHT'];
+            $assignedChildIds[$rightId] = true;
         }
 
         // 3. Additional placement children (where underuserid = nodeId)
@@ -567,9 +558,10 @@ body.bg-theme {
 }
 
 .node-toggle-sign {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 900;
-    fill: #475569;
+    fill: #0284c7;
+    text-anchor: middle;
     user-select: none;
 }
 
@@ -763,10 +755,11 @@ body.bg-theme {
         rootNode.x0 = height / 2;
         rootNode.y0 = isMobile ? 40 : 100;
 
-        // Auto-expand branches leading to direct referrals of root so all 10 direct referrals
-        // are 100% visible simultaneously on the tree canvas at their exact binary placements.
-        // Non-direct branches remain collapsed for optimal clarity and performance.
-        collapseNonDirectBranches(rootNode);
+        // Initial view: Root + Root's immediate direct/placement children visible.
+        // Immediate children's own sub-branches are collapsed so downlines do not auto-open.
+        if (rootNode.children) {
+            rootNode.children.forEach(collapseSubtree);
+        }
 
         // Center Initial Position according to screen size
         const initialScale = isMobile ? 0.72 : 0.92;
@@ -780,29 +773,6 @@ body.bg-theme {
         svg.call(zoomBehavior.transform, initialTransform);
 
         updateTree(rootNode);
-    }
-
-    function hasDirectDescendant(node) {
-        if (!node) return false;
-        if (node.data && node.data.is_direct_to_root && String(node.data.id) !== String(rootUserId)) {
-            return true;
-        }
-        const ch = node.children || node._children || [];
-        for (let i = 0; i < ch.length; i++) {
-            if (hasDirectDescendant(ch[i])) return true;
-        }
-        return false;
-    }
-
-    function collapseNonDirectBranches(node) {
-        if (!node || !node.children) return;
-        node.children.forEach(child => {
-            if (hasDirectDescendant(child)) {
-                collapseNonDirectBranches(child);
-            } else {
-                collapseSubtree(child);
-            }
-        });
     }
 
     function collapseSubtree(d) {
@@ -873,8 +843,8 @@ body.bg-theme {
         // Toggle Sign (+ / -) above node circle
         nodeEnter.append('text')
             .attr('class', 'node-toggle-sign')
-            .attr('dy', -10)
-            .attr('dx', -3.5)
+            .attr('dy', -9)
+            .attr('dx', 0)
             .text(d => (d.children || d._children || d.data.has_children_db) ? (d.children ? '-' : '+') : '');
 
         // User Name Text
@@ -940,7 +910,7 @@ body.bg-theme {
                                 }
                                 d.children.forEach(c => {
                                     syncNodeDepth(c, d);
-                                    collapseNonDirectBranches(c);
+                                    collapseSubtree(c);
                                 });
                             }
 
