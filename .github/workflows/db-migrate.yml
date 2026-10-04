@@ -45,14 +45,14 @@ jobs:
           # Test SSH connection with retries
           echo "Testing SSH connection to $CLEAN_USER@$CLEAN_HOST:$CLEAN_PORT..."
           CONNECTED=0
-          for i in 1 2 3; do
+          for i in 1 2 3 4 5; do
             if ssh -i ~/.ssh/hostinger_key -p "$CLEAN_PORT" $SSH_OPTS "$CLEAN_USER@$CLEAN_HOST" 'echo HOSTINGER_SSH_CONNECTED_OK'; then
               echo "SSH connected successfully on attempt $i"
               CONNECTED=1
               break
             fi
-            echo "SSH attempt $i failed, retrying in 5 seconds..."
-            sleep 5
+            echo "SSH attempt $i failed, retrying in 7 seconds..."
+            sleep 7
           done
 
           if [ $CONNECTED -ne 1 ]; then
