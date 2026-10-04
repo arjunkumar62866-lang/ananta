@@ -81,11 +81,3 @@ jobs:
             "$CLEAN_USER@$CLEAN_HOST" \
             'cd /home/u914531711/domains/anantamtptl.com/public_html && php database/migration.php migrate'
 
-          # Run deep diagnostic script on Hostinger
-          echo "Executing deep diagnostic script on Hostinger..."
-          ssh \
-            -i ~/.ssh/hostinger_key \
-            -p "$CLEAN_PORT" \
-            -o StrictHostKeyChecking=yes \
-            "$CLEAN_USER@$CLEAN_HOST" \
-            'cd /home/u914531711/domains/anantamtptl.com/public_html && php dashboard/user1/diag_deep.php key=aX9zK7mQ'
