@@ -107,8 +107,18 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         }
 
         $cList = [];
-        if (!empty($u['left_id']) && isset($globalUserMap[(string)$u['left_id']])) $cList[] = (string)$u['left_id'];
-        if (!empty($u['right_id']) && isset($globalUserMap[(string)$u['right_id']])) $cList[] = (string)$u['right_id'];
+        if (!empty($u['left_id']) && isset($globalUserMap[(string)$u['left_id']])) {
+            $cUnder = (string)($globalUserMap[(string)$u['left_id']]['underuserid'] ?? '');
+            if (empty($cUnder) || $cUnder === (string)$startNodeId) {
+                $cList[] = (string)$u['left_id'];
+            }
+        }
+        if (!empty($u['right_id']) && isset($globalUserMap[(string)$u['right_id']])) {
+            $cUnder = (string)($globalUserMap[(string)$u['right_id']]['underuserid'] ?? '');
+            if (empty($cUnder) || $cUnder === (string)$startNodeId) {
+                $cList[] = (string)$u['right_id'];
+            }
+        }
 
         if (isset($underUserChildrenMap[$startNodeId])) {
             foreach ($underUserChildrenMap[$startNodeId] as $uc) {
@@ -214,9 +224,16 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         $assignedChildIds = [];
 
         // 1. LEFT SLOT (At most 1)
-        $leftId = (!empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) 
+        $leftCandidate = (!empty($user['left_id']) && isset($globalUserMap[(string)$user['left_id']])) 
             ? (string)$user['left_id'] 
             : '';
+        $leftId = '';
+        if (!empty($leftCandidate)) {
+            $candUnder = (string)($globalUserMap[$leftCandidate]['underuserid'] ?? '');
+            if (empty($candUnder) || $candUnder === $nodeId) {
+                $leftId = $leftCandidate;
+            }
+        }
         if (empty($leftId) && isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
@@ -236,9 +253,16 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
         }
 
         // 2. RIGHT SLOT (At most 1)
-        $rightId = (!empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) 
+        $rightCandidate = (!empty($user['right_id']) && isset($globalUserMap[(string)$user['right_id']])) 
             ? (string)$user['right_id'] 
             : '';
+        $rightId = '';
+        if (!empty($rightCandidate)) {
+            $candUnder = (string)($globalUserMap[$rightCandidate]['underuserid'] ?? '');
+            if (empty($candUnder) || $candUnder === $nodeId) {
+                $rightId = $rightCandidate;
+            }
+        }
         if (empty($rightId) && isset($underUserChildrenMap[$nodeId])) {
             foreach ($underUserChildrenMap[$nodeId] as $uc) {
                 $cId = (string)$uc['userid'];
@@ -296,7 +320,12 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             }
         }
 
-        $isDirectToParent = (!empty($user['sponserid']) && !empty($parentNodeId) && (string)$user['sponserid'] === (string)$parentNodeId);
+        $cleanReqNodeId = (stripos($reqNodeId, 'AN') === 0) ? trim(substr($reqNodeId, 2)) : $reqNodeId;
+        $spId = !empty($user['sponserid']) ? trim((string)$user['sponserid']) : '';
+        $cleanSpId = (stripos($spId, 'AN') === 0) ? trim(substr($spId, 2)) : $spId;
+
+        $isDirectToParent = (!empty($spId) && !empty($parentNodeId) && ($cleanSpId === (string)$parentNodeId || $spId === (string)$parentNodeId));
+        $isDirectToRoot   = (!empty($spId) && ($cleanSpId === (string)$cleanReqNodeId || $spId === (string)$reqNodeId));
 
         $node = [
             'id'                    => $user['userid'],
@@ -309,7 +338,7 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             'placement_parent_id'   => $user['underuserid'] ?? '',
             'join_side'             => $user['join_side'] ?? '',
             'is_direct_referral'    => $isDirectToParent,
-            'is_direct_to_root'     => $isDirectToParent,
+            'is_direct_to_root'     => $isDirectToRoot,
             'joining_date'          => $user['joining_date'] ?? '',
             'mobile'                => $user['mobile'] ?? '',
             'leftcount'             => $leftCount,
