@@ -228,15 +228,13 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
 
         $totalBusiness = $personalBusiness + $leftBusiness + $rightBusiness;
 
-        // Gather Children for this Node:
-        // 1. ALL Direct Referral children (sponserid == nodeId)
-        // 2. Any Placement children (underuserid == nodeId)
+        // Gather Direct Referral Children for this Node (ALL users where sponserid == nodeId)
+        // With live authoritative binary placement side (LEFT/RIGHT) and placement parent preserved
         $childrenList = [];
         $assignedChildIds = [];
 
         $cleanNodeId = (stripos($nodeId, 'AN') === 0) ? trim(substr($nodeId, 2)) : $nodeId;
 
-        // Step 1: Add ALL direct referrals (where sponserid == nodeId)
         $directCandidates = [];
         if (isset($sponsorChildrenMap[$nodeId])) {
             $directCandidates = array_merge($directCandidates, $sponsorChildrenMap[$nodeId]);
@@ -257,49 +255,12 @@ if (isset($_GET['api']) && $_GET['api'] === 'get_tree') {
             }
         }
 
-        // Step 2: Also add any placement children (where underuserid == nodeId) if not already added
-        if (isset($underUserChildrenMap[$nodeId])) {
-            foreach ($underUserChildrenMap[$nodeId] as $uc) {
-                $cId = (string)$uc['userid'];
-                if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    $assignedChildIds[$cId] = true;
-                    $side = !empty($uc['join_side']) ? strtoupper(trim($uc['join_side'])) : '';
-                    $childrenList[] = [
-                        'id'   => $cId,
-                        'side' => !empty($side) ? $side : 'DIRECT'
-                    ];
-                }
-            }
-        }
-        if ($cleanNodeId !== $nodeId && isset($underUserChildrenMap[$cleanNodeId])) {
-            foreach ($underUserChildrenMap[$cleanNodeId] as $uc) {
-                $cId = (string)$uc['userid'];
-                if ($cId !== $nodeId && !isset($assignedChildIds[$cId]) && !isset($globalRenderedUsers[$cId])) {
-                    $assignedChildIds[$cId] = true;
-                    $side = !empty($uc['join_side']) ? strtoupper(trim($uc['join_side'])) : '';
-                    $childrenList[] = [
-                        'id'   => $cId,
-                        'side' => !empty($side) ? $side : 'DIRECT'
-                    ];
-                }
-            }
-        }
-
-        // Has children in DB: TRUE if node has ANY team members in left or right, or placement children, or direct children
-        $hasChildrenInDb = false;
-        if (
-            $leftCount > 0 ||
-            $rightCount > 0 ||
-            !empty($user['left_id']) ||
-            !empty($user['right_id']) ||
+        // hasChildrenInDb: True if node has direct referrals in database
+        $hasChildrenInDb = (
             count($childrenList) > 0 ||
-            (isset($underUserChildrenMap[$nodeId]) && count($underUserChildrenMap[$nodeId]) > 0) ||
-            ($cleanNodeId !== $nodeId && isset($underUserChildrenMap[$cleanNodeId]) && count($underUserChildrenMap[$cleanNodeId]) > 0) ||
             (isset($sponsorChildrenMap[$nodeId]) && count($sponsorChildrenMap[$nodeId]) > 0) ||
             ($cleanNodeId !== $nodeId && isset($sponsorChildrenMap[$cleanNodeId]) && count($sponsorChildrenMap[$cleanNodeId]) > 0)
-        ) {
-            $hasChildrenInDb = true;
-        }
+        );
 
         $cleanReqNodeId = (stripos($reqNodeId, 'AN') === 0) ? trim(substr($reqNodeId, 2)) : $reqNodeId;
         $spId = !empty($user['sponserid']) ? trim((string)$user['sponserid']) : '';
@@ -845,8 +806,6 @@ body.bg-theme {
             if (d._children && d._children.length > 0) return true;
             if (d.data) {
                 if (d.data.has_children_db) return true;
-                if (parseInt(d.data.leftcount || 0) > 0) return true;
-                if (parseInt(d.data.rightcount || 0) > 0) return true;
                 if (d.data.children && d.data.children.length > 0) return true;
             }
             return false;
