@@ -1961,23 +1961,31 @@ if (!function_exists('getUserNetworkDownlineIds')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || empty($userId)) return [];
 
+        $userId = trim((string)$userId);
+        $cleanId = (stripos($userId, 'AN') === 0) ? trim(substr($userId, 2)) : $userId;
+        $anId = (stripos($userId, 'AN') === 0) ? $userId : 'AN' . $userId;
+
         $descendants = [];
-        $visited = [$userId => true];
+        $visited = [$userId => true, $cleanId => true, $anId => true];
 
         // 1. Gather all sponsor-tree downlines (recursive via user.sponserid & tbl_sponsor)
-        $sponsorQueue = [$userId];
+        $sponsorQueue = array_unique([$userId, $cleanId, $anId]);
         while (!empty($sponsorQueue)) {
             $currSponsor = array_shift($sponsorQueue);
 
             // From user table
-            $stmtU = $db->prepare("SELECT userid FROM user WHERE sponserid = :sp AND userid != :sp");
-            $stmtU->execute([':sp' => $currSponsor]);
+            $currClean = (stripos($currSponsor, 'AN') === 0) ? trim(substr($currSponsor, 2)) : $currSponsor;
+            $currAn    = (stripos($currSponsor, 'AN') === 0) ? $currSponsor : 'AN' . $currSponsor;
+            $stmtU = $db->prepare("SELECT userid FROM user WHERE (sponserid = :sp OR sponserid = :ansp) AND userid != :sp AND userid != :ansp");
+            $stmtU->execute([':sp' => $currClean, ':ansp' => $currAn]);
             $directsU = $stmtU->fetchAll(PDO::FETCH_COLUMN);
 
             // From tbl_sponsor table
-            $stmtSp = $db->prepare("SELECT referral_id FROM tbl_sponsor WHERE sponsor_id = :sp AND referral_id != :sp");
-            $stmtSp->execute([':sp' => $currSponsor]);
-            $directsSp = $stmtSp->fetchAll(PDO::FETCH_COLUMN);
+            try {
+                $stmtSp = $db->prepare("SELECT referral_id FROM tbl_sponsor WHERE (sponsor_id = :sp OR sponsor_id = :ansp) AND referral_id != :sp AND referral_id != :ansp");
+                $stmtSp->execute([':sp' => $currClean, ':ansp' => $currAn]);
+                $directsSp = $stmtSp->fetchAll(PDO::FETCH_COLUMN);
+            } catch (Exception $eSp) { $directsSp = []; }
 
             $directs = array_unique(array_merge($directsU, $directsSp));
             foreach ($directs as $dId) {
@@ -1996,14 +2004,19 @@ if (!function_exists('getUserNetworkDownlineIds')) {
             $currPlace = array_shift($placementQueue);
 
             // From tree table left_id & right_id
-            $stmtT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
-            $stmtT->execute([':uid' => $currPlace]);
+            $pClean = (stripos($currPlace, 'AN') === 0) ? trim(substr($currPlace, 2)) : $currPlace;
+            $pAn    = (stripos($currPlace, 'AN') === 0) ? $currPlace : 'AN' . $currPlace;
+            $stmtT = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid OR userid = :anid LIMIT 1");
+            $stmtT->execute([':uid' => $pClean, ':anid' => $pAn]);
             $tRow = $stmtT->fetch(PDO::FETCH_ASSOC);
             if ($tRow) {
                 foreach (['left_id', 'right_id'] as $k) {
                     $cId = trim((string)($tRow[$k] ?? ''));
-                    if (!empty($cId) && !isset($visited[$cId])) {
+                    $cleanC = (stripos($cId, 'AN') === 0) ? trim(substr($cId, 2)) : $cId;
+                    if (!empty($cId) && !isset($visited[$cId]) && !isset($visited[$cleanC])) {
                         $visited[$cId] = true;
+                        $visited[$cleanC] = true;
+                        $visited['AN' . $cleanC] = true;
                         $descendants[] = $cId;
                         $placementQueue[] = $cId;
                     }
@@ -2011,8 +2024,8 @@ if (!function_exists('getUserNetworkDownlineIds')) {
             }
 
             // From user table underuserid
-            $stmtUnder = $db->prepare("SELECT userid FROM user WHERE underuserid = :uid AND userid != :uid");
-            $stmtUnder->execute([':uid' => $currPlace]);
+            $stmtUnder = $db->prepare("SELECT userid FROM user WHERE (underuserid = :uid OR underuserid = :anid) AND userid != :uid AND userid != :anid");
+            $stmtUnder->execute([':uid' => $pClean, ':anid' => $pAn]);
             $underUsers = $stmtUnder->fetchAll(PDO::FETCH_COLUMN);
             foreach ($underUsers as $uId) {
                 $uId = trim((string)$uId);
@@ -2195,8 +2208,9 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             $directCount = $directMap[$uid] ?? 0;
             $nodePos = !empty($curr['position']) ? $curr['position'] : (!empty($uData['join_side']) ? strtoupper($uData['join_side']) : $initialPosition);
 
+            $isAccountActive = ((string)($uData['active'] ?? '') === '1' || (int)($uData['active'] ?? 0) === 1 || strtolower((string)($uData['status'] ?? '')) === 'active');
             $hasActiveInvestment = ($invUsd > 0 || $invInr > 0);
-            $isActive = $hasActiveInvestment;
+            $isActive = ($isAccountActive || $hasActiveInvestment);
             $nodeStatus = $isActive ? 'Active' : 'Inactive';
 
             $results[] = [
@@ -2375,8 +2389,9 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 $invUsd = parseInputToUSD($invInr, 'INR', $db);
             }
 
+            $isAccountActive = ((string)($r['active'] ?? '') === '1' || (int)($r['active'] ?? 0) === 1 || strtolower((string)($r['status'] ?? '')) === 'active');
             $hasActiveInvestment = ($invUsd > 0 || $invInr > 0);
-            $isActive = $hasActiveInvestment;
+            $isActive = ($isAccountActive || $hasActiveInvestment);
 
             // Direct count for direct member
             $stmtDir = $db->prepare("SELECT COUNT(*) FROM user WHERE sponserid = :uid");
@@ -2839,8 +2854,22 @@ function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pd
     if (!$db || !$userid) return ['investments' => [], 'unlock_debits' => []];
 
     // Gather self + all downline IDs across complete sponsor & placement network
+    $cleanUid = (stripos($userid, 'AN') === 0) ? trim(substr($userid, 2)) : $userid;
+    $anUid    = (stripos($userid, 'AN') === 0) ? $userid : 'AN' . $userid;
     $downlineIds = getUserNetworkDownlineIds($userid, $db);
-    $allTargetUserIds = array_values(array_unique(array_merge([$userid], $downlineIds)));
+    
+    // Ensure all target IDs include both raw, clean, and AN-prefixed representations
+    $expandedTargetIds = [];
+    foreach (array_merge([$userid, $cleanUid, $anUid], $downlineIds) as $rawId) {
+        $rawId = trim((string)$rawId);
+        if ($rawId === '') continue;
+        $cId = (stripos($rawId, 'AN') === 0) ? trim(substr($rawId, 2)) : $rawId;
+        $aId = (stripos($rawId, 'AN') === 0) ? $rawId : 'AN' . $rawId;
+        $expandedTargetIds[] = $rawId;
+        $expandedTargetIds[] = $cId;
+        $expandedTargetIds[] = $aId;
+    }
+    $allTargetUserIds = array_values(array_unique($expandedTargetIds));
 
     if (empty($allTargetUserIds)) {
         return ['investments' => [], 'unlock_debits' => []];
