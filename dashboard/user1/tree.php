@@ -747,11 +747,10 @@ body.bg-theme {
         rootNode.x0 = height / 2;
         rootNode.y0 = isMobile ? 40 : 100;
 
-        // Level 0 (Root) and Level 1 (All root direct referrals) are 100% visible on initial load.
-        // All Level 2+ descendants below root direct referrals are collapsed into _children.
-        if (rootNode.children) {
-            rootNode.children.forEach(collapseSubtree);
-        }
+        // Auto-expand branches leading to direct referrals of root so all 10 direct referrals
+        // are 100% visible simultaneously on the tree canvas at their exact binary placements.
+        // Non-direct branches remain collapsed for optimal clarity and performance.
+        collapseNonDirectBranches(rootNode);
 
         // Center Initial Position according to screen size
         const initialScale = isMobile ? 0.72 : 0.92;
@@ -765,6 +764,29 @@ body.bg-theme {
         svg.call(zoomBehavior.transform, initialTransform);
 
         updateTree(rootNode);
+    }
+
+    function hasDirectDescendant(node) {
+        if (!node) return false;
+        if (node.data && node.data.is_direct_to_root && String(node.data.id) !== String(rootUserId)) {
+            return true;
+        }
+        const ch = node.children || node._children || [];
+        for (let i = 0; i < ch.length; i++) {
+            if (hasDirectDescendant(ch[i])) return true;
+        }
+        return false;
+    }
+
+    function collapseNonDirectBranches(node) {
+        if (!node || !node.children) return;
+        node.children.forEach(child => {
+            if (hasDirectDescendant(child)) {
+                collapseNonDirectBranches(child);
+            } else {
+                collapseSubtree(child);
+            }
+        });
     }
 
     function collapseSubtree(d) {
@@ -874,12 +896,9 @@ body.bg-theme {
                 d.children = null;
                 updateTree(d);
             } else if (d._children) {
-                // Expand ONLY immediate next level (collapse all sub-children recursively)
+                // Expand this node's branch
                 d.children = d._children;
                 d._children = null;
-                if (d.children) {
-                    d.children.forEach(collapseSubtree);
-                }
                 updateTree(d);
             } else if (d.data.has_children_db) {
                 // Fetch deeper downlines dynamically via AJAX for Unlimited Depth
@@ -905,7 +924,7 @@ body.bg-theme {
                                 }
                                 d.children.forEach(c => {
                                     syncNodeDepth(c, d);
-                                    collapseSubtree(c); // Collapse all deeper descendants beyond immediate level
+                                    collapseNonDirectBranches(c);
                                 });
                             }
 
