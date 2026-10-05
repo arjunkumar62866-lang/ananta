@@ -5041,8 +5041,9 @@ if (!function_exists('sendTransactionKeyOTP')) {
             </html>
             ';
 
-            // Send email using exact mail() signature from register.php
-            $sent = @mail($to, $subject, $message, $headers);
+            // Send email with envelope sender (-f) for Hostinger MTA alignment
+            $extraParams = "-f" . strip_tags($fromEmailDomain);
+            $sent = @mail($to, $subject, $message, $headers, $extraParams);
 
             // STEP 8 & 9: Inspect Delivery Status
             if (!$sent) {
