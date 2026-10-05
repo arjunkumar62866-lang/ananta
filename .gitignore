@@ -25,13 +25,10 @@ dashboard1 1/admin/common/connection.php
 dashboard1 1/use r/common/connection.php
 dashboard1 1/user1/common/connection.php
 
-# Environment & SMTP Configuration Files
+# Environment Configuration Files
 .env
 .env.*
 !.env.example
-smtp_config.php
-common/smtp_config.php
-!smtp_config.example.php
 
 # Logs and PHP error files
 *.log

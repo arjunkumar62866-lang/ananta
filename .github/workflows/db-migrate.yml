@@ -81,8 +81,6 @@ jobs:
             --exclude 'dashboard/user1/common/connection.php' \
             --exclude 'dashboard/use r/common/connection.php' \
             --exclude 'dashboard1 1/' \
-            --exclude 'smtp_config.php' \
-            --exclude 'common/smtp_config.php' \
             -e "ssh -i ~/.ssh/hostinger_key -p $CLEAN_PORT $SSH_OPTS" \
             ./ "$CLEAN_USER@$CLEAN_HOST:/home/u914531711/domains/anantamtptl.com/public_html/"
 
