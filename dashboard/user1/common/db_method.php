@@ -5041,13 +5041,26 @@ if (!function_exists('sendTransactionKeyOTP')) {
             </html>
             ';
 
-            // Send email with envelope sender (-f) for Hostinger MTA alignment
-            $extraParams = "-f" . strip_tags($fromEmailDomain);
-            $sent = @mail($to, $subject, $message, $headers, $extraParams);
+            // Send email using Authenticated SMTP (with graceful fallback to MTA)
+            $smtpHelperPath = dirname(__DIR__, 3) . '/common/smtp_helper.php';
+            if (!file_exists($smtpHelperPath)) {
+                $smtpHelperPath = dirname(__DIR__, 2) . '/common/smtp_helper.php';
+            }
+            if (!file_exists($smtpHelperPath) && !empty($_SERVER['DOCUMENT_ROOT'])) {
+                $smtpHelperPath = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/common/smtp_helper.php';
+            }
+
+            if (file_exists($smtpHelperPath)) {
+                require_once $smtpHelperPath;
+                $mailResult = sendAnantaSmtpMail($to, $name, $subject, $message, $replyToEmail);
+            } else {
+                $sent = @mail($to, $subject, $message, $headers, "-f" . strip_tags($fromEmailDomain));
+                $mailResult = $sent ? ['status' => 'success'] : ['status' => 'error', 'message' => 'Unable to send OTP email.'];
+            }
 
             // STEP 8 & 9: Inspect Delivery Status
-            if (!$sent) {
-                error_log("OTP mail() delivery failed for user {$userid} to {$email}");
+            if (($mailResult['status'] ?? '') !== 'success') {
+                error_log("Transaction Key OTP delivery failed for user {$userid} to {$email}: " . ($mailResult['error'] ?? ($mailResult['message'] ?? 'Unknown error')));
                 return ['status' => 'error', 'message' => 'Unable to send OTP email right now. Please try again later.'];
             }
 
