@@ -58,10 +58,18 @@ switch ($action) {
         $wallet_type    = trim($_POST['wallet_type'] ?? '');
         $adj_type       = strtoupper(trim($_POST['type'] ?? ''));
         $amount         = (float)($_POST['amount'] ?? 0);
+        $currency       = strtoupper(trim($_POST['currency'] ?? ''));
         $reason         = trim($_POST['reason'] ?? '');
         $reference      = trim($_POST['reference'] ?? '');
 
-        $res = processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wallet_type, $adj_type, $amount, $reason, $reference, $pdo);
+        if (empty($currency) && function_exists('getUserCurrency')) {
+            $currency = getUserCurrency();
+        }
+        if (!in_array($currency, ['INR', 'USD'])) {
+            $currency = 'USD';
+        }
+
+        $res = processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wallet_type, $adj_type, $amount, $reason, $reference, $pdo, $currency);
         echo json_encode($res);
         break;
 

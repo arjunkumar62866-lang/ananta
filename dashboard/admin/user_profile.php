@@ -1027,7 +1027,7 @@ body.ananta-admin-dashboard, body.bg-theme, body.bg-theme1 {
                 </div>
 
                 <div class="form-group mb-3">
-                    <label class="text-muted font-weight-bold small uppercase">Adjustment Amount (₹)</label>
+                    <label class="text-muted font-weight-bold small uppercase">Adjustment Amount (<span id="modalCurrencySymbol">$</span>)</label>
                     <input type="number" id="modalAmount" step="0.01" min="0.01" class="form-control font-weight-bold" placeholder="Enter amount > 0">
                 </div>
 
@@ -1143,13 +1143,29 @@ body.ananta-admin-dashboard, body.bg-theme, body.bg-theme1 {
 <script>
 var targetUser = "<?php echo $targetUserId; ?>";
 var currentBalNum = 0;
+var rawCurrentBalUSD = 0;
+
+function formatActiveAdminCurrency(amountInActiveCurrency) {
+    var symbol = (typeof window.getAdminCurrencySymbol === 'function') ? window.getAdminCurrencySymbol() : ((window.ADMIN_CURRENCY === 'INR') ? '₹' : '$');
+    var val = parseFloat(amountInActiveCurrency) || 0;
+    return symbol + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 function openWalletModal(walletKey, walletName, actionType, currentBal) {
+    var activeCurr = (typeof window.ADMIN_CURRENCY !== 'undefined' && window.ADMIN_CURRENCY) ? window.ADMIN_CURRENCY : 'USD';
+    var symbol = (typeof window.getAdminCurrencySymbol === 'function') ? window.getAdminCurrencySymbol() : (activeCurr === 'INR' ? '₹' : '$');
+    
     $('#modalWalletKey').val(walletKey);
     $('#modalWalletName').val(walletName);
     $('#modalActionType').val(actionType);
+    $('#modalCurrencySymbol').text(symbol);
+    $('#modalAmount').attr('placeholder', 'Enter amount in ' + activeCurr + ' > 0');
+    
+    // Display balance in active currency
     $('#modalCurrentBalance').val(formatAdminCurrency(currentBal));
-    currentBalNum = parseFloat(currentBal);
+    rawCurrentBalUSD = parseFloat(currentBal) || 0;
+    var convBal = (typeof window.convertAdminCurrency === 'function') ? window.convertAdminCurrency(currentBal) : parseFloat(currentBal);
+    currentBalNum = parseFloat(convBal) || 0;
 
     $('#modalAmount').val('');
     $('#modalReason').val('');
@@ -1204,7 +1220,7 @@ function proceedToConfirmation() {
     }
 
     if (action === 'DEBIT' && currentBalNum < amount) {
-        $('#modalAlert').removeClass('d-none').text('Insufficient balance! Current balance is ' + formatAdminCurrency(currentBalNum) + ', requested debit is ' + formatAdminCurrency(amount) + '. Negative balance is blocked.');
+        $('#modalAlert').removeClass('d-none').text('Insufficient balance! Current balance is ' + formatActiveAdminCurrency(currentBalNum) + ', requested debit is ' + formatActiveAdminCurrency(amount) + '. Negative balance is blocked.');
         return;
     }
 
@@ -1214,9 +1230,9 @@ function proceedToConfirmation() {
 
     $('#confirmWallet').text($('#modalWalletName').val());
     $('#confirmAction').text(action).css('color', (action === 'CREDIT') ? '#10b981' : '#ef4444');
-    $('#confirmAmount').text(formatAdminCurrency(amount));
-    $('#confirmPrevBal').text(formatAdminCurrency(currentBalNum));
-    $('#confirmNewBal').text(formatAdminCurrency(newBal));
+    $('#confirmAmount').text(formatActiveAdminCurrency(amount));
+    $('#confirmPrevBal').text(formatActiveAdminCurrency(currentBalNum));
+    $('#confirmNewBal').text(formatActiveAdminCurrency(newBal));
     $('#confirmReason').text(reason);
 
     $('#modalStep1').addClass('d-none');
@@ -1229,10 +1245,11 @@ function backToStep1() {
 }
 
 function executeWalletTransaction() {
-    var walletKey = $('#modalWalletKey').val();
-    var action    = $('#modalActionType').val();
-    var amount    = parseFloat($('#modalAmount').val());
-    var reason    = $.trim($('#modalReason').val());
+    var walletKey  = $('#modalWalletKey').val();
+    var action     = $('#modalActionType').val();
+    var amount     = parseFloat($('#modalAmount').val());
+    var reason     = $.trim($('#modalReason').val());
+    var activeCurr = (typeof window.ADMIN_CURRENCY !== 'undefined' && window.ADMIN_CURRENCY) ? window.ADMIN_CURRENCY : 'USD';
 
     $('#btnConfirmSubmit').prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Processing...');
 
@@ -1246,6 +1263,7 @@ function executeWalletTransaction() {
             wallet_type: walletKey,
             type: action,
             amount: amount,
+            currency: activeCurr,
             reason: reason
         },
         success: function (res) {

@@ -1,5 +1,6 @@
 <?php
 include 'common/connection.php';
+include_once 'common/db_method.php';
 
 // Fetch GET/POST values safely
 $tid      = $_GET['id'] ?? $_POST['id'] ?? null;
@@ -14,8 +15,8 @@ if (!$tid) {
 }
 
 try {
-    // 1. Fetch exact deposit request record from tbl_payment
-    $stmtFind = $pdo->prepare("SELECT id, userid, tr_id, amount, status FROM tbl_payment WHERE (tr_id = :tid OR id = :tid) LIMIT 1");
+    // 1. Fetch exact deposit request record from tbl_payment including mode
+    $stmtFind = $pdo->prepare("SELECT id, userid, tr_id, amount, mode, subject, status FROM tbl_payment WHERE (tr_id = :tid OR id = :tid) LIMIT 1");
     $stmtFind->execute([':tid' => $tid]);
     $payRow = $stmtFind->fetch(PDO::FETCH_ASSOC);
 
@@ -29,6 +30,8 @@ try {
     $reqStatus = (int)$payRow['status'];
     $userid    = !empty($payRow['userid']) ? $payRow['userid'] : $uidParam;
     $amt       = ($amtParam > 0) ? $amtParam : (float)$payRow['amount'];
+    $mode      = strtoupper(trim($payRow['mode'] ?? ''));
+    $isINR     = ($mode === 'INR');
 
     // 2. Prevent Duplicate Approval / Re-processing
     if ($reqStatus !== 0) {
@@ -39,6 +42,24 @@ try {
 
     if (!$remark) {
         $remark = ($title === "Approved") ? "Approved by Admin" : "Rejected by Admin";
+    }
+
+    // Determine USD equivalent for base database wallet storage ($1 = ₹90)
+    $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+    if ($rate <= 0) $rate = 90.0;
+
+    if ($isINR) {
+        // User requested in INR: credit matches INR fund (base USD = INR / rate)
+        $amtINR      = $amt;
+        $creditedUSD = round($amtINR / $rate, 2);
+        $dispFund    = "₹" . number_format($amtINR, 2);
+        $currPrefix  = "₹";
+    } else {
+        // User requested in USD (BEP20 / USDT): credit matches USD fund directly
+        $creditedUSD = round($amt, 2);
+        $amtINR      = round($creditedUSD * $rate, 2);
+        $dispFund    = "$" . number_format($creditedUSD, 2);
+        $currPrefix  = "$";
     }
 
     if ($title === "Approved") {
@@ -64,24 +85,34 @@ try {
         $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
         $prefixedUid = 'AN' . $cleanUid;
 
-        // Step B: Credit user's Main Wallet fields (deposite_wallet and pin_wallet) AND update total_deposit
-        $stmtUser = $pdo->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt, total_deposit = total_deposit + :amt WHERE userid = :userid OR userid = :clean OR userid = :prefixed");
+        // Step B: Credit user's Main Wallet fields (deposite_wallet, pin_wallet, amount) and total_deposit in base USD
+        $stmtUser = $pdo->prepare("UPDATE user SET 
+            deposite_wallet = deposite_wallet + :amt, 
+            pin_wallet = pin_wallet + :amt, 
+            amount = amount + :amt,
+            total_deposit = total_deposit + :amt 
+            WHERE userid = :userid OR userid = :clean OR userid = :prefixed");
         $stmtUser->execute([
-            ':amt'      => $amt,
+            ':amt'      => $creditedUSD,
             ':userid'   => $userid,
             ':clean'    => $cleanUid,
             ':prefixed' => $prefixedUid
         ]);
 
-        // Step C: Insert transaction log into tbl_transaction
-        $subject = "Deposit Request Approved — $" . number_format($amt, 2) . " credited to Main Wallet";
+        // Step C: Insert transaction log into tbl_transaction (stores base USD, subject clarifies currency)
+        if ($isINR) {
+            $subject = "Deposit Request Approved — ₹" . number_format($amtINR, 2) . " credited to Main Wallet";
+        } else {
+            $subject = "Deposit Request Approved — $" . number_format($creditedUSD, 2) . " credited to Main Wallet";
+        }
+
         $stmtTxn = $pdo->prepare("INSERT INTO tbl_transaction (user_id, type, subject, time, created_date, status, amount) VALUES (:u_id, 'Credit', :sub, :time, :date, 1, :amount)");
         $stmtTxn->execute([
             ':u_id'   => $userid,
             ':sub'    => $subject,
             ':time'   => $time,
             ':date'   => $date,
-            ':amount' => $amt
+            ':amount' => $creditedUSD
         ]);
 
         // Commit transaction atomically
@@ -90,17 +121,21 @@ try {
         // Include user notification helper
         require_once __DIR__ . '/../user1/common/db_method.php';
         if (function_exists('createUserNotification')) {
+            $notifMsg = $isINR 
+                ? "Your INR deposit request of ₹" . number_format($amtINR, 2) . " has been APPROVED by Admin. ₹" . number_format($amtINR, 2) . " has been credited to your Main Wallet. Remark: {$remark}"
+                : "Your USD deposit request of $" . number_format($creditedUSD, 2) . " has been APPROVED by Admin. $" . number_format($creditedUSD, 2) . " has been credited to your Main Wallet. Remark: {$remark}";
+
             createUserNotification(
                 $userid,
                 'DEPOSIT',
                 'Deposit Request Approved',
-                "Your deposit request of $" . number_format($amt, 2) . " has been APPROVED by Admin. $" . number_format($amt, 2) . " has been credited to your Main Wallet. Remark: {$remark}",
+                $notifMsg,
                 $trId,
                 $pdo
             );
         }
 
-        echo "<script>alert('Deposit Request Approved Successfully. $" . number_format($amt, 2) . " credited to Main Wallet.');window.location.assign('pending-fund-request.php');</script>";
+        echo "<script>alert('Deposit Request Approved Successfully. {$dispFund} credited to Main Wallet.');window.location.assign('pending-fund-request.php');</script>";
         exit;
 
     } elseif ($title === "Cancel" || $title === "Reject") {
@@ -124,11 +159,15 @@ try {
 
         require_once __DIR__ . '/../user1/common/db_method.php';
         if (function_exists('createUserNotification')) {
+            $notifRejectMsg = $isINR
+                ? "Your INR deposit request of ₹" . number_format($amt, 2) . " has been REJECTED by Admin. Remark: {$remark}"
+                : "Your USD deposit request of $" . number_format($amt, 2) . " has been REJECTED by Admin. Remark: {$remark}";
+
             createUserNotification(
                 $userid,
                 'DEPOSIT',
                 'Deposit Request Rejected',
-                "Your deposit request of $" . number_format($amt, 2) . " has been REJECTED by Admin. Remark: {$remark}",
+                $notifRejectMsg,
                 $trId,
                 $pdo
             );

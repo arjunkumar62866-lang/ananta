@@ -2831,7 +2831,7 @@ function logAdminAuditAction($admin_id, $action, $target_user_id, $amount, $wall
  * Process Universal Admin Wallet Adjustment (Credit / Debit) across any isolated wallet with row lock & audit.
  */
 if (!function_exists('processUniversalAdminWalletAdjustment')) {
-function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wallet_column, $adjustment_type, $amount, $reason, $reference = '', $pdoConnection = null) {
+function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wallet_column, $adjustment_type, $amount, $reason, $reference = '', $pdoConnection = null, $currency = 'USD') {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$admin_id || !$target_user_id) {
@@ -2892,6 +2892,22 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
         return ['status' => 'error', 'message' => 'A mandatory reason is required for any admin balance adjustment.'];
     }
 
+    $currency = in_array(strtoupper(trim($currency)), ['INR', 'USD']) ? strtoupper(trim($currency)) : 'USD';
+    $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : 90.0;
+    if ($rate <= 0) $rate = 90.0;
+
+    if ($currency === 'INR') {
+        $amountInUSD = round($amount / $rate, 2);
+        $amountInINR = round($amount, 2);
+        $currSymbol  = '₹';
+        $dispAmount  = '₹' . number_format($amountInINR, 2);
+    } else {
+        $amountInUSD = round($amount, 2);
+        $amountInINR = round($amount * $rate, 2);
+        $currSymbol  = '$';
+        $dispAmount  = '$' . number_format($amountInUSD, 2);
+    }
+
     // Generate unique transaction ID (ADM-XXXXXX)
     $txnId = !empty($reference) ? $reference : ('ADM-' . str_pad(mt_rand(100000, 999999), 6, '0', STR_PAD_LEFT));
 
@@ -2902,57 +2918,116 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
     }
 
     try {
-        $stmtUser = $db->prepare("SELECT userid, `{$wallet_column}` FROM user WHERE userid = :userid FOR UPDATE");
-        $stmtUser->execute([':userid' => $target_user_id]);
-        $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$target_user_id);
+        $prefixedUid = 'AN' . $cleanUid;
 
-        if (!$userRow) {
-            if ($inLocalTxn) $db->rollBack();
-            return ['status' => 'error', 'message' => "Target user {$target_user_id} not found."];
-        }
+        $isMainWallet = in_array($wallet_column, ['amount', 'deposite_wallet', 'pin_wallet']);
 
-        $prevBal = (float)($userRow[$wallet_column] ?? 0.00);
+        if ($isMainWallet) {
+            $stmtUser = $db->prepare("SELECT userid, deposite_wallet, pin_wallet, amount FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
+            $stmtUser->execute([
+                ':userid'   => $target_user_id,
+                ':clean'    => $cleanUid,
+                ':prefixed' => $prefixedUid
+            ]);
+            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
-        if ($adjType === 'DEBIT') {
-            if ($prevBal < $amount) {
+            if (!$userRow) {
                 if ($inLocalTxn) $db->rollBack();
-                return [
-                    'status'  => 'error',
-                    'message' => "Insufficient balance in {$walletDisplayName}. Current: ₹" . number_format($prevBal, 2) . ", Requested Debit: ₹" . number_format($amount, 2) . ". Negative balance is blocked."
-                ];
+                return ['status' => 'error', 'message' => "Target user {$target_user_id} not found."];
             }
-            $newBal = round($prevBal - $amount, 2);
-            $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = `{$wallet_column}` - :amt WHERE userid = :userid");
-        } else {
-            $newBal = round($prevBal + $amount, 2);
-            $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = `{$wallet_column}` + :amt WHERE userid = :userid");
-        }
 
-        $updStmt->execute([':amt' => $amount, ':userid' => $target_user_id]);
+            $target_user_id = $userRow['userid'];
+            $depBal = (float)($userRow['deposite_wallet'] ?? 0.00);
+            $pinBal = (float)($userRow['pin_wallet'] ?? 0.00);
+            $amtBal = (float)($userRow['amount'] ?? 0.00);
+            $prevBalUSD = max($depBal, $pinBal, $amtBal);
+
+            if ($adjType === 'DEBIT') {
+                if ($prevBalUSD < $amountInUSD) {
+                    if ($inLocalTxn) $db->rollBack();
+                    $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalUSD * $rate, 2)) : ('$' . number_format($prevBalUSD, 2));
+                    return [
+                        'status'  => 'error',
+                        'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
+                    ];
+                }
+                $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
+                $updStmt = $db->prepare("UPDATE user SET 
+                    deposite_wallet = GREATEST(0, deposite_wallet - :amt),
+                    pin_wallet = GREATEST(0, pin_wallet - :amt),
+                    amount = GREATEST(0, amount - :amt)
+                    WHERE userid = :userid");
+            } else {
+                $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
+                $updStmt = $db->prepare("UPDATE user SET 
+                    deposite_wallet = deposite_wallet + :amt,
+                    pin_wallet = pin_wallet + :amt,
+                    amount = amount + :amt
+                    WHERE userid = :userid");
+            }
+
+            $updStmt->execute([':amt' => $amountInUSD, ':userid' => $target_user_id]);
+
+        } else {
+            $stmtUser = $db->prepare("SELECT userid, `{$wallet_column}` FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
+            $stmtUser->execute([
+                ':userid'   => $target_user_id,
+                ':clean'    => $cleanUid,
+                ':prefixed' => $prefixedUid
+            ]);
+            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userRow) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Target user {$target_user_id} not found."];
+            }
+
+            $target_user_id = $userRow['userid'];
+            $prevBalUSD = (float)($userRow[$wallet_column] ?? 0.00);
+
+            if ($adjType === 'DEBIT') {
+                if ($prevBalUSD < $amountInUSD) {
+                    if ($inLocalTxn) $db->rollBack();
+                    $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalUSD * $rate, 2)) : ('$' . number_format($prevBalUSD, 2));
+                    return [
+                        'status'  => 'error',
+                        'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
+                    ];
+                }
+                $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
+                $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = GREATEST(0, `{$wallet_column}` - :amt) WHERE userid = :userid");
+            } else {
+                $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
+                $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = `{$wallet_column}` + :amt WHERE userid = :userid");
+            }
+
+            $updStmt->execute([':amt' => $amountInUSD, ':userid' => $target_user_id]);
+        }
 
         $txnType = ($adjType === 'CREDIT') ? 'Credit' : 'Debit';
-        $subject = "Admin Adjustment ({$adjType}) - Wallet: {$walletDisplayName} - Reason: {$reason} (Txn: {$txnId})";
+        $subject = "Admin Adjustment ({$adjType}) - Wallet: {$walletDisplayName} ({$dispAmount}) - Reason: {$reason} (Txn: {$txnId})";
 
-        // Create transaction record in tbl_transaction
+        // Create transaction record in tbl_transaction (stores base USD)
         $insTxn = $db->prepare("
             INSERT INTO tbl_transaction
-            (user_id, type, subject, amount, created_date, status)
+            (user_id, type, subject, amount, created_date, time, status)
             VALUES
-            (:user_id, :type, :subject, :amount, NOW(), 1)
+            (:user_id, :type, :subject, :amount, CURDATE(), CURTIME(), 1)
         ");
         $insTxn->execute([
             ':user_id' => $target_user_id,
             ':type'    => $txnType,
             ':subject' => $subject,
-            ':amount'  => $amount
+            ':amount'  => $amountInUSD
         ]);
 
         // Log Immutable Admin Audit Record in tbl_admin_audit_log
-        logAdminAuditAction($admin_id, $adjType, $target_user_id, $amount, $wallet_column, $prevBal, $newBal, $reason, $txnId, $db);
+        logAdminAuditAction($admin_id, $adjType, $target_user_id, $amountInUSD, $wallet_column, $prevBalUSD, $newBalUSD, "{$dispAmount} | {$reason}", $txnId, $db);
 
         // Create User Notification in tbl_system_notifications
         $notifTitle = ($adjType === 'CREDIT') ? "Admin Wallet Credit" : "Admin Wallet Debit";
-        $notifMessage = "₹" . number_format($amount, 2) . " has been " . strtolower($adjType) . "ed " . ($adjType === 'CREDIT' ? 'to' : 'from') . " your " . $walletDisplayName . ".\n\nReason:\n" . $reason . "\n\nTransaction ID:\n" . $txnId;
+        $notifMessage = "{$dispAmount} has been " . strtolower($adjType) . "ed " . ($adjType === 'CREDIT' ? 'to' : 'from') . " your " . $walletDisplayName . ".\n\nReason:\n" . $reason . "\n\nTransaction ID:\n" . $txnId;
 
         $insNotif = $db->prepare("
             INSERT INTO tbl_system_notifications
@@ -2974,9 +3049,9 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
         return [
             'status'           => 'success',
             'transaction_id'   => $txnId,
-            'message'          => "Successfully processed {$adjType} of ₹" . number_format($amount, 2) . " on {$walletDisplayName} for user {$target_user_id}.",
-            'previous_balance' => $prevBal,
-            'new_balance'      => $newBal
+            'message'          => "Successfully processed {$adjType} of {$dispAmount} on {$walletDisplayName} for user {$target_user_id}.",
+            'previous_balance' => ($currency === 'INR') ? ($prevBalUSD * $rate) : $prevBalUSD,
+            'new_balance'      => ($currency === 'INR') ? ($newBalUSD * $rate) : $newBalUSD
         ];
     } catch (Exception $e) {
         if ($inLocalTxn && $db->inTransaction()) {
