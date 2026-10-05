@@ -488,6 +488,16 @@ body.bg-theme {
     letter-spacing: 0.3px;
 }
 
+.tree-node {
+    cursor: pointer;
+    user-select: none;
+}
+
+.node-hitbox {
+    cursor: pointer;
+    pointer-events: all;
+}
+
 .tree-node:hover .node-circle {
     transform: scale(1.35);
 }
@@ -536,7 +546,7 @@ body.bg-theme {
     padding: 14px 16px;
     width: 260px;
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
-    pointer-events: auto;
+    pointer-events: none !important;
     display: none;
     font-size: 12.5px;
     color: #0f172a;
@@ -756,13 +766,13 @@ body.bg-theme {
         // A. RENDER HORIZONTAL CURVED BEZIER LINKS
         // -------------------------------------------------------------
         const linkSelection = gCanvas.selectAll('path.tree-link')
-            .data(links, d => (d.target.parent ? d.target.parent.data.id + '_' + d.target.data.id : d.target.data.id));
+            .data(links, d => d.target.data.id);
 
         linkSelection.enter()
             .append('path')
             .attr('class', 'tree-link')
             .attr('d', d => {
-                const o = { x: source.x0, y: source.y0 };
+                const o = { x: source.x0 ?? source.x, y: source.y0 ?? source.y };
                 return generateHorizontalLink({ source: o, target: o });
             })
             .merge(linkSelection)
@@ -783,14 +793,29 @@ body.bg-theme {
         // B. RENDER NODES (CIRCLE JUNCTION + NAME & ID TEXT)
         // -------------------------------------------------------------
         const nodeSelection = gCanvas.selectAll('g.tree-node')
-            .data(nodes, d => (d.parent ? d.parent.data.id + '_' + d.data.id : d.data.id));
+            .data(nodes, d => d.data.id);
 
         const nodeEnter = nodeSelection.enter()
             .append('g')
             .attr('class', 'tree-node')
-            .attr('transform', d => `translate(${source.y0}, ${source.x0})`);
+            .attr('transform', d => `translate(${source.y0 ?? source.y}, ${source.x0 ?? source.x})`)
+            .attr('cursor', 'pointer');
 
-        // Circle Junction
+        // 1. Transparent Hitbox Rectangle covering entire node area
+        // Guarantees immediate 100% 1-click trigger anywhere across the entire node
+        nodeEnter.append('rect')
+            .attr('class', 'node-hitbox')
+            .attr('x', -18)
+            .attr('y', -18)
+            .attr('width', 240)
+            .attr('height', 36)
+            .attr('rx', 6)
+            .attr('fill', '#ffffff')
+            .attr('fill-opacity', 0.0001)
+            .attr('pointer-events', 'all')
+            .attr('cursor', 'pointer');
+
+        // 2. Circle Junction
         nodeEnter.append('circle')
             .attr('class', d => {
                 let cls = d.data.active ? 'node-circle active-node' : 'node-circle inactive-node';
@@ -799,37 +824,41 @@ body.bg-theme {
                 }
                 return cls;
             })
-            .attr('r', 6.5);
+            .attr('r', 6.5)
+            .attr('cursor', 'pointer');
 
         function nodeHasChildren(d) {
             if (d.children && d.children.length > 0) return true;
             if (d._children && d._children.length > 0) return true;
             if (d.data) {
-                if (d.data.has_children_db) return true;
                 if (d.data.children && d.data.children.length > 0) return true;
+                if (d.data.has_children_db) return true;
             }
             return false;
         }
 
-        // Toggle Sign (+ / -) above node circle
+        // 3. Toggle Sign (+ / -) above node circle
         nodeEnter.append('text')
             .attr('class', 'node-toggle-sign')
             .attr('dy', -9)
             .attr('dx', 0)
+            .attr('cursor', 'pointer')
             .text(d => nodeHasChildren(d) ? (d.children ? '-' : '+') : '');
 
-        // User Name Text
+        // 4. User Name Text
         nodeEnter.append('text')
             .attr('class', 'node-name-text')
             .attr('dx', 14)
             .attr('dy', -2)
+            .attr('cursor', 'pointer')
             .text(d => d.data.name);
 
-        // User ID & Position Text with Visible DIRECT Tag
+        // 5. User ID & Position Text with Visible DIRECT Tag
         const idText = nodeEnter.append('text')
             .attr('class', 'node-id-text')
             .attr('dx', 14)
-            .attr('dy', 14);
+            .attr('dy', 14)
+            .attr('cursor', 'pointer');
 
         idText.append('tspan')
             .attr('class', 'node-id-val')
@@ -844,18 +873,36 @@ body.bg-theme {
             .text(d => (d.data.is_direct_to_root && String(d.data.id) !== String(rootUserId)) ? '★ DIRECT' : '');
 
         function toggleNodeExpansion(d) {
+            hideTooltip();
             if (d.children && d.children.length > 0) {
                 // Collapse this node's branch
                 d._children = d.children;
                 d.children = null;
                 updateTree(d);
             } else if (d._children && d._children.length > 0) {
-                // Expand this node's branch
+                // Expand this node's branch instantly from in-memory cache
                 d.children = d._children;
                 d._children = null;
                 updateTree(d);
+            } else if (d.data && d.data.children && d.data.children.length > 0) {
+                // Instantly construct sub-hierarchy from already fetched data
+                const subHierarchy = d3.hierarchy(d.data, child => child.children);
+                d.children = subHierarchy.children;
+                if (d.children) {
+                    function syncNodeDepth(node, parentNode) {
+                        node.parent = parentNode;
+                        node.depth = parentNode.depth + 1;
+                        if (node.children) node.children.forEach(ch => syncNodeDepth(ch, node));
+                        if (node._children) node._children.forEach(ch => syncNodeDepth(ch, node));
+                    }
+                    d.children.forEach(c => {
+                        syncNodeDepth(c, d);
+                        collapseSubtree(c);
+                    });
+                }
+                updateTree(d);
             } else if (nodeHasChildren(d)) {
-                // Fetch deeper direct downlines dynamically via AJAX
+                // Fetch deeper direct downlines dynamically via AJAX only if not pre-loaded
                 fetch(`tree.php?api=get_tree&depth=50&node_id=${encodeURIComponent(d.data.id)}&root_id=${encodeURIComponent(rootUserId)}`)
                     .then(res => res.json())
                     .then(res => {
@@ -867,12 +914,8 @@ body.bg-theme {
                                 function syncNodeDepth(node, parentNode) {
                                     node.parent = parentNode;
                                     node.depth = parentNode.depth + 1;
-                                    if (node.children) {
-                                        node.children.forEach(ch => syncNodeDepth(ch, node));
-                                    }
-                                    if (node._children) {
-                                        node._children.forEach(ch => syncNodeDepth(ch, node));
-                                    }
+                                    if (node.children) node.children.forEach(ch => syncNodeDepth(ch, node));
+                                    if (node._children) node._children.forEach(ch => syncNodeDepth(ch, node));
                                 }
                                 d.children.forEach(c => {
                                     syncNodeDepth(c, d);
@@ -891,28 +934,18 @@ body.bg-theme {
             }
         }
 
-        // Click on Circle, Toggle Sign, Name, ID, or double click:
-        // ALWAYS Toggle Expansion inline right on the canvas (NEVER switch root or make a separate tree!)
-        nodeEnter.select('.node-circle').on('click', (event, d) => {
+        // Single Click Handler: attached directly to nodeEnter (entire node group)
+        // AND all child elements to ensure 100% 1-click response on all desktop and mobile devices
+        nodeEnter.on('click', (event, d) => {
             event.stopPropagation();
             toggleNodeExpansion(d);
         });
-        nodeEnter.select('.node-toggle-sign').on('click', (event, d) => {
-            event.stopPropagation();
-            toggleNodeExpansion(d);
-        });
-        nodeEnter.select('.node-name-text').on('click', (event, d) => {
-            event.stopPropagation();
-            toggleNodeExpansion(d);
-        });
-        nodeEnter.select('.node-id-text').on('click', (event, d) => {
-            event.stopPropagation();
-            toggleNodeExpansion(d);
-        });
-        nodeEnter.on('dblclick', (event, d) => {
-            event.stopPropagation();
-            toggleNodeExpansion(d);
-        });
+
+        nodeEnter.selectAll('.node-hitbox, .node-circle, .node-toggle-sign, .node-name-text, .node-id-text')
+            .on('click', (event, d) => {
+                event.stopPropagation();
+                toggleNodeExpansion(d);
+            });
 
         // Hover / Touch Tooltip Handlers
         nodeEnter.on('mouseover', (event, d) => {
@@ -997,10 +1030,6 @@ body.bg-theme {
             <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 11.5px; color: #334155; margin-top: 2px;">
                 <span>Right Team: <b>${data.rightcount} Members</b> (${data.right_business_fmt})</span>
             </div>
-            <hr style="margin: 8px 0; border-color: #cbd5e1;">
-            <button type="button" class="btn-make-root" style="width: 100%; background: #0284c7; color: #ffffff; border: none; border-radius: 8px; padding: 7px 12px; font-weight: 700; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(2,132,199,0.25);" onclick="window.setAsTreeRoot('${data.id}')">
-                <span>View as Main Root &rarr;</span>
-            </button>
         `;
 
         const bounds = container.getBoundingClientRect();
