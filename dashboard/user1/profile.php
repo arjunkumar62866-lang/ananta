@@ -1219,7 +1219,7 @@ body.ananta-user-dashboard {
                             <h5 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Forgot Transaction Key?</h5>
                             <p class="text-muted small mb-4" style="font-size: 13px;">Click below to receive a 6-digit OTP on your registered email address.</p>
 
-                            <form method="POST" class="mb-4">
+                            <form method="POST" action="profile.php#security_section" class="mb-4">
                                 <div class="form-group mb-3">
                                     <label class="profile-label">Registered Email Address</label>
                                     <input type="email" class="profile-input" value="<?php echo htmlspecialchars($useremail); ?>" readonly style="background: #f8fafc;">
@@ -1233,7 +1233,7 @@ body.ananta-user-dashboard {
                             <hr class="my-4">
 
                             <!-- Step 2: Verify OTP -->
-                            <form method="POST">
+                            <form method="POST" action="profile.php#security_section">
                                 <div class="form-group mb-3">
                                     <label class="profile-label">Enter 6-Digit OTP <span class="text-danger">*</span></label>
                                     <input type="text" name="otp_code" class="profile-input" placeholder="Enter OTP received in email" maxlength="6" required style="font-family: monospace; font-size: 16px; letter-spacing: 3px;">
@@ -1257,7 +1257,7 @@ body.ananta-user-dashboard {
                                 <?php endif; ?>
                             </p>
 
-                            <form method="POST">
+                            <form method="POST" action="profile.php#security_section">
                                 <div class="form-group mb-3">
                                     <label class="profile-label">New Transaction Key <span class="text-danger">*</span></label>
                                     <input type="password" name="new_txn_key" class="profile-input" placeholder="Enter new Transaction Key (min 4 chars)" required <?php echo empty($_SESSION['txn_otp_verified']) ? 'disabled' : ''; ?>>
