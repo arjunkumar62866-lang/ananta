@@ -3688,10 +3688,13 @@ if (!function_exists('setTransactionKey')) {
             return ['status' => 'error', 'message' => 'Transaction Key must be at least 4 characters long.'];
         }
 
+        $cleanUid = (stripos($userid, 'AN') === 0) ? trim(substr($userid, 2)) : $userid;
+        $anUid    = (stripos($userid, 'AN') === 0) ? $userid : 'AN' . $userid;
+
         try {
             $hash = password_hash($txnKey, PASSWORD_BCRYPT);
-            $stmt = $db->prepare("UPDATE user SET txn_pass = :hash WHERE userid = :uid");
-            $stmt->execute([':hash' => $hash, ':uid' => $userid]);
+            $stmt = $db->prepare("UPDATE user SET txn_pass = :hash WHERE userid = :uid OR userid = :clean OR userid = :an");
+            $stmt->execute([':hash' => $hash, ':uid' => $userid, ':clean' => $cleanUid, ':an' => $anUid]);
 
             return ['status' => 'success', 'message' => 'Transaction Key updated successfully.'];
         } catch (Throwable $e) {
@@ -4603,7 +4606,7 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $stmtPI1->execute($ids);
         $pi1 = (float)$stmtPI1->fetchColumn();
 
-        $stmtPI2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type = 'Profit Income' OR subject LIKE '%Profit Income%')");
+        $stmtPI2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type = 'Profit Income' OR subject LIKE '%Profit Income%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtPI2->execute($ids);
         $pi2 = (float)$stmtPI2->fetchColumn();
 
@@ -4614,7 +4617,7 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $stmtPS1->execute($ids);
         $ps1 = (float)$stmtPS1->fetchColumn();
 
-        $stmtPS2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Profit Sharing%'");
+        $stmtPS2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Profit Sharing%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtPS2->execute($ids);
         $ps2 = (float)$stmtPS2->fetchColumn();
 
@@ -4629,7 +4632,7 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $stmtDB2->execute($ids);
         $db2 = (float)$stmtDB2->fetchColumn();
 
-        $stmtDB3 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Direct Bonus%'");
+        $stmtDB3 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Direct Bonus%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtDB3->execute($ids);
         $db3 = (float)$stmtDB3->fetchColumn();
 
@@ -4640,7 +4643,7 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $stmtMI1->execute($ids);
         $mi1 = (float)$stmtMI1->fetchColumn();
 
-        $stmtMI2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Mentor Income%'");
+        $stmtMI2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Mentor Income%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtMI2->execute($ids);
         $mi2 = (float)$stmtMI2->fetchColumn();
 
@@ -4651,7 +4654,7 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $stmtRR1->execute($ids);
         $rr1 = (float)$stmtRR1->fetchColumn();
 
-        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Reward Income%'");
+        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Reward Income%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtRR2->execute($ids);
         $rr2 = (float)$stmtRR2->fetchColumn();
 
@@ -4666,14 +4669,14 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $stmtVIP2->execute($ids);
         $vip2 = (float)$stmtVIP2->fetchColumn();
 
-        $stmtVIP3 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (subject LIKE '%VIP%' OR subject LIKE '%Ranking%')");
+        $stmtVIP3 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('VIP Club', 'VIP Income') OR subject LIKE '%VIP Club%' OR subject LIKE '%VIP Ranking%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtVIP3->execute($ids);
         $vip3 = (float)$stmtVIP3->fetchColumn();
 
         $vipClub = max(($vip1 + $vip2), $vip3);
 
         // 7. Company Turnover (Sum of CREDITED turnover_payout in tbl_vip_monthly_schedule + turnover in tbl_transaction)
-        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (subject LIKE '%Turnover%' OR subject LIKE '%Company%')");
+        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Turnover%' OR subject LIKE '%Company%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtCT1->execute($ids);
         $ct1 = (float)$stmtCT1->fetchColumn();
 
@@ -4867,7 +4870,7 @@ if (!function_exists('getUserIncomeWalletHistory')) {
 
         // 7. Company Turnover
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'COMPANY_TURNOVER') {
-            $sql1 = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject FROM tbl_transaction WHERE user_id IN ($inClause) AND (subject LIKE '%Turnover%' OR subject LIKE '%Company%')";
+            $sql1 = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Turnover%' OR subject LIKE '%Company%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'";
             $stmt1 = $db->prepare($sql1);
             $stmt1->execute($ids);
             foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -4943,15 +4946,18 @@ if (!function_exists('sendTransactionKeyOTP')) {
         ensureOTPTableExists($db);
 
         try {
-            // STEP 1 & 2: Fetch registered email directly by authenticated userid
-            $stmtUser = $db->prepare("SELECT email, name FROM user WHERE userid = :uid LIMIT 1");
-            $stmtUser->execute([':uid' => $userid]);
+            // STEP 1 & 2: Fetch registered email directly by authenticated userid (support both clean and AN-prefixed)
+            $cleanUid = (stripos($userid, 'AN') === 0) ? trim(substr($userid, 2)) : $userid;
+            $anUid    = (stripos($userid, 'AN') === 0) ? $userid : 'AN' . $userid;
+            $stmtUser = $db->prepare("SELECT userid, email, name FROM user WHERE userid = :uid OR userid = :clean OR userid = :an LIMIT 1");
+            $stmtUser->execute([':uid' => $userid, ':clean' => $cleanUid, ':an' => $anUid]);
             $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
             if (!$userRow || empty($userRow['email'])) {
                 return ['status' => 'error', 'message' => 'Registered user email not found.'];
             }
 
+            $actualUserId = $userRow['userid'];
             $email = trim($userRow['email']);
             $name = $userRow['name'] ?: 'User';
 
@@ -4961,15 +4967,15 @@ if (!function_exists('sendTransactionKeyOTP')) {
             }
 
             // STEP 4: Rate Limiting Check (Max 3 successful OTP deliveries within 5 minutes)
-            $stmtLimit = $db->prepare("SELECT COUNT(*) FROM tbl_otp WHERE userid = :uid AND type = 'TXN_KEY_RESET' AND is_sent = 1 AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
-            $stmtLimit->execute([':uid' => $userid]);
+            $stmtLimit = $db->prepare("SELECT COUNT(*) FROM tbl_otp WHERE (userid = :uid OR userid = :actualUid) AND type = 'TXN_KEY_RESET' AND is_sent = 1 AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
+            $stmtLimit->execute([':uid' => $userid, ':actualUid' => $actualUserId]);
             if ((int)$stmtLimit->fetchColumn() >= 3) {
                 return ['status' => 'error', 'message' => 'Rate limit exceeded. Please wait 5 minutes before requesting a new OTP.'];
             }
 
             // Invalidate any previous active unused OTPs for this user
-            $stmtInvalidate = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE userid = :uid AND type = 'TXN_KEY_RESET' AND is_used = 0");
-            $stmtInvalidate->execute([':uid' => $userid]);
+            $stmtInvalidate = $db->prepare("UPDATE tbl_otp SET is_used = 1 WHERE (userid = :uid OR userid = :actualUid) AND type = 'TXN_KEY_RESET' AND is_used = 0");
+            $stmtInvalidate->execute([':uid' => $userid, ':actualUid' => $actualUserId]);
 
             // STEP 5: Generate 6-digit secure OTP
             $otp = sprintf("%06d", random_int(100000, 999999));
@@ -5067,12 +5073,17 @@ if (!function_exists('sendTransactionKeyOTP')) {
             // Insert OTP record ONLY after mail delivery succeeds
             $stmtInsert = $db->prepare("INSERT INTO tbl_otp (userid, email, otp, type, is_used, is_sent, created_at, expires_at) VALUES (:uid, :email, :otp, 'TXN_KEY_RESET', 0, 1, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))");
             $stmtInsert->execute([
-                ':uid' => $userid,
+                ':uid'   => $actualUserId,
                 ':email' => $email,
-                ':otp' => $otp
+                ':otp'   => $otp
             ]);
 
-            return ['status' => 'success', 'message' => 'OTP sent successfully to your registered email address.'];
+            // Mask email for user clarity: e.g. mrf***@gmail.com
+            $eParts = explode('@', $email);
+            $maskedLoc = (strlen($eParts[0]) > 3) ? substr($eParts[0], 0, 3) . '***' : substr($eParts[0], 0, 1) . '***';
+            $maskedEmail = $maskedLoc . '@' . ($eParts[1] ?? '');
+
+            return ['status' => 'success', 'message' => "OTP sent successfully to your registered email ({$maskedEmail})."];
         } catch (Throwable $e) {
             error_log("sendTransactionKeyOTP Exception: " . $e->getMessage());
             return ['status' => 'error', 'message' => 'Unable to send OTP email right now. Please try again later.'];
@@ -5155,12 +5166,17 @@ if (!function_exists('verifyTransactionKeyOTP')) {
 
         ensureOTPTableExists($db);
 
+        $cleanUid = (stripos($userid, 'AN') === 0) ? trim(substr($userid, 2)) : $userid;
+        $anUid    = (stripos($userid, 'AN') === 0) ? $userid : 'AN' . $userid;
+
         try {
-            // Check for valid unexpired OTP
-            $stmtCheck = $db->prepare("SELECT id FROM tbl_otp WHERE userid = :uid AND otp = :otp AND type = 'TXN_KEY_RESET' AND is_used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1");
+            // Check for valid unexpired OTP (support both clean and AN-prefixed userid)
+            $stmtCheck = $db->prepare("SELECT id FROM tbl_otp WHERE (userid = :uid OR userid = :clean OR userid = :an) AND otp = :otp AND type = 'TXN_KEY_RESET' AND is_used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1");
             $stmtCheck->execute([
-                ':uid' => $userid,
-                ':otp' => $otpInput
+                ':uid'   => $userid,
+                ':clean' => $cleanUid,
+                ':an'    => $anUid,
+                ':otp'   => $otpInput
             ]);
             $otpRow = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
