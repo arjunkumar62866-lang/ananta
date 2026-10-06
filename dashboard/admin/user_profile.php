@@ -144,7 +144,7 @@ if ($kycVal === 2 || $kycVal === 1) {
 }
 
 // Fetch User Wallet Balances from Single Source of Truth
-$mainWalletBal = function_exists('getUserWalletBalance') ? getUserWalletBalance($targetUserId, $pdo) : (float)($row['deposite_wallet'] ?? $row['pin_wallet'] ?? $row['amount'] ?? 0.00);
+$mainWalletBal = function_exists('getUserWalletBalance') ? getUserWalletBalance($targetUserId, $pdo) : (float)($row['deposite_wallet'] ?? $row['pin_wallet'] ?? 0.00);
 
 // 1. Profit Income
 $piVal = (float)($row['profit_income_wallet'] ?? 0.00);
@@ -261,17 +261,17 @@ $userGrowthVal = round($piVal + $psVal + $dbVal + $miVal + $rrVal + $vipVal + $c
 
 // Map the 12 Wallets to DB columns / Real-Time Single Source of Truth
 $walletsConfig = [
-    'amount' => [
+    'deposite_wallet' => [
         'name' => 'Main Wallet',
-        'key'  => 'amount',
+        'key'  => 'deposite_wallet',
         'val'  => $mainWalletBal,
         'icon' => 'fa-wallet',
         'color' => '#0284c7'
     ],
-    'net_balance' => [
+    'amount' => [
         'name' => 'Net Balance',
-        'key'  => 'net_balance',
-        'val'  => (float)($row['net_balance'] ?? 0.00),
+        'key'  => 'amount',
+        'val'  => (float)($row['amount'] ?? $row['net_balance'] ?? 0.00),
         'icon' => 'fa-balance-scale',
         'color' => '#0d9488'
     ],

@@ -2839,6 +2839,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
     }
 
     $validWallets = [
+        'deposite_wallet',
         'amount',
         'net_balance',
         'active_investment',
@@ -2851,13 +2852,15 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
         'vip_club_wallet',
         'user_growth_wallet',
         'company_turnover_wallet',
-        'deposite_wallet',
+        'pin_wallet',
         'working_wallet',
         'nonwork_wallet'
     ];
 
     $walletNames = [
-        'amount'                  => 'Main Wallet',
+        'deposite_wallet'         => 'Main Wallet',
+        'pin_wallet'              => 'Main Wallet',
+        'amount'                  => 'Net Balance',
         'net_balance'             => 'Net Balance',
         'active_investment'       => 'Active Investment',
         'total_withdrawal'        => 'All Withdrawal',
@@ -2868,8 +2871,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
         'rank_reward_wallet'      => 'Rank Reward',
         'vip_club_wallet'         => 'VIP Club Income',
         'user_growth_wallet'      => 'User Growth',
-        'company_turnover_wallet' => 'Company Turnover Income',
-        'deposite_wallet'         => 'Deposit Wallet'
+        'company_turnover_wallet' => 'Company Turnover Income'
     ];
 
     if (!in_array($wallet_column, $validWallets)) {
@@ -2921,10 +2923,12 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
         $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$target_user_id);
         $prefixedUid = 'AN' . $cleanUid;
 
-        $isMainWallet = in_array($wallet_column, ['amount', 'deposite_wallet', 'pin_wallet']);
+        $isMainWallet = in_array($wallet_column, ['deposite_wallet', 'pin_wallet']);
+        $isNetBalance = in_array($wallet_column, ['amount', 'net_balance']);
 
         if ($isMainWallet) {
-            $stmtUser = $db->prepare("SELECT userid, deposite_wallet, pin_wallet, amount FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
+            // Main Wallet operates ONLY on deposite_wallet & pin_wallet (isolated from Net Balance)
+            $stmtUser = $db->prepare("SELECT userid, deposite_wallet, pin_wallet FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
             $stmtUser->execute([
                 ':userid'   => $target_user_id,
                 ':clean'    => $cleanUid,
@@ -2940,8 +2944,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             $target_user_id = $userRow['userid'];
             $depBal = (float)($userRow['deposite_wallet'] ?? 0.00);
             $pinBal = (float)($userRow['pin_wallet'] ?? 0.00);
-            $amtBal = (float)($userRow['amount'] ?? 0.00);
-            $prevBalUSD = max($depBal, $pinBal, $amtBal);
+            $prevBalUSD = max($depBal, $pinBal);
 
             if ($adjType === 'DEBIT') {
                 if ($prevBalUSD < $amountInUSD) {
@@ -2955,15 +2958,57 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                 $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
                 $updStmt = $db->prepare("UPDATE user SET 
                     deposite_wallet = GREATEST(0, deposite_wallet - :amt),
-                    pin_wallet = GREATEST(0, pin_wallet - :amt),
-                    amount = GREATEST(0, amount - :amt)
+                    pin_wallet = GREATEST(0, pin_wallet - :amt)
                     WHERE userid = :userid");
             } else {
                 $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
                 $updStmt = $db->prepare("UPDATE user SET 
                     deposite_wallet = deposite_wallet + :amt,
-                    pin_wallet = pin_wallet + :amt,
-                    amount = amount + :amt
+                    pin_wallet = pin_wallet + :amt
+                    WHERE userid = :userid");
+            }
+
+            $updStmt->execute([':amt' => $amountInUSD, ':userid' => $target_user_id]);
+
+        } elseif ($isNetBalance) {
+            // Net Balance operates ONLY on amount & net_balance (isolated from Main Wallet)
+            $stmtUser = $db->prepare("SELECT userid, amount, net_balance FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
+            $stmtUser->execute([
+                ':userid'   => $target_user_id,
+                ':clean'    => $cleanUid,
+                ':prefixed' => $prefixedUid
+            ]);
+            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userRow) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Target user {$target_user_id} not found."];
+            }
+
+            $target_user_id = $userRow['userid'];
+            $amtBal = (float)($userRow['amount'] ?? 0.00);
+            $netBal = (float)($userRow['net_balance'] ?? 0.00);
+            $prevBalUSD = max($amtBal, $netBal);
+
+            if ($adjType === 'DEBIT') {
+                if ($prevBalUSD < $amountInUSD) {
+                    if ($inLocalTxn) $db->rollBack();
+                    $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalUSD * $rate, 2)) : ('$' . number_format($prevBalUSD, 2));
+                    return [
+                        'status'  => 'error',
+                        'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
+                    ];
+                }
+                $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
+                $updStmt = $db->prepare("UPDATE user SET 
+                    amount = GREATEST(0, amount - :amt),
+                    net_balance = GREATEST(0, net_balance - :amt)
+                    WHERE userid = :userid");
+            } else {
+                $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
+                $updStmt = $db->prepare("UPDATE user SET 
+                    amount = amount + :amt,
+                    net_balance = net_balance + :amt
                     WHERE userid = :userid");
             }
 
@@ -4711,7 +4756,7 @@ if (!function_exists('getUserWalletBalance')) {
         $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
         $prefixedUid = 'AN' . $cleanUid;
 
-        $stmt = $db->prepare("SELECT COALESCE(deposite_wallet, pin_wallet, amount, 0) FROM user WHERE userid = :uid OR userid = :clean OR userid = :prefixed LIMIT 1");
+        $stmt = $db->prepare("SELECT COALESCE(deposite_wallet, pin_wallet, 0) FROM user WHERE userid = :uid OR userid = :clean OR userid = :prefixed LIMIT 1");
         $stmt->execute([
             ':uid'      => $userid,
             ':clean'    => $cleanUid,
