@@ -2923,8 +2923,9 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
         $cleanUid    = preg_replace('/^(AN|ANANTA)/i', '', (string)$target_user_id);
         $prefixedUid = 'AN' . $cleanUid;
 
-        $isMainWallet = in_array($wallet_column, ['deposite_wallet', 'pin_wallet']);
-        $isNetBalance = in_array($wallet_column, ['amount', 'net_balance']);
+        $isMainWallet       = in_array($wallet_column, ['deposite_wallet', 'pin_wallet']);
+        $isNetBalance       = in_array($wallet_column, ['amount', 'net_balance']);
+        $isActiveInvestment = ($wallet_column === 'active_investment');
 
         if ($isMainWallet) {
             // Main Wallet operates ONLY on deposite_wallet & pin_wallet (isolated from Net Balance)
@@ -3013,6 +3014,141 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             }
 
             $updStmt->execute([':amt' => $amountInUSD, ':userid' => $target_user_id]);
+
+        } elseif ($isActiveInvestment) {
+            // Active Investment operates on tbl_roi_one (source of truth) and synchronizes user.active_investment & user.total_package
+            $stmtUser = $db->prepare("SELECT userid, name, active_investment, total_package FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
+            $stmtUser->execute([
+                ':userid'   => $target_user_id,
+                ':clean'    => $cleanUid,
+                ':prefixed' => $prefixedUid
+            ]);
+            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userRow) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Target user {$target_user_id} not found."];
+            }
+
+            $target_user_id = $userRow['userid'];
+
+            // Query active investment records from tbl_roi_one with row-locking
+            $stmtInv = $db->prepare("
+                SELECT id, package_code, real_fund_usd, package, status, capital_withdrawal_status
+                FROM tbl_roi_one
+                WHERE user_id = :uid 
+                  AND status = '0' 
+                  AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+                ORDER BY id ASC
+                FOR UPDATE
+            ");
+            $stmtInv->execute([':uid' => $target_user_id]);
+            $activeRows = $stmtInv->fetchAll(PDO::FETCH_ASSOC);
+
+            $prevBalUSD = 0.00;
+            foreach ($activeRows as $arow) {
+                $pkgUsd = (float)($arow['real_fund_usd'] ?? 0);
+                $pkgInr = (float)($arow['package'] ?? 0);
+                if ($pkgUsd <= 0 && $pkgInr > 0) {
+                    $pkgUsd = round($pkgInr / $rate, 2);
+                }
+                $prevBalUSD += $pkgUsd;
+            }
+            $prevBalUSD = round($prevBalUSD, 2);
+
+            // Fallback: If no records in tbl_roi_one, check user.active_investment or user.total_package
+            if ($prevBalUSD <= 0.00) {
+                $actInv = (float)($userRow['active_investment'] ?? 0);
+                $totPkg = (float)($userRow['total_package'] ?? 0);
+                if ($actInv > 0) {
+                    $prevBalUSD = round($actInv, 2);
+                } elseif ($totPkg > 0) {
+                    $prevBalUSD = round($totPkg / $rate, 2);
+                }
+            }
+
+            if ($adjType === 'DEBIT') {
+                if ($prevBalUSD < $amountInUSD) {
+                    if ($inLocalTxn) $db->rollBack();
+                    $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalUSD * $rate, 2)) : ('$' . number_format($prevBalUSD, 2));
+                    return [
+                        'status'  => 'error',
+                        'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
+                    ];
+                }
+
+                $remainingToDebit = $amountInUSD;
+                foreach ($activeRows as $arow) {
+                    if ($remainingToDebit <= 0) {
+                        break;
+                    }
+                    $rowId  = (int)$arow['id'];
+                    $pkgUsd = (float)($arow['real_fund_usd'] ?? 0);
+                    $pkgInr = (float)($arow['package'] ?? 0);
+                    if ($pkgUsd <= 0 && $pkgInr > 0) {
+                        $pkgUsd = round($pkgInr / $rate, 2);
+                    }
+
+                    if ($pkgUsd <= ($remainingToDebit + 0.0001)) {
+                        // Fully consumed this investment row
+                        $updRoi = $db->prepare("UPDATE tbl_roi_one SET real_fund_usd = 0.00, package = 0, status = '1', capital_withdrawal_status = 'WITHDRAWN' WHERE id = :id");
+                        $updRoi->execute([':id' => $rowId]);
+                        $remainingToDebit = round(max(0, $remainingToDebit - $pkgUsd), 2);
+                    } else {
+                        // Partially debit this investment row
+                        $newPkgUsd = round($pkgUsd - $remainingToDebit, 2);
+                        $newPkgInr = round($newPkgUsd * $rate, 2);
+                        $updRoi = $db->prepare("UPDATE tbl_roi_one SET real_fund_usd = :usd, package = :inr WHERE id = :id");
+                        $updRoi->execute([
+                            ':usd' => $newPkgUsd,
+                            ':inr' => $newPkgInr,
+                            ':id'  => $rowId
+                        ]);
+                        $remainingToDebit = 0.00;
+                    }
+                }
+
+                $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
+                $newBalINR = round($newBalUSD * $rate, 2);
+
+                $updUser = $db->prepare("UPDATE user SET 
+                    active_investment = :new_usd,
+                    total_package = :new_inr
+                    WHERE userid = :userid");
+                $updUser->execute([
+                    ':new_usd' => $newBalUSD,
+                    ':new_inr' => $newBalINR,
+                    ':userid'  => $target_user_id
+                ]);
+
+            } else {
+                // CREDIT
+                $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
+                $newBalINR = round($newBalUSD * $rate, 2);
+
+                $insRoi = $db->prepare("
+                    INSERT INTO tbl_roi_one 
+                    (user_id, level, name, package_code, real_fund_usd, bonus_percent_snapshot, bonus_amount_usd, lock_period_months, maturity_date, deduction_percent_snapshot, capital_withdrawal_status, package, percentage, count, amount, totalincome, capping, lock_day, date, time, closingdate, status)
+                    VALUES
+                    (:uid, 1, 'Admin Investment Credit', 'ADMIN_ADJ', :fund_usd, 0.00, 0.00, 48, DATE_ADD(CURDATE(), INTERVAL 48 MONTH), 15.00, 'LOCKED', :pkg_inr, 3.00, 0, 0, 0, :capping, 1460, CURDATE(), CURTIME(), CURDATE(), '0')
+                ");
+                $insRoi->execute([
+                    ':uid'      => $target_user_id,
+                    ':fund_usd' => $amountInUSD,
+                    ':pkg_inr'  => $amountInINR,
+                    ':capping'  => $amountInINR * 2
+                ]);
+
+                $updUser = $db->prepare("UPDATE user SET 
+                    active_investment = :new_usd,
+                    total_package = :new_inr
+                    WHERE userid = :userid");
+                $updUser->execute([
+                    ':new_usd' => $newBalUSD,
+                    ':new_inr' => $newBalINR,
+                    ':userid'  => $target_user_id
+                ]);
+            }
 
         } else {
             $stmtUser = $db->prepare("SELECT userid, `{$wallet_column}` FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
