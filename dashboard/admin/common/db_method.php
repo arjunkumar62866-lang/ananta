@@ -3272,6 +3272,30 @@ function processAnantaPackageInvestment($user_id, $package_id, $amount_usd, $pdo
         return ['status' => 'error', 'message' => 'User authentication required.'];
     }
 
+    // Strict Server-Side Check: User must have completed $11 Account Activation
+    $actStatus = function_exists('getUserAccountActivationStatus')
+        ? getUserAccountActivationStatus($user_id, $db)
+        : null;
+
+    $isActive = ($actStatus && !empty($actStatus['is_active']));
+    if (!$actStatus) {
+        $stmtActCheck = $db->prepare("SELECT active, activation_expiry_date FROM user WHERE userid = :uid OR userid = :clean LIMIT 1");
+        $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$user_id);
+        $stmtActCheck->execute([':uid' => $user_id, ':clean' => $cleanUid]);
+        $uAct = $stmtActCheck->fetch(PDO::FETCH_ASSOC);
+        if ($uAct && (int)$uAct['active'] === 1) {
+            $exp = $uAct['activation_expiry_date'];
+            $isActive = empty($exp) || (strtotime($exp) > time());
+        }
+    }
+
+    if (!$isActive) {
+        return [
+            'status'  => 'error',
+            'message' => 'Please complete your $11 activation before purchasing an investment/package.'
+        ];
+    }
+
     $val = validatePackageInvestment($package_id, $amount_usd, $db);
     if (!$val['status']) {
         return ['status' => 'error', 'message' => $val['message']];
@@ -3793,32 +3817,45 @@ if (!function_exists('getUserAccountActivationStatus')) {
         $expiryDate = $u['activation_expiry_date'] ?: null;
         $nowTs      = time();
 
-        if ($activeFlag === 1 && $expiryDate) {
-            $expiryTs = strtotime($expiryDate);
-            if ($expiryTs > $nowTs) {
-                $remSecs = $expiryTs - $nowTs;
-                $remDays = (int)ceil($remSecs / 86400);
+        if ($activeFlag === 1) {
+            if ($expiryDate) {
+                $expiryTs = strtotime($expiryDate);
+                if ($expiryTs > $nowTs) {
+                    $remSecs = $expiryTs - $nowTs;
+                    $remDays = (int)ceil($remSecs / 86400);
+                    return [
+                        'status'         => 'ACTIVE',
+                        'active_flag'    => 1,
+                        'is_active'      => true,
+                        'is_expired'     => false,
+                        'start_date'     => $startDate,
+                        'expiry_date'    => $expiryDate,
+                        'remaining_days' => $remDays,
+                        'status_label'   => 'ACTIVE'
+                    ];
+                } else {
+                    $db->prepare("UPDATE user SET active = '0' WHERE userid = :uid AND active = '1'")->execute([':uid' => $userid]);
+                    return [
+                        'status'         => 'EXPIRED',
+                        'active_flag'    => 0,
+                        'is_active'      => false,
+                        'is_expired'     => true,
+                        'start_date'     => $startDate,
+                        'expiry_date'    => $expiryDate,
+                        'remaining_days' => 0,
+                        'status_label'   => 'EXPIRED'
+                    ];
+                }
+            } else {
                 return [
                     'status'         => 'ACTIVE',
                     'active_flag'    => 1,
                     'is_active'      => true,
                     'is_expired'     => false,
                     'start_date'     => $startDate,
-                    'expiry_date'    => $expiryDate,
-                    'remaining_days' => $remDays,
+                    'expiry_date'    => null,
+                    'remaining_days' => 1460,
                     'status_label'   => 'ACTIVE'
-                ];
-            } else {
-                $db->prepare("UPDATE user SET active = '0' WHERE userid = :uid AND active = '1'")->execute([':uid' => $userid]);
-                return [
-                    'status'         => 'EXPIRED',
-                    'active_flag'    => 0,
-                    'is_active'      => false,
-                    'is_expired'     => true,
-                    'start_date'     => $startDate,
-                    'expiry_date'    => $expiryDate,
-                    'remaining_days' => 0,
-                    'status_label'   => 'EXPIRED'
                 ];
             }
         } elseif ($expiryDate && strtotime($expiryDate) <= $nowTs) {

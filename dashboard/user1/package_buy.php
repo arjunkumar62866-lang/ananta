@@ -32,28 +32,39 @@ $selectedCurrency = getUserCurrency();
 // Fetch single source of truth main wallet balance
 $mainBalanceUSD = getUserWalletBalance($userid, $pdo);
 
+// Strict $11 Account Activation Status Check
+$actStatus = function_exists('getUserAccountActivationStatus') 
+    ? getUserAccountActivationStatus($userid, $pdo) 
+    : ['is_active' => false];
+$isUserActive = !empty($actStatus['is_active']);
+
 $alertMsg = null;
 $alertType = null;
 
 if (isset($_POST["submit"])) {
-    $rawPkgId = trim($_POST['package_id'] ?? '');
-    $priceInput = (float)($_POST['price'] ?? $_POST['amount'] ?? 0);
-
-    $package_code = isset($pkgCodeMap[$rawPkgId]) ? $pkgCodeMap[$rawPkgId] : strtoupper($rawPkgId);
-
-    // If active currency is INR or form sent INR mode, parse input to USD
-    $currMode = $_POST['currency_mode'] ?? $selectedCurrency;
-    $amount_usd = parseInputToUSD($priceInput, $currMode, $pdo);
-
-    $res = processAnantaPackageInvestment($userid, $package_code, $amount_usd, $pdo);
-
-    if ($res['status'] === 'success') {
-        $msg = addslashes($res['message']);
-        echo "<script>alert('{$msg}'); window.location.href = 'index.php';</script>";
-        exit();
-    } else {
-        $alertMsg = $res['message'];
+    if (!$isUserActive) {
+        $alertMsg = 'Please complete your $11 activation before purchasing an investment/package.';
         $alertType = 'danger';
+    } else {
+        $rawPkgId = trim($_POST['package_id'] ?? '');
+        $priceInput = (float)($_POST['price'] ?? $_POST['amount'] ?? 0);
+
+        $package_code = isset($pkgCodeMap[$rawPkgId]) ? $pkgCodeMap[$rawPkgId] : strtoupper($rawPkgId);
+
+        // If active currency is INR or form sent INR mode, parse input to USD
+        $currMode = $_POST['currency_mode'] ?? $selectedCurrency;
+        $amount_usd = parseInputToUSD($priceInput, $currMode, $pdo);
+
+        $res = processAnantaPackageInvestment($userid, $package_code, $amount_usd, $pdo);
+
+        if ($res['status'] === 'success') {
+            $msg = addslashes($res['message']);
+            echo "<script>alert('{$msg}'); window.location.href = 'index.php';</script>";
+            exit();
+        } else {
+            $alertMsg = $res['message'];
+            $alertType = 'danger';
+        }
     }
 }
 ?>
@@ -339,6 +350,25 @@ label.form-label, label {
       </div>
       <?php endif; ?>
 
+      <?php if (!$isUserActive): ?>
+      <div class="alert alert-warning border-0 shadow-sm p-4 mb-4" style="border-radius: 18px; background: #fffbeb; border: 1.5px solid #fde68a !important;">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-3">
+                  <div style="width: 48px; height: 48px; border-radius: 14px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                      <i class="zmdi zmdi-alert-triangle"></i>
+                  </div>
+                  <div>
+                      <h5 class="mb-1 font-weight-bold" style="color: #92400e; font-size: 16px;">Account Activation Required ($11 Unlock Access)</h5>
+                      <p class="mb-0" style="color: #b45309; font-size: 13.5px;">Please complete your $11 activation before purchasing an investment/package.</p>
+                  </div>
+              </div>
+              <a href="activate_account.php" class="btn btn-warning font-weight-bold px-4 py-2" style="background: #f59e0b; color: #ffffff; border-radius: 12px; font-size: 13.5px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+                  <i class="zmdi zmdi-shield-check mr-1"></i> Activate Account Now ($11)
+              </a>
+          </div>
+      </div>
+      <?php endif; ?>
+
       <!-- Package Cards Grid -->
       <div class="row mb-4">
           <div class="col-12">
@@ -466,7 +496,8 @@ label.form-label, label {
                     </div>
                 </div>
 
-                <button type="submit" name="submit" class="btn-ananta-submit">
+                <button type="submit" name="submit" class="btn-ananta-submit" id="btnSubmitPackage"
+                    <?= (!$isUserActive) ? 'disabled style="opacity: 0.6; cursor: not-allowed;" title="Please complete your $11 activation before purchasing an investment/package."' : ''; ?>>
                   <i class="fa fa-shopping-cart me-1"></i> Confirm & Buy Investment
                 </button>
                 
@@ -588,6 +619,17 @@ function updateCalcSummary() {
 }
 
 $(document).ready(function() {
+    let isUserActive = <?= $isUserActive ? 'true' : 'false'; ?>;
+
+    $('#form-data').on('submit', function(e) {
+        if (!isUserActive) {
+            e.preventDefault();
+            alert('Please complete your $11 activation before purchasing an investment/package.');
+            window.location.href = 'activate_account.php';
+            return false;
+        }
+    });
+
     // Select BASIC by default if nothing selected
     if ($('#package_id option').length > 1) {
         $('#package_id').val('BASIC');
