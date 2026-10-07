@@ -3390,6 +3390,8 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
     $totUsers     = (int)$db->query("SELECT COUNT(*) FROM user")->fetchColumn();
     $activeUsers  = (int)$db->query("SELECT COUNT(*) FROM user WHERE active = '1'")->fetchColumn();
     $inactiveUsers= (int)$db->query("SELECT COUNT(*) FROM user WHERE active = '0'")->fetchColumn();
+    $cDate        = date('Y-m-d');
+    $todayRegs    = (int)$db->query("SELECT COUNT(*) FROM user WHERE (joining_date = '{$cDate}' OR DATE(joining_date) = '{$cDate}')")->fetchColumn();
 
     $totUnlockAcc = (int)$db->query("SELECT COUNT(*) FROM user WHERE active = '1'")->fetchColumn();
     $totRevenueUnlock = round($totUnlockAcc * 990.00, 2); // ₹990 per $11 unlock access
@@ -3430,8 +3432,8 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
     ");
     $monthBizInr  = (float)$stmtMonth->fetchColumn();
 
-    $totWdPaid    = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE subject LIKE '%Withdraw%' AND type='Credit' AND status=1")->fetchColumn();
-    $totWdPend    = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE subject LIKE '%Withdraw%' AND status=0")->fetchColumn();
+    $totWdPaid    = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') AND subject NOT LIKE 'Admin Adjustment%' AND (status = 1 OR a_status = '1') AND status != 2 AND a_status != '2'")->fetchColumn();
+    $totWdPend    = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') AND subject NOT LIKE 'Admin Adjustment%' AND (status = 0 OR a_status = '0' OR status IS NULL OR a_status IS NULL) AND status != 2 AND a_status != '2'")->fetchColumn();
 
     $piPaid       = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc")->fetchColumn();
     $psPaid       = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc")->fetchColumn();
@@ -3446,6 +3448,7 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
     $openTickets  = (int)$db->query("SELECT COUNT(*) FROM tbl_support_tickets WHERE status = 'OPEN'")->fetchColumn();
 
     return [
+        'today_registrations'     => $todayRegs,
         'total_users'             => $totUsers,
         'active_users'            => $activeUsers,
         'inactive_users'          => $inactiveUsers,

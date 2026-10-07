@@ -251,13 +251,13 @@ $news = $newsdata['news'];
       </a>
       <ul class="submenu">
         <li><a href="all_user.php"><i class="zmdi zmdi-circle-o"></i> All Users & Profiles</a></li>
+        <li><a href="registration-report.php"><i class="zmdi zmdi-circle-o"></i> Registration Report</a></li>
         <li><a href="move_team.php"><i class="zmdi zmdi-circle-o"></i> Move Team in Tree</a></li>
         <li><a href="active_all_user.php"><i class="zmdi zmdi-circle-o"></i> Active Users</a></li>
         <li><a href="inactive_all_user.php"><i class="zmdi zmdi-circle-o"></i> Inactive Users</a></li>
         <li><a href="deactive_user.php"><i class="zmdi zmdi-circle-o"></i> Blocked / Suspended</a></li>
         <li><a href="activation_history.php"><i class="zmdi zmdi-circle-o"></i> Activation History ($11)</a></li>
         <li><a href="user_timeline.php"><i class="zmdi zmdi-circle-o"></i> Complete User Timeline</a></li>
-        
       </ul>
     </li>
 

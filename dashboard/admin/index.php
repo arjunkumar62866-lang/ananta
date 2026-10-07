@@ -653,7 +653,7 @@ $inactivePct = 100 - $activePct;
 
           <!-- 11. New Registration -->
           <div class="col mb-3 metric-card-item">
-            <a href="all_user.php" class="metric-card-link">
+            <a href="registration-report.php" class="metric-card-link">
               <div class="executive-card p-3">
                 <div class="d-flex align-items-center justify-content-between mb-2">
                   <div class="metric-icon-box" style="background: var(--accent-blue-soft); color: var(--accent-blue);">
@@ -661,24 +661,8 @@ $inactivePct = 100 - $activePct;
                   </div>
                 </div>
                 <div class="metric-title">New Registration</div>
-                <div class="metric-value" style="font-size:18px;"><?php echo number_format($stats['total_users']); ?> Total</div>
+                <div class="metric-value" style="font-size:18px;">Today: <?php echo number_format($stats['today_registrations']); ?></div>
                 
-              </div>
-            </a>
-          </div>
-
-          <!-- 12. Total Withdrawals Summary -->
-          <div class="col mb-3 metric-card-item">
-            <a href="withdraw-history.php" class="metric-card-link">
-              <div class="executive-card p-3">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                  <div class="metric-icon-box" style="background: var(--accent-teal-soft); color: var(--accent-teal);">
-                    <i class="fa fa-dollar"></i>
-                  </div>
-                </div>
-                <div class="metric-title">Total Withdrawals</div>
-                <div class="metric-value" style="color:#10b981;"><?php echo formatCurrency($stats['total_withdrawal_paid'] / getUSDToINRRate($pdo)); ?></div>
-               
               </div>
             </a>
           </div>
