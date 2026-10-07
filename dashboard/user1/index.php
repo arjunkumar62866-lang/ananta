@@ -170,6 +170,10 @@ $table="tbl_transaction";
 $withdrawaltotal = incometotalnew($pdo, $table,$userid,'Withdrawal Request');
 $withdrawaltotal= round((float)($withdrawaltotal ?? 0), 2);
 
+$stmtU_bal = $pdo->prepare("SELECT amount FROM user WHERE userid = :uid");
+$stmtU_bal->execute([':uid' => $userid]);
+$userNetBal = (float)($stmtU_bal->fetchColumn() ?: 0);
+
 // generation income
 $table="tbl_transaction";
 $generation_income = incometotalnew_exact_subject($pdo, $table,$userid,'Generation Income Payout');
@@ -1245,7 +1249,7 @@ body.ananta-user-dashboard {
 
     <!-- Card 4: Total Withdrawal -->
     <div class="col-12">
-        <a href="withdraw-history.php" class="card border-0 shadow-sm quick-wallet-card text-decoration-none">
+        <a href="javascript:void(0);" data-toggle="modal" data-target="#totalWithdrawalOptionsModal" class="card border-0 shadow-sm quick-wallet-card text-decoration-none" role="button">
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center min-w-0" style="flex: 1;">
                     <div class="rounded-xl quick-wallet-icon p-2 d-flex align-items-center justify-content-center"
@@ -1254,9 +1258,12 @@ body.ananta-user-dashboard {
                     </div>
 
                     <div class="min-w-0 ml-2" style="flex: 1;">
-                        <span class="d-block text-muted font-weight-bold quick-wallet-title">
-                            Total Withdrawal
-                        </span>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="d-block text-muted font-weight-bold quick-wallet-title">
+                                Total Withdrawal
+                            </span>
+                            <span class="badge badge-primary px-1 font-weight-bold ml-1" style="font-size: 10px; border-radius: 4px;">2 Options</span>
+                        </div>
                         <h4 class="mb-0 font-weight-bold quick-wallet-amount" style="color: #0f172a;">
                             <?php echo formatCurrency($withdrawaltotal, $selectedCurrency); ?>
                         </h4>
@@ -1700,6 +1707,115 @@ body.ananta-user-dashboard {
         <!--start overlay-->
         <div class="overlay toggle-menu"></div>
         <!--end overlay-->
+
+        <!-- MODAL: TOTAL WITHDRAWAL OPTIONS (2 WALLET OPTIONS) -->
+        <div class="modal fade" id="totalWithdrawalOptionsModal" tabindex="-1" role="dialog" aria-labelledby="totalWithdrawalModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 580px;">
+                <div class="modal-content" style="border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2); overflow: hidden; background: #ffffff;">
+                    
+                    <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 22px; box-shadow: 0 6px 16px rgba(2, 132, 199, 0.3); flex-shrink: 0;">
+                                <i class="zmdi zmdi-balance-wallet"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h5 class="modal-title font-weight-bold text-dark mb-0" id="totalWithdrawalModalLabel" style="font-size: 20px;">
+                                    Total Withdrawal Options
+                                </h5>
+                                <p class="text-muted small mb-0 font-weight-semibold">Select your withdrawal destination wallet</p>
+                            </div>
+                        </div>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="font-size: 28px; line-height: 1; padding: 0; margin: 0; outline: none; opacity: 0.6;">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body p-4">
+                        <div class="alert alert-light border mb-3 p-3 rounded-lg" style="background: #f8fafc; border-color: #e2e8f0 !important; border-radius: 14px;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Total Withdrawn Till Date</small>
+                                    <span class="font-weight-bold text-dark" style="font-size: 17px;"><?php echo formatCurrency($withdrawaltotal, $selectedCurrency); ?></span>
+                                </div>
+                                <div class="text-right">
+                                    <small class="text-muted font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Net Available Balance</small>
+                                    <span class="font-weight-bold text-primary" style="font-size: 17px;"><?php echo formatCurrency($userNetBal, $selectedCurrency); ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-column" style="gap: 14px;">
+                            <!-- OPTION 1: Net Balance Wallet -->
+                            <a href="withdraw.php?tab=net_balance" class="text-decoration-none withdrawal-modal-opt-card">
+                                <div class="p-3 d-flex align-items-center justify-content-between" style="border: 2px solid #e2e8f0; border-radius: 16px; background: #ffffff; transition: all 0.2s ease;">
+                                    <div class="d-flex align-items-start min-w-0" style="flex: 1;">
+                                        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(2, 132, 199, 0.12); color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                                            <i class="zmdi zmdi-money-box"></i>
+                                        </div>
+                                        <div class="ml-3 min-w-0" style="flex: 1;">
+                                            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                                <h6 class="mb-0 font-weight-bold" style="color: #0f172a; font-size: 16px;">1. Net Balance Wallet</h6>
+                                                <span class="badge" style="background: #eff6ff; color: #0284c7; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">Profit / Income</span>
+                                            </div>
+                                            <p class="mb-1 text-muted small font-weight-bold" style="font-size: 12.5px;">Profit/Income withdrawal ke liye</p>
+                                            <span class="text-secondary small font-weight-semibold d-block">
+                                                <i class="zmdi zmdi-check-circle text-success mr-1"></i> Direct Bank Transfer (INR) & BEP20 USDT
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-2 flex-shrink-0 text-primary" style="font-size: 22px;">
+                                        <i class="zmdi zmdi-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </a>
+
+                            <!-- OPTION 2: Investment Wallet -->
+                            <a href="withdraw.php?tab=capital" class="text-decoration-none withdrawal-modal-opt-card">
+                                <div class="p-3 d-flex align-items-center justify-content-between" style="border: 2px solid #e2e8f0; border-radius: 16px; background: #ffffff; transition: all 0.2s ease;">
+                                    <div class="d-flex align-items-start min-w-0" style="flex: 1;">
+                                        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(22, 163, 74, 0.12); color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                                            <i class="zmdi zmdi-lock-open"></i>
+                                        </div>
+                                        <div class="ml-3 min-w-0" style="flex: 1;">
+                                            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                                                <h6 class="mb-0 font-weight-bold" style="color: #0f172a; font-size: 16px;">2. Investment Wallet</h6>
+                                                <span class="badge" style="background: #f0fdf4; color: #16a34a; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">Capital Withdrawal</span>
+                                            </div>
+                                            <p class="mb-1 text-muted small font-weight-bold" style="font-size: 12.5px;">Capital withdrawal ke liye (15% deduction)</p>
+                                            <div class="p-2 mt-1 rounded text-muted font-weight-bold" style="background: #f8fafc; font-size: 11.5px; line-height: 1.4; border: 1px solid #e2e8f0;">
+                                                <i class="zmdi zmdi-shield-security text-warning mr-1"></i> <strong>Locking Rules:</strong><br>
+                                                • Basic, Advance, Premium, Tour: <strong>48 Months Lock</strong><br>
+                                                • 30% Bonus Package: <strong>6 Months Lock</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ml-2 flex-shrink-0 text-success" style="font-size: 22px;">
+                                        <i class="zmdi zmdi-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-0 pt-0 px-4 pb-3 d-flex justify-content-between align-items-center" style="background: #f8fafc; border-top: 1px solid #f1f5f9;">
+                        <a href="withdraw-history.php" class="text-primary small font-weight-bold text-decoration-none">
+                            <i class="zmdi zmdi-time-restore mr-1"></i> View Withdrawal History
+                        </a>
+                        <button type="button" class="btn btn-secondary btn-sm px-3 font-weight-bold" data-dismiss="modal" style="border-radius: 10px;">Close</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .withdrawal-modal-opt-card:hover > div {
+            border-color: #0284c7 !important;
+            background: #f0f9ff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(2, 132, 199, 0.12);
+        }
+        </style>
 
       </div>
       <!-- End container-fluid-->

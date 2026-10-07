@@ -232,6 +232,47 @@ label.form-label, label {
     font-size: 11.5px;
     letter-spacing: 0.5px;
 }
+/* Wallet Tabs Pill Switcher */
+.wallet-tabs-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 6px;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+    gap: 8px;
+    display: inline-flex;
+}
+
+.wallet-tab-btn {
+    border: none;
+    background: transparent;
+    color: #475569;
+    font-weight: 700;
+    font-size: 13.5px;
+    padding: 9px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wallet-tab-btn:hover {
+    background: #f1f5f9;
+    color: #0284c7;
+}
+
+.wallet-tab-btn.active {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
+
+.wallet-tab-btn.active .badge-light {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
 </style>
 
 <body class="ananta-user-dashboard">
@@ -300,17 +341,44 @@ label.form-label, label {
           </div>
       <?php endif; ?>
 
-      <!-- BOTH WITHDRAWAL SECTIONS SIDE-BY-SIDE (LEFT & RIGHT COLUMNS) -->
+      <!-- WALLET SELECTOR / NAVIGATION SWITCHER (NET BALANCE VS INVESTMENT WALLET) -->
+      <div class="row mb-4">
+          <div class="col-12">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div class="wallet-tabs-container d-flex flex-wrap">
+                      <button type="button" class="wallet-tab-btn" id="tab_btn_all" onclick="switchWithdrawalView('all')">
+                          <i class="fa fa-th-large"></i> All Options (Both Wallets)
+                      </button>
+                      <button type="button" class="wallet-tab-btn" id="tab_btn_net" onclick="switchWithdrawalView('net_balance')">
+                          <i class="fa fa-university text-primary"></i> 1. Net Balance Wallet <span class="badge badge-light ml-1">Profit / Income</span>
+                      </button>
+                      <button type="button" class="wallet-tab-btn" id="tab_btn_cap" onclick="switchWithdrawalView('capital')">
+                          <i class="fa fa-lock text-success"></i> 2. Investment Wallet <span class="badge badge-light ml-1">Capital Withdrawal</span>
+                      </button>
+                  </div>
+                  <a href="withdraw-history.php" class="btn btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 12px; font-size: 13px;">
+                      <i class="fa fa-history mr-1"></i> Full Withdrawal History
+                  </a>
+              </div>
+          </div>
+      </div>
+
+      <!-- BOTH WITHDRAWAL SECTIONS (LEFT: NET BALANCE, RIGHT: INVESTMENT CAPITAL) -->
       <div class="row mb-5" style="display: flex; flex-wrap: wrap;">
           
-          <!-- LEFT COLUMN: 1. NET BALANCE WITHDRAWAL -->
-          <div class="col-lg-6 mb-4 mb-lg-0">
+          <!-- OPTION 1: NET BALANCE WALLET (PROFIT / INCOME WITHDRAWAL) -->
+          <div class="col-lg-6 mb-4 mb-lg-0" id="col_net_balance">
               <div class="withdrawal-section-card">
                   <div class="withdrawal-card-header">
-                      <h5>
-                          <i class="fa fa-university text-primary"></i> 1. Net Balance Withdrawal
-                      </h5>
-                      <p>Withdraw from your available Net Balance via Bank or BEP20 USDT</p>
+                      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                          <div>
+                              <h5>
+                                  <i class="fa fa-university text-primary"></i> 1. Net Balance Wallet
+                              </h5>
+                              <p>Profit / Income withdrawal ke liye (Bank INR & BEP20 USDT)</p>
+                          </div>
+                          <span class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size: 11px;">Profit / Income</span>
+                      </div>
                   </div>
                   <div class="p-4 p-md-4 flex-grow-1 d-flex flex-column justify-content-between">
                       <form method="POST" action="withdraw.php">
@@ -389,16 +457,42 @@ label.form-label, label {
               </div>
           </div>
 
-          <!-- RIGHT COLUMN: 2. CAPITAL WITHDRAWAL -->
-          <div class="col-lg-6">
+          <!-- OPTION 2: INVESTMENT WALLET (CAPITAL WITHDRAWAL) -->
+          <div class="col-lg-6" id="col_capital">
               <div class="withdrawal-section-card">
                   <div class="withdrawal-card-header">
-                      <h5>
-                          <i class="fa fa-unlock-alt text-success"></i> 2. Capital Withdrawal
-                      </h5>
-                      <p>View package lock periods, maturity eligibility & claim capital payouts</p>
+                      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                          <div>
+                              <h5>
+                                  <i class="fa fa-unlock-alt text-success"></i> 2. Investment Wallet
+                              </h5>
+                              <p>Capital withdrawal ke liye (Package Locking & 15% Deduction Rules)</p>
+                          </div>
+                          <span class="badge badge-success px-2 py-1 font-weight-bold" style="font-size: 11px;">15% Deduction</span>
+                      </div>
                   </div>
                   <div class="p-4 p-md-4 flex-grow-1">
+                      
+                      <!-- Capital Locking Rules Summary Alert Box -->
+                      <div class="p-3 mb-3" style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 14px;">
+                          <div class="d-flex align-items-center justify-content-between mb-2">
+                              <span style="font-weight: 800; color: #0f172a; font-size: 13px;">
+                                  <i class="fa fa-shield text-success me-1"></i> Capital Locking Rules:
+                              </span>
+                              <span class="badge badge-warning text-dark font-weight-bold" style="font-size: 11px;">15% Deduction</span>
+                          </div>
+                          <div class="row text-dark font-weight-bold g-1" style="font-size: 12px; line-height: 1.6;">
+                              <div class="col-sm-6 mb-1">• <strong>Basic Package:</strong> 48 Months Lock &rarr; 15% Ded.</div>
+                              <div class="col-sm-6 mb-1">• <strong>Advance Package:</strong> 48 Months Lock &rarr; 15% Ded.</div>
+                              <div class="col-sm-6 mb-1">• <strong>Premium Package:</strong> 48 Months Lock &rarr; 15% Ded.</div>
+                              <div class="col-sm-6 mb-1">• <strong>30% Bonus Package:</strong> 6 Months Lock &rarr; 15% Ded.</div>
+                              <div class="col-sm-12 mb-1">• <strong>Tour Package:</strong> 48 Months Lock &rarr; 15% Ded.</div>
+                          </div>
+                          <div class="mt-2 pt-2 border-top text-muted font-weight-bold" style="font-size: 11.5px;">
+                              <i class="fa fa-lock text-warning me-1"></i> <strong>Important:</strong> Capital Withdrawal option locking complete hone se pehle disabled/locked rahega.
+                          </div>
+                      </div>
+
                       <?php if (empty($userInvestments)): ?>
                           <div class="text-center py-4">
                               <i class="fa fa-cubes text-muted mb-2" style="font-size: 40px;"></i>
@@ -407,14 +501,15 @@ label.form-label, label {
                               <a href="package_buy.php" class="btn btn-sm btn-primary font-weight-bold px-3 py-2 mt-1" style="border-radius: 10px;">Buy Package Now</a>
                           </div>
                       <?php else: ?>
-                          <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+                          <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
                               <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
                                   <thead>
                                       <tr>
                                           <th>Inv #</th>
                                           <th>Package</th>
-                                          <th>Real Fund</th>
-                                          <th>Maturity</th>
+                                          <th>Capital</th>
+                                          <th>Lock</th>
+                                          <th>Maturity Date</th>
                                           <th>Status</th>
                                           <th>Action</th>
                                       </tr>
@@ -424,10 +519,20 @@ label.form-label, label {
                                           $invId = $inv['id'];
                                           $pkgName = htmlspecialchars($inv['name'] ?: $inv['package_code'] ?: 'Standard Package');
                                           $realFundUsd = (float)($inv['real_fund_usd'] > 0 ? $inv['real_fund_usd'] : round(((float)$inv['package']) / 90.0, 2));
-                                          $lockMonths = (int)($inv['lock_period_months'] ?: 48);
-                                          $invDate = $inv['date'];
+                                          
+                                          // Auto-resolve lock months according to package rules if missing
+                                          $lockMonths = (int)($inv['lock_period_months'] ?? 0);
+                                          if ($lockMonths <= 0 && function_exists('determinePackageLockingRules')) {
+                                              $rules = determinePackageLockingRules($inv['name'] ?? '', $inv['package_code'] ?? '');
+                                              $lockMonths = $rules['lock_period_months'];
+                                          } elseif ($lockMonths <= 0) {
+                                              $chk = strtoupper(trim(($inv['name'] ?? '') . ' ' . ($inv['package_code'] ?? '')));
+                                              $lockMonths = (strpos($chk, 'BONUS') !== false) ? 6 : 48;
+                                          }
+
+                                          $invDate = $inv['date'] ?: date('Y-m-d');
                                           $maturityDate = $inv['maturity_date'] ?: date('Y-m-d', strtotime("+{$lockMonths} months", strtotime($invDate)));
-                                          $deductPct = (float)($inv['deduction_percent_snapshot'] ?: 15.00);
+                                          $deductPct = 15.00; // Strict 15% deduction as specified
                                           $deductAmtUsd = round($realFundUsd * ($deductPct / 100.0), 2);
                                           $netWdUsd = round($realFundUsd - $deductAmtUsd, 2);
 
@@ -438,33 +543,36 @@ label.form-label, label {
                                       <tr>
                                           <td class="font-weight-bold">#<?= $invId; ?></td>
                                           <td class="font-weight-bold text-primary"><?= $pkgName; ?></td>
-                                          <td class="font-weight-bold text-success">$<?= number_format($realFundUsd, 0); ?></td>
-                                          <td><small class="font-weight-bold"><?= $maturityDate; ?></small></td>
+                                          <td class="font-weight-bold text-success">$<?= number_format($realFundUsd, 2); ?></td>
+                                          <td><span class="badge badge-light border font-weight-bold"><?= $lockMonths; ?>M</span></td>
+                                          <td><small class="font-weight-bold text-dark"><?= $maturityDate; ?></small></td>
                                           <td>
                                               <?php if ($isWithdrawn): ?>
                                                   <span class="badge badge-secondary px-2 py-1 font-weight-bold">WITHDRAWN</span>
                                               <?php elseif ($isLocked): ?>
-                                                  <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold">🔒 LOCKED</span>
+                                                  <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold"><i class="fa fa-lock mr-1"></i> LOCKED</span>
                                               <?php else: ?>
-                                                  <span class="badge badge-success px-2 py-1 font-weight-bold">✅ ELIGIBLE</span>
+                                                  <span class="badge badge-success px-2 py-1 font-weight-bold"><i class="fa fa-check-circle mr-1"></i> ELIGIBLE</span>
                                               <?php endif; ?>
                                           </td>
                                           <td>
                                               <?php if ($isWithdrawn): ?>
                                                   <button type="button" class="btn btn-xs btn-light font-weight-bold" disabled>Claimed</button>
                                               <?php elseif ($isLocked): ?>
-                                                  <button type="button" class="btn btn-xs btn-outline-secondary font-weight-bold" disabled>Locked</button>
+                                                  <button type="button" class="btn btn-xs btn-outline-secondary font-weight-bold" disabled title="Capital locked until <?= $maturityDate; ?>">
+                                                      <i class="fa fa-lock mr-1"></i> Locked
+                                                  </button>
                                               <?php else: ?>
                                                   <button type="button" class="btn btn-xs btn-success font-weight-bold px-2" data-toggle="modal" data-target="#capWdModal<?= $invId; ?>">
-                                                      Claim
+                                                      Claim Capital
                                                   </button>
 
                                                   <!-- Modal -->
                                                   <div class="modal fade" id="capWdModal<?= $invId; ?>" tabindex="-1" role="dialog" aria-hidden="true">
                                                       <div class="modal-dialog modal-dialog-centered" role="document">
-                                                          <div class="modal-content" style="border-radius: 18px; border: none;">
+                                                          <div class="modal-content" style="border-radius: 18px; border: none; box-shadow: 0 20px 50px rgba(15,23,42,0.2);">
                                                               <div class="modal-header border-0 pb-0">
-                                                                  <h5 class="modal-title font-weight-bold text-dark">Confirm Capital Withdrawal</h5>
+                                                                  <h5 class="modal-title font-weight-bold text-dark"><i class="fa fa-unlock-alt text-success me-1"></i> Confirm Capital Withdrawal</h5>
                                                                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                       <span aria-hidden="true">&times;</span>
                                                                   </button>
@@ -476,18 +584,19 @@ label.form-label, label {
 
                                                                       <div class="p-3 mb-3" style="background: #f8fafc; border-radius: 14px; border: 1px solid #e2e8f0;">
                                                                           <div class="d-flex justify-content-between mb-1"><span class="text-muted">Package:</span><strong class="text-dark"><?= $pkgName; ?></strong></div>
-                                                                          <div class="d-flex justify-content-between mb-1"><span class="text-muted">Real Capital:</span><strong class="text-dark">$<?= number_format($realFundUsd, 2); ?></strong></div>
+                                                                          <div class="d-flex justify-content-between mb-1"><span class="text-muted">Invested Capital:</span><strong class="text-dark">$<?= number_format($realFundUsd, 2); ?></strong></div>
+                                                                          <div class="d-flex justify-content-between mb-1"><span class="text-muted">Lock Period Completed:</span><strong class="text-dark"><?= $lockMonths; ?> Months</strong></div>
                                                                           <div class="d-flex justify-content-between mb-1"><span class="text-muted">15% Deduction:</span><strong class="text-danger">-$<?= number_format($deductAmtUsd, 2); ?></strong></div>
                                                                           <hr class="my-2">
-                                                                          <div class="d-flex justify-content-between"><span class="font-weight-bold text-dark">Net Cash Payout:</span><strong class="text-success font-weight-bold" style="font-size: 16px;">$<?= number_format($netWdUsd, 2); ?></strong></div>
+                                                                          <div class="d-flex justify-content-between"><span class="font-weight-bold text-dark">Net Capital Payout (85%):</span><strong class="text-success font-weight-bold" style="font-size: 16px;">$<?= number_format($netWdUsd, 2); ?></strong></div>
                                                                       </div>
 
                                                                       <div class="form-group mb-0">
                                                                           <div class="d-flex justify-content-between align-items-center mb-1">
                                                                               <label for="txn_key_<?= $invId; ?>" class="mb-0">Transaction Key (Security PIN) <span class="text-danger">*</span></label>
-                                                                              <a href="profile.php#security_section" class="small font-weight-bold text-primary text-decoration-none"><i class="zmdi zmdi-lock-outline mr-1"></i>Forgot Transaction Key?</a>
+                                                                              <a href="profile.php#security_section" class="small font-weight-bold text-primary text-decoration-none"><i class="zmdi zmdi-lock-outline mr-1"></i>Forgot Key?</a>
                                                                           </div>
-                                                                          <input type="password" class="form-control" id="txn_key_<?= $invId; ?>" name="txn_key" placeholder="Enter Transaction Key" required style="height: 48px;">
+                                                                          <input type="password" class="form-control" id="txn_key_<?= $invId; ?>" name="txn_key" placeholder="Enter 4-digit Transaction Key" required style="height: 48px;">
                                                                       </div>
                                                                   </div>
                                                                   <div class="modal-footer border-0 pt-0 p-4">
@@ -511,17 +620,17 @@ label.form-label, label {
           </div>
       </div>
 
-      <!-- BOTH WITHDRAWAL HISTORIES SIDE-BY-SIDE (LEFT & RIGHT COLUMNS) -->
+      <!-- BOTH WITHDRAWAL HISTORIES (LEFT: NET BALANCE HISTORY, RIGHT: CAPITAL HISTORY) -->
       <div class="row">
           
           <!-- LEFT HISTORY: NET BALANCE WITHDRAWAL HISTORY -->
-          <div class="col-lg-6 mb-4 mb-lg-0">
+          <div class="col-lg-6 mb-4 mb-lg-0" id="col_net_balance_hist">
               <div class="withdrawal-section-card">
                   <div class="withdrawal-card-header">
                       <h5>
-                          <i class="fa fa-history text-primary"></i> Net Balance Withdrawal History
+                          <i class="fa fa-history text-primary"></i> 1. Net Balance Withdrawal History
                       </h5>
-                      <p>Logs of your past Net Balance payout requests</p>
+                      <p>Logs of your past Net Balance profit & income payout requests</p>
                   </div>
                   <div class="p-4">
                       <?php if (empty($netWithdrawalHistory)): ?>
@@ -562,13 +671,13 @@ label.form-label, label {
           </div>
 
           <!-- RIGHT HISTORY: CAPITAL WITHDRAWAL HISTORY -->
-          <div class="col-lg-6">
+          <div class="col-lg-6" id="col_capital_hist">
               <div class="withdrawal-section-card">
                   <div class="withdrawal-card-header">
                       <h5>
-                          <i class="fa fa-list-alt text-success"></i> Capital Withdrawal History
+                          <i class="fa fa-list-alt text-success"></i> 2. Capital Withdrawal History
                       </h5>
-                      <p>Logs of your matured capital claims and payouts</p>
+                      <p>Logs of your matured package capital claims and payouts (15% deduction)</p>
                   </div>
                   <div class="p-4">
                       <?php if (empty($capitalWithdrawalHistory)): ?>
@@ -618,6 +727,40 @@ label.form-label, label {
 </div>
 
 <script>
+function switchWithdrawalView(view) {
+    $('.wallet-tab-btn').removeClass('active');
+    
+    if (view === 'net_balance') {
+        $('#tab_btn_net').addClass('active');
+        $('#col_net_balance').show().removeClass('col-lg-6').addClass('col-lg-12');
+        $('#col_capital').hide();
+        $('#col_net_balance_hist').show().removeClass('col-lg-6').addClass('col-lg-12');
+        $('#col_capital_hist').hide();
+    } else if (view === 'capital') {
+        $('#tab_btn_cap').addClass('active');
+        $('#col_net_balance').hide();
+        $('#col_capital').show().removeClass('col-lg-6').addClass('col-lg-12');
+        $('#col_net_balance_hist').hide();
+        $('#col_capital_hist').show().removeClass('col-lg-6').addClass('col-lg-12');
+    } else {
+        $('#tab_btn_all').addClass('active');
+        $('#col_net_balance').show().removeClass('col-lg-12').addClass('col-lg-6');
+        $('#col_capital').show().removeClass('col-lg-12').addClass('col-lg-6');
+        $('#col_net_balance_hist').show().removeClass('col-lg-12').addClass('col-lg-6');
+        $('#col_capital_hist').show().removeClass('col-lg-12').addClass('col-lg-6');
+    }
+}
+
+$(document).ready(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'net_balance' || tab === 'capital') {
+        switchWithdrawalView(tab);
+    } else {
+        switchWithdrawalView('all');
+    }
+});
+
 function updateWithdrawalMethodBoxes() {
     var methodSelect = document.getElementById('withdrawal_method');
     if (!methodSelect) return;

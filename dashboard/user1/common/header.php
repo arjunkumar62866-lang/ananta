@@ -469,7 +469,8 @@ setTimeout(function() {
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </a>
       <ul class="submenu">
-        <li><a href="withdraw.php"><i class="zmdi zmdi-circle-o"></i> INR & BEP20 Withdrawal</a></li>
+        <li><a href="withdraw.php?tab=net_balance"><i class="zmdi zmdi-circle-o"></i> 1. Net Balance Wallet (Profit/Income)</a></li>
+        <li><a href="withdraw.php?tab=capital"><i class="zmdi zmdi-circle-o"></i> 2. Investment Wallet (Capital)</a></li>
         <li><a href="withdraw-history.php"><i class="zmdi zmdi-circle-o"></i> Withdraw History</a></li>
       </ul>
     </li>

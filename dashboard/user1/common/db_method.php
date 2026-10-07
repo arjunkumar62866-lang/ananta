@@ -3268,6 +3268,30 @@ if (!function_exists('getAnantaPackageConfigs')) {
     }
 }
 
+if (!function_exists('determinePackageLockingRules')) {
+    /**
+     * Capital Locking Rules:
+     * - Basic Package: 48 months lock -> 15% deduction
+     * - Advance Package: 48 months lock -> 15% deduction
+     * - Premium Package: 48 months lock -> 15% deduction
+     * - 30% Bonus Package: 6 months lock -> 15% deduction
+     * - Tour Package: 48 months lock -> 15% deduction
+     */
+    function determinePackageLockingRules($packageName, $packageCode = null) {
+        $str = strtoupper(trim(($packageName ?? '') . ' ' . ($packageCode ?? '')));
+        if (strpos($str, 'BONUS') !== false || strpos($str, '30%') !== false) {
+            return [
+                'lock_period_months' => 6,
+                'deduction_percent'  => 15.00
+            ];
+        }
+        return [
+            'lock_period_months' => 48,
+            'deduction_percent'  => 15.00
+        ];
+    }
+}
+
 if (!function_exists('validatePackageInvestment')) {
     function validatePackageInvestment($package_id, $amount_usd, $pdoConnection = null) {
         global $pdo;
@@ -3549,11 +3573,21 @@ if (!function_exists('processCapitalWithdrawal')) {
 
             $cDate = date('Y-m-d');
             $maturityDate = $inv['maturity_date'];
-            $lockMonths   = (int)$inv['lock_period_months'];
-            $invDate      = $inv['date'];
+            $lockMonths   = (int)($inv['lock_period_months'] ?? 0);
+            $invDate      = $inv['date'] ?: $cDate;
 
-            // Strict Server-Side Lock Check: Calculate if lock period / maturity date has passed
-            $computedMaturity = $maturityDate ?: date('Y-m-d', strtotime("+{$lockMonths} months", strtotime($invDate)));
+            // Strict Server-Side Lock Check: Auto-resolve lock months according to package rules if missing
+            if ($lockMonths <= 0 || empty($maturityDate)) {
+                $rules = determinePackageLockingRules($inv['name'] ?? '', $inv['package_code'] ?? '');
+                if ($lockMonths <= 0) {
+                    $lockMonths = $rules['lock_period_months'];
+                }
+                if (empty($maturityDate)) {
+                    $maturityDate = date('Y-m-d', strtotime("+{$lockMonths} months", strtotime($invDate)));
+                }
+            }
+
+            $computedMaturity = $maturityDate;
             if ($cDate < $computedMaturity) {
                 if ($inLocalTxn) $db->rollBack();
                 return [
@@ -3563,7 +3597,7 @@ if (!function_exists('processCapitalWithdrawal')) {
             }
 
             $realFundUsd  = (float)($inv['real_fund_usd'] > 0 ? $inv['real_fund_usd'] : round(((float)$inv['package']) / 90.0, 2));
-            $deductPct    = (float)($inv['deduction_percent_snapshot'] > 0 ? $inv['deduction_percent_snapshot'] : 15.00);
+            $deductPct    = 15.00; // Strictly 15% deduction on capital withdrawal
             $deductAmtUsd = round($realFundUsd * ($deductPct / 100.0), 2);
             $netWdUsd     = round($realFundUsd - $deductAmtUsd, 2);
             $netWdInr     = round($netWdUsd * 90.0, 2);
