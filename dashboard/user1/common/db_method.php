@@ -421,18 +421,21 @@ if (!function_exists('loginUser')) {
 
 function loginUser($userid, $password, $pdo)
 {
-    // Remove first two characters from user ID
-    $userid = substr($userid, 2);
+    // Clean user ID (handle both with and without "AN" prefix)
+    $cleanId = $userid;
+    if (stripos($cleanId, 'AN') === 0) {
+        $cleanId = substr($cleanId, 2);
+    }
 
-    // Optimized query: only fetch required columns, use LIMIT 1
+    // Optimized query: support cleanId and raw userid, active status
     $stmt = $pdo->prepare("
         SELECT userid, pass, status
         FROM user
-        WHERE userid = :userid 
+        WHERE (userid = :clean OR userid = :raw) 
         AND status IN (0, 1)
         LIMIT 1
     ");
-    $stmt->execute(['userid' => $userid]);
+    $stmt->execute([':clean' => $cleanId, ':raw' => $userid]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // Compare passwords (plain-text for now to match old system)
@@ -445,9 +448,9 @@ function loginUser($userid, $password, $pdo)
             $userIp = $_SERVER['REMOTE_ADDR'] ?? 'Unknown IP';
             createUserNotification(
                 $user['userid'],
-                'GENERAL',
-                'New Account Login Alert',
-                "Your account was logged in successfully from IP: {$userIp} at " . date('d M Y, h:i A') . '.',
+                'LOGIN',
+                'Account Login Successful',
+                "Successful login to your account on " . date('d M Y, h:i A') . " from IP: {$userIp}.",
                 null,
                 $pdo
             );
@@ -3502,6 +3505,18 @@ if (!function_exists('processAnantaPackageInvestment')) {
                 generateDirectBonusSchedule($invId, $user_id, $inrAmount, $cDate, $db);
             }
 
+            // Trigger Package Investment Notification
+            if (function_exists('createUserNotification')) {
+                createUserNotification(
+                    $user_id,
+                    'INVESTMENT',
+                    "Package Investment Activated ({$pkg['package_name']})",
+                    "Your investment of $" . number_format($realFundUsd, 2) . " in {$pkg['package_name']} is active. Capital is locked for {$lockMonths} months (Maturity Date: {$maturityDate}).",
+                    $invId,
+                    $db
+                );
+            }
+
             if ($inLocalTxn) {
                 $db->commit();
             }
@@ -3662,6 +3677,18 @@ if (!function_exists('processCapitalWithdrawal')) {
                 ':bonus_rec'  => $bonusAmtUsd
             ]);
 
+            // Trigger Capital Withdrawal Notification
+            if (function_exists('createUserNotification')) {
+                createUserNotification(
+                    $user_id,
+                    'WITHDRAWAL',
+                    'Capital Withdrawal Processed & Paid',
+                    "Your capital withdrawal for Investment #{$investment_id} ({$inv['name']}) of $" . number_format($netWdUsd, 2) . " (after 15% deduction of $" . number_format($deductAmtUsd, 2) . ") has been processed and credited to your Net Balance.",
+                    $investment_id,
+                    $db
+                );
+            }
+
             if ($inLocalTxn) {
                 $db->commit();
             }
@@ -3753,6 +3780,17 @@ if (!function_exists('setTransactionKey')) {
             $hash = password_hash($txnKey, PASSWORD_BCRYPT);
             $stmt = $db->prepare("UPDATE user SET txn_pass = :hash WHERE userid = :uid OR userid = :clean OR userid = :an");
             $stmt->execute([':hash' => $hash, ':uid' => $userid, ':clean' => $cleanUid, ':an' => $anUid]);
+
+            if (function_exists('createUserNotification')) {
+                createUserNotification(
+                    $userid,
+                    'SECURITY',
+                    'Security PIN Updated',
+                    'Your security Transaction Key (PIN) was updated successfully on ' . date('d M Y, h:i A') . '.',
+                    null,
+                    $db
+                );
+            }
 
             return ['status' => 'success', 'message' => 'Transaction Key updated successfully.'];
         } catch (Throwable $e) {
@@ -4397,6 +4435,37 @@ if (!function_exists('processAccountActivation')) {
                 ':cdate'   => $txnDateStr,
                 ':ctime'   => $txnTimeStr
             ]);
+
+            // Trigger Notifications
+            if (function_exists('createUserNotification')) {
+                if ($isSelf) {
+                    createUserNotification(
+                        $activatorId,
+                        'SECURITY',
+                        'Account Access Activated',
+                        "Your account has been successfully unlocked with 4-Year Access until " . date('d M Y', strtotime($expiryDtStr)) . " [Ref: {$txnRef}].",
+                        $txnRef,
+                        $db
+                    );
+                } else {
+                    createUserNotification(
+                        $activatorId,
+                        'SECURITY',
+                        'User Account Activated',
+                        "You successfully activated 4-Year Access for user {$target['name']} ({$targetId}) [Ref: {$txnRef}].",
+                        $txnRef,
+                        $db
+                    );
+                    createUserNotification(
+                        $targetId,
+                        'SECURITY',
+                        'Account Access Activated',
+                        "Your account has been unlocked with 4-Year Access by {$activator['name']} ({$activatorId}) [Ref: {$txnRef}].",
+                        $txnRef,
+                        $db
+                    );
+                }
+            }
 
             if ($inLocalTxn) $db->commit();
 
@@ -5268,7 +5337,7 @@ if (!function_exists('verifyTransactionKeyOTP')) {
 }
 
 /**
- * Requirement #22: User Notification System Helpers
+ * Requirement #22: User Notification System Helpers (Full Real-Time & Multi-Category Support)
  */
 if (!function_exists('createUserNotification')) {
     function createUserNotification($userId, $type, $title, $message, $refId = null, $pdoConnection = null) {
@@ -5277,9 +5346,12 @@ if (!function_exists('createUserNotification')) {
         if (!$db || !$userId || !$title || !$message) return false;
 
         $type = strtoupper(trim($type));
-        $validTypes = ['DEPOSIT', 'WITHDRAWAL', 'P2P', 'KYC', 'ADMIN', 'GENERAL'];
+        $validTypes = ['LOGIN', 'DEPOSIT', 'WITHDRAWAL', 'TRANSFER', 'P2P', 'INVESTMENT', 'PACKAGE', 'KYC', 'SECURITY', 'INCOME', 'ADMIN', 'GENERAL', 'SYSTEM'];
         if (!in_array($type, $validTypes, true)) {
             $type = 'GENERAL';
+        }
+        if ($type === 'PACKAGE') {
+            $type = 'INVESTMENT';
         }
 
         try {
@@ -5288,7 +5360,7 @@ if (!function_exists('createUserNotification')) {
                 VALUES (:uid, :type, :title, :msg, :ref, 0, NOW())
             ");
             return $stmt->execute([
-                ':uid'   => $userId,
+                ':uid'   => (string)$userId,
                 ':type'  => $type,
                 ':title' => $title,
                 ':msg'   => $message,
@@ -5301,10 +5373,17 @@ if (!function_exists('createUserNotification')) {
 }
 
 if (!function_exists('getUserNotifications')) {
-    function getUserNotifications($userId, $limit = 50, $pdoConnection = null) {
+    function getUserNotifications($userId, $limit = 50, $offset = 0, $pdoConnection = null) {
         global $pdo;
+        if ($offset instanceof PDO && $pdoConnection === null) {
+            $pdoConnection = $offset;
+            $offset = 0;
+        }
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userId) return [];
+
+        $cleanUid = (stripos($userId, 'AN') === 0) ? substr($userId, 2) : $userId;
+        $anUid    = (stripos($userId, 'AN') === 0) ? $userId : 'AN' . $userId;
 
         try {
             // Fetch direct user notifications AND global/targeted admin system broadcasts
@@ -5318,7 +5397,7 @@ if (!function_exists('getUserNotifications')) {
                     n.is_read, 
                     n.created_at
                 FROM tbl_user_notifications n
-                WHERE n.user_id = :uid
+                WHERE n.user_id = :uid OR n.user_id = :clean OR n.user_id = :an
 
                 UNION ALL
 
@@ -5328,19 +5407,24 @@ if (!function_exists('getUserNotifications')) {
                     s.title, 
                     s.message, 
                     s.id as ref_id, 
-                    0 as is_read, 
+                    s.is_read as is_read, 
                     s.created_at
                 FROM tbl_system_notifications s
-                WHERE s.target_type = 'GLOBAL' OR (s.target_type = 'USER' AND s.target_user_id = :uid_target)
+                WHERE s.target_type = 'GLOBAL' OR (s.target_type = 'USER' AND (s.target_user_id = :uid_target OR s.target_user_id = :clean_target OR s.target_user_id = :an_target))
 
                 ORDER BY created_at DESC
-                LIMIT :lim
+                LIMIT :lim OFFSET :off
             ";
 
             $stmt = $db->prepare($sql);
-            $stmt->bindValue(':uid', $userId, PDO::PARAM_STR);
-            $stmt->bindValue(':uid_target', $userId, PDO::PARAM_STR);
+            $stmt->bindValue(':uid', (string)$userId, PDO::PARAM_STR);
+            $stmt->bindValue(':clean', (string)$cleanUid, PDO::PARAM_STR);
+            $stmt->bindValue(':an', (string)$anUid, PDO::PARAM_STR);
+            $stmt->bindValue(':uid_target', (string)$userId, PDO::PARAM_STR);
+            $stmt->bindValue(':clean_target', (string)$cleanUid, PDO::PARAM_STR);
+            $stmt->bindValue(':an_target', (string)$anUid, PDO::PARAM_STR);
             $stmt->bindValue(':lim', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':off', (int)$offset, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
@@ -5355,10 +5439,19 @@ if (!function_exists('getUnreadNotificationCount')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userId) return 0;
 
+        $cleanUid = (stripos($userId, 'AN') === 0) ? substr($userId, 2) : $userId;
+        $anUid    = (stripos($userId, 'AN') === 0) ? $userId : 'AN' . $userId;
+
         try {
-            $stmt = $db->prepare("SELECT COUNT(*) FROM tbl_user_notifications WHERE user_id = :uid AND is_read = 0");
-            $stmt->execute([':uid' => $userId]);
-            return (int)$stmt->fetchColumn();
+            $stmt1 = $db->prepare("SELECT COUNT(*) FROM tbl_user_notifications WHERE (user_id = :uid OR user_id = :clean OR user_id = :an) AND is_read = 0");
+            $stmt1->execute([':uid' => (string)$userId, ':clean' => (string)$cleanUid, ':an' => (string)$anUid]);
+            $cntUser = (int)$stmt1->fetchColumn();
+
+            $stmt2 = $db->prepare("SELECT COUNT(*) FROM tbl_system_notifications WHERE (target_type = 'GLOBAL' OR target_user_id = :uid OR target_user_id = :clean OR target_user_id = :an) AND is_read = 0");
+            $stmt2->execute([':uid' => (string)$userId, ':clean' => (string)$cleanUid, ':an' => (string)$anUid]);
+            $cntSys = (int)$stmt2->fetchColumn();
+
+            return ($cntUser + $cntSys);
         } catch (Exception $e) {
             return 0;
         }
@@ -5368,13 +5461,29 @@ if (!function_exists('getUnreadNotificationCount')) {
 if (!function_exists('markNotificationAsRead')) {
     function markNotificationAsRead($userId, $notificationId, $pdoConnection = null) {
         global $pdo;
+        // Swap tolerance if caller swapped arguments:
+        if (is_numeric($userId) && !is_numeric($notificationId)) {
+            $temp = $userId;
+            $userId = $notificationId;
+            $notificationId = $temp;
+        }
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userId || !$notificationId) return false;
 
+        $notifId = (int)$notificationId;
+        $cleanUid = (stripos($userId, 'AN') === 0) ? substr($userId, 2) : $userId;
+        $anUid    = (stripos($userId, 'AN') === 0) ? $userId : 'AN' . $userId;
+
         try {
-            $stmt = $db->prepare("UPDATE tbl_user_notifications SET is_read = 1 WHERE id = :nid AND user_id = :uid");
-            $stmt->execute([':nid' => $notificationId, ':uid' => $userId]);
-            return ($stmt->rowCount() > 0);
+            if ($notifId >= 1000000) {
+                $sysId = $notifId - 1000000;
+                $stmt = $db->prepare("UPDATE tbl_system_notifications SET is_read = 1 WHERE id = :nid");
+                return $stmt->execute([':nid' => $sysId]);
+            } else {
+                $stmt = $db->prepare("UPDATE tbl_user_notifications SET is_read = 1 WHERE id = :nid AND (user_id = :uid OR user_id = :clean OR user_id = :an)");
+                $stmt->execute([':nid' => $notifId, ':uid' => (string)$userId, ':clean' => (string)$cleanUid, ':an' => (string)$anUid]);
+                return ($stmt->rowCount() > 0);
+            }
         } catch (Exception $e) {
             return false;
         }
@@ -5387,9 +5496,17 @@ if (!function_exists('markAllNotificationsAsRead')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userId) return false;
 
+        $cleanUid = (stripos($userId, 'AN') === 0) ? substr($userId, 2) : $userId;
+        $anUid    = (stripos($userId, 'AN') === 0) ? $userId : 'AN' . $userId;
+
         try {
-            $stmt = $db->prepare("UPDATE tbl_user_notifications SET is_read = 1 WHERE user_id = :uid AND is_read = 0");
-            return $stmt->execute([':uid' => $userId]);
+            $stmt1 = $db->prepare("UPDATE tbl_user_notifications SET is_read = 1 WHERE (user_id = :uid OR user_id = :clean OR user_id = :an) AND is_read = 0");
+            $stmt1->execute([':uid' => (string)$userId, ':clean' => (string)$cleanUid, ':an' => (string)$anUid]);
+
+            $stmt2 = $db->prepare("UPDATE tbl_system_notifications SET is_read = 1 WHERE (target_type = 'GLOBAL' OR target_user_id = :uid OR target_user_id = :clean OR target_user_id = :an) AND is_read = 0");
+            $stmt2->execute([':uid' => (string)$userId, ':clean' => (string)$cleanUid, ':an' => (string)$anUid]);
+
+            return true;
         } catch (Exception $e) {
             return false;
         }

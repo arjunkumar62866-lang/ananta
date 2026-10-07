@@ -250,7 +250,7 @@ if ($activeInvVal <= 0) {
 $totalWdVal = (float)($row['total_withdrawal'] ?? 0.00);
 if ($totalWdVal <= 0) {
     try {
-        $stmtWd = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Withdraw%' OR type = 'Withdrawal Request')");
+        $stmtWd = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Withdraw%' OR type = 'Withdrawal Request') AND status != 2 AND subject NOT LIKE 'Admin Adjustment%'");
         $stmtWd->execute([':uid' => $targetUserId]);
         $totalWdVal = (float)$stmtWd->fetchColumn();
     } catch (Exception $e) {}

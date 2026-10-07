@@ -40,6 +40,17 @@ if (isset($_POST['submit'])) {
         ':userid'  => $userid
     ]);
 
+    if (function_exists('createUserNotification')) {
+        createUserNotification(
+            $userid,
+            'SECURITY',
+            'Password Changed Successfully',
+            'Your account password was updated on ' . date('d M Y, h:i A') . '. If this was not you, please contact support immediately.',
+            null,
+            $pdo
+        );
+    }
+
     echo "<script>alert('Password changed successfully');window.location.assign('update-password.php');</script>";
     exit;
 }

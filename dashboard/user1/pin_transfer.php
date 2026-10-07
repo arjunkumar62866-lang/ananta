@@ -48,6 +48,25 @@ if (isset($_POST['submit'])) {
                     ':date'             => $date
                 ]);
 
+                if (function_exists('createUserNotification')) {
+                    createUserNotification(
+                        $userid,
+                        'TRANSFER',
+                        'Pin Transfer Sent',
+                        "You transferred {$total_pin} pins to {$name} ({$sponser}).",
+                        null,
+                        $pdo
+                    );
+                    createUserNotification(
+                        $sponser,
+                        'TRANSFER',
+                        'Pin Transfer Received',
+                        "You received {$total_pin} pins from {$username} ({$userid}).",
+                        null,
+                        $pdo
+                    );
+                }
+
                 echo "<script>alert('Pin transferred successfully');window.location.assign('pin_transfer.php');</script>";
             } else {
                 echo "<script>alert('Something went wrong');window.location.assign('pin_transfer.php');</script>";

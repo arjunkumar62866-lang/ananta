@@ -2926,6 +2926,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
         $isMainWallet       = in_array($wallet_column, ['deposite_wallet', 'pin_wallet']);
         $isNetBalance       = in_array($wallet_column, ['amount', 'net_balance']);
         $isActiveInvestment = ($wallet_column === 'active_investment');
+        $isTotalWithdrawal  = ($wallet_column === 'total_withdrawal');
 
         if ($isMainWallet) {
             // Main Wallet operates ONLY on deposite_wallet & pin_wallet (isolated from Net Balance)
@@ -3150,6 +3151,96 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                 ]);
             }
 
+        } elseif ($isTotalWithdrawal) {
+            // All Withdrawal operates on user.total_withdrawal and tbl_transaction
+            $stmtUser = $db->prepare("SELECT userid, name, total_withdrawal FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
+            $stmtUser->execute([
+                ':userid'   => $target_user_id,
+                ':clean'    => $cleanUid,
+                ':prefixed' => $prefixedUid
+            ]);
+            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userRow) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Target user {$target_user_id} not found."];
+            }
+
+            $target_user_id = $userRow['userid'];
+
+            // Query current withdrawal balance: check user.total_withdrawal, or fallback to tbl_transaction matching user_profile.php
+            $prevBalUSD = (float)($userRow['total_withdrawal'] ?? 0.00);
+            if ($prevBalUSD <= 0.00) {
+                $stmtWd = $db->prepare("
+                    SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) 
+                    FROM tbl_transaction 
+                    WHERE (user_id = :uid OR user_id = :clean OR user_id = :an) 
+                      AND (subject LIKE '%Withdraw%' OR type = 'Withdrawal Request')
+                      AND subject NOT LIKE 'Admin Adjustment%'
+                ");
+                $stmtWd->execute([':uid' => $target_user_id, ':clean' => $cleanUid, ':an' => $prefixedUid]);
+                $prevBalUSD = (float)$stmtWd->fetchColumn();
+            }
+            $prevBalUSD = round($prevBalUSD, 2);
+
+            if ($adjType === 'DEBIT') {
+                if ($prevBalUSD < $amountInUSD) {
+                    if ($inLocalTxn) $db->rollBack();
+                    $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalUSD * $rate, 2)) : ('$' . number_format($prevBalUSD, 2));
+                    return [
+                        'status'  => 'error',
+                        'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
+                    ];
+                }
+
+                $newBalUSD = round(max(0, $prevBalUSD - $amountInUSD), 2);
+
+                // Update user.total_withdrawal
+                $updUser = $db->prepare("UPDATE user SET total_withdrawal = :new_bal WHERE userid = :userid");
+                $updUser->execute([
+                    ':new_bal' => $newBalUSD,
+                    ':userid'  => $target_user_id
+                ]);
+
+                // Clear/reduce the underlying withdrawal transactions in tbl_transaction so dynamic recalculation matches $newBalUSD
+                $remToDebit = $amountInUSD;
+                $stmtTxns = $db->prepare("
+                    SELECT id, amount 
+                    FROM tbl_transaction 
+                    WHERE (user_id = :uid OR user_id = :clean OR user_id = :an) 
+                      AND (subject LIKE '%Withdraw%' OR type = 'Withdrawal Request')
+                      AND subject NOT LIKE 'Admin Adjustment%'
+                      AND status != 2
+                    ORDER BY id DESC 
+                    FOR UPDATE
+                ");
+                $stmtTxns->execute([':uid' => $target_user_id, ':clean' => $cleanUid, ':an' => $prefixedUid]);
+                $wdRows = $stmtTxns->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($wdRows as $wRow) {
+                    if ($remToDebit <= 0) break;
+                    $wId  = (int)$wRow['id'];
+                    $wAmt = (float)$wRow['amount'];
+                    if ($wAmt <= ($remToDebit + 0.0001)) {
+                        $db->prepare("UPDATE tbl_transaction SET status = 2, a_status = 2 WHERE id = :id")->execute([':id' => $wId]);
+                        $remToDebit = round(max(0, $remToDebit - $wAmt), 2);
+                    } else {
+                        $newWAmt = round($wAmt - $remToDebit, 2);
+                        $db->prepare("UPDATE tbl_transaction SET amount = :amt WHERE id = :id")->execute([':amt' => $newWAmt, ':id' => $wId]);
+                        $remToDebit = 0.00;
+                    }
+                }
+
+            } else {
+                // CREDIT
+                $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
+                $updUser = $db->prepare("UPDATE user SET total_withdrawal = :new_bal WHERE userid = :userid");
+                $updUser->execute([
+                    ':new_bal' => $newBalUSD,
+                    ':userid'  => $target_user_id
+                ]);
+            }
+
         } else {
             $stmtUser = $db->prepare("SELECT userid, `{$wallet_column}` FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
             $stmtUser->execute([
@@ -3167,6 +3258,50 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             $target_user_id = $userRow['userid'];
             $prevBalUSD = (float)($userRow[$wallet_column] ?? 0.00);
 
+            // Fallback for income wallets if user column is 0.00 but history has accumulated payouts
+            if ($prevBalUSD <= 0.00) {
+                if ($wallet_column === 'profit_income_wallet') {
+                    $stmtPI = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid");
+                    $stmtPI->execute([':uid' => $target_user_id]);
+                    $prevBalUSD = (float)$stmtPI->fetchColumn();
+                } elseif ($wallet_column === 'profit_sharing_wallet') {
+                    $stmtPS = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id = :uid");
+                    $stmtPS->execute([':uid' => $target_user_id]);
+                    $prevBalUSD = (float)$stmtPS->fetchColumn();
+                } elseif ($wallet_column === 'direct_bonus_wallet') {
+                    $stmtDB = $db->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
+                    $stmtDB->execute([':uid' => $target_user_id]);
+                    $dbVal = (float)$stmtDB->fetchColumn();
+                    if ($dbVal <= 0) {
+                        $stmtRoi2 = $db->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_two WHERE user_id = :uid");
+                        $stmtRoi2->execute([':uid' => $target_user_id]);
+                        $dbVal = (float)$stmtRoi2->fetchColumn();
+                    }
+                    $prevBalUSD = $dbVal;
+                } elseif ($wallet_column === 'mentor_income_wallet') {
+                    $stmtMI = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE mentor_id = :uid AND status = 'CREDITED'");
+                    $stmtMI->execute([':uid' => $target_user_id]);
+                    $prevBalUSD = (float)$stmtMI->fetchColumn();
+                } elseif ($wallet_column === 'rank_reward_wallet') {
+                    $stmtRR = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid");
+                    $stmtRR->execute([':uid' => $target_user_id]);
+                    $prevBalUSD = (float)$stmtRR->fetchColumn();
+                } elseif ($wallet_column === 'vip_club_wallet') {
+                    $stmtVip1 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
+                    $stmtVip1->execute([':uid' => $target_user_id]);
+                    $v1 = (float)$stmtVip1->fetchColumn();
+                    $stmtVip2 = $db->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
+                    $stmtVip2->execute([':uid' => $target_user_id]);
+                    $v2 = (float)$stmtVip2->fetchColumn();
+                    $prevBalUSD = round($v1 + $v2, 2);
+                } elseif ($wallet_column === 'company_turnover_wallet') {
+                    $stmtCT = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Turnover%' OR subject LIKE '%Leadership%')");
+                    $stmtCT->execute([':uid' => $target_user_id]);
+                    $prevBalUSD = (float)$stmtCT->fetchColumn();
+                }
+                $prevBalUSD = round($prevBalUSD, 2);
+            }
+
             if ($adjType === 'DEBIT') {
                 if ($prevBalUSD < $amountInUSD) {
                     if ($inLocalTxn) $db->rollBack();
@@ -3177,13 +3312,13 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                     ];
                 }
                 $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
-                $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = GREATEST(0, `{$wallet_column}` - :amt) WHERE userid = :userid");
+                $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = :new_bal WHERE userid = :userid");
+                $updStmt->execute([':new_bal' => $newBalUSD, ':userid' => $target_user_id]);
             } else {
                 $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
-                $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = `{$wallet_column}` + :amt WHERE userid = :userid");
+                $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = :new_bal WHERE userid = :userid");
+                $updStmt->execute([':new_bal' => $newBalUSD, ':userid' => $target_user_id]);
             }
-
-            $updStmt->execute([':amt' => $amountInUSD, ':userid' => $target_user_id]);
         }
 
         $txnType = ($adjType === 'CREDIT') ? 'Credit' : 'Debit';
@@ -4970,5 +5105,38 @@ if (!function_exists('getUserWalletBalance')) {
             ':prefixed' => $prefixedUid
         ]);
         return round((float)($stmt->fetchColumn() ?: 0), 2);
+    }
+}
+
+if (!function_exists('createUserNotification')) {
+    function createUserNotification($userId, $type, $title, $message, $refId = null, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userId || !$title || !$message) return false;
+
+        $type = strtoupper(trim($type));
+        $validTypes = ['LOGIN', 'DEPOSIT', 'WITHDRAWAL', 'TRANSFER', 'P2P', 'INVESTMENT', 'PACKAGE', 'KYC', 'SECURITY', 'INCOME', 'ADMIN', 'GENERAL', 'SYSTEM'];
+        if (!in_array($type, $validTypes, true)) {
+            $type = 'GENERAL';
+        }
+        if ($type === 'PACKAGE') {
+            $type = 'INVESTMENT';
+        }
+
+        try {
+            $stmt = $db->prepare("
+                INSERT INTO tbl_user_notifications (user_id, type, title, message, ref_id, is_read, created_at)
+                VALUES (:uid, :type, :title, :msg, :ref, 0, NOW())
+            ");
+            return $stmt->execute([
+                ':uid'   => (string)$userId,
+                ':type'  => $type,
+                ':title' => $title,
+                ':msg'   => $message,
+                ':ref'   => $refId
+            ]);
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }

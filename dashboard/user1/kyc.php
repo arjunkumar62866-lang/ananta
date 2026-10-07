@@ -225,6 +225,17 @@ if (isset($_POST['update'])) {
                 ':userid' => $userid
             ]);
 
+            if (function_exists('createUserNotification')) {
+                createUserNotification(
+                    $userid,
+                    'KYC',
+                    'KYC Documents Submitted',
+                    'Your Bank KYC details and identity documents have been submitted successfully and are currently pending admin review.',
+                    null,
+                    $pdo
+                );
+            }
+
             echo "<script>alert('KYC updated successfully!'); window.location.href = 'kyc.php';</script>";
             exit();
         }

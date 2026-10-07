@@ -139,6 +139,9 @@ $unreadCount = getUnreadNotificationCount($userid, $pdo);
 .icon-p2p { background: #e0e7ff; color: #4338ca; }
 .icon-kyc { background: #fef3c7; color: #b45309; }
 .icon-admin { background: #f3e8ff; color: #7e22ce; }
+.icon-login { background: #e0f2fe; color: #0284c7; }
+.icon-investment { background: #fae8ff; color: #a21caf; }
+.icon-security { background: #ffedd5; color: #c2410c; }
 .icon-default { background: #f1f5f9; color: #475569; }
 
 .notif-body {
@@ -254,7 +257,7 @@ $unreadCount = getUnreadNotificationCount($userid, $pdo);
                                     </span>
                                 <?php endif; ?>
                             </h3>
-                            <p class="mb-0 small" style="color: #475569 !important; font-weight: 600;">View and manage all system updates, transaction alerts, and activity notifications.</p>
+                            <p class="mb-0 small" style="color: #475569 !important; font-weight: 600;">View and manage real-time updates, login alerts, transfers, withdrawals, and account security notifications.</p>
                         </div>
 
                         <?php if ($unreadCount > 0): ?>
@@ -271,10 +274,13 @@ $unreadCount = getUnreadNotificationCount($userid, $pdo);
                     <div class="notif-tabs mb-4">
                         <a href="notifications.php" class="notif-tab <?php echo (empty($filterType) && !$unreadOnly) ? 'active' : ''; ?>">All</a>
                         <a href="notifications.php?unread=1" class="notif-tab <?php echo $unreadOnly ? 'active' : ''; ?>">Unread (<?php echo $unreadCount; ?>)</a>
-                        <a href="notifications.php?type=DEPOSIT" class="notif-tab <?php echo $filterType === 'DEPOSIT' ? 'active' : ''; ?>">Deposit</a>
+                        <a href="notifications.php?type=LOGIN" class="notif-tab <?php echo $filterType === 'LOGIN' ? 'active' : ''; ?>">Login</a>
                         <a href="notifications.php?type=WITHDRAWAL" class="notif-tab <?php echo $filterType === 'WITHDRAWAL' ? 'active' : ''; ?>">Withdrawal</a>
-                        <a href="notifications.php?type=P2P" class="notif-tab <?php echo $filterType === 'P2P' ? 'active' : ''; ?>">P2P</a>
+                        <a href="notifications.php?type=P2P" class="notif-tab <?php echo ($filterType === 'P2P' || $filterType === 'TRANSFER') ? 'active' : ''; ?>">Transfer & P2P</a>
+                        <a href="notifications.php?type=DEPOSIT" class="notif-tab <?php echo $filterType === 'DEPOSIT' ? 'active' : ''; ?>">Deposit</a>
+                        <a href="notifications.php?type=INVESTMENT" class="notif-tab <?php echo ($filterType === 'INVESTMENT' || $filterType === 'PACKAGE') ? 'active' : ''; ?>">Investment</a>
                         <a href="notifications.php?type=KYC" class="notif-tab <?php echo $filterType === 'KYC' ? 'active' : ''; ?>">KYC</a>
+                        <a href="notifications.php?type=SECURITY" class="notif-tab <?php echo $filterType === 'SECURITY' ? 'active' : ''; ?>">Security</a>
                         <a href="notifications.php?type=ADMIN" class="notif-tab <?php echo $filterType === 'ADMIN' ? 'active' : ''; ?>">Admin</a>
                     </div>
 
@@ -291,6 +297,10 @@ $unreadCount = getUnreadNotificationCount($userid, $pdo);
                             $typeClass = 'icon-default';
                             $icon = 'zmdi-info-outline';
                             switch (strtoupper($n['type'])) {
+                                case 'LOGIN':
+                                    $typeClass = 'icon-login';
+                                    $icon = 'zmdi-sign-in';
+                                    break;
                                 case 'DEPOSIT':
                                     $typeClass = 'icon-deposit';
                                     $icon = 'zmdi-balance-wallet';
@@ -300,14 +310,25 @@ $unreadCount = getUnreadNotificationCount($userid, $pdo);
                                     $icon = 'zmdi-money-off';
                                     break;
                                 case 'P2P':
+                                case 'TRANSFER':
                                     $typeClass = 'icon-p2p';
                                     $icon = 'zmdi-swap-vertical';
+                                    break;
+                                case 'INVESTMENT':
+                                case 'PACKAGE':
+                                    $typeClass = 'icon-investment';
+                                    $icon = 'zmdi-trending-up';
                                     break;
                                 case 'KYC':
                                     $typeClass = 'icon-kyc';
                                     $icon = 'zmdi-shield-check';
                                     break;
+                                case 'SECURITY':
+                                    $typeClass = 'icon-security';
+                                    $icon = 'zmdi-lock';
+                                    break;
                                 case 'ADMIN':
+                                case 'SYSTEM':
                                     $typeClass = 'icon-admin';
                                     $icon = 'zmdi-speaker';
                                     break;

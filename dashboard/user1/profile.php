@@ -93,6 +93,16 @@ if (isset($_POST['submit'])) {
     ]);
 
     if ($updated) {
+        if (function_exists('createUserNotification')) {
+            createUserNotification(
+                $userid,
+                'SECURITY',
+                'Profile Details Updated',
+                'Your profile details were updated on ' . date('d M Y, h:i A') . '.',
+                null,
+                $pdo
+            );
+        }
 
         echo '<script>
             alert("Profile Updated Successfully");

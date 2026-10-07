@@ -850,17 +850,30 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
 
             <!-- =============================================
-                 NOTIFICATION BELL ICON (DESKTOP & MOBILE)
+                 NOTIFICATION BELL ICON & DROPDOWN (REAL-TIME)
             ============================================== -->
-            <div class="ananta-notification-header-item mr-2" style="position: relative; display: inline-flex; align-items: center;">
-                <a href="notifications.php" class="ananta-notif-btn" aria-label="Notifications" title="View Notifications" style="position: relative; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 50%; color: #0f172a; text-decoration: none; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); transition: all 0.2s ease;">
-                    <i class="zmdi zmdi-notifications" style="font-size: 19px; color: #0f172a;"></i>
-                    <?php if (!empty($unreadNotificationCount) && $unreadNotificationCount > 0): ?>
-                        <span class="badge badge-pill" style="position: absolute; top: -4px; right: -4px; font-size: 9.5px; font-weight: 800; padding: 2px 5px; background: #ef4444; color: #ffffff; border: 2px solid #ffffff; border-radius: 100px; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);">
-                            <?php echo ($unreadNotificationCount > 99) ? '99+' : $unreadNotificationCount; ?>
-                        </span>
-                    <?php endif; ?>
+            <div class="ananta-notification-header-item dropdown mr-2" style="position: relative; display: inline-flex; align-items: center;">
+                <a href="#" class="ananta-notif-btn dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" aria-expanded="false" aria-label="Notifications" title="View Notifications" style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 50%; color: #0f172a; text-decoration: none; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); transition: all 0.2s ease;">
+                    <i class="zmdi zmdi-notifications" style="font-size: 20px; color: #0f172a;"></i>
+                    <span class="ananta-notif-badge badge badge-pill" style="position: absolute; top: -4px; right: -4px; font-size: 9.5px; font-weight: 800; padding: 2px 5px; background: #ef4444; color: #ffffff; border: 2px solid #ffffff; border-radius: 100px; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4); display: <?php echo (!empty($unreadNotificationCount) && $unreadNotificationCount > 0) ? 'inline-block' : 'none'; ?>;">
+                        <?php echo ($unreadNotificationCount > 99) ? '99+' : ($unreadNotificationCount ?? 0); ?>
+                    </span>
                 </a>
+
+                <div class="dropdown-menu dropdown-menu-right ananta-notif-dropdown p-0 shadow-lg border-0" style="width: 320px; border-radius: 16px; overflow: hidden; background: #ffffff; margin-top: 8px;">
+                    <div class="p-3 d-flex align-items-center justify-content-between text-white" style="background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);">
+                        <h6 class="mb-0 font-weight-bold" style="font-size: 14px; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+                            <i class="zmdi zmdi-notifications-active"></i> Notifications
+                        </h6>
+                        <button type="button" class="btn btn-sm text-white p-0 mark-all-notif-btn font-weight-bold" style="font-size: 11px; text-decoration: underline; background: none; border: none; cursor: pointer;">Mark all read</button>
+                    </div>
+                    <div class="ananta-notif-list" style="max-height: 280px; overflow-y: auto;">
+                        <div class="p-3 text-center text-muted small">Loading updates...</div>
+                    </div>
+                    <div class="p-2 text-center bg-light border-top">
+                        <a href="notifications.php" class="font-weight-bold text-primary small" style="text-decoration: none;">View All Notifications &rarr;</a>
+                    </div>
+                </div>
             </div>
 
             <!-- =============================================
@@ -2100,6 +2113,151 @@ document.addEventListener("DOMContentLoaded", function () {
     font-weight: 600 !important;
 }
 </style>
+
+<!-- Floating Toast Notification Container -->
+<div id="anantaNotifToastContainer" style="position: fixed; top: 85px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let lastUnreadCount = -1;
+    let seenNotifIds = new Set();
+
+    function fetchRealTimeNotifications() {
+        fetch('ajax_notifications.php?action=get_latest&limit=5')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const unreadCount = data.unread_count || 0;
+                    const badges = document.querySelectorAll('.ananta-notif-badge');
+                    
+                    badges.forEach(b => {
+                        if (unreadCount > 0) {
+                            b.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                            b.style.display = 'inline-block';
+                        } else {
+                            b.style.display = 'none';
+                        }
+                    });
+
+                    // Render Dropdown List
+                    const listContainer = document.querySelector('.ananta-notif-list');
+                    if (listContainer && data.notifications) {
+                        if (data.notifications.length === 0) {
+                            listContainer.innerHTML = '<div class="p-3 text-center text-muted small"><i class="zmdi zmdi-notifications-off mr-1"></i> No recent notifications</div>';
+                        } else {
+                            let html = '';
+                            data.notifications.forEach(n => {
+                                const isUnread = parseInt(n.is_read) === 0;
+                                let icon = 'zmdi-info-outline';
+                                let iconBg = '#f1f5f9';
+                                let iconColor = '#475569';
+
+                                switch (String(n.type).toUpperCase()) {
+                                    case 'LOGIN': icon = 'zmdi-sign-in'; iconBg = '#e0f2fe'; iconColor = '#0284c7'; break;
+                                    case 'DEPOSIT': icon = 'zmdi-balance-wallet'; iconBg = '#dcfce7'; iconColor = '#15803d'; break;
+                                    case 'WITHDRAWAL': icon = 'zmdi-money-off'; iconBg = '#fee2e2'; iconColor = '#b91c1c'; break;
+                                    case 'P2P':
+                                    case 'TRANSFER': icon = 'zmdi-swap-vertical'; iconBg = '#e0e7ff'; iconColor = '#4338ca'; break;
+                                    case 'INVESTMENT': icon = 'zmdi-trending-up'; iconBg = '#f3e8ff'; iconColor = '#7e22ce'; break;
+                                    case 'KYC': icon = 'zmdi-shield-check'; iconBg = '#fef3c7'; iconColor = '#b45309'; break;
+                                    case 'SECURITY': icon = 'zmdi-lock'; iconBg = '#ffedd5'; iconColor = '#c2410c'; break;
+                                    case 'ADMIN': icon = 'zmdi-speaker'; iconBg = '#fae8ff'; iconColor = '#a21caf'; break;
+                                }
+
+                                html += `
+                                    <div class="p-2.5 border-bottom d-flex align-items-start gap-2 ${isUnread ? 'bg-light' : ''}" style="padding: 10px 12px; transition: background 0.2s;">
+                                        <div style="width: 32px; height: 32px; border-radius: 8px; background: ${iconBg}; color: ${iconColor}; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-top: 2px;">
+                                            <i class="zmdi ${icon}"></i>
+                                        </div>
+                                        <div style="flex-grow: 1; min-width: 0;">
+                                            <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                                <strong style="font-size: 12px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">${escapeHtml(n.title)}</strong>
+                                                <span style="font-size: 10px; color: #64748b; font-weight: 600;">${n.formatted_time || ''}</span>
+                                            </div>
+                                            <p style="font-size: 11.5px; color: #475569; margin: 0; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(n.message)}</p>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            listContainer.innerHTML = html;
+                        }
+                    }
+
+                    // Check for new unread notifications to trigger Toast Alert
+                    if (lastUnreadCount !== -1 && unreadCount > lastUnreadCount) {
+                        data.notifications.forEach(n => {
+                            if (parseInt(n.is_read) === 0 && !seenNotifIds.has(n.id)) {
+                                showToastAlert(n);
+                                seenNotifIds.add(n.id);
+                            }
+                        });
+                    }
+
+                    // Initialize seen IDs on first load
+                    if (lastUnreadCount === -1 && data.notifications) {
+                        data.notifications.forEach(n => seenNotifIds.add(n.id));
+                    }
+
+                    lastUnreadCount = unreadCount;
+                }
+            })
+            .catch(err => console.error('Notification poll error:', err));
+    }
+
+    function showToastAlert(n) {
+        const container = document.getElementById('anantaNotifToastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.style.cssText = 'pointer-events: auto; background: #ffffff; border-left: 5px solid #0284c7; border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18); min-width: 280px; max-width: 320px; transition: all 0.3s ease; transform: translateY(-20px); opacity: 0;';
+        
+        toast.innerHTML = `
+            <div class="d-flex align-items-start justify-content-between mb-1">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="zmdi zmdi-notifications-active text-primary" style="font-size: 16px;"></i>
+                    <strong style="font-size: 13px; color: #0f172a;">${escapeHtml(n.title)}</strong>
+                </div>
+                <button type="button" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 0;" onclick="this.parentElement.parentElement.remove()">&times;</button>
+            </div>
+            <p style="font-size: 12px; color: #334155; margin: 0 0 6px 0; line-height: 1.4;">${escapeHtml(n.message)}</p>
+            <div style="font-size: 10px; color: #64748b; font-weight: 600;">Just Now &bull; <a href="notifications.php" style="color: #0284c7; text-decoration: none;">View</a></div>
+        `;
+
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.transform = 'translateY(0)'; toast.style.opacity = '1'; }, 50);
+
+        // Auto remove toast after 6 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 6000);
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // Mark all as read click handler
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('mark-all-notif-btn')) {
+            e.preventDefault();
+            fetch('ajax_notifications.php?action=mark_all_read', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        fetchRealTimeNotifications();
+                    }
+                });
+        }
+    });
+
+    // Initial fetch & set poll interval every 15 seconds
+    fetchRealTimeNotifications();
+    setInterval(fetchRealTimeNotifications, 15000);
+});
+</script>
 
 <!-- =========================================================
      END ANANTA TOPBAR
