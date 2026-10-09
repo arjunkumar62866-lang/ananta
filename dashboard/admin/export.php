@@ -72,8 +72,18 @@ switch ($module) {
         break;
 
     case 'users':
-        $query = "SELECT userid, name, email, mobile, sponserid, active, status, joining_date, amount, profit_income_wallet, profit_sharing_wallet, direct_bonus_wallet, mentor_income_wallet, vip_club_wallet FROM user ORDER BY id DESC LIMIT 10000";
-        $stmt = $pdo->query($query);
+        $from_date = trim($_GET['from_date'] ?? '');
+        $to_date   = trim($_GET['to_date'] ?? '');
+        $query = "SELECT userid, name, email, mobile, sponserid, active, status, joining_date, amount, profit_income_wallet, profit_sharing_wallet, direct_bonus_wallet, mentor_income_wallet, vip_club_wallet FROM user WHERE 1=1";
+        $params = [];
+        if (!empty($from_date) && !empty($to_date)) {
+            $query .= " AND DATE(joining_date) BETWEEN :from_date AND :to_date";
+            $params[':from_date'] = $from_date;
+            $params[':to_date']   = $to_date;
+        }
+        $query .= " ORDER BY id DESC LIMIT 10000";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if ($format === 'csv' || $format === 'excel') {
@@ -94,8 +104,18 @@ switch ($module) {
         break;
 
     case 'withdrawals':
-        $query = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.type, t.status, t.created_date, t.time FROM tbl_transaction t LEFT JOIN user u ON t.user_id = u.userid WHERE t.subject LIKE '%Withdraw%' ORDER BY t.id DESC LIMIT 5000";
-        $stmt = $pdo->query($query);
+        $from_date = trim($_GET['from_date'] ?? '');
+        $to_date   = trim($_GET['to_date'] ?? '');
+        $query = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.type, t.status, t.created_date, t.time FROM tbl_transaction t LEFT JOIN user u ON t.user_id = u.userid WHERE t.subject LIKE '%Withdraw%'";
+        $params = [];
+        if (!empty($from_date) && !empty($to_date)) {
+            $query .= " AND DATE(t.created_date) BETWEEN :from_date AND :to_date";
+            $params[':from_date'] = $from_date;
+            $params[':to_date']   = $to_date;
+        }
+        $query .= " ORDER BY t.id DESC LIMIT 5000";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if ($format === 'csv' || $format === 'excel') {

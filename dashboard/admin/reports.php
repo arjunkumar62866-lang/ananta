@@ -6,8 +6,29 @@ include __DIR__ . '/common/header.php';
 
 $type        = strtolower(trim($_GET['type'] ?? 'daily'));
 $user_search = trim($_GET['user_search'] ?? '');
-$from_date   = trim($_GET['from_date'] ?? date('Y-m-01'));
-$to_date     = trim($_GET['to_date'] ?? date('Y-m-d'));
+
+$cToday = date('Y-m-d');
+$cMonthStart = date('Y-m-01');
+
+// Default date range: today for daily/investment/withdrawal/income/business/company, start of month for monthly
+if (isset($_GET['from_date']) && !empty($_GET['from_date'])) {
+    $from_date = trim($_GET['from_date']);
+} else {
+    $from_date = ($type === 'monthly' || $type === 'yearly') ? $cMonthStart : $cToday;
+}
+
+if (isset($_GET['to_date']) && !empty($_GET['to_date'])) {
+    $to_date = trim($_GET['to_date']);
+} else {
+    $to_date = $cToday;
+}
+
+$dateError = '';
+if ($from_date > $to_date) {
+    $dateError = 'From Date cannot be later than To Date. Showing records for today.';
+    $from_date = $cToday;
+    $to_date   = $cToday;
+}
 
 // Search parameter string for user query filtering
 $uSearchParam = '%' . $user_search . '%';
@@ -306,15 +327,24 @@ label.form-label-custom {
           <p class="mb-0 text-white-50 small">Filter financial records by date range, user ID/name, and export official CSV or PDF reports.</p>
         </div>
         <div>
-          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':'audit'); ?>&format=csv" class="btn btn-light font-weight-bold px-3 py-2 mr-2" style="border-radius: 10px;">
+          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':'audit'); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=csv" class="btn btn-light font-weight-bold px-3 py-2 mr-2" style="border-radius: 10px;">
             <i class="fa fa-file-excel-o text-success mr-1"></i> Export CSV / Excel
           </a>
-          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':'audit'); ?>&format=pdf" class="btn btn-outline-light font-weight-bold px-3 py-2" style="border-radius: 10px;" target="_blank">
+          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':'audit'); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=pdf" class="btn btn-outline-light font-weight-bold px-3 py-2" style="border-radius: 10px;" target="_blank">
             <i class="fa fa-file-pdf-o text-danger mr-1"></i> Export PDF
           </a>
         </div>
       </div>
     </div>
+
+    <?php if (!empty($dateError)): ?>
+      <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert" style="border-radius: 12px; font-weight: 600;">
+        <i class="fa fa-exclamation-triangle mr-2"></i> <?php echo htmlspecialchars($dateError); ?>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    <?php endif; ?>
 
     <!-- Filter Form with Calendar Datepicker & User Search -->
     <div class="card border-0 mb-4" style="background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15,23,42,0.05);">
@@ -351,13 +381,19 @@ label.form-label-custom {
             <input type="date" name="to_date" value="<?php echo htmlspecialchars($to_date); ?>" class="form-control">
           </div>
 
-          <div class="col-lg-2 col-md-12 mb-3">
-            <button type="submit" class="btn btn-primary font-weight-bold w-100 py-2" style="border-radius:10px; background:#0284c7; border:none; height: 44px;">
-              <i class="fa fa-filter mr-1"></i> Apply Filter
+          <div class="col-lg-2 col-md-12 mb-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary font-weight-bold flex-grow-1 py-2 mr-2" style="border-radius:10px; background:#0284c7; border:none; height: 44px;">
+              <i class="fa fa-filter mr-1"></i> Apply
             </button>
+            <a href="reports.php?type=<?php echo htmlspecialchars($type); ?>" class="btn btn-secondary font-weight-bold py-2" style="border-radius:10px; height: 44px; display: inline-flex; align-items: center; justify-content: center;" title="Reset Filter to Default">
+              <i class="fa fa-refresh mr-1"></i> Reset
+            </a>
           </div>
 
         </form>
+        <div class="mt-2 text-muted small">
+          <strong>Active Filter Period:</strong> <span class="badge badge-light border text-dark px-2 py-1"><?php echo htmlspecialchars($from_date); ?></span> to <span class="badge badge-light border text-dark px-2 py-1"><?php echo htmlspecialchars($to_date); ?></span>
+        </div>
       </div>
     </div>
 

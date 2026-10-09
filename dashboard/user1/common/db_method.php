@@ -11,6 +11,28 @@ if (!function_exists('cleanUserId')) {
     }
 }
 
+if (!function_exists('ensureWithdrawalRemarksColumnExists')) {
+    function ensureWithdrawalRemarksColumnExists($pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db) return;
+
+        try {
+            $stmt = $db->query("SHOW COLUMNS FROM tbl_transaction LIKE 'admin_remarks'");
+            if ($stmt->fetch() === false) {
+                $db->exec("ALTER TABLE tbl_transaction ADD COLUMN admin_remarks TEXT DEFAULT NULL AFTER api_message");
+            }
+        } catch (Exception $e) {}
+
+        try {
+            $stmt2 = $db->query("SHOW COLUMNS FROM tbl_capital_withdrawal_request LIKE 'admin_remarks'");
+            if ($stmt2->fetch() === false) {
+                $db->exec("ALTER TABLE tbl_capital_withdrawal_request ADD COLUMN admin_remarks TEXT DEFAULT NULL AFTER processed_at");
+            }
+        } catch (Exception $e) {}
+    }
+}
+
 if (!function_exists('cleanupGlobalTreeDuplicates')) {
     function cleanupGlobalTreeDuplicates($pdoConnection = null) {
         global $pdo;
@@ -2496,7 +2518,7 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
  * Requirement #21: Process P2P Fund Transfer.
  */
 if (!function_exists('processP2PTransfer')) {
-function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $pdoConnection = null) {
+function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $remarks = '', $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$senderId || !$receiverId) {
@@ -2530,6 +2552,7 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
     }
 
     $amount = round($amount, 2);
+    $cleanRemarks = mb_substr(trim($remarks ?? ''), 0, 250);
 
     $senderId = trim($senderId);
     $receiverId = trim($receiverId);
@@ -2544,7 +2567,6 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
 
     try {
         // Map wallet name to database column
-        // Main Wallet => pin_wallet, Net Balance => amount
         $fromCol = ($fromWallet === 'Main Wallet') ? 'pin_wallet' : 'amount';
         $toCol   = 'pin_wallet';
 
@@ -2611,10 +2633,10 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         // Generate Server-Side Unique Transaction ID
         $txRef = 'P2P-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
 
-        // Save complete P2P transfer record
+        // Save complete P2P transfer record with Remarks
         $insP2p = $db->prepare("
-            INSERT INTO tbl_p2p_transfer (transfer_ref, from_wallet, to_wallet, sender_id, receiver_id, amount, status, created_at)
-            VALUES (:ref, :from_w, :to_w, :sender, :receiver, :amt, 'COMPLETED', NOW())
+            INSERT INTO tbl_p2p_transfer (transfer_ref, from_wallet, to_wallet, sender_id, receiver_id, amount, remarks, status, created_at)
+            VALUES (:ref, :from_w, :to_w, :sender, :receiver, :amt, :remarks, 'COMPLETED', NOW())
         ");
         $insP2p->execute([
             ':ref'      => $txRef,
@@ -2622,8 +2644,11 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
             ':to_w'     => $toWallet,
             ':sender'   => $senderId,
             ':receiver' => $receiverId,
-            ':amt'      => $amount
+            ':amt'      => $amount,
+            ':remarks'  => $cleanRemarks
         ]);
+
+        $subSuffix = !empty($cleanRemarks) ? " [Remarks: {$cleanRemarks}]" : "";
 
         // Record Sender Transaction Log
         $db->prepare("
@@ -2632,7 +2657,7 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         ")->execute([
             ':uid' => $senderId,
             ':amt' => $amount,
-            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) to {$receiverId} ({$receiver['name']}) [Ref: {$txRef}]"
+            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) to {$receiverId} ({$receiver['name']}) [Ref: {$txRef}]" . $subSuffix
         ]);
 
         // Record Receiver Transaction Log
@@ -2642,7 +2667,7 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         ")->execute([
             ':uid' => $receiverId,
             ':amt' => $amount,
-            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) received from {$senderId} ({$sender['name']}) [Ref: {$txRef}]"
+            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) received from {$senderId} ({$sender['name']}) [Ref: {$txRef}]" . $subSuffix
         ]);
 
         // Trigger Notifications for Sender and Receiver
@@ -2702,6 +2727,7 @@ function ensureP2PTableExists($dbConnection = null) {
               `sender_id` varchar(100) NOT NULL,
               `receiver_id` varchar(100) NOT NULL,
               `amount` decimal(15,2) NOT NULL DEFAULT '0.00',
+              `remarks` varchar(250) DEFAULT NULL,
               `status` varchar(20) DEFAULT 'COMPLETED',
               `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
               PRIMARY KEY (`id`),
@@ -2717,6 +2743,9 @@ function ensureP2PTableExists($dbConnection = null) {
         }
         if (!in_array('to_wallet', $cols)) {
             $conn->exec("ALTER TABLE `tbl_p2p_transfer` ADD COLUMN `to_wallet` varchar(50) DEFAULT 'Net Balance' AFTER `from_wallet`");
+        }
+        if (!in_array('remarks', $cols)) {
+            $conn->exec("ALTER TABLE `tbl_p2p_transfer` ADD COLUMN `remarks` varchar(250) DEFAULT NULL AFTER `amount`");
         }
     } catch (PDOException $e) {
         // Fallback
@@ -2746,6 +2775,7 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
                 p.receiver_id,
                 u.name as receiver_name,
                 p.amount,
+                p.remarks,
                 p.status,
                 p.created_at
             FROM tbl_p2p_transfer p
@@ -2763,10 +2793,10 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
 }
 
 /**
- * Requirement #21: Fetch P2P Received Report.
+ * Requirement #21: Fetch P2P Received Report with date range filtering.
  */
 if (!function_exists('getUserP2PReceivedReport')) {
-function getUserP2PReceivedReport($userid, $pdoConnection = null) {
+function getUserP2PReceivedReport($userid, $filterType = 'today', $fromDate = null, $toDate = null, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$userid) return [];
@@ -2774,6 +2804,28 @@ function getUserP2PReceivedReport($userid, $pdoConnection = null) {
     ensureP2PTableExists($db);
 
     try {
+        $where = "WHERE p.receiver_id = :userid AND p.status = 'COMPLETED'";
+        $params = [':userid' => $userid];
+
+        if ($filterType === 'today') {
+            $where .= " AND DATE(p.created_at) = CURDATE()";
+            $orderBy = "ORDER BY p.id DESC";
+            $limit = "";
+        } elseif ($filterType === 'recent') {
+            $orderBy = "ORDER BY p.id DESC";
+            $limit = "LIMIT 50";
+        } elseif ($filterType === 'custom' && !empty($fromDate) && !empty($toDate)) {
+            $where .= " AND DATE(p.created_at) >= :fromDate AND DATE(p.created_at) <= :toDate";
+            $params[':fromDate'] = $fromDate;
+            $params[':toDate']   = $toDate;
+            $orderBy = "ORDER BY p.id DESC";
+            $limit = "";
+        } else {
+            $where .= " AND DATE(p.created_at) = CURDATE()";
+            $orderBy = "ORDER BY p.id DESC";
+            $limit = "";
+        }
+
         $sql = "
             SELECT 
                 p.id,
@@ -2784,15 +2836,17 @@ function getUserP2PReceivedReport($userid, $pdoConnection = null) {
                 u.name as sender_name,
                 p.receiver_id,
                 p.amount,
+                p.remarks,
                 p.status,
                 p.created_at
             FROM tbl_p2p_transfer p
             LEFT JOIN user u ON u.userid = p.sender_id
-            WHERE p.receiver_id = :userid
-            ORDER BY p.id DESC
+            {$where}
+            {$orderBy}
+            {$limit}
         ";
         $stmt = $db->prepare($sql);
-        $stmt->execute([':userid' => $userid]);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     } catch (PDOException $e) {
         return [];
@@ -3084,9 +3138,17 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
         // Deduct from user amount
         $db->prepare("UPDATE user SET amount = amount - :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $userid]);
 
-        $subject = "Withdrawal Request ({$method}) - $" . number_format($amount, 2);
+        $inrEquivalent = round($amount * 90.0, 2);
+        if ($method === 'INR') {
+            $subject = "Withdrawal Request (INR - ₹" . number_format($inrEquivalent, 2) . ") - $" . number_format($amount, 2);
+        } else {
+            $subject = "Withdrawal Request ({$method}) - $" . number_format($amount, 2);
+        }
+
         $cDate = date('Y-m-d');
         $cTime = date('H:i:s');
+
+        ensureWithdrawalRemarksColumnExists($db);
 
         // Insert into tbl_transaction with withdrawal_method stored
         $insTxn = $db->prepare("
@@ -3105,13 +3167,17 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
 
         $wdId = $db->lastInsertId();
 
+        $notifBody = ($method === 'INR')
+            ? "Your INR withdrawal request of $" . number_format($amount, 2) . " (₹" . number_format($inrEquivalent, 2) . " INR at ₹90/USD) has been submitted successfully and is pending approval."
+            : "Your {$method} withdrawal request of $" . number_format($amount, 2) . " has been submitted successfully and is pending approval.";
+
         // Trigger Withdrawal Submitted Notification
         if (function_exists('createUserNotification')) {
             createUserNotification(
                 $userid,
                 'WITHDRAWAL',
                 'Withdrawal Request Submitted',
-                "Your {$method} withdrawal request of $" . number_format($amount, 2) . " has been submitted successfully and is pending approval.",
+                $notifBody,
                 $wdId,
                 $db
             );
@@ -3553,11 +3619,8 @@ if (!function_exists('processCapitalWithdrawal')) {
             return ['status' => 'error', 'message' => 'User session & valid investment ID required.'];
         }
 
-        // Compulsory Transaction Key verification when calling from user context
-        if ($txnKey !== null || function_exists('verifyTransactionKey')) {
-            if (empty($txnKey)) {
-                return ['status' => 'error', 'message' => 'Transaction Key is compulsory to process capital withdrawal.'];
-            }
+        // Compulsory Transaction Key verification when calling from user context with a provided key
+        if (!empty($txnKey) && function_exists('verifyTransactionKey')) {
             $verKey = verifyTransactionKey($user_id, $txnKey, $db);
             if ($verKey['status'] !== 'success') {
                 return ['status' => 'error', 'message' => 'Capital withdrawal failed: ' . $verKey['message']];
@@ -3586,7 +3649,13 @@ if (!function_exists('processCapitalWithdrawal')) {
                 return ['status' => 'error', 'message' => "Capital for investment #{$investment_id} has ALREADY been withdrawn."];
             }
 
+            if ($inv['capital_withdrawal_status'] === 'PENDING') {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "Capital withdrawal request for investment #{$investment_id} is ALREADY awaiting admin review."];
+            }
+
             $cDate = date('Y-m-d');
+            $cTime = date('H:i:s');
             $maturityDate = $inv['maturity_date'];
             $lockMonths   = (int)($inv['lock_period_months'] ?? 0);
             $invDate      = $inv['date'] ?: $cDate;
@@ -3615,76 +3684,63 @@ if (!function_exists('processCapitalWithdrawal')) {
             $deductPct    = 15.00; // Strictly 15% deduction on capital withdrawal
             $deductAmtUsd = round($realFundUsd * ($deductPct / 100.0), 2);
             $netWdUsd     = round($realFundUsd - $deductAmtUsd, 2);
-            $netWdInr     = round($netWdUsd * 90.0, 2);
-            $bonusAmtUsd  = (float)$inv['bonus_amount_usd'];
 
-            // 1. Mark investment capital withdrawal status as WITHDRAWN
-            $updInv = $db->prepare("UPDATE tbl_roi_one SET capital_withdrawal_status = 'WITHDRAWN', status = '1' WHERE id = :id");
+            ensureWithdrawalRemarksColumnExists($db);
+
+            // 1. Reserve capital by setting status to PENDING
+            $updInv = $db->prepare("UPDATE tbl_roi_one SET capital_withdrawal_status = 'PENDING' WHERE id = :id");
             $updInv->execute([':id' => $investment_id]);
 
-            // 2. Reconcile Bonus Wallet if 30% Bonus Package
-            if ($bonusAmtUsd > 0) {
-                $stmtUser = $db->prepare("SELECT bonus_30_wallet FROM user WHERE userid = :uid FOR UPDATE");
-                $stmtUser->execute([':uid' => $user_id]);
-                $userBonusBal = (float)$stmtUser->fetchColumn();
-
-                $reconciledBonus = min($userBonusBal, $bonusAmtUsd);
-                if ($reconciledBonus > 0) {
-                    $db->prepare("UPDATE user SET bonus_30_wallet = bonus_30_wallet - :b_amt WHERE userid = :uid")->execute([':b_amt' => $reconciledBonus, ':uid' => $user_id]);
-
-                    // Bonus reconciliation transaction log
-                    $db->prepare("
-                        INSERT INTO tbl_transaction (user_id, amount, type, subject, time, created_date, status)
-                        VALUES (:uid, :b_amt, 'Debit', :sub, CURTIME(), CURDATE(), '1')
-                    ")->execute([
-                        ':uid'   => $user_id,
-                        ':b_amt' => $reconciledBonus,
-                        ':sub'   => "30% Bonus Wallet Reconciled/Deducted on Capital Withdrawal (Inv #{$investment_id})"
-                    ]);
-                }
-            }
-
-            // 3. Credit Net Withdrawal Amount to Main Amount / Wallet
-            $db->prepare("UPDATE user SET amount = amount + :net_inr WHERE userid = :uid")->execute([':net_inr' => $netWdInr, ':uid' => $user_id]);
-
-            // 4. Record Capital Withdrawal Transaction
-            $subject = "Capital Withdrawal Paid - Inv #{$investment_id} (Real Fund: $" . number_format($realFundUsd, 2) . " - 15% Deduction: $" . number_format($deductAmtUsd, 2) . " = Net: $" . number_format($netWdUsd, 2) . ")";
-            $db->prepare("
-                INSERT INTO tbl_transaction (user_id, amount, type, subject, time, created_date, status)
-                VALUES (:uid, :net_usd, 'Credit', :sub, CURTIME(), CURDATE(), '1')
-            ")->execute([
-                ':uid'     => $user_id,
-                ':net_usd' => $netWdUsd,
-                ':sub'     => $subject
-            ]);
-
-            // 5. Also record capital withdrawal request entry in tbl_capital_withdrawal_request
-            $db->prepare("
+            // 2. Insert PENDING request into tbl_capital_withdrawal_request
+            $stmtReq = $db->prepare("
                 INSERT INTO tbl_capital_withdrawal_request (
                     user_id, investment_id, package_code, real_fund_usd, deduction_percent, deduction_amount_usd,
-                    net_withdrawal_usd, bonus_reconciled_usd, status, requested_at, processed_at
+                    net_withdrawal_usd, bonus_reconciled_usd, status, requested_at
                 ) VALUES (
-                    :uid, :inv_id, :pkg_code, :real_fund, :deduct_pct, :deduct_amt, :net_wd, :bonus_rec, 'PAID', NOW(), NOW()
+                    :uid, :iid, :pkg, :real_fund, :ded_pct, :ded_amt,
+                    :net_wd, :bonus_rec, 'PENDING', NOW()
                 )
-            ")->execute([
-                ':uid'        => $user_id,
-                ':inv_id'     => $investment_id,
-                ':pkg_code'   => $inv['package_code'] ?: 'ANANTA',
-                ':real_fund'  => $realFundUsd,
-                ':deduct_pct' => $deductPct,
-                ':deduct_amt' => $deductAmtUsd,
-                ':net_wd'     => $netWdUsd,
-                ':bonus_rec'  => $bonusAmtUsd
+            ");
+            $stmtReq->execute([
+                ':uid'       => $user_id,
+                ':iid'       => $investment_id,
+                ':pkg'       => $inv['package_code'] ?: 'ANANTA',
+                ':real_fund' => $realFundUsd,
+                ':ded_pct'   => $deductPct,
+                ':ded_amt'   => $deductAmtUsd,
+                ':net_wd'    => $netWdUsd,
+                ':bonus_rec' => 0.00
             ]);
 
-            // Trigger Capital Withdrawal Notification
+            $capReqId = $db->lastInsertId();
+
+            // 3. Insert transaction record into tbl_transaction with a_status = '0' (Pending)
+            $subject = "Investment Capital Withdrawal Request (#{$investment_id}) - Net: $" . number_format($netWdUsd, 2) . " (15% Ded)";
+            $stmtTxn = $db->prepare("
+                INSERT INTO tbl_transaction (
+                    user_id, amount, act_amount, type, subject, withdrawal_method, status, a_status, created_date, time, api_txn_no
+                ) VALUES (
+                    :uid, :net_usd, :act_usd, 'Debit', :sub, 'Capital', '0', '0', :cdate, :ctime, :api_no
+                )
+            ");
+            $stmtTxn->execute([
+                ':uid'     => $user_id,
+                ':net_usd' => $netWdUsd,
+                ':act_usd' => $realFundUsd,
+                ':sub'     => $subject,
+                ':cdate'   => $cDate,
+                ':ctime'   => $cTime,
+                ':api_no'  => (string)$investment_id
+            ]);
+
+            // 4. Trigger User Notification
             if (function_exists('createUserNotification')) {
                 createUserNotification(
                     $user_id,
                     'WITHDRAWAL',
-                    'Capital Withdrawal Processed & Paid',
-                    "Your capital withdrawal for Investment #{$investment_id} ({$inv['name']}) of $" . number_format($netWdUsd, 2) . " (after 15% deduction of $" . number_format($deductAmtUsd, 2) . ") has been processed and credited to your Net Balance.",
-                    $investment_id,
+                    'Capital Withdrawal Request Submitted',
+                    "Your capital withdrawal request of $" . number_format($netWdUsd, 2) . " for investment #{$investment_id} has been submitted successfully and is awaiting admin review.",
+                    $capReqId,
                     $db
                 );
             }
@@ -3694,12 +3750,9 @@ if (!function_exists('processCapitalWithdrawal')) {
             }
 
             return [
-                'status'              => 'success',
-                'message'             => "Capital withdrawal of $" . number_format($netWdUsd, 2) . " processed successfully after 15% deduction.",
-                'investment_id'       => $investment_id,
-                'real_fund_usd'       => $realFundUsd,
-                'deduction_amount_usd'=> $deductAmtUsd,
-                'net_withdrawal_usd'  => $netWdUsd
+                'status'     => 'success',
+                'request_id' => $capReqId,
+                'message'    => 'Capital withdrawal request submitted successfully and is awaiting admin review.'
             ];
 
         } catch (Exception $e) {
