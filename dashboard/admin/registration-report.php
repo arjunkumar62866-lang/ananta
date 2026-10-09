@@ -1,11 +1,8 @@
+<?php ob_start(); ?>
+<!DOCTYPE html>
+<html lang="en">
 <?php
-ob_start();
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-require_once __DIR__ . '/common/connection.php';
-require_once __DIR__ . '/common/db_method.php';
+include __DIR__ . '/common/header.php';
 
 // Security: Admin Authentication Guard
 if (!isset($_SESSION['auserid'])) {
@@ -14,13 +11,11 @@ if (!isset($_SESSION['auserid'])) {
 }
 
 // -------------------------------------------------------------
-// 1. DATE RANGE HANDLING & VALIDATION
+// 1. DATE RANGE HANDLING & VALIDATION (Default to Today for recent registrations)
 // -------------------------------------------------------------
-$defaultFromDate = date('Y-m-01'); // 1st date of current month
-$defaultToDate   = date('Y-m-d');  // Today
-
-$fromDateInput = trim($_GET['from_date'] ?? $defaultFromDate);
-$toDateInput   = trim($_GET['to_date'] ?? $defaultToDate);
+$cToday        = date('Y-m-d');
+$fromDateInput = trim($_GET['from_date'] ?? $cToday);
+$toDateInput   = trim($_GET['to_date'] ?? $cToday);
 
 $validationError = '';
 $isValidRange    = true;
@@ -42,9 +37,8 @@ $daysCount     = 1;
 $dailyAverage  = 0.0;
 $todayCount    = 0;
 
-$cDate = date('Y-m-d');
 $stmtToday = $pdo->prepare("SELECT COUNT(*) FROM user WHERE (joining_date = :today OR DATE(joining_date) = :today)");
-$stmtToday->execute([':today' => $cDate]);
+$stmtToday->execute([':today' => $cToday]);
 $todayCount = (int)$stmtToday->fetchColumn();
 
 if ($isValidRange) {
@@ -88,8 +82,8 @@ if ($isValidRange) {
             'day_name'   => $dt->format('D'),
             'formatted'  => $dt->format('d M Y'),
             'count'      => $cnt,
-            'is_today'   => ($dStr === $cDate),
-            'is_future'  => ($dStr > $cDate)
+            'is_today'   => ($dStr === $cToday),
+            'is_future'  => ($dStr > $cToday)
         ];
         $totalPeriod += $cnt;
     }
@@ -130,8 +124,6 @@ if ($isValidRange) {
     $stmtUsers->execute($params);
     $userList = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
 }
-
-include __DIR__ . '/common/header.php';
 ?>
 
 <style>
@@ -276,7 +268,7 @@ label.form-label-custom {
                 <div>
                     <span class="badge badge-light text-primary px-3 py-1 mb-2" style="border-radius: 100px; font-weight: 700;">REGISTRATION ANALYTICS</span>
                     <h3 class="mb-1 text-white font-weight-bold">Daily New Registration Report</h3>
-                    <p class="mb-0 text-white-50 small">Track daily new user registrations, monthly breakdown, and custom date range metrics.</p>
+                    <p class="mb-0 text-white-50 small">Showing recent new user registrations. Use date filter to view past historical data.</p>
                 </div>
                 <div class="header-actions-group">
                     <a href="all_user.php" class="btn btn-light font-weight-bold px-3 py-2" style="border-radius: 10px;">
