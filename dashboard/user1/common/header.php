@@ -508,6 +508,38 @@ setTimeout(function() {
 
 <!-- Dropdown Script & Styles -->
 <style>
+/* User Notification Dropdown Screen Bounds Responsiveness */
+.ananta-notif-dropdown {
+    border-radius: 16px !important;
+    padding: 0 !important;
+    margin-top: 8px !important;
+    background: #ffffff !important;
+    width: 340px !important;
+    max-width: 90vw !important;
+    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.20) !important;
+    z-index: 999999 !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 767.98px) {
+    .dropdown-menu.ananta-notif-dropdown,
+    .dropdown-menu.ananta-notif-dropdown.show {
+        position: fixed !important;
+        top: 65px !important;
+        left: 12px !important;
+        right: 12px !important;
+        bottom: auto !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        transform: none !important;
+        -webkit-transform: none !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        z-index: 999999 !important;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.3) !important;
+    }
+}
+
 /* SUBMENU & SIDEBAR MENU REDESIGN STYLING */
 .sidebar-menu {
     padding: 15px 12px !important;
