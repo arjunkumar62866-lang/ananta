@@ -73,7 +73,7 @@ Press `Ctrl + C` in your terminal window running the server.
 #### Commit & Push Code Updates to GitHub:
 ```bash
 git add .
-git commit -m "Total withdrawal problem fixed"
+git commit -m "Fix : implementation of new Capital Withdrawal UI and report"
 git push origin main
 ```
 *(Hostinger automatically deploys code pushed to `main`, and GitHub Actions executes pending database migrations safely).*

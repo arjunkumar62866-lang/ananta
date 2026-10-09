@@ -325,6 +325,7 @@ table.dataTable.no-footer {
                                                 <th>Date</th>
                                                 <th>Time</th>
                                                 <th>Status</th>
+                                                <th>Admin Remarks</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -415,6 +416,12 @@ table.dataTable.no-footer {
                             } else {
                                 return '<span class="badge-status badge-status-canceled"><i class="fa fa-times-circle"></i> Canceled</span>';
                             }
+                        }
+                    },
+                    {
+                        data: 'admin_remarks',
+                        render: function(data) {
+                            return data ? `<span class="small font-weight-semibold text-dark">${data}</span>` : '—';
                         }
                     }
                 ],

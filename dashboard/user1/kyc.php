@@ -23,11 +23,8 @@ $userBep20    = $userRow['bep20_address'] ?? '';
 if ($kycStatusVal === 0) {
     $k_status = "Not Submitted";
     $color    = "#FF6C60";
-} else if ($kycStatusVal === 1) {
-    $k_status = "Pending";
-    $color    = '#FEFC95';
-} else if ($kycStatusVal === 2) {
-    $k_status = "Clear";
+} else if ($kycStatusVal === 1 || $kycStatusVal === 2) {
+    $k_status = "Verified";
     $color    = '#C4FBC7';
 } else if ($kycStatusVal === 3) {
     $k_status = "Rejected";
@@ -39,70 +36,6 @@ if ($kycStatusVal === 0) {
 
 $errorMsg   = '';
 $successMsg = '';
-
-// Helper for file uploads
-if (!function_exists('secureUploadKycDoc')) {
-    function secureUploadKycDoc($fileKey, $allowedExts = ['jpg', 'jpeg', 'png', 'pdf']) {
-        if (!isset($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] === UPLOAD_ERR_NO_FILE) {
-            return ['status' => 'empty'];
-        }
-        $file = $_FILES[$fileKey];
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return ['status' => 'error', 'message' => 'File upload error occurred code: ' . $file['error']];
-        }
-        // Size limit: 5MB
-        if ($file['size'] > 5 * 1024 * 1024) {
-            return ['status' => 'error', 'message' => 'File size exceeds 5MB limit.'];
-        }
-
-        $origExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($origExt, $allowedExts)) {
-            return ['status' => 'error', 'message' => 'Invalid file extension. Permitted: JPG, JPEG, PNG, PDF.'];
-        }
-
-        // MIME validation
-        $fileMime = '';
-        if (function_exists('finfo_open')) {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $fileMime = strtolower(finfo_file($finfo, $file['tmp_name']) ?: '');
-            finfo_close($finfo);
-        } elseif (function_exists('mime_content_type')) {
-            $fileMime = strtolower(@mime_content_type($file['tmp_name']) ?: '');
-        }
-
-        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'image/pjpeg', 'image/x-png'];
-        if (!empty($fileMime) && !in_array($fileMime, $allowedMimes)) {
-            return ['status' => 'error', 'message' => 'Invalid file MIME type (' . htmlspecialchars($fileMime) . '). Permitted: JPG, PNG, PDF.'];
-        }
-
-        // Random filename
-        $newFilename = 'kyc_' . bin2hex(random_bytes(16)) . '.' . $origExt;
-        $uploadDir   = __DIR__ . '/uploads';
-        if (!is_dir($uploadDir)) {
-            @mkdir($uploadDir, 0755, true);
-        }
-
-        // Ensure .htaccess inside uploads prevents script execution
-        $htaccessPath = $uploadDir . '/.htaccess';
-        if (!file_exists($htaccessPath)) {
-            $htaccessContent = "<FilesMatch \"\\.(php|phtml|php3|php4|php5|phps|phar|exe|pl|py|cgi|sh|js|htm|html)$\">\n";
-            $htaccessContent .= "    Order allow,deny\n";
-            $htaccessContent .= "    Deny from all\n";
-            $htaccessContent .= "</FilesMatch>\n";
-            $htaccessContent .= "RemoveHandler .php .phtml .php3 .php4 .php5 .phps .phar\n";
-            $htaccessContent .= "RemoveType .php .phtml .php3 .php4 .php5 .phps .phar\n";
-            @file_put_contents($htaccessPath, $htaccessContent);
-        }
-
-        $destPath = $uploadDir . '/' . $newFilename;
-        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-            if (!@copy($file['tmp_name'], $destPath)) {
-                return ['status' => 'error', 'message' => 'Failed to save uploaded file.'];
-            }
-        }
-        return ['status' => 'success', 'filename' => $newFilename];
-    }
-}
 
 // Handle Form Submission
 if (isset($_POST['update'])) {
@@ -117,8 +50,14 @@ if (isset($_POST['update'])) {
     $pan           = strtoupper(trim($_POST['pan'] ?? ''));
     $mimo          = trim($_POST['mimo'] ?? ''); // Aadhaar Number
 
-    // Validation checks
-    if ($ac_number1 !== $ac_number2) {
+    // Reject image file upload attempts
+    if (
+        (!empty($_FILES['adhar_front_img']['name']) && $_FILES['adhar_front_img']['error'] !== UPLOAD_ERR_NO_FILE) ||
+        (!empty($_FILES['adhar_back_img']['name']) && $_FILES['adhar_back_img']['error'] !== UPLOAD_ERR_NO_FILE) ||
+        (!empty($_FILES['pan_img']['name']) && $_FILES['pan_img']['error'] !== UPLOAD_ERR_NO_FILE)
+    ) {
+        $errorMsg = "Aadhaar Card and PAN Card image uploads have been disabled. Only text details are accepted.";
+    } elseif ($ac_number1 !== $ac_number2) {
         $errorMsg = "Account Number and Confirm Account Number do not match.";
     } elseif (!empty($ifsc) && !preg_match('/^[A-Z]{4}0[A-Z0-9]{6}$/', $ifsc)) {
         $errorMsg = "Invalid IFSC Code format. Example: SBIN0001234";
@@ -127,7 +66,7 @@ if (isset($_POST['update'])) {
     } elseif (!empty($mimo) && !preg_match('/^[0-9]{12}$/', $mimo)) {
         $errorMsg = "Aadhaar Number must be exactly 12 digits.";
     } else {
-        // Fetch existing KYC row to retain old uploaded images if new files aren't provided
+        // Fetch existing KYC row to retain old uploaded images
         $stmtChk = $pdo->prepare("SELECT * FROM kyc WHERE userid = :userid");
         $stmtChk->execute([':userid' => $userid]);
         $existKyc = $stmtChk->fetch(PDO::FETCH_ASSOC);
@@ -136,37 +75,9 @@ if (isset($_POST['update'])) {
         $adhar_back_img  = $existKyc['adhar_back_img'] ?? '';
         $pan_img         = $existKyc['pan_img'] ?? '';
 
-        // Handle Aadhaar Card Upload (Front)
-        $upAdhar = secureUploadKycDoc('adhar_front_img');
-        if ($upAdhar['status'] === 'error') {
-            $errorMsg = "Aadhaar Card Upload Error: " . $upAdhar['message'];
-        } elseif ($upAdhar['status'] === 'success') {
-            $adhar_front_img = $upAdhar['filename'];
-        }
-
-        // Handle Aadhaar Card Upload (Back if provided)
-        if (empty($errorMsg)) {
-            $upAdharBack = secureUploadKycDoc('adhar_back_img');
-            if ($upAdharBack['status'] === 'error') {
-                $errorMsg = "Aadhaar Back Image Error: " . $upAdharBack['message'];
-            } elseif ($upAdharBack['status'] === 'success') {
-                $adhar_back_img = $upAdharBack['filename'];
-            }
-        }
-
-        // Handle PAN Card Upload
-        if (empty($errorMsg)) {
-            $upPan = secureUploadKycDoc('pan_img');
-            if ($upPan['status'] === 'error') {
-                $errorMsg = "PAN Card Upload Error: " . $upPan['message'];
-            } elseif ($upPan['status'] === 'success') {
-                $pan_img = $upPan['filename'];
-            }
-        }
-
         if (empty($errorMsg)) {
             if ($existKyc) {
-                // UPDATE kyc record
+                // UPDATE kyc record (status = '1' for Verified/Completed)
                 $stmtUpd = $pdo->prepare("UPDATE kyc SET 
                     holder_name = :holder_name,
                     ac_number   = :ac_number,
@@ -179,7 +90,7 @@ if (isset($_POST['update'])) {
                     adhar_front_img = :adhar_front_img,
                     adhar_back_img  = :adhar_back_img,
                     pan_img         = :pan_img,
-                    status      = '0'
+                    status      = '1'
                     WHERE userid = :userid");
                 $stmtUpd->execute([
                     ':holder_name'     => $holder_name,
@@ -196,11 +107,11 @@ if (isset($_POST['update'])) {
                     ':userid'          => $userid
                 ]);
             } else {
-                // INSERT kyc record
+                // INSERT kyc record (status = '1' for Verified/Completed)
                 $stmtIns = $pdo->prepare("INSERT INTO kyc (
                     userid, holder_name, ac_number, bank, branch, ifsc, bhim, pan, mimo, adhar_front_img, adhar_back_img, pan_img, status
                 ) VALUES (
-                    :userid, :holder_name, :ac_number, :bank, :branch, :ifsc, :bhim, :pan, :mimo, :adhar_front_img, :adhar_back_img, :pan_img, '0'
+                    :userid, :holder_name, :ac_number, :bank, :branch, :ifsc, :bhim, :pan, :mimo, :adhar_front_img, :adhar_back_img, :pan_img, '1'
                 )");
                 $stmtIns->execute([
                     ':userid'          => $userid,
@@ -218,8 +129,8 @@ if (isset($_POST['update'])) {
                 ]);
             }
 
-            // Update user table (kyc = 1 for pending, bep20_address)
-            $stmtUserUpd = $pdo->prepare("UPDATE user SET kyc = '1', bep20_address = :bep20 WHERE userid = :userid");
+            // Update user table (kyc = '2' for Verified/Clear, bep20_address)
+            $stmtUserUpd = $pdo->prepare("UPDATE user SET kyc = '2', bep20_address = :bep20 WHERE userid = :userid");
             $stmtUserUpd->execute([
                 ':bep20'  => $bep20_address,
                 ':userid' => $userid
@@ -229,14 +140,14 @@ if (isset($_POST['update'])) {
                 createUserNotification(
                     $userid,
                     'KYC',
-                    'KYC Documents Submitted',
-                    'Your Bank KYC details and identity documents have been submitted successfully and are currently pending admin review.',
+                    'KYC Verified',
+                    'Your Bank & Identity KYC details have been updated and verified successfully.',
                     null,
                     $pdo
                 );
             }
 
-            echo "<script>alert('KYC updated successfully!'); window.location.href = 'kyc.php';</script>";
+            echo "<script>alert('KYC details updated and verified successfully!'); window.location.href = 'kyc.php';</script>";
             exit();
         }
     }
@@ -604,34 +515,6 @@ body.ananta-user-dashboard {
                             </div>
                         </div>
 
-                        <!-- SECTION 4: DOCUMENTS -->
-                        <div class="section-title-box">
-                            <i class="fa fa-upload text-primary"></i>
-                            <h5>4. Upload ID Proof</h5>
-                        </div>
-
-                        <div class="kyc-grid">
-                            <!-- Aadhaar Card Upload (Front) -->
-                            <div class="kyc-field">
-                                <label>Aadhaar Card Upload (Front Image / PDF)</label>
-                                <input type="file" name="adhar_front_img" class="form-control" accept="image/*,.pdf">
-                                <?php if (!empty($row1['adhar_front_img'])): ?>
-                                    <a href="uploads/<?php echo htmlspecialchars($row1['adhar_front_img']); ?>" target="_blank" class="doc-preview-badge">
-                                        <i class="fa fa-file-image-o mr-1"></i> View Existing Aadhaar Front
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-
-                            <!-- PAN Card Upload -->
-                            <div class="kyc-field">
-                                <label>PAN Card Upload (Image / PDF)</label>
-                                <input type="file" name="pan_img" class="form-control" accept="image/*,.pdf">
-                                <?php if (!empty($row1['pan_img'])): ?>
-                                    <a href="uploads/<?php echo htmlspecialchars($row1['pan_img']); ?>" target="_blank" class="doc-preview-badge">
-                                        <i class="fa fa-file-image-o mr-1"></i> View Existing PAN Card
-                                    </a>
-                                <?php endif; ?>
-                            </div>
                         </div>
 
                         <div class="kyc-submit-area">

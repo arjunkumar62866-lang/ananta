@@ -313,6 +313,7 @@ table.dataTable.no-footer {
                                                 <th>IFSC</th>
                                                 <th>Wallet Address</th>
                                                 <th>Status</th>
+                                                <th>Admin Remarks</th>
                                                 <th>Date</th>
                                                 <th>Action</th> 
                                             </tr>
@@ -366,6 +367,24 @@ table.dataTable.no-footer {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
+        function triggerApproveWithdrawal(id, uid, amt) {
+            let rem = prompt("Optional Admin Approval Remarks:", "Withdrawal approved successfully.");
+            if (rem === null) return;
+            let url = "approved-withdrawal.php?tid=" + encodeURIComponent(id) + "&user_id=" + encodeURIComponent(uid) + "&amt=" + encodeURIComponent(amt) + "&admin_remarks=" + encodeURIComponent(rem);
+            window.location.href = url;
+        }
+
+        function triggerRejectWithdrawal(id, uid, amt) {
+            let reason = prompt("Mandatory Rejection Reason / Remarks:");
+            if (reason === null) return;
+            if (reason.trim() === "") {
+                alert("Rejection reason is MANDATORY when rejecting a withdrawal request.");
+                return;
+            }
+            let url = "cancel-withdrawal.php?tid=" + encodeURIComponent(id) + "&uid=" + encodeURIComponent(uid) + "&amt=" + encodeURIComponent(amt) + "&admin_remarks=" + encodeURIComponent(reason);
+            window.location.href = url;
+        }
+
         $(document).ready(function () {
             const urlParams = new URLSearchParams(window.location.search);
             const typeParam = urlParams.get('type') || 'all';
@@ -416,6 +435,12 @@ table.dataTable.no-footer {
                         }
                       }
                     },
+                    {
+                        data: 'admin_remarks',
+                        render: function(data) {
+                            return data ? `<span class="small font-weight-semibold text-dark">${data}</span>` : '—';
+                        }
+                    },
                     { data: 'created_date'},
                     {
                         data: null,
@@ -423,12 +448,12 @@ table.dataTable.no-footer {
                             if (row.a_status == "0") {
                                 return `
                                     <div class="d-flex gap-2">
-                                        <a href="approved-withdrawal.php?tid=${row.id}&beneficiary_id=${row.api_txn_no}&user_id=${row.user_id}&amt=${row.amount}" class="btn btn-success btn-sm font-weight-bold" onclick="return confirm('Approve this withdrawal request?');">
+                                        <button type="button" onclick="triggerApproveWithdrawal('${row.id}', '${row.user_id}', '${row.amount}')" class="btn btn-success btn-sm font-weight-bold">
                                             <i class="fa fa-check me-1"></i> Approve
-                                        </a>
-                                        <a href="cancel-withdrawal.php?uid=${row.user_id}&amt=${row.act_amount}&tid=${row.id}" class="btn btn-danger btn-sm font-weight-bold" onclick="return confirm('Cancel and refund this request?');">
-                                            <i class="fa fa-times me-1"></i> Cancel
-                                        </a>
+                                        </button>
+                                        <button type="button" onclick="triggerRejectWithdrawal('${row.id}', '${row.user_id}', '${row.act_amount}')" class="btn btn-danger btn-sm font-weight-bold">
+                                            <i class="fa fa-times me-1"></i> Cancel / Reject
+                                        </button>
                                     </div>
                                 `;
                             } else {

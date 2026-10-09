@@ -77,9 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $receiverId = trim($_POST['receiver_id'] ?? '');
         $amount     = (float)($_POST['amount'] ?? 0);
         $txnKey     = trim($_POST['txn_key'] ?? '');
+        $remarks    = trim($_POST['remarks'] ?? '');
 
         // Process P2P Transfer with complete validations & atomic transaction
-        $res = processP2PTransfer($userid, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $pdo);
+        $res = processP2PTransfer($userid, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $remarks, $pdo);
         if ($res['status'] === 'success') {
             $msg = $res['message'];
             $msgType = 'success';
@@ -98,9 +99,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Received History Filter params
+$recFilterType = $_GET['rec_filter'] ?? 'today';
+if (!in_array($recFilterType, ['today', 'recent', 'custom'])) {
+    $recFilterType = 'today';
+}
+
+$recFromDate = trim($_GET['rec_from_date'] ?? '');
+$recToDate   = trim($_GET['rec_to_date'] ?? '');
+$recDateError = '';
+
+if ($recFilterType === 'custom') {
+    if (empty($recFromDate) || empty($recToDate)) {
+        $recDateError = 'Please select both From Date and To Date.';
+    } elseif (strtotime($recFromDate) > strtotime($recToDate)) {
+        $recDateError = 'From Date cannot be after To Date.';
+    }
+}
+
 $sentHistory = getUserP2PTransferHistory($userid, $pdo);
-$receivedReport = getUserP2PReceivedReport($userid, $pdo);
-$activeTab = isset($_GET['tab']) && $_GET['tab'] === 'received' ? 'received' : 'transfer';
+$receivedReport = getUserP2PReceivedReport($userid, $recFilterType, $recFromDate, $recToDate, $pdo);
+$activeTab = isset($_GET['tab']) && $_GET['tab'] === 'received' ? 'received' : (isset($_GET['rec_filter']) ? 'received' : 'transfer');
 
 $totalSentUSD = 0;
 foreach ($sentHistory as $s) {
@@ -234,8 +253,22 @@ foreach ($receivedReport as $r) {
                                 <label for="txn_key" class="font-weight-bold small text-uppercase mb-0" style="color: #475569;">Transaction Key</label>
                                 <a href="profile.php#security_section" class="small font-weight-bold text-primary text-decoration-none"><i class="zmdi zmdi-lock-outline mr-1"></i>Forgot Key?</a>
                             </div>
-                            <input type="password" class="form-control form-control-lg" id="txn_key" name="txn_key" placeholder="Enter Transaction Key" required style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;">
+                            <div class="input-group">
+                                <input type="password" class="form-control form-control-lg" id="txn_key" name="txn_key" placeholder="Enter Transaction Key" required style="border-top-left-radius: 10px; border-bottom-left-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" id="btnToggleTxnKey" onclick="toggleTxnKeyVisibility()" style="border-top-right-radius: 10px; border-bottom-right-radius: 10px; border: 1px solid #cbd5e1; border-left: 0; background: #f8fafc; color: #64748b;" title="Show/Hide Key">
+                                        <i class="zmdi zmdi-eye" id="eyeIconTxnKey"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Transfer Remarks / Reason -->
+                    <div class="form-group mb-3">
+                        <label for="remarks" class="font-weight-bold small text-uppercase" style="color: #475569;">Transfer Remarks / Reason <span class="text-muted font-weight-normal">(Optional)</span></label>
+                        <textarea class="form-control" id="remarks" name="remarks" rows="2" maxlength="250" placeholder="Enter the reason for this transfer" style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 14px; resize: vertical;"></textarea>
+                        <small class="form-text text-muted">Maximum 250 characters.</small>
                     </div>
 
                     <button type="submit" id="btnSubmitP2P" class="btn px-4 py-2 font-weight-bold" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; border-radius: 10px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
@@ -248,6 +281,21 @@ foreach ($receivedReport as $r) {
         <script>
         let lookupTimer = null;
         let isUserVerified = false;
+
+        function toggleTxnKeyVisibility() {
+            const input = document.getElementById('txn_key');
+            const icon = document.getElementById('eyeIconTxnKey');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('zmdi-eye');
+                icon.classList.add('zmdi-eye-off');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('zmdi-eye-off');
+                icon.classList.add('zmdi-eye');
+            }
+        }
 
         function updateToWalletOptions() {
             document.getElementById('to_wallet').value = 'Main Wallet';
@@ -340,6 +388,7 @@ foreach ($receivedReport as $r) {
                                         <th class="py-3 px-3">Receiver Name</th>
                                         <th class="py-3 px-3 text-right">Amount</th>
                                         <th class="py-3 px-3 text-center">Status</th>
+                                        <th class="py-3 px-3">Remarks</th>
                                         <th class="py-3 px-3 text-center">Date & Time</th>
                                     </tr>
                                 </thead>
@@ -361,12 +410,13 @@ foreach ($receivedReport as $r) {
                                                 <td class="py-3 px-3 text-center">
                                                     <span class="badge badge-pill px-3 py-1" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 700;"><?php echo htmlspecialchars($s['status']); ?></span>
                                                 </td>
+                                                <td class="py-3 px-3 text-muted small"><?php echo !empty($s['remarks']) ? htmlspecialchars($s['remarks']) : '—'; ?></td>
                                                 <td class="py-3 px-3 text-center text-muted small"><?php echo htmlspecialchars($s['created_at']); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="9" class="text-center py-5 text-muted">
+                                            <td colspan="10" class="text-center py-5 text-muted">
                                                 <i class="zmdi zmdi-swap-off zmdi-hc-3x d-block mb-2" style="color: #cbd5e1;"></i>
                                                 No P2P transfers sent yet.
                                             </td>
@@ -381,12 +431,43 @@ foreach ($receivedReport as $r) {
 
             <!-- Received Report Tab -->
             <div id="tab-received" class="tab-pane <?php echo ($activeTab === 'received') ? 'active' : 'fade'; ?>">
-                <div class="card border-0 shadow-sm" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px;">
-                    <div class="card-header bg-white py-3" style="border-bottom: 1px solid #f1f5f9; border-radius: 18px 18px 0 0;">
+                <div class="card border-0 shadow-sm mb-4" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px;">
+                    <div class="card-header bg-white py-3 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3" style="border-bottom: 1px solid #f1f5f9; border-radius: 18px 18px 0 0;">
                         <h6 class="m-0 font-weight-bold" style="color: #0f172a;">
                             <i class="zmdi zmdi-inbox mr-2" style="color: #16a34a;"></i> P2P Received Report
                         </h6>
+
+                        <!-- Received History Date Filters -->
+                        <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
+                            <a href="p2p.php?tab=received&rec_filter=today" class="btn btn-sm font-weight-semibold <?php echo ($recFilterType === 'today') ? 'btn-success' : 'btn-outline-secondary'; ?>" style="border-radius: 8px;">
+                                <i class="zmdi zmdi-calendar-note mr-1"></i> Today
+                            </a>
+                            <a href="p2p.php?tab=received&rec_filter=recent" class="btn btn-sm font-weight-semibold <?php echo ($recFilterType === 'recent') ? 'btn-primary' : 'btn-outline-secondary'; ?>" style="border-radius: 8px;">
+                                <i class="zmdi zmdi-time-restore mr-1"></i> Recent
+                            </a>
+
+                            <!-- Custom Date Range Form -->
+                            <form method="GET" action="p2p.php" class="form-inline d-flex align-items-center gap-2">
+                                <input type="hidden" name="tab" value="received">
+                                <input type="hidden" name="rec_filter" value="custom">
+                                
+                                <input type="date" name="rec_from_date" value="<?php echo htmlspecialchars($recFromDate); ?>" class="form-control form-control-sm" placeholder="From Date" style="border-radius: 8px; border: 1px solid #cbd5e1;" required>
+                                <span class="text-muted small">to</span>
+                                <input type="date" name="rec_to_date" value="<?php echo htmlspecialchars($recToDate); ?>" class="form-control form-control-sm" placeholder="To Date" style="border-radius: 8px; border: 1px solid #cbd5e1;" required>
+                                
+                                <button type="submit" class="btn btn-sm btn-info font-weight-semibold" style="border-radius: 8px;">
+                                    <i class="zmdi zmdi-filter-list mr-1"></i> Apply Filter
+                                </button>
+                            </form>
+                        </div>
                     </div>
+
+                    <?php if (!empty($recDateError)): ?>
+                        <div class="alert alert-danger mx-3 mt-3 mb-0 py-2 small" role="alert" style="border-radius: 8px;">
+                            <i class="zmdi zmdi-alert-circle mr-1"></i> <?php echo htmlspecialchars($recDateError); ?>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0" style="color: #0f172a;">
@@ -400,6 +481,7 @@ foreach ($receivedReport as $r) {
                                         <th class="py-3 px-3">Sender Name</th>
                                         <th class="py-3 px-3 text-right">Amount Received</th>
                                         <th class="py-3 px-3 text-center">Status</th>
+                                        <th class="py-3 px-3">Remarks</th>
                                         <th class="py-3 px-3 text-center">Date & Time</th>
                                     </tr>
                                 </thead>
@@ -421,14 +503,23 @@ foreach ($receivedReport as $r) {
                                                 <td class="py-3 px-3 text-center">
                                                     <span class="badge badge-pill px-3 py-1" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 700;"><?php echo htmlspecialchars($r['status']); ?></span>
                                                 </td>
+                                                <td class="py-3 px-3 text-muted small"><?php echo !empty($r['remarks']) ? htmlspecialchars($r['remarks']) : '—'; ?></td>
                                                 <td class="py-3 px-3 text-center text-muted small"><?php echo htmlspecialchars($r['created_at']); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="9" class="text-center py-5 text-muted">
+                                            <td colspan="10" class="text-center py-5 text-muted">
                                                 <i class="zmdi zmdi-inbox zmdi-hc-3x d-block mb-2" style="color: #cbd5e1;"></i>
-                                                No P2P transfers received yet.
+                                                <?php 
+                                                    if ($recFilterType === 'today') {
+                                                        echo 'No received transactions found for today.';
+                                                    } elseif ($recFilterType === 'recent') {
+                                                        echo 'No received transactions found.';
+                                                    } else {
+                                                        echo 'No received transactions found for the selected date range.';
+                                                    }
+                                                ?>
                                             </td>
                                         </tr>
                                     <?php endif; ?>

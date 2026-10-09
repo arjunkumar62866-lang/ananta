@@ -6,11 +6,13 @@ header('Content-Type: application/json');
 
 $type = $_GET['type'] ?? 'all';
 
+ensureWithdrawalRemarksColumnExists($pdo);
+
 switch ((string)$type) {
     case '1':
         // Approved Withdrawals
         $stmt = $pdo->prepare("
-            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, created_date, api_txn_no
+            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
             WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
               AND subject NOT LIKE '%Investment%'
@@ -21,9 +23,9 @@ switch ((string)$type) {
     case '3':
         // Investment Withdrawal Requests
         $stmt = $pdo->prepare("
-            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, created_date, api_txn_no
+            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
-            WHERE (subject LIKE '%Investment Withdrawal%')
+            WHERE (subject LIKE '%Investment%' OR withdrawal_method = 'Capital')
               AND (a_status = '0' OR a_status IS NULL OR status = 0)
             ORDER BY id DESC
         ");
@@ -31,7 +33,7 @@ switch ((string)$type) {
     case '0':
         // Pending Net Balance Withdrawals
         $stmt = $pdo->prepare("
-            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, created_date, api_txn_no
+            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
             WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
               AND subject NOT LIKE '%Investment%'
@@ -42,7 +44,7 @@ switch ((string)$type) {
     case '2':
         // Rejected / Cancelled Withdrawals
         $stmt = $pdo->prepare("
-            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, created_date, api_txn_no
+            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
             WHERE (subject LIKE '%Cancel Withdrawal%' OR a_status = '2' OR status = 2)
             ORDER BY id DESC
@@ -51,7 +53,7 @@ switch ((string)$type) {
     default:
         // All Net Balance Withdrawals
         $stmt = $pdo->prepare("
-            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, created_date, api_txn_no
+            SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
             WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
               AND subject NOT LIKE '%Investment%'

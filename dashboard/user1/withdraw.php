@@ -74,9 +74,11 @@ $stmtInv->execute([':uid' => $userid]);
 $userInvestments = $stmtInv->fetchAll(PDO::FETCH_ASSOC);
 $cDate = date('Y-m-d');
 
+ensureWithdrawalRemarksColumnExists($pdo);
+
 // Fetch Net Balance Withdrawal History
 $stmtNetHist = $pdo->prepare("
-    SELECT id, amount, act_amount, type, subject, withdrawal_method, status, created_date, time
+    SELECT id, amount, act_amount, type, subject, withdrawal_method, status, a_status, admin_remarks, created_date, time
     FROM tbl_transaction
     WHERE user_id = :uid AND (withdrawal_method IS NOT NULL OR subject LIKE '%Withdrawal%')
     ORDER BY id DESC LIMIT 20
@@ -394,8 +396,19 @@ label.form-label, label {
 
                           <div class="form-group mb-4">
                               <label for="amount">Withdrawal Amount ($ USD)</label>
-                              <input type="number" step="0.01" min="10" class="form-control" id="amount" name="amount" placeholder="Enter amount (Minimum $10)" required <?php echo $isWithdrawalDisabled ? 'disabled' : ''; ?> style="height: 48px;">
+                              <input type="number" step="0.01" min="10" class="form-control" id="amount" name="amount" placeholder="Enter amount (Minimum $10)" required <?php echo $isWithdrawalDisabled ? 'disabled' : ''; ?> style="height: 48px;" oninput="updateInrConversionDisplay()" onchange="updateInrConversionDisplay()">
                               <small class="text-muted mt-1 d-block font-weight-bold">Available Net Balance: <?php echo formatCurrency($userBal, $selectedCurrency); ?></small>
+                              
+                              <!-- Automatic INR Conversion Display -->
+                              <div class="p-3 mt-2" id="inr_conversion_container" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;">
+                                  <div class="d-flex align-items-center justify-content-between">
+                                      <span class="text-muted font-weight-bold" style="font-size: 13px;">Equivalent Amount (INR):</span>
+                                      <span id="inr_conversion_display" class="font-weight-bold text-success" style="font-size: 17px;">₹0.00</span>
+                                  </div>
+                                  <small class="text-muted font-weight-bold d-block mt-1" style="font-size: 11.5px;">
+                                      <i class="fa fa-info-circle text-success mr-1"></i> Conversion Rate: 1 USD = ₹90
+                                  </small>
+                              </div>
                           </div>
 
                           <div class="form-group mb-4">
@@ -537,8 +550,9 @@ label.form-label, label {
                                           $netWdUsd = round($realFundUsd - $deductAmtUsd, 2);
 
                                           $isWithdrawn = ($inv['capital_withdrawal_status'] === 'WITHDRAWN');
-                                          $isMatured = ($cDate >= $maturityDate);
-                                          $isLocked = (!$isWithdrawn && !$isMatured);
+                                          $isPending   = ($inv['capital_withdrawal_status'] === 'PENDING');
+                                          $isMatured   = ($cDate >= $maturityDate);
+                                          $isLocked    = (!$isWithdrawn && !$isPending && !$isMatured);
                                       ?>
                                       <tr>
                                           <td class="font-weight-bold">#<?= $invId; ?></td>
@@ -549,6 +563,8 @@ label.form-label, label {
                                           <td>
                                               <?php if ($isWithdrawn): ?>
                                                   <span class="badge badge-secondary px-2 py-1 font-weight-bold">WITHDRAWN</span>
+                                              <?php elseif ($isPending): ?>
+                                                  <span class="badge badge-info px-2 py-1 font-weight-bold"><i class="fa fa-clock-o mr-1"></i> PENDING REVIEW</span>
                                               <?php elseif ($isLocked): ?>
                                                   <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold"><i class="fa fa-lock mr-1"></i> LOCKED</span>
                                               <?php else: ?>
@@ -557,7 +573,11 @@ label.form-label, label {
                                           </td>
                                           <td>
                                               <?php if ($isWithdrawn): ?>
-                                                  <button type="button" class="btn btn-xs btn-light font-weight-bold" disabled>Claimed</button>
+                                                  <button type="button" class="btn btn-xs btn-light font-weight-bold" disabled>Withdrawn</button>
+                                              <?php elseif ($isPending): ?>
+                                                  <button type="button" class="btn btn-xs btn-outline-info font-weight-bold" disabled title="Withdrawal request is under admin review">
+                                                      <i class="fa fa-clock-o mr-1"></i> Pending Review
+                                                  </button>
                                               <?php elseif ($isLocked): ?>
                                                   <button type="button" class="btn btn-xs btn-outline-secondary font-weight-bold" disabled title="Capital locked until <?= $maturityDate; ?>">
                                                       <i class="fa fa-lock mr-1"></i> Locked
@@ -647,12 +667,18 @@ label.form-label, label {
                                           <th>Amount</th>
                                           <th>Date & Time</th>
                                           <th>Status</th>
+                                          <th>Admin Remarks</th>
                                       </tr>
                                   </thead>
                                   <tbody>
                                       <?php foreach ($netWithdrawalHistory as $row): 
-                                          $st = (string)$row['status'];
-                                          $stBadge = ($st === '1' || strtolower($row['subject'] ?? '') === 'approved') ? '<span class="badge badge-success px-2 py-1">PAID</span>' : (($st === '2') ? '<span class="badge badge-danger px-2 py-1">REJECTED</span>' : '<span class="badge badge-warning text-dark px-2 py-1">PENDING</span>');
+                                          $aSt = (string)($row['a_status'] ?? $row['status']);
+                                          $stBadge = ($aSt === '1' || strtolower($row['subject'] ?? '') === 'approved') 
+                                              ? '<span class="badge badge-success px-2 py-1">PAID</span>' 
+                                              : (($aSt === '2') 
+                                                  ? '<span class="badge badge-danger px-2 py-1">REJECTED</span>' 
+                                                  : '<span class="badge badge-warning text-dark px-2 py-1">PENDING</span>');
+                                          $admRem = trim($row['admin_remarks'] ?? '');
                                       ?>
                                       <tr>
                                           <td class="font-weight-bold">#<?= $row['id']; ?></td>
@@ -660,6 +686,7 @@ label.form-label, label {
                                           <td class="font-weight-bold text-dark">$<?= number_format((float)$row['amount'], 2); ?></td>
                                           <td><small class="text-muted font-weight-bold"><?= $row['created_date']; ?> <?= $row['time']; ?></small></td>
                                           <td><?= $stBadge; ?></td>
+                                          <td class="small text-muted font-weight-semibold"><?= !empty($admRem) ? htmlspecialchars($admRem) : '—'; ?></td>
                                       </tr>
                                       <?php endforeach; ?>
                                   </tbody>
@@ -692,20 +719,32 @@ label.form-label, label {
                                           <th>#</th>
                                           <th>Package</th>
                                           <th>Real Fund</th>
-                                          <th>Net Paid</th>
+                                          <th>Net Payout</th>
                                           <th>Date</th>
                                           <th>Status</th>
+                                          <th>Admin Remarks</th>
                                       </tr>
                                   </thead>
                                   <tbody>
-                                      <?php foreach ($capitalWithdrawalHistory as $cRow): ?>
+                                      <?php foreach ($capitalWithdrawalHistory as $cRow): 
+                                          $cSt = strtoupper(trim($cRow['status'] ?? 'PENDING'));
+                                          if ($cSt === 'PAID' || $cSt === 'APPROVED') {
+                                              $cBadge = '<span class="badge badge-success px-2 py-1">PAID</span>';
+                                          } elseif ($cSt === 'REJECTED') {
+                                              $cBadge = '<span class="badge badge-danger px-2 py-1">REJECTED</span>';
+                                          } else {
+                                              $cBadge = '<span class="badge badge-warning text-dark px-2 py-1">PENDING</span>';
+                                          }
+                                          $cRem = trim($cRow['admin_remarks'] ?? '');
+                                      ?>
                                       <tr>
                                           <td class="font-weight-bold">#<?= $cRow['id']; ?></td>
                                           <td class="font-weight-bold text-primary"><?= htmlspecialchars($cRow['package_name'] ?: $cRow['package_code'] ?: 'ANANTA'); ?></td>
                                           <td class="font-weight-bold">$<?= number_format((float)$cRow['real_fund_usd'], 2); ?></td>
                                           <td class="font-weight-bold text-success">$<?= number_format((float)$cRow['net_withdrawal_usd'], 2); ?></td>
                                           <td><small class="text-muted font-weight-bold"><?= substr($cRow['requested_at'] ?: $cRow['created_at'] ?: '', 0, 10); ?></small></td>
-                                          <td><span class="badge badge-success px-2 py-1">PAID</span></td>
+                                          <td><?= $cBadge; ?></td>
+                                          <td class="small text-muted font-weight-semibold"><?= !empty($cRem) ? htmlspecialchars($cRem) : '—'; ?></td>
                                       </tr>
                                       <?php endforeach; ?>
                                   </tbody>
@@ -727,6 +766,19 @@ label.form-label, label {
 </div>
 
 <script>
+function updateInrConversionDisplay() {
+    const amtInput = document.getElementById('amount');
+    const displaySpan = document.getElementById('inr_conversion_display');
+    if (!amtInput || !displaySpan) return;
+
+    const val = parseFloat(amtInput.value);
+    if (isNaN(val) || val <= 0) {
+        displaySpan.innerText = '₹0.00';
+    } else {
+        const inr = val * 90.0;
+        displaySpan.innerText = '₹' + inr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+}
 function switchWithdrawalView(view) {
     $('.wallet-tab-btn').removeClass('active');
     

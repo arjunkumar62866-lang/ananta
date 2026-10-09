@@ -75,8 +75,13 @@ if (isset($_POST['update'])) {
         ':userid'      => $userid
     ]);
 
-    // Update user table
-    $stmt2 = $con->prepare("UPDATE user SET kyc = '1' WHERE userid = :userid");
+    // Update kyc table status to '1' (Verified)
+    $updateStatus = "UPDATE kyc SET status = '1' WHERE userid = :userid";
+    $stmtStatus = $con->prepare($updateStatus);
+    $stmtStatus->execute([':userid' => $userid]);
+
+    // Update user table (kyc = '2' for Verified/Clear)
+    $stmt2 = $con->prepare("UPDATE user SET kyc = '2' WHERE userid = :userid");
     $stmt2->execute([':userid' => $userid]);
 }
 
