@@ -114,8 +114,13 @@ body.bg-theme1 {
 
 /* DataTables Light Fintech Table Styling */
 .table-responsive {
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
 }
 
 table.dataTable.no-footer {
