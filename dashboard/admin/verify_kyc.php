@@ -1,17 +1,18 @@
-<?php ob_start(); ?>
-<!DOCTYPE html>
-<html lang="en">
-
 <?php 
-include 'common/header.php';
-include('common/connection.php'); // MUST contain $pdo connection
+ob_start(); 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/common/connection.php';
+require_once __DIR__ . '/common/db_method.php';
 
 $uid = trim($_GET['uid'] ?? '');
 
 /* -----------------------------------------
    VERIFY BUTTON (PDO)
 ------------------------------------------ */
-if (isset($_POST['submit'])) {
+if (isset($_POST['submit']) && !empty($uid)) {
 
     $stmt = $pdo->prepare("UPDATE kyc SET status='1' WHERE userid=:uid");
     $stmt->execute(['uid' => $uid]);
@@ -19,7 +20,6 @@ if (isset($_POST['submit'])) {
     $stmt = $pdo->prepare("UPDATE user SET kyc='2' WHERE userid=:uid");
     $stmt->execute(['uid' => $uid]);
 
-    require_once __DIR__ . '/../user1/common/db_method.php';
     if (function_exists('createUserNotification')) {
         createUserNotification(
             $uid,
@@ -31,19 +31,18 @@ if (isset($_POST['submit'])) {
         );
     }
 
-    header("Location: verify_kyc.php?uid=".$uid);
-    exit;
+    header("Location: verify_kyc.php?uid=" . urlencode($uid));
+    exit();
 }
 
 /* -----------------------------------------
    CANCEL BUTTON (PDO)
 ------------------------------------------ */
-if (isset($_POST['cancel'])) {
+if (isset($_POST['cancel']) && !empty($uid)) {
 
     $stmt = $pdo->prepare("UPDATE user SET kyc='3' WHERE userid=:uid");
     $stmt->execute(['uid' => $uid]);
 
-    require_once __DIR__ . '/../user1/common/db_method.php';
     if (function_exists('createUserNotification')) {
         createUserNotification(
             $uid,
@@ -55,8 +54,8 @@ if (isset($_POST['cancel'])) {
         );
     }
 
-    header("Location: verify_kyc.php?uid=".$uid);
-    exit;
+    header("Location: verify_kyc.php?uid=" . urlencode($uid));
+    exit();
 }
 
 /* -----------------------------------------
@@ -92,6 +91,9 @@ if ($kycCode == 0) {
 }
 
 $newmemberid = ($hmpre ?? 'AN') . $uid;
+
+// Include header AFTER all POST handlers and redirects complete
+include __DIR__ . '/common/header.php';
 ?>
 
 <style>
@@ -315,6 +317,6 @@ $newmemberid = ($hmpre ?? 'AN') . $uid;
 </div>
 </div>
 
-<?php include 'common/footer.php'; ?>
+<?php include __DIR__ . '/common/footer.php'; ?>
 </body>
 </html>
