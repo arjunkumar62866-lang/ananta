@@ -2096,6 +2096,26 @@ document.addEventListener("DOMContentLoaded", function () {
     top: 100% !important;
     z-index: 999999 !important;
 }
+
+@media (max-width: 767.98px) {
+    div.dropdown-menu.ananta-notif-dropdown,
+    div.dropdown-menu.ananta-notif-dropdown.show,
+    .ananta-notification-header-item .dropdown-menu.ananta-notif-dropdown.show {
+        position: fixed !important;
+        top: 65px !important;
+        left: 12px !important;
+        right: 12px !important;
+        bottom: auto !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        transform: none !important;
+        -webkit-transform: none !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        z-index: 999999 !important;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.3) !important;
+    }
+}
 </style>
 
 <!-- Global DataTables High-Contrast Black Text Controls -->
