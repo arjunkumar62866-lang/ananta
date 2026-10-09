@@ -1019,8 +1019,9 @@ a[href*="export.php?"][href*="format=pdf"]:hover {
 }
 
 /* Header Notification Dropdown Center Responsiveness */
-
-/* Header Notification Dropdown Center Responsiveness */
+css
+```
+/* Header Notification Dropdown - Mobile Fix */
 .notif-dropdown-menu {
     border-radius: 16px !important;
     padding: 0 !important;
@@ -1037,14 +1038,15 @@ a[href*="export.php?"][href*="format=pdf"]:hover {
     .notif-dropdown-menu {
         position: fixed !important;
         top: 65px !important;
-        left: 50% !important;
-        right: auto !important;
-        transform: translateX(-50%) !important;
-        width: calc(100vw - 24px) !important;
-        max-width: 380px !important;
+        left: 12px !important;
+        right: 12px !important;
+        transform: none !important;
+        width: auto !important;
+        max-width: none !important;
         margin: 0 !important;
         box-sizing: border-box !important;
     }
 }
+```
 </style>
 
