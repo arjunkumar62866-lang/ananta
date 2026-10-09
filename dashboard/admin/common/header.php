@@ -785,7 +785,7 @@ document.addEventListener("DOMContentLoaded", function() {
                   <strong class="text-primary text-truncate" style="font-size:13px; max-width:200px;"><?php echo htmlspecialchars($tn['title']); ?></strong>
                   <span class="badge badge-light border text-muted" style="font-size:9.5px; border-radius:6px;"><?php echo htmlspecialchars($tn['target_type']); ?></span>
                 </div>
-                <p class="mb-1 text-secondary text-truncate" style="max-width:100%; font-size:12px; font-weight:500; margin:0;"><?php echo htmlspecialchars($tn['message']); ?></p>
+                <p class="mb-1 text-secondary" style="font-size:12px; font-weight:500; margin:0; word-break:break-word; white-space:normal;"><?php echo htmlspecialchars($tn['message']); ?></p>
                 <div class="small text-muted mt-1" style="font-size:10.5px;">
                   <i class="fa fa-clock-o mr-1"></i> <?php echo date('d-M-Y H:i', strtotime($tn['created_at'])); ?>
                 </div>
@@ -1018,8 +1018,7 @@ a[href*="export.php?"][href*="format=pdf"]:hover {
     border-color: #b91c1c !important;
 }
 
-/* Header Notification Dropdown Center Responsiveness */
-
+/* Header Notification Dropdown Screen Bounds Responsiveness */
 .notif-dropdown-menu {
     border-radius: 16px !important;
     padding: 0 !important;
@@ -1033,16 +1032,21 @@ a[href*="export.php?"][href*="format=pdf"]:hover {
 }
 
 @media (max-width: 767.98px) {
-    .notif-dropdown-menu {
+    .dropdown-menu.notif-dropdown-menu,
+    .dropdown-menu.notif-dropdown-menu.show {
         position: fixed !important;
         top: 65px !important;
         left: 12px !important;
         right: 12px !important;
+        bottom: auto !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
         transform: none !important;
-        width: auto !important;
-        max-width: none !important;
+        -webkit-transform: none !important;
         margin: 0 !important;
         box-sizing: border-box !important;
+        z-index: 999999 !important;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.3) !important;
     }
 }
 </style>
