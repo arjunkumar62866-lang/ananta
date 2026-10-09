@@ -10,6 +10,31 @@
 
     <!-- APPLE GLASSMORPHIC FLOATING MOBILE NAVBAR WITH SLIDING INDICATOR -->
     <style>
+    .footer {
+      position: relative !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      clear: both !important;
+      margin-top: 40px !important;
+      padding: 20px 15px 90px 15px !important;
+      background: transparent !important;
+      color: #64748b !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      text-align: center !important;
+      border-top: 1px solid rgba(226, 232, 240, 0.6) !important;
+      z-index: 10 !important;
+    }
+    @media (min-width: 992px) {
+      .footer {
+        padding-bottom: 25px !important;
+        margin-left: 250px !important;
+        width: calc(100% - 250px) !important;
+      }
+    }
+
     .apple-glass-bottom-nav {
       position: fixed;
       bottom: 12px;
