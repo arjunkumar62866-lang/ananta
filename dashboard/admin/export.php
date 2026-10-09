@@ -145,6 +145,41 @@ switch ($module) {
         }
         break;
 
+    case 'transactions':
+        $from_date = trim($_GET['from_date'] ?? '');
+        $to_date   = trim($_GET['to_date'] ?? '');
+        $query = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.type, t.status, t.created_date, t.time FROM tbl_transaction t LEFT JOIN user u ON t.user_id = u.userid WHERE 1=1";
+        $params = [];
+        if (!empty($from_date) && !empty($to_date)) {
+            $query .= " AND DATE(t.created_date) BETWEEN :from_date AND :to_date";
+            $params[':from_date'] = $from_date;
+            $params[':to_date']   = $to_date;
+        }
+        $query .= " ORDER BY t.id DESC LIMIT 10000";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($format === 'csv' || $format === 'excel') {
+            fputcsv($output, ['Txn ID', 'User ID', 'Name', 'Amount', 'Subject', 'Type', 'Status', 'Date', 'Time']);
+            foreach ($rows as $r) {
+                $stText = ($r['status'] == '1') ? 'COMPLETED/APPROVED' : (($r['status'] == '2') ? 'REJECTED/CANCELLED' : 'PENDING');
+                fputcsv($output, [$r['id'], $r['user_id'], $r['name'], $r['amount'], $r['subject'], $r['type'], $stText, $r['created_date'], $r['time']]);
+            }
+            fclose($output);
+            exit;
+        } else {
+            echo "<h2>Ananta Wallet Transaction Summary Report</h2>";
+            echo "<table border='1' cellpadding='8' cellspacing='0'><thead><tr><th>ID</th><th>User ID</th><th>Name</th><th>Amount</th><th>Subject</th><th>Status</th><th>Date</th></tr></thead><tbody>";
+            foreach ($rows as $r) {
+                $stText = ($r['status'] == '1') ? 'COMPLETED' : (($r['status'] == '2') ? 'REJECTED' : 'PENDING');
+                echo "<tr><td>{$r['id']}</td><td>{$r['user_id']}</td><td>{$r['name']}</td><td>{$r['amount']}</td><td>{$r['subject']}</td><td>{$stText}</td><td>{$r['created_date']}</td></tr>";
+            }
+            echo "</tbody></table>";
+            exit;
+        }
+        break;
+
     default:
         die("Invalid export module specified.");
 }

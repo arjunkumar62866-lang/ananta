@@ -407,10 +407,10 @@ label.form-label-custom {
           <p class="mb-0 text-white-50 small">Filter financial records by date range, user ID/name, and export official CSV or PDF reports.</p>
         </div>
         <div class="header-actions-group">
-          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':'audit'); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=csv" class="btn btn-light font-weight-bold px-3 py-2 mr-2" style="border-radius: 10px;">
+          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':($type==='wallet'?'transactions':'audit')); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=csv" class="btn btn-light font-weight-bold px-3 py-2 mr-2" style="border-radius: 10px;">
             <i class="fa fa-file-excel-o text-success mr-1"></i> Export CSV / Excel
           </a>
-          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':'audit'); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=pdf" class="btn btn-outline-light font-weight-bold px-3 py-2" style="border-radius: 10px;" target="_blank">
+          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':($type==='wallet'?'transactions':'audit')); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=pdf" class="btn btn-outline-light font-weight-bold px-3 py-2" style="border-radius: 10px;" target="_blank">
             <i class="fa fa-file-pdf-o text-danger mr-1"></i> Export PDF
           </a>
         </div>
