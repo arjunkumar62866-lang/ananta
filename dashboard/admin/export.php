@@ -168,7 +168,7 @@ switch ($module) {
                 $stText = ($r['status'] == '1') ? 'COMPLETED/APPROVED' : (($r['status'] == '2') ? 'REJECTED/CANCELLED' : 'PENDING');
                 $rawAmt = (float)$r['amount'];
                 $subj   = $r['subject'] ?? '';
-                $isINR  = (($rawAmt > 500 && strpos($subj, '$') === false) || (strpos($subj, 'Unlock Access Fee') !== false && strpos($subj, '$11') !== false && $rawAmt > 100));
+                $isINR  = ((strpos($subj, 'Ananta Package Investment') !== false) || (strpos($subj, 'Unlock Access Fee') !== false));
                 $usdVal = $isINR ? round($rawAmt / $rate, 2) : round($rawAmt, 2);
                 $inrVal = round($usdVal * $rate, 2);
                 fputcsv($output, [$r['id'], $r['user_id'], $r['name'], $r['amount'], $r['subject'], $r['type'], $stText, number_format($usdVal, 2), number_format($inrVal, 2), $r['created_date'], $r['time']]);
@@ -182,7 +182,7 @@ switch ($module) {
                 $stText = ($r['status'] == '1') ? 'COMPLETED' : (($r['status'] == '2') ? 'REJECTED' : 'PENDING');
                 $rawAmt = (float)$r['amount'];
                 $subj   = $r['subject'] ?? '';
-                $isINR  = (($rawAmt > 500 && strpos($subj, '$') === false) || (strpos($subj, 'Unlock Access Fee') !== false && strpos($subj, '$11') !== false && $rawAmt > 100));
+                $isINR  = ((strpos($subj, 'Ananta Package Investment') !== false) || (strpos($subj, 'Unlock Access Fee') !== false));
                 $usdVal = $isINR ? round($rawAmt / $rate, 2) : round($rawAmt, 2);
                 $inrVal = round($usdVal * $rate, 2);
                 echo "<tr><td>{$r['id']}</td><td>{$r['user_id']}</td><td>{$r['name']}</td><td>{$r['amount']}</td><td>{$r['subject']}</td><td>{$stText}</td><td>\${$usdVal}</td><td>₹{$inrVal}</td><td>{$r['created_date']}</td></tr>";

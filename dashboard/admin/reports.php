@@ -109,7 +109,7 @@ switch ($type) {
             $whereClause .= " AND (t.user_id LIKE :usearch OR u.name LIKE :usearch)";
             $params[':usearch'] = $uSearchParam;
         }
-        $sql = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.status, t.a_status, t.created_date as created_at 
+        $sql = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.type, t.status, t.a_status, t.created_date as created_at 
                 FROM tbl_transaction t 
                 LEFT JOIN user u ON t.user_id = u.userid 
                 {$whereClause} 
@@ -120,10 +120,13 @@ switch ($type) {
         foreach ($rawRows as $r) { 
             $rawAmt = (float)$r['amount'];
             $subj   = $r['subject'] ?? '';
-            // Determine if stored amount is in INR (Package Investments > 500 without $ symbol, or Unlock Access Fee 990)
+            // Documented Authoritative Currency Classification Rules:
+            // 1. Package Investments ('Ananta Package Investment%'): Stored in INR (package amount).
+            // 2. Unlock Access Fees ('Unlock Access Fee%'): Stored in INR (₹990.00).
+            // 3. All other transactions (Withdrawals, Admin Adjustments, Deposits, Payouts): Stored in Base USD.
             $isINR = (
-                ($rawAmt > 500 && strpos($subj, '$') === false) ||
-                (strpos($subj, 'Unlock Access Fee') !== false && strpos($subj, '$11') !== false && $rawAmt > 100)
+                (strpos($subj, 'Ananta Package Investment') !== false) ||
+                (strpos($subj, 'Unlock Access Fee') !== false)
             );
             $usdAmount = $isINR ? ($rawAmt / $rate) : $rawAmt;
             $r['usd_amount'] = $usdAmount;
