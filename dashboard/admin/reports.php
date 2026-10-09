@@ -116,9 +116,19 @@ switch ($type) {
                 ORDER BY t.id DESC LIMIT 500";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
-        $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($reportData as $r) { 
-            $totalSum += (float)$r['amount']; 
+        $rawRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rawRows as $r) { 
+            $rawAmt = (float)$r['amount'];
+            $subj   = $r['subject'] ?? '';
+            // Determine if stored amount is in INR (Package Investments > 500 without $ symbol, or Unlock Access Fee 990)
+            $isINR = (
+                ($rawAmt > 500 && strpos($subj, '$') === false) ||
+                (strpos($subj, 'Unlock Access Fee') !== false && strpos($subj, '$11') !== false && $rawAmt > 100)
+            );
+            $usdAmount = $isINR ? ($rawAmt / $rate) : $rawAmt;
+            $r['usd_amount'] = $usdAmount;
+            $reportData[] = $r;
+            $totalSum += $usdAmount; 
         }
         $totalCount = count($reportData);
         break;
@@ -619,7 +629,7 @@ label.form-label-custom {
                     <td class="px-4 font-weight-bold">#<?php echo $row['id']; ?></td>
                     <td><strong><?php echo htmlspecialchars($row['user_id']); ?></strong></td>
                     <td><?php echo htmlspecialchars($row['name'] ?? 'Member'); ?></td>
-                    <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$row['amount']); ?></td>
+                    <td class="font-weight-bold text-success"><?php echo formatCurrency((float)($row['usd_amount'] ?? $row['amount'])); ?></td>
                     <td class="small text-muted"><?php echo htmlspecialchars($row['subject'] ?? 'Transaction Record'); ?></td>
                     <td class="px-4 small text-muted"><?php echo htmlspecialchars($row['created_at']); ?></td>
                   </tr>
