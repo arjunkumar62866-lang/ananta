@@ -751,12 +751,53 @@ document.addEventListener("DOMContentLoaded", function() {
         </div>
       </li>
 
-      <!-- Notification Bell -->
-      <li class="nav-item">
-        <a href="notification_centre.php" class="nav-link p-2" style="position: relative;">
+      <?php
+      $topNotifications = [];
+      $topNotifCount = 0;
+      try {
+          $stmtTopNotif = $pdo->query("SELECT * FROM tbl_system_notifications ORDER BY id DESC LIMIT 5");
+          $topNotifications = $stmtTopNotif->fetchAll(PDO::FETCH_ASSOC);
+          $topNotifCount = count($topNotifications);
+      } catch (Exception $e) {
+          $topNotifications = [];
+      }
+      ?>
+
+      <!-- Notification Bell with Dropdown Popup -->
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle dropdown-toggle-nocaret p-2" data-toggle="dropdown" href="javascript:void(0);" role="button" aria-haspopup="true" aria-expanded="false" style="position: relative;">
           <i class="fa fa-bell-o text-secondary" style="font-size: 18px;"></i>
-          <span style="position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></span>
+          <?php if ($topNotifCount > 0): ?>
+            <span class="badge badge-danger badge-pill" style="position: absolute; top: 2px; right: 2px; font-size: 9px; padding: 2px 5px; border-radius: 100px;"><?php echo $topNotifCount; ?></span>
+          <?php endif; ?>
         </a>
+        <div class="dropdown-menu dropdown-menu-right shadow-lg border-0" style="border-radius:16px; padding:0; margin-top:10px; background:#ffffff; width:330px; max-width:90vw;">
+          <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="background:#f8fafc; border-top-left-radius:16px; border-top-right-radius:16px;">
+            <h6 class="mb-0 font-weight-bold text-dark" style="font-size:14px;"><i class="fa fa-bell text-primary mr-1"></i> Notifications</h6>
+            <span class="badge badge-primary font-weight-bold" style="border-radius:100px; font-size:10px;"><?php echo $topNotifCount; ?> New</span>
+          </div>
+          <div style="max-height:280px; overflow-y:auto;">
+            <?php if (empty($topNotifications)): ?>
+              <div class="p-3 text-center text-muted small font-weight-bold">No system notifications yet.</div>
+            <?php else: foreach ($topNotifications as $tn): ?>
+              <div class="p-3 border-bottom text-dark" style="font-size:12.5px;">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <strong class="text-primary" style="font-size:13px;"><?php echo htmlspecialchars($tn['title']); ?></strong>
+                  <span class="badge badge-light border text-muted" style="font-size:9.5px; border-radius:6px;"><?php echo htmlspecialchars($tn['target_type']); ?></span>
+                </div>
+                <p class="mb-1 text-secondary text-truncate" style="max-width:290px; font-size:12px; font-weight:500; margin:0;"><?php echo htmlspecialchars($tn['message']); ?></p>
+                <div class="small text-muted mt-1" style="font-size:10.5px;">
+                  <i class="fa fa-clock-o mr-1"></i> <?php echo date('d-M-Y H:i', strtotime($tn['created_at'])); ?>
+                </div>
+              </div>
+            <?php endforeach; endif; ?>
+          </div>
+          <div class="p-2 text-center bg-light" style="border-bottom-left-radius:16px; border-bottom-right-radius:16px;">
+            <a href="notification_centre.php" class="btn btn-sm btn-outline-primary font-weight-bold w-100" style="border-radius:10px; font-size:12px;">
+              <i class="fa fa-expand mr-1"></i> Expand / View All Notifications &rarr;
+            </a>
+          </div>
+        </div>
       </li>
 
       <!-- Admin User Avatar & Profile Dropdown -->

@@ -62,6 +62,48 @@ select.form-control option {
     color: #94a3b8 !important;
     opacity: 1 !important;
 }
+
+/* Table Responsive & Column Fixes */
+.table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+.table {
+    margin-bottom: 0 !important;
+    width: 100% !important;
+}
+.table thead th {
+    white-space: nowrap !important;
+    padding: 12px 14px !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    letter-spacing: 0.5px !important;
+}
+.table tbody td {
+    padding: 12px 14px !important;
+    vertical-align: middle !important;
+}
+.td-nowrap {
+    white-space: nowrap !important;
+}
+.td-msg {
+    min-width: 250px;
+    max-width: 380px;
+    white-space: normal !important;
+    word-break: break-word !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+}
+
+@media (max-width: 767.98px) {
+    .content-wrapper {
+        padding-top: 75px !important;
+        padding-bottom: 110px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+}
 </style>
 
 <body class="ananta-admin-dashboard bg-theme bg-theme1">
@@ -144,21 +186,21 @@ select.form-control option {
             <tbody style="font-size: 13.5px; color: #0f172a;">
               <?php if (empty($notifications)): ?>
                 <tr>
-                  <td colspan="7" class="text-center py-5 text-muted">No system notifications dispatched yet.</td>
+                  <td colspan="7" class="text-center py-5 text-muted font-weight-bold">No system notifications dispatched yet.</td>
                 </tr>
               <?php else: foreach ($notifications as $n): ?>
                 <tr>
-                  <td class="px-4 font-weight-bold">#<?php echo $n['id']; ?></td>
-                  <td>
-                    <span class="badge <?php echo $n['target_type']==='GLOBAL'?'badge-primary':'badge-info'; ?> px-2 py-1">
+                  <td class="px-4 font-weight-bold td-nowrap">#<?php echo $n['id']; ?></td>
+                  <td class="td-nowrap">
+                    <span class="badge <?php echo $n['target_type']==='GLOBAL'?'badge-primary':'badge-info'; ?> px-2 py-1 font-weight-bold" style="border-radius:6px;">
                       <?php echo htmlspecialchars($n['target_type']); ?>
                     </span>
                   </td>
-                  <td><?php echo htmlspecialchars($n['target_user_id'] ?? 'ALL MEMBERS'); ?></td>
-                  <td><strong><?php echo htmlspecialchars($n['title']); ?></strong></td>
-                  <td class="small text-muted" style="max-width:300px;"><?php echo htmlspecialchars($n['message']); ?></td>
-                  <td><span class="badge badge-secondary"><?php echo htmlspecialchars($n['created_by']); ?></span></td>
-                  <td class="px-4 small text-muted"><?php echo date('d-M-Y H:i:s', strtotime($n['created_at'])); ?></td>
+                  <td class="td-nowrap font-weight-bold" style="color:#0f172a;"><?php echo htmlspecialchars($n['target_user_id'] ?? 'ALL MEMBERS'); ?></td>
+                  <td class="td-nowrap"><strong style="color:#0284c7;"><?php echo htmlspecialchars($n['title']); ?></strong></td>
+                  <td class="td-msg text-secondary"><?php echo htmlspecialchars($n['message']); ?></td>
+                  <td class="td-nowrap"><span class="badge badge-secondary px-2 py-1 font-weight-bold" style="border-radius:6px;"><?php echo htmlspecialchars($n['created_by']); ?></span></td>
+                  <td class="px-4 td-nowrap small text-muted font-weight-bold"><?php echo date('d-M-Y h:i:s A', strtotime($n['created_at'])); ?></td>
                 </tr>
               <?php endforeach; endif; ?>
             </tbody>
