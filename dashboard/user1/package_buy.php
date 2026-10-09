@@ -112,6 +112,41 @@ body.bg-theme1 {
     flex-shrink: 0;
 }
 
+@media (max-width: 767.98px) {
+    .income-header-card {
+        padding: 16px !important;
+        border-radius: 18px !important;
+        overflow: hidden !important;
+    }
+    .income-header-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+        border-radius: 12px;
+    }
+    .header-banner-title {
+        font-size: 17px !important;
+        word-break: break-word !important;
+    }
+    .header-banner-sub {
+        font-size: 12px !important;
+        word-break: break-word !important;
+    }
+    .header-balance-box {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    .header-actions-wrapper {
+        width: 100% !important;
+    }
+    .w-100-mobile {
+        width: 100% !important;
+        text-align: center !important;
+    }
+}
+
 /* Package Grid Cards */
 .package-card {
     background: #ffffff;
@@ -313,26 +348,26 @@ label.form-label, label {
                               <i class="fa fa-shopping-cart"></i>
                           </div>
                           <div>
-                              <div class="d-flex align-items-center gap-2 mb-1">
+                              <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                   <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 700; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">ANANTA NIVESH PACKAGES</span>
                                   <span style="font-size: 12px; color: #64748b; font-weight: 600;">PORTFOLIO GROWTH</span>
                               </div>
-                              <h4 class="mb-0" style="font-size: 22px; font-weight: 800; color: #0f172a;">
+                              <h4 class="mb-0 header-banner-title" style="font-size: 22px; font-weight: 800; color: #0f172a;">
                                   Select & Buy <span style="background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Investment Package</span> 🚀
                               </h4>
-                              <p class="mb-0 text-muted" style="font-size: 13.5px; margin-top: 3px;">
+                              <p class="mb-0 text-muted header-banner-sub" style="font-size: 13.5px; margin-top: 3px;">
                                   Select an official package, enter your investment amount, and lock in guaranteed capital growth.
                               </p>
                           </div>
                       </div>
-                      <div class="d-flex align-items-center gap-2 flex-wrap">
-                          <div class="px-3 py-2" style="background: #ffffff; border-radius: 14px; border: 1px solid rgba(2, 132, 199, 0.25); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
+                      <div class="d-flex align-items-center gap-2 flex-wrap header-actions-wrapper">
+                          <div class="px-3 py-2 header-balance-box" style="background: #ffffff; border-radius: 14px; border: 1px solid rgba(2, 132, 199, 0.25); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
                               <span class="text-muted d-block" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Fund Balance</span>
                               <span class="font-weight-bold" style="font-size: 18px; color: #0284c7; font-weight: 800;">
                                   <?php echo formatCurrency($mainBalanceUSD, $selectedCurrency); ?>
                               </span>
                           </div>
-                          <a href="fund-request.php" class="btn btn-outline-success font-weight-bold px-3 py-2" style="border-radius: 12px; font-size: 13px;">
+                          <a href="fund-request.php" class="btn btn-outline-success font-weight-bold px-3 py-2 w-100-mobile" style="border-radius: 12px; font-size: 13px;">
                               <i class="fa fa-plus-circle me-1"></i> Add Fund
                           </a>
                       </div>
