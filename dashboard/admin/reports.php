@@ -278,16 +278,19 @@ switch ($type) {
 ?>
 
 <style>
-/* High contrast form control styling for input boxes, date inputs, selects, and text */
+/* Responsive High contrast form control styling */
 .form-control, select.form-control, input[type="text"].form-control, input[type="date"].form-control {
     background-color: #ffffff !important;
     color: #0f172a !important;
     border: 1.5px solid #cbd5e1 !important;
     border-radius: 10px !important;
-    padding: 10px 14px !important;
+    padding: 10px 12px !important;
     font-size: 14px !important;
     font-weight: 500 !important;
     opacity: 1 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    height: 44px !important;
 }
 .form-control:focus, select.form-control:focus, input[type="text"].form-control:focus, input[type="date"].form-control:focus {
     background-color: #ffffff !important;
@@ -308,6 +311,60 @@ label.form-label-custom {
     color: #1e293b !important;
     margin-bottom: 6px !important;
     display: block !important;
+    font-size: 13px !important;
+}
+/* Responsive action button container */
+.btn-filter-group {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+.btn-filter-apply {
+    flex: 2 1 auto !important;
+    height: 44px !important;
+    border-radius: 10px !important;
+    background: #0284c7 !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 16px !important;
+}
+.btn-filter-reset {
+    flex: 1 1 auto !important;
+    height: 44px !important;
+    border-radius: 10px !important;
+    background: #64748b !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 16px !important;
+    text-decoration: none !important;
+}
+.btn-filter-reset:hover {
+    background: #475569 !important;
+    color: #ffffff !important;
+}
+@media (max-width: 767.98px) {
+    .filter-card-body {
+        padding: 16px !important;
+    }
+    .header-actions-group {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    .header-actions-group .btn {
+        width: 100% !important;
+        margin-right: 0 !important;
+    }
 }
 </style>
 
@@ -326,7 +383,7 @@ label.form-label-custom {
           <h3 class="mb-1 text-white font-weight-bold"><?php echo htmlspecialchars($title); ?></h3>
           <p class="mb-0 text-white-50 small">Filter financial records by date range, user ID/name, and export official CSV or PDF reports.</p>
         </div>
-        <div>
+        <div class="header-actions-group">
           <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':'audit'); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=csv" class="btn btn-light font-weight-bold px-3 py-2 mr-2" style="border-radius: 10px;">
             <i class="fa fa-file-excel-o text-success mr-1"></i> Export CSV / Excel
           </a>
@@ -348,10 +405,10 @@ label.form-label-custom {
 
     <!-- Filter Form with Calendar Datepicker & User Search -->
     <div class="card border-0 mb-4" style="background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15,23,42,0.05);">
-      <div class="card-body p-4">
-        <form method="GET" class="row align-items-end">
+      <div class="card-body p-4 filter-card-body">
+        <form method="GET" class="row">
           
-          <div class="col-lg-3 col-md-6 mb-3">
+          <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
             <label class="form-label-custom">Report Category / Type</label>
             <select name="type" class="form-control" onchange="this.form.submit()">
               <option value="daily" <?php echo $type==='daily'?'selected':''; ?>>📅 Daily Financial Summary</option>
@@ -366,33 +423,38 @@ label.form-label-custom {
             </select>
           </div>
 
-          <div class="col-lg-3 col-md-6 mb-3">
+          <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
             <label class="form-label-custom">🔍 Search User ID / Name</label>
             <input type="text" name="user_search" value="<?php echo htmlspecialchars($user_search); ?>" class="form-control" placeholder="Enter User ID or Member Name...">
           </div>
 
-          <div class="col-lg-2 col-md-6 mb-3">
+          <div class="col-xl-2 col-lg-2 col-md-6 col-6 mb-3">
             <label class="form-label-custom">📅 From Date</label>
             <input type="date" name="from_date" value="<?php echo htmlspecialchars($from_date); ?>" class="form-control">
           </div>
 
-          <div class="col-lg-2 col-md-6 mb-3">
+          <div class="col-xl-2 col-lg-2 col-md-6 col-6 mb-3">
             <label class="form-label-custom">📅 To Date</label>
             <input type="date" name="to_date" value="<?php echo htmlspecialchars($to_date); ?>" class="form-control">
           </div>
 
-          <div class="col-lg-2 col-md-12 mb-3 d-flex gap-2">
-            <button type="submit" class="btn btn-primary font-weight-bold flex-grow-1 py-2 mr-2" style="border-radius:10px; background:#0284c7; border:none; height: 44px;">
-              <i class="fa fa-filter mr-1"></i> Apply
-            </button>
-            <a href="reports.php?type=<?php echo htmlspecialchars($type); ?>" class="btn btn-secondary font-weight-bold py-2" style="border-radius:10px; height: 44px; display: inline-flex; align-items: center; justify-content: center;" title="Reset Filter to Default">
-              <i class="fa fa-refresh mr-1"></i> Reset
-            </a>
+          <div class="col-xl-2 col-lg-2 col-md-12 col-12 mb-3 d-flex align-items-end">
+            <div class="btn-filter-group">
+              <button type="submit" class="btn btn-filter-apply">
+                <i class="fa fa-filter mr-1"></i> Apply
+              </button>
+              <a href="reports.php?type=<?php echo htmlspecialchars($type); ?>" class="btn btn-filter-reset" title="Reset Filter to Default">
+                <i class="fa fa-refresh mr-1"></i> Reset
+              </a>
+            </div>
           </div>
 
         </form>
-        <div class="mt-2 text-muted small">
-          <strong>Active Filter Period:</strong> <span class="badge badge-light border text-dark px-2 py-1"><?php echo htmlspecialchars($from_date); ?></span> to <span class="badge badge-light border text-dark px-2 py-1"><?php echo htmlspecialchars($to_date); ?></span>
+        <div class="mt-2 text-muted small d-flex align-items-center flex-wrap gap-2">
+          <strong>Active Filter Period:</strong> 
+          <span class="badge badge-light border text-dark px-2 py-1" style="font-size: 12px; border-radius: 6px;"><?php echo htmlspecialchars($from_date); ?></span> 
+          <span>to</span> 
+          <span class="badge badge-light border text-dark px-2 py-1" style="font-size: 12px; border-radius: 6px;"><?php echo htmlspecialchars($to_date); ?></span>
         </div>
       </div>
     </div>
