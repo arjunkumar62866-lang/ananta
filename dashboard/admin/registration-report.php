@@ -135,90 +135,83 @@ include __DIR__ . '/common/header.php';
 ?>
 
 <style>
-body.ananta-admin-dashboard,
-body.bg-theme,
-body.bg-theme1 {
-    background: #f4f6f8 !important;
+/* Responsive High contrast form control styling */
+.form-control, select.form-control, input[type="text"].form-control, input[type="date"].form-control {
+    background-color: #ffffff !important;
     color: #0f172a !important;
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    height: 44px !important;
 }
-
-#wrapper {
-    background: #f4f6f8 !important;
-    min-height: 100vh !important;
+.form-control:focus, select.form-control:focus, input[type="text"].form-control:focus, input[type="date"].form-control:focus {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
 }
-
-.content-wrapper {
-    background-color: #f4f6f8 !important;
-    padding-top: 85px !important;
-    padding-bottom: 60px !important;
-}
-
-/* Header Card */
-.reg-header-card {
-    background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(15, 23, 42, 0.05) 100%), #ffffff !important;
-    border-radius: 22px !important;
-    border: 1px solid rgba(2, 132, 199, 0.20) !important;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
-    margin-bottom: 24px;
-}
-
-.reg-header-icon {
-    width: 54px;
-    height: 54px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
-    color: #ffffff;
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
-    flex-shrink: 0;
+label.form-label-custom {
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin-bottom: 6px !important;
+    display: block !important;
+    font-size: 13px !important;
 }
 
 /* Stat Metric Box */
 .stat-metric-card {
     background: #ffffff !important;
-    border-radius: 18px !important;
+    border-radius: 16px !important;
     border: 1px solid #e2e8f0 !important;
-    padding: 20px !important;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04) !important;
+    padding: 16px !important;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04) !important;
     height: 100%;
 }
-
 .stat-metric-value {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 800;
     color: #0f172a !important;
     margin-top: 4px;
+    word-break: break-word;
 }
-
 .stat-metric-label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     color: #64748b !important;
-    text-uppercase;
+    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-/* Table Card */
+/* Table Card & Responsive Table Rules */
 .ananta-table-card {
     background: #ffffff !important;
     border-radius: 20px !important;
     border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
     overflow: hidden;
 }
-
-.ananta-table-card .card-header-title {
-    font-size: 17px;
-    font-weight: 800;
-    color: #0f172a !important;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
+.table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+.table {
+    margin-bottom: 0 !important;
+    width: 100% !important;
+}
+.table thead th {
+    white-space: nowrap !important;
+    padding: 12px 14px !important;
+}
+.table tbody td {
+    white-space: nowrap !important;
+    padding: 12px 14px !important;
+    vertical-align: middle !important;
 }
 
 .zero-day-badge {
@@ -243,31 +236,50 @@ body.bg-theme1 {
     background: #f0f9ff !important;
     border-left: 4px solid #0284c7 !important;
 }
+
+@media (max-width: 767.98px) {
+    .content-wrapper {
+        padding-top: 75px !important;
+        padding-bottom: 110px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .header-actions-group {
+        width: 100% !important;
+        margin-top: 10px;
+    }
+    .header-actions-group .btn {
+        width: 100% !important;
+    }
+    .stat-metric-card {
+        padding: 12px !important;
+    }
+    .stat-metric-value {
+        font-size: 18px !important;
+    }
+    .stat-metric-label {
+        font-size: 10px !important;
+    }
+}
 </style>
 
+<body class="ananta-admin-dashboard bg-theme bg-theme1">
 <div id="wrapper">
+<div class="clearfix"></div>
+
 <div class="content-wrapper">
     <div class="container-fluid">
 
         <!-- HEADER BANNER -->
-        <div class="card reg-header-card p-4">
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="reg-header-icon mr-3">
-                        <i class="zmdi zmdi-account-add"></i>
-                    </div>
-                    <div>
-                        <h3 class="mb-1 font-weight-bold" style="color: #0f172a; font-size: 22px;">
-                            Daily New Registration Report
-                        </h3>
-                        <p class="mb-0 small" style="color: #475569; font-weight: 600;">
-                            Track daily new user registrations, monthly breakdown, and custom date range metrics.
-                        </p>
-                    </div>
-                </div>
-
+        <div class="card border-0 mb-4" style="background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%); border-radius: 20px; box-shadow: 0 10px 25px rgba(2, 132, 199, 0.2);">
+            <div class="card-body p-4 text-white d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div>
-                    <a href="all_user.php" class="btn btn-sm btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 100px;">
+                    <span class="badge badge-light text-primary px-3 py-1 mb-2" style="border-radius: 100px; font-weight: 700;">REGISTRATION ANALYTICS</span>
+                    <h3 class="mb-1 text-white font-weight-bold">Daily New Registration Report</h3>
+                    <p class="mb-0 text-white-50 small">Track daily new user registrations, monthly breakdown, and custom date range metrics.</p>
+                </div>
+                <div class="header-actions-group">
+                    <a href="all_user.php" class="btn btn-light font-weight-bold px-3 py-2" style="border-radius: 10px;">
                         <i class="zmdi zmdi-accounts-list mr-1"></i> All Users Directory
                     </a>
                 </div>
@@ -284,30 +296,28 @@ body.bg-theme1 {
             </div>
         <?php endif; ?>
 
-        <!-- DATE FILTER & SUMMARY ROW -->
+        <!-- DATE FILTER CARD -->
         <div class="card ananta-table-card mb-4 p-4">
-            <form method="GET" action="registration-report.php" class="m-0">
-                <div class="row align-items-end">
-                    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
-                        <label class="form-label font-weight-bold small text-muted mb-1">FROM DATE</label>
-                        <input type="date" name="from_date" class="form-control font-weight-bold" value="<?php echo htmlspecialchars($fromDateInput); ?>" required style="border-radius: 10px;">
-                    </div>
+            <form method="GET" action="registration-report.php" class="row">
+                <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
+                    <label class="form-label-custom">📅 FROM DATE</label>
+                    <input type="date" name="from_date" class="form-control" value="<?php echo htmlspecialchars($fromDateInput); ?>" required>
+                </div>
 
-                    <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
-                        <label class="form-label font-weight-bold small text-muted mb-1">TO DATE</label>
-                        <input type="date" name="to_date" class="form-control font-weight-bold" value="<?php echo htmlspecialchars($toDateInput); ?>" required style="border-radius: 10px;">
-                    </div>
+                <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
+                    <label class="form-label-custom">📅 TO DATE</label>
+                    <input type="date" name="to_date" class="form-control" value="<?php echo htmlspecialchars($toDateInput); ?>" required>
+                </div>
 
-                    <div class="col-md-4 col-sm-8 mb-3 mb-md-0">
-                        <label class="form-label font-weight-bold small text-muted mb-1">SEARCH USER / SPONSOR</label>
-                        <input type="text" name="user_search" class="form-control font-weight-bold" placeholder="User ID, Name, or Sponsor..." value="<?php echo htmlspecialchars($_GET['user_search'] ?? ''); ?>" style="border-radius: 10px;">
-                    </div>
+                <div class="col-xl-4 col-lg-4 col-md-6 col-12 mb-3">
+                    <label class="form-label-custom">🔍 SEARCH USER / SPONSOR</label>
+                    <input type="text" name="user_search" class="form-control" placeholder="User ID, Name, or Sponsor..." value="<?php echo htmlspecialchars($_GET['user_search'] ?? ''); ?>">
+                </div>
 
-                    <div class="col-md-2 col-sm-4 text-right">
-                        <button type="submit" class="btn btn-primary font-weight-bold w-100 py-2" style="border-radius: 10px; background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%); border: none;">
-                            <i class="zmdi zmdi-filter-list mr-1"></i> Filter Report
-                        </button>
-                    </div>
+                <div class="col-xl-2 col-lg-2 col-md-6 col-12 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary font-weight-bold w-100" style="height: 44px; border-radius: 10px; background: #0284c7; border: none;">
+                        <i class="zmdi zmdi-filter-list mr-1"></i> Filter Report
+                    </button>
                 </div>
             </form>
         </div>
@@ -315,34 +325,34 @@ body.bg-theme1 {
         <?php if ($isValidRange): ?>
             <!-- STATS METRICS SUMMARY CARDS -->
             <div class="row mb-4">
-                <div class="col-6 col-md-3 mb-3 mb-md-0">
-                    <div class="stat-metric-card" style="border-left: 5px solid #0284c7 !important;">
+                <div class="col-xl-3 col-lg-3 col-md-6 col-6 mb-3">
+                    <div class="stat-metric-card" style="border-left: 4px solid #0284c7 !important;">
                         <div class="stat-metric-label">TODAY'S REGISTRATIONS</div>
                         <div class="stat-metric-value" style="color: #0284c7 !important;"><?php echo number_format($todayCount); ?></div>
-                        <div class="small text-muted font-weight-bold mt-1">Current Date: <?php echo date('d M Y'); ?></div>
+                        <div class="small text-muted font-weight-bold mt-1">Date: <?php echo date('d M Y'); ?></div>
                     </div>
                 </div>
 
-                <div class="col-6 col-md-3 mb-3 mb-md-0">
-                    <div class="stat-metric-card" style="border-left: 5px solid #16a34a !important;">
-                        <div class="stat-metric-label">PERIOD TOTAL REGISTRATIONS</div>
+                <div class="col-xl-3 col-lg-3 col-md-6 col-6 mb-3">
+                    <div class="stat-metric-card" style="border-left: 4px solid #16a34a !important;">
+                        <div class="stat-metric-label">PERIOD TOTAL</div>
                         <div class="stat-metric-value" style="color: #16a34a !important;"><?php echo number_format($totalPeriod); ?></div>
                         <div class="small text-muted font-weight-bold mt-1"><?php echo date('d M', strtotime($fromDateInput)); ?> - <?php echo date('d M Y', strtotime($toDateInput)); ?></div>
                     </div>
                 </div>
 
-                <div class="col-6 col-md-3 mb-3 mb-md-0">
-                    <div class="stat-metric-card" style="border-left: 5px solid #9333ea !important;">
+                <div class="col-xl-3 col-lg-3 col-md-6 col-6 mb-3">
+                    <div class="stat-metric-card" style="border-left: 4px solid #9333ea !important;">
                         <div class="stat-metric-label">DAILY AVERAGE</div>
                         <div class="stat-metric-value" style="color: #9333ea !important;"><?php echo number_format($dailyAverage, 2); ?></div>
                         <div class="small text-muted font-weight-bold mt-1">Across <?php echo $daysCount; ?> Days</div>
                     </div>
                 </div>
 
-                <div class="col-6 col-md-3 mb-3 mb-md-0">
-                    <div class="stat-metric-card" style="border-left: 5px solid #0f172a !important;">
+                <div class="col-xl-3 col-lg-3 col-md-6 col-6 mb-3">
+                    <div class="stat-metric-card" style="border-left: 4px solid #0f172a !important;">
                         <div class="stat-metric-label">REPORT RANGE</div>
-                        <div class="stat-metric-value" style="font-size: 16px; margin-top: 10px; color: #0f172a !important;">
+                        <div class="stat-metric-value" style="font-size: 15px; margin-top: 8px; color: #0f172a !important;">
                             <?php echo date('d M', strtotime($fromDateInput)); ?> &rarr; <?php echo date('d M Y', strtotime($toDateInput)); ?>
                         </div>
                         <div class="small text-muted font-weight-bold mt-1">Total Days: <?php echo $daysCount; ?></div>
@@ -350,13 +360,13 @@ body.bg-theme1 {
                 </div>
             </div>
 
-            <!-- DAILY BREAKDOWN TABLE (INCLUDES ALL DAYS INCLUDING ZERO REGISTRATION DAYS) -->
+            <!-- DAILY BREAKDOWN TABLE -->
             <div class="card ananta-table-card mb-4">
-                <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between border-bottom">
-                    <h5 class="card-header-title">
-                        <i class="zmdi zmdi-calendar-alt text-primary"></i> Daily Registration Breakdown
+                <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2 border-bottom">
+                    <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                        <i class="zmdi zmdi-calendar-alt text-primary mr-1"></i> Daily Registration Breakdown
                     </h5>
-                    <span class="badge badge-pill badge-secondary font-weight-bold px-3 py-1">
+                    <span class="badge badge-light border text-dark font-weight-bold px-3 py-1" style="border-radius: 100px; font-size: 11px;">
                         Includes Days With 0 Registrations
                     </span>
                 </div>
@@ -371,7 +381,7 @@ body.bg-theme1 {
                                 <th class="py-3 text-right px-4">Status & Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody style="font-size: 13.5px; color: #0f172a;">
                             <?php foreach ($dailyBreakdown as $row): ?>
                                 <?php 
                                 $pct = ($totalPeriod > 0) ? round(($row['count'] / $totalPeriod) * 100, 1) : 0;
@@ -384,7 +394,7 @@ body.bg-theme1 {
                                         <?php endif; ?>
                                     </td>
                                     <td class="font-weight-semibold text-muted"><?php echo $row['day_name']; ?></td>
-                                    <td class="text-center font-weight-bold" style="font-size: 16px;">
+                                    <td class="text-center font-weight-bold" style="font-size: 15px;">
                                         <?php if ($row['count'] > 0): ?>
                                             <span class="active-day-badge"><?php echo $row['count']; ?> New</span>
                                         <?php else: ?>
@@ -392,11 +402,11 @@ body.bg-theme1 {
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
-                                        <div class="d-flex align-items-center justify-content-center gap-2">
-                                            <div class="progress w-50" style="height: 6px; border-radius: 10px; background: #e2e8f0;">
+                                        <div class="d-flex align-items-center justify-content-center gap-2" style="min-width: 120px;">
+                                            <div class="progress w-100" style="height: 6px; border-radius: 10px; background: #e2e8f0;">
                                                 <div class="progress-bar bg-primary" role="progressbar" style="width: <?php echo $pct; ?>%; border-radius: 10px;"></div>
                                             </div>
-                                            <span class="small font-weight-bold text-muted"><?php echo $pct; ?>%</span>
+                                            <span class="small font-weight-bold text-muted ml-2"><?php echo $pct; ?>%</span>
                                         </div>
                                     </td>
                                     <td class="text-right px-4">
@@ -416,13 +426,13 @@ body.bg-theme1 {
             </div>
 
             <!-- DETAILED USER LIST TABLE -->
-            <div class="card ananta-table-card">
-                <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between border-bottom">
-                    <h5 class="card-header-title">
-                        <i class="zmdi zmdi-accounts-list-alt text-primary"></i> Registered Users Directory (<?php echo count($userList); ?> Users)
+            <div class="card ananta-table-card mb-4">
+                <div class="card-header bg-white py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2 border-bottom">
+                    <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                        <i class="zmdi zmdi-accounts-list-alt text-primary mr-1"></i> Registered Users Directory (<?php echo count($userList); ?> Users)
                     </h5>
                     <span class="small text-muted font-weight-bold">
-                        Showing registrations between <?php echo date('d-M-Y', strtotime($fromDateInput)); ?> and <?php echo date('d-M-Y', strtotime($toDateInput)); ?>
+                        Between <?php echo date('d-M-Y', strtotime($fromDateInput)); ?> and <?php echo date('d-M-Y', strtotime($toDateInput)); ?>
                     </span>
                 </div>
                 <div class="table-responsive">
@@ -438,7 +448,7 @@ body.bg-theme1 {
                                 <th class="py-3 text-right px-4">Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody style="font-size: 13.5px; color: #0f172a;">
                             <?php if (empty($userList)): ?>
                                 <tr>
                                     <td colspan="7" class="text-center py-5 text-muted">
@@ -499,3 +509,5 @@ body.bg-theme1 {
 </div>
 
 <?php include __DIR__ . '/common/footer.php'; ?>
+</body>
+</html>
