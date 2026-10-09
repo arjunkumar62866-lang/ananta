@@ -131,7 +131,9 @@ switch ($type) {
             $usdAmount = $isINR ? ($rawAmt / $rate) : $rawAmt;
             $r['usd_amount'] = $usdAmount;
             $reportData[] = $r;
-            $totalSum += $usdAmount; 
+            if ((int)($r['status'] ?? 1) !== 2) {
+                $totalSum += $usdAmount; 
+            }
         }
         $totalCount = count($reportData);
         break;
