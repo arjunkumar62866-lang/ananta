@@ -37,6 +37,7 @@ $uSearchParam = '%' . $user_search . '%';
 $reportTitles = [
     'daily'      => 'Daily Financial & Business Summary',
     'monthly'    => 'Monthly Financial & Payout Summary',
+    'wallet'     => 'Monthly Wallet Transaction Summary',
     'yearly'     => 'Yearly Business & Tax Statement',
     'user'       => 'User-Wise Financial Statement Report',
     'investment' => 'Package Investment & Activation Report',
@@ -96,6 +97,28 @@ switch ($type) {
         $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($reportData as $r) { 
             $totalSum += (float)$r['total_investment']; 
+        }
+        $totalCount = count($reportData);
+        break;
+
+    case 'wallet':
+        // Comprehensive Wallet Transaction Audit Ledger
+        $whereClause = "WHERE DATE(t.created_date) BETWEEN :from_date AND :to_date";
+        $params = [':from_date' => $from_date, ':to_date' => $to_date];
+        if (!empty($user_search)) {
+            $whereClause .= " AND (t.user_id LIKE :usearch OR u.name LIKE :usearch)";
+            $params[':usearch'] = $uSearchParam;
+        }
+        $sql = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.status, t.a_status, t.created_date as created_at 
+                FROM tbl_transaction t 
+                LEFT JOIN user u ON t.user_id = u.userid 
+                {$whereClause} 
+                ORDER BY t.id DESC LIMIT 500";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($reportData as $r) { 
+            $totalSum += (float)$r['amount']; 
         }
         $totalCount = count($reportData);
         break;
@@ -413,6 +436,7 @@ label.form-label-custom {
             <select name="type" class="form-control" onchange="this.form.submit()">
               <option value="daily" <?php echo $type==='daily'?'selected':''; ?>>📅 Daily Financial Summary</option>
               <option value="monthly" <?php echo $type==='monthly'?'selected':''; ?>>📆 Monthly Financial Summary</option>
+              <option value="wallet" <?php echo $type==='wallet'?'selected':''; ?>>💳 Wallet Transaction Summary</option>
               <option value="yearly" <?php echo $type==='yearly'?'selected':''; ?>>📊 Yearly Business Summary</option>
               <option value="user" <?php echo $type==='user'?'selected':''; ?>>👤 User-Wise Financial Statement</option>
               <option value="investment" <?php echo $type==='investment'?'selected':''; ?>>💼 Package Investment Report</option>
