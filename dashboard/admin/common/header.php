@@ -1018,27 +1018,28 @@ a[href*="export.php?"][href*="format=pdf"]:hover {
     border-color: #b91c1c !important;
 }
 
-/* Header Notification Dropdown Mobile Responsiveness */
+/* Header Notification Dropdown Center Responsiveness */
 .notif-dropdown-menu {
     border-radius: 16px !important;
     padding: 0 !important;
     margin-top: 10px !important;
     background: #ffffff !important;
-    width: 330px !important;
+    width: 340px !important;
     max-width: 90vw !important;
+    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.20) !important;
+    z-index: 999999 !important;
 }
 
-@media (max-width: 576px) {
+@media (max-width: 767.98px) {
     .notif-dropdown-menu {
         position: fixed !important;
         top: 65px !important;
-        left: 12px !important;
-        right: 12px !important;
-        width: calc(100vw - 24px) !important;
-        max-width: calc(100vw - 24px) !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 32px) !important;
+        max-width: 380px !important;
         margin: 0 !important;
-        transform: none !important;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25) !important;
     }
 }
 </style>
