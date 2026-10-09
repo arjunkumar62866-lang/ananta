@@ -1019,9 +1019,7 @@ a[href*="export.php?"][href*="format=pdf"]:hover {
 }
 
 /* Header Notification Dropdown Center Responsiveness */
-css
-```
-/* Header Notification Dropdown - Mobile Fix */
+
 .notif-dropdown-menu {
     border-radius: 16px !important;
     padding: 0 !important;
@@ -1047,6 +1045,5 @@ css
         box-sizing: border-box !important;
     }
 }
-```
 </style>
 
