@@ -8,7 +8,7 @@
 
 <style>
 /* =========================================================
-   ANANTA FINTECH THEME - WITHDRAW HISTORY REDESIGN
+   ANANTA FINTECH THEME - WITHDRAW HISTORY CLEAN MOBILE REDESIGN
 ========================================================= */
 html, body {
     min-height: 100%;
@@ -38,84 +38,89 @@ body.bg-theme1 {
 }
 
 .income-header-card {
-    background: linear-gradient(135deg, rgba(2, 132, 199, 0.10) 0%, rgba(14, 165, 233, 0.10) 100%), #ffffff !important;
-    border-radius: 24px !important;
-    border: 1px solid rgba(2, 132, 199, 0.18) !important;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
-    margin-bottom: 24px;
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04) !important;
+    margin-bottom: 20px;
 }
 
 .income-header-icon {
-    width: 58px;
-    height: 58px;
-    border-radius: 18px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
     background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     color: #ffffff;
-    font-size: 24px;
+    font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
     flex-shrink: 0;
 }
 
 .ananta-fintech-card {
-    background: #ffffff !important;
-    border-radius: 22px !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.06) !important;
-    overflow: hidden;
+    background: transparent !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .card-header-bar {
-    padding: 24px 28px;
-    border-bottom: 1px solid #f1f5f9;
-    background: linear-gradient(135deg, #ffffff 0%, #fbfdff 60%, #f8fafc 100%);
+    padding: 16px 0;
+    border-bottom: none;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
 }
 
 .card-header-title h4 {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 800;
     color: #0f172a;
 }
 
 .card-header-title p {
-    margin: 4px 0 0;
-    font-size: 13.5px;
+    margin: 2px 0 0;
+    font-size: 13px;
     color: #64748b;
     font-weight: 500;
 }
 
 .btn-export-excel {
-    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+    background: #16a34a !important;
     color: #ffffff !important;
     font-weight: 700 !important;
     border: none !important;
-    border-radius: 12px !important;
-    padding: 10px 20px !important;
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25) !important;
+    border-radius: 10px !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    box-shadow: 0 4px 10px rgba(22, 163, 74, 0.2) !important;
     transition: all 0.2s ease !important;
     display: inline-flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 6px !important;
 }
 
 .btn-export-excel:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.35) !important;
+    background: #15803d !important;
     color: #ffffff !important;
 }
 
 /* DataTables Light Fintech Table Styling */
 .table-responsive {
-    border-radius: 16px;
+    border-radius: 14px;
     border: 1px solid #e2e8f0;
+    background: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03);
+    margin-top: 10px;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
 }
 
 table.dataTable.no-footer {
@@ -125,6 +130,7 @@ table.dataTable.no-footer {
 .table {
     margin-bottom: 0 !important;
     color: #0f172a !important;
+    width: 100% !important;
 }
 
 .table thead th {
@@ -133,71 +139,76 @@ table.dataTable.no-footer {
     font-size: 12px !important;
     font-weight: 800 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.6px !important;
+    letter-spacing: 0.5px !important;
     border-bottom: 2px solid #e2e8f0 !important;
     border-top: none !important;
-    padding: 14px 16px !important;
+    padding: 12px 14px !important;
     white-space: nowrap;
 }
 
 .table tbody td {
-    padding: 14px 16px !important;
+    padding: 12px 14px !important;
     vertical-align: middle !important;
     border-bottom: 1px solid #f1f5f9 !important;
     color: #0f172a !important;
-    font-size: 14px !important;
+    font-size: 13.5px !important;
     font-weight: 600 !important;
+    white-space: nowrap;
 }
 
 .table-hover tbody tr:hover {
     background-color: #f8fafc !important;
 }
 
-/* DataTables Controls Overrides - Explicit Black Text */
+/* DataTables Controls Overrides - Responsive & Clean */
 .dataTables_wrapper {
     color: #0f172a !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
+    font-size: 13.5px !important;
+    width: 100% !important;
 }
 
 .dataTables_wrapper .dataTables_length,
-.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper .dataTables_info,
-.dataTables_wrapper .dataTables_processing,
-.dataTables_wrapper .dataTables_paginate {
+.dataTables_wrapper .dataTables_filter {
     color: #0f172a !important;
     font-weight: 700 !important;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .dataTables_wrapper .dataTables_length label,
 .dataTables_wrapper .dataTables_filter label {
     color: #0f172a !important;
     font-weight: 700 !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 8px !important;
+    flex-wrap: wrap;
+    margin: 0;
 }
 
 .dataTables_wrapper .dataTables_length select {
     color: #0f172a !important;
     background-color: #ffffff !important;
     border: 1.5px solid #cbd5e1 !important;
-    border-radius: 10px !important;
-    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    padding: 6px 10px !important;
     font-weight: 700 !important;
     outline: none !important;
+    height: 38px !important;
 }
 
 .dataTables_wrapper .dataTables_filter input {
     color: #0f172a !important;
     background-color: #ffffff !important;
     border: 1.5px solid #cbd5e1 !important;
-    border-radius: 10px !important;
-    padding: 8px 14px !important;
+    border-radius: 8px !important;
+    padding: 6px 12px !important;
     font-weight: 600 !important;
     outline: none !important;
+    height: 38px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 .dataTables_wrapper .dataTables_filter input:focus,
@@ -206,13 +217,26 @@ table.dataTable.no-footer {
     box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
 }
 
+.dataTables_wrapper .dataTables_info {
+    padding-top: 14px !important;
+    color: #64748b !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    padding-top: 10px !important;
+}
+
 .dataTables_wrapper .dataTables_paginate .paginate_button {
     border-radius: 8px !important;
     border: 1px solid #cbd5e1 !important;
     background: #ffffff !important;
     color: #0f172a !important;
     font-weight: 700 !important;
-    margin: 0 3px !important;
+    margin: 2px !important;
+    padding: 4px 10px !important;
+    font-size: 13px !important;
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button.current,
@@ -223,9 +247,9 @@ table.dataTable.no-footer {
 }
 
 .status-badge {
-    padding: 6px 14px;
+    padding: 5px 12px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     display: inline-block;
     text-transform: uppercase;
@@ -248,6 +272,49 @@ table.dataTable.no-footer {
 .amount-display {
     font-weight: 800;
     color: #0f172a;
+}
+
+/* Mobile Responsiveness Improvements */
+@media (max-width: 767.98px) {
+    .content-wrapper {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        padding-top: 75px !important;
+    }
+    .income-header-card {
+        padding: 16px !important;
+        border-radius: 14px !important;
+    }
+    .card-header-bar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 10px 0 !important;
+    }
+    .btn-export-excel {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        float: none !important;
+        text-align: left !important;
+        width: 100% !important;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        float: none !important;
+        text-align: center !important;
+        width: 100% !important;
+    }
+    .dataTables_wrapper .dataTables_paginate {
+        display: flex !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+    }
 }
 </style>
 
