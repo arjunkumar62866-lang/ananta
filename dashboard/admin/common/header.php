@@ -771,7 +771,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <span class="badge badge-danger badge-pill" style="position: absolute; top: 2px; right: 2px; font-size: 9px; padding: 2px 5px; border-radius: 100px;"><?php echo $topNotifCount; ?></span>
           <?php endif; ?>
         </a>
-        <div class="dropdown-menu dropdown-menu-right shadow-lg border-0" style="border-radius:16px; padding:0; margin-top:10px; background:#ffffff; width:330px; max-width:90vw;">
+        <div class="dropdown-menu dropdown-menu-right shadow-lg border-0 notif-dropdown-menu">
           <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="background:#f8fafc; border-top-left-radius:16px; border-top-right-radius:16px;">
             <h6 class="mb-0 font-weight-bold text-dark" style="font-size:14px;"><i class="fa fa-bell text-primary mr-1"></i> Notifications</h6>
             <span class="badge badge-primary font-weight-bold" style="border-radius:100px; font-size:10px;"><?php echo $topNotifCount; ?> New</span>
@@ -782,10 +782,10 @@ document.addEventListener("DOMContentLoaded", function() {
             <?php else: foreach ($topNotifications as $tn): ?>
               <div class="p-3 border-bottom text-dark" style="font-size:12.5px;">
                 <div class="d-flex align-items-center justify-content-between mb-1">
-                  <strong class="text-primary" style="font-size:13px;"><?php echo htmlspecialchars($tn['title']); ?></strong>
+                  <strong class="text-primary text-truncate" style="font-size:13px; max-width:200px;"><?php echo htmlspecialchars($tn['title']); ?></strong>
                   <span class="badge badge-light border text-muted" style="font-size:9.5px; border-radius:6px;"><?php echo htmlspecialchars($tn['target_type']); ?></span>
                 </div>
-                <p class="mb-1 text-secondary text-truncate" style="max-width:290px; font-size:12px; font-weight:500; margin:0;"><?php echo htmlspecialchars($tn['message']); ?></p>
+                <p class="mb-1 text-secondary text-truncate" style="max-width:100%; font-size:12px; font-weight:500; margin:0;"><?php echo htmlspecialchars($tn['message']); ?></p>
                 <div class="small text-muted mt-1" style="font-size:10.5px;">
                   <i class="fa fa-clock-o mr-1"></i> <?php echo date('d-M-Y H:i', strtotime($tn['created_at'])); ?>
                 </div>
@@ -1016,6 +1016,30 @@ a[href*="export.php?"][href*="format=pdf"]:hover {
     background-color: #fef2f2 !important;
     color: #991b1b !important;
     border-color: #b91c1c !important;
+}
+
+/* Header Notification Dropdown Mobile Responsiveness */
+.notif-dropdown-menu {
+    border-radius: 16px !important;
+    padding: 0 !important;
+    margin-top: 10px !important;
+    background: #ffffff !important;
+    width: 330px !important;
+    max-width: 90vw !important;
+}
+
+@media (max-width: 576px) {
+    .notif-dropdown-menu {
+        position: fixed !important;
+        top: 65px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        margin: 0 !important;
+        transform: none !important;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25) !important;
+    }
 }
 </style>
 
