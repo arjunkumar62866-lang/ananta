@@ -1262,11 +1262,19 @@ function getUserActiveInvestmentTotal($userid, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || empty($userid)) {
-        return ['total_usd' => 0.00, 'total_inr' => 0.00, 'active_count' => 0, 'investments' => []];
+        return [
+            'total_usd'       => 0.00,
+            'total_inr'       => 0.00,
+            'real_fund_usd'   => 0.00,
+            'bonus_fund_usd'  => 0.00,
+            'return_base_usd' => 0.00,
+            'active_count'    => 0,
+            'investments'     => []
+        ];
     }
 
     $sql = "
-        SELECT id, package_code, real_fund_usd, package, date, time, count, lock_day, lock_period_months, maturity_date, capital_withdrawal_status, status
+        SELECT id, package_code, real_fund_usd, bonus_amount_usd, bonus_percent_snapshot, package, date, time, count, lock_day, lock_period_months, maturity_date, capital_withdrawal_status, status
         FROM tbl_roi_one
         WHERE user_id = :uid 
           AND status = '0' 
@@ -1277,45 +1285,60 @@ function getUserActiveInvestmentTotal($userid, $pdoConnection = null) {
     $stmt->execute([':uid' => $userid]);
     $activeRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $totalUsd = 0.00;
+    $totalRealUsd = 0.00;
+    $totalBonusUsd = 0.00;
+    $totalReturnBaseUsd = 0.00;
     $totalInr = 0.00;
 
     foreach ($activeRows as $row) {
         $pkgInr = (float)($row['package'] ?? 0);
-        $pkgUsd = (float)($row['real_fund_usd'] ?? 0);
-        if ($pkgUsd <= 0 && $pkgInr > 0) {
-            $pkgUsd = function_exists('parseInputToUSD') ? parseInputToUSD($pkgInr, 'INR', $db) : round($pkgInr / 90.0, 2);
+        $realUsd = (float)($row['real_fund_usd'] ?? 0);
+        $bonusUsd = (float)($row['bonus_amount_usd'] ?? 0);
+        if ($realUsd <= 0 && $pkgInr > 0) {
+            $realUsd = function_exists('parseInputToUSD') ? parseInputToUSD($pkgInr, 'INR', $db) : round($pkgInr / 90.0, 2);
         }
-        if ($pkgInr <= 0 && $pkgUsd > 0) {
-            $pkgInr = round($pkgUsd * 90.0, 2);
+        $retBaseUsd = round($realUsd + $bonusUsd, 2);
+        if ($pkgInr <= 0 && $retBaseUsd > 0) {
+            $pkgInr = round($retBaseUsd * 90.0, 2);
         }
-        $totalUsd += $pkgUsd;
+
+        $totalRealUsd += $realUsd;
+        $totalBonusUsd += $bonusUsd;
+        $totalReturnBaseUsd += $retBaseUsd;
         $totalInr += $pkgInr;
     }
 
     // Fallback: If no records in tbl_roi_one, check user.active_investment or user.total_package
-    if ($totalUsd <= 0 && $totalInr <= 0) {
-        $stmtU = $db->prepare("SELECT active_investment, total_package FROM user WHERE userid = :uid LIMIT 1");
+    if ($totalReturnBaseUsd <= 0 && $totalInr <= 0) {
+        $stmtU = $db->prepare("SELECT active_investment, total_package, bonus_30_wallet FROM user WHERE userid = :uid LIMIT 1");
         $stmtU->execute([':uid' => $userid]);
         $uRow = $stmtU->fetch(PDO::FETCH_ASSOC);
         if ($uRow) {
             $actInv = (float)($uRow['active_investment'] ?? 0);
             $totPkg = (float)($uRow['total_package'] ?? 0);
+            $bonusBal = (float)($uRow['bonus_30_wallet'] ?? 0);
             if ($actInv > 0) {
-                $totalUsd = $actInv;
-                $totalInr = round($actInv * 90.0, 2);
+                $totalRealUsd = $actInv;
+                $totalBonusUsd = $bonusBal;
+                $totalReturnBaseUsd = round($actInv + $bonusBal, 2);
+                $totalInr = round($totalReturnBaseUsd * 90.0, 2);
             } elseif ($totPkg > 0) {
-                $totalInr = $totPkg;
-                $totalUsd = function_exists('parseInputToUSD') ? parseInputToUSD($totPkg, 'INR', $db) : round($totPkg / 90.0, 2);
+                $totalRealUsd = function_exists('parseInputToUSD') ? parseInputToUSD($totPkg, 'INR', $db) : round($totPkg / 90.0, 2);
+                $totalBonusUsd = $bonusBal;
+                $totalReturnBaseUsd = round($totalRealUsd + $bonusBal, 2);
+                $totalInr = round($totalReturnBaseUsd * 90.0, 2);
             }
         }
     }
 
     return [
-        'total_usd'    => round($totalUsd, 2),
-        'total_inr'    => round($totalInr, 2),
-        'active_count' => count($activeRows),
-        'investments'  => $activeRows
+        'total_usd'       => round($totalReturnBaseUsd, 2),
+        'total_inr'       => round($totalInr, 2),
+        'real_fund_usd'   => round($totalRealUsd, 2),
+        'bonus_fund_usd'  => round($totalBonusUsd, 2),
+        'return_base_usd' => round($totalReturnBaseUsd, 2),
+        'active_count'    => count($activeRows),
+        'investments'     => $activeRows
     ];
 }
 }
@@ -3064,7 +3087,7 @@ function updateUserBEP20Address($userid, $bep20Address, $txnKey = null, $pdoConn
  * Requirement #21: Unified INR & BEP20 Withdrawal Processor with Security Controls.
  */
 if (!function_exists('processUserWithdrawalRequest')) {
-function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnKey = null, $pdoConnection = null) {
+function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnKey = null, $pdoConnection = null, $optionsOrWallet = null) {
     global $pdo;
     if ($txnKey instanceof PDO && $pdoConnection === null) {
         $pdoConnection = $txnKey;
@@ -3073,6 +3096,14 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$userid) {
         return ['status' => 'error', 'message' => 'User session required.'];
+    }
+
+    $walletCheck = is_array($optionsOrWallet) ? ($optionsOrWallet['wallet'] ?? $optionsOrWallet['fund_type'] ?? '') : (is_string($optionsOrWallet) ? $optionsOrWallet : '');
+    if (stripos($walletCheck, 'bonus') !== false || (is_string($withdrawalMethod) && stripos($withdrawalMethod, 'bonus') !== false)) {
+        return [
+            'status'  => 'error',
+            'message' => 'Bonus Fund is permanently non-withdrawable ($0.00). Only eligible Real Fund principal or Net Balance may be withdrawn.'
+        ];
     }
 
     if (empty($txnKey)) {
@@ -3443,13 +3474,19 @@ if (!function_exists('processAnantaPackageInvestment')) {
         $realFundUsd = (float)$amount_usd;
         $bonusPct    = (float)$pkg['bonus_percentage'];
         $bonusAmtUsd = ($bonusPct > 0) ? round($realFundUsd * ($bonusPct / 100.0), 2) : 0.00;
+        $returnCalculationBase = round($realFundUsd + $bonusAmtUsd, 2);
         $lockMonths  = (int)$pkg['lock_period_months'];
         $deductPct   = (float)$pkg['withdrawal_deduction_percent'];
 
         $inrAmount   = round($realFundUsd * 90.0, 2); // $1 = ₹90 conversion factor
+        $returnBaseInr = round($returnCalculationBase * 90.0, 2);
         $cDate       = date('Y-m-d');
         $cTime       = date('H:i:s');
-        $maturityDate= date('Y-m-d', strtotime("+{$lockMonths} months"));
+
+        // Strict calendar-month maturity calculation via MySQL DATE_ADD
+        $stmtMat = $db->prepare("SELECT DATE_ADD(:cdate, INTERVAL :months MONTH) as mat_date");
+        $stmtMat->execute([':cdate' => $cDate, ':months' => $lockMonths]);
+        $maturityDate = $stmtMat->fetchColumn() ?: date('Y-m-d', strtotime("+{$lockMonths} months"));
 
         $inLocalTxn = false;
         if (!$db->inTransaction()) {
@@ -3458,8 +3495,41 @@ if (!function_exists('processAnantaPackageInvestment')) {
         }
 
         try {
+            // Idempotency / duplicate submission protection: prevent duplicate investment and crediting bonus twice
+            $dupStmt = $db->prepare("
+                SELECT id, real_fund_usd, bonus_amount_usd, maturity_date 
+                FROM tbl_roi_one 
+                WHERE user_id = :uid 
+                  AND package_code = :pkg 
+                  AND ABS(real_fund_usd - :amt) < 0.01 
+                  AND date = :cdate 
+                  AND TIME_TO_SEC(TIMEDIFF(:ctime, time)) < 15
+                LIMIT 1
+            ");
+            $dupStmt->execute([
+                ':uid'   => $user_id,
+                ':pkg'   => $pkg['package_id'],
+                ':amt'   => $realFundUsd,
+                ':cdate' => $cDate,
+                ':ctime' => $cTime
+            ]);
+            $dup = $dupStmt->fetch(PDO::FETCH_ASSOC);
+            if ($dup) {
+                if ($inLocalTxn && $db->inTransaction()) {
+                    $db->rollBack();
+                }
+                return [
+                    'status'                 => 'error',
+                    'message'                => 'Duplicate investment request detected. Investment and bonus have already been recorded.',
+                    'investment_id'          => $dup['id'],
+                    'real_fund_usd'          => (float)$dup['real_fund_usd'],
+                    'bonus_amount_usd'       => (float)$dup['bonus_amount_usd'],
+                    'return_calculation_base'=> round((float)$dup['real_fund_usd'] + (float)$dup['bonus_amount_usd'], 2)
+                ];
+            }
+
             // Lock user row FOR UPDATE
-            $stmtUser = $db->prepare("SELECT userid, pin_wallet, deposite_wallet, bonus_30_wallet, total_package FROM user WHERE userid = :uid FOR UPDATE");
+            $stmtUser = $db->prepare("SELECT userid, pin_wallet, deposite_wallet, bonus_30_wallet, total_package, active_investment FROM user WHERE userid = :uid FOR UPDATE");
             $stmtUser->execute([':uid' => $user_id]);
             $uRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
@@ -3480,24 +3550,26 @@ if (!function_exists('processAnantaPackageInvestment')) {
                 return ['status' => 'error', 'message' => "Insufficient Main Wallet balance. Required: ₹" . number_format($inrAmount, 2) . " ($" . number_format($realFundUsd, 2) . "), Available: ₹" . number_format($pinWalletBalInr, 2) . " ($" . number_format($pinWalletBalUsd, 2) . ")"];
             }
 
-            // 1. Update user pin_wallet, deposite_wallet & total_package
+            // 1. Update user pin_wallet, deposite_wallet, total_package & active_investment
             $updUser = $db->prepare("
                 UPDATE user SET
                     pin_wallet = GREATEST(0, pin_wallet - :deduct_usd),
                     deposite_wallet = GREATEST(0, deposite_wallet - :deduct_usd),
                     total_package = total_package + :inr_amt,
                     bonus_30_wallet = bonus_30_wallet + :bonus_usd,
+                    active_investment = active_investment + :ret_usd,
                     upgrade_date = :cdate,
                     atime = :ctime
                 WHERE userid = :uid
             ");
             $updUser->execute([
                 ':deduct_usd' => $realFundUsd,
-                ':inr_amt'   => $inrAmount,
-                ':bonus_usd' => $bonusAmtUsd,
-                ':cdate'     => $cDate,
-                ':ctime'     => $cTime,
-                ':uid'       => $user_id
+                ':inr_amt'    => $inrAmount,
+                ':bonus_usd'  => $bonusAmtUsd,
+                ':ret_usd'    => $returnCalculationBase,
+                ':cdate'      => $cDate,
+                ':ctime'      => $cTime,
+                ':uid'        => $user_id
             ]);
 
             // 2. Insert Investment Record into tbl_roi_one with Immutable Snapshot
@@ -3512,7 +3584,7 @@ if (!function_exists('processAnantaPackageInvestment')) {
                     :inr_pkg, 3.00, :cdate, :cdate, :ctime, '0', :lock_days, :capping, 1, 0, 0, 0
                 )
             ");
-            $incLimitCapping = round($inrAmount * 2.0, 2);
+            $incLimitCapping = round($returnBaseInr * 2.0, 2);
             $insRoi->execute([
                 ':uid'           => $user_id,
                 ':pkg_name'      => substr($pkg['package_name'], 0, 20),
@@ -3523,10 +3595,10 @@ if (!function_exists('processAnantaPackageInvestment')) {
                 ':lock_months'   => $lockMonths,
                 ':maturity_date' => $maturityDate,
                 ':deduct_pct'    => $deductPct,
-                ':inr_pkg'       => $inrAmount,
+                ':inr_pkg'       => $returnBaseInr,
                 ':cdate'         => $cDate,
                 ':ctime'         => $cTime,
-                ':lock_days'     => round($lockMonths * 30.4),
+                ':lock_days'     => $lockMonths,
                 ':capping'       => $incLimitCapping
             ]);
 
@@ -3539,7 +3611,7 @@ if (!function_exists('processAnantaPackageInvestment')) {
                 VALUES
                 (:uid, :inr_amt, 'Credit', :subject, :ctime, :cdate, '1')
             ");
-            $subject = "Ananta Package Investment - {$pkg['package_name']} ($ " . number_format($realFundUsd, 2) . ")";
+            $subject = "Ananta Package Investment - {$pkg['package_name']} (Real Fund: $" . number_format($realFundUsd, 2) . ", Return Base: $" . number_format($returnCalculationBase, 2) . ")";
             $insTxn->execute([
                 ':uid'     => $user_id,
                 ':inr_amt' => $inrAmount,
@@ -3556,7 +3628,7 @@ if (!function_exists('processAnantaPackageInvestment')) {
                     VALUES
                     (:uid, :bonus_usd, 'Credit', :subject, :ctime, :cdate, '1')
                 ");
-                $bonusSubject = "30% Bonus Package Credit ($ " . number_format($bonusAmtUsd, 2) . ") to 30% Bonus Wallet";
+                $bonusSubject = "30% Bonus Package Credit ($" . number_format($bonusAmtUsd, 2) . ") to 30% Bonus Wallet";
                 $insBonusTxn->execute([
                     ':uid'       => $user_id,
                     ':bonus_usd' => $bonusAmtUsd,
@@ -3577,7 +3649,7 @@ if (!function_exists('processAnantaPackageInvestment')) {
                     $user_id,
                     'INVESTMENT',
                     "Package Investment Activated ({$pkg['package_name']})",
-                    "Your investment of $" . number_format($realFundUsd, 2) . " in {$pkg['package_name']} is active. Capital is locked for {$lockMonths} months (Maturity Date: {$maturityDate}).",
+                    "Your investment of $" . number_format($realFundUsd, 2) . " (Return Base: $" . number_format($returnCalculationBase, 2) . ") in {$pkg['package_name']} is active. Capital locked for {$lockMonths} calendar months until {$maturityDate}.",
                     $invId,
                     $db
                 );
@@ -3588,14 +3660,15 @@ if (!function_exists('processAnantaPackageInvestment')) {
             }
 
             return [
-                'status'            => 'success',
-                'message'           => "Investment of $" . number_format($realFundUsd, 2) . " in {$pkg['package_name']} completed successfully!",
-                'investment_id'     => $invId,
-                'real_fund_usd'     => $realFundUsd,
-                'bonus_amount_usd'  => $bonusAmtUsd,
-                'lock_period_months'=> $lockMonths,
-                'maturity_date'     => $maturityDate,
-                'inr_amount'        => $inrAmount
+                'status'                 => 'success',
+                'message'                => "Investment of $" . number_format($realFundUsd, 2) . " in {$pkg['package_name']} completed successfully!",
+                'investment_id'          => $invId,
+                'real_fund_usd'          => $realFundUsd,
+                'bonus_amount_usd'       => $bonusAmtUsd,
+                'return_calculation_base'=> $returnCalculationBase,
+                'lock_period_months'     => $lockMonths,
+                'maturity_date'          => $maturityDate,
+                'inr_amount'             => $inrAmount
             ];
 
         } catch (Exception $e) {
@@ -3608,13 +3681,16 @@ if (!function_exists('processAnantaPackageInvestment')) {
 }
 
 if (!function_exists('processCapitalWithdrawal')) {
-    function processCapitalWithdrawal($user_id, $investment_id, $txnKey = null, $pdoConnection = null) {
+    function processCapitalWithdrawal($user_id, $investment_id, $txnKeyOrPdo = null, $pdoConnection = null, $options = []) {
         global $pdo;
-        if ($txnKey instanceof PDO && $pdoConnection === null) {
-            $pdoConnection = $txnKey;
-            $txnKey = null;
+        $txnKey = null;
+        if ($txnKeyOrPdo instanceof PDO) {
+            $db = $txnKeyOrPdo;
+        } else {
+            $txnKey = $txnKeyOrPdo;
+            $db = $pdoConnection ?: $pdo;
         }
-        $db = $pdoConnection ?: $pdo;
+
         if (!$db || !$user_id || !$investment_id) {
             return ['status' => 'error', 'message' => 'User session & valid investment ID required.'];
         }
@@ -3625,6 +3701,15 @@ if (!function_exists('processCapitalWithdrawal')) {
             if ($verKey['status'] !== 'success') {
                 return ['status' => 'error', 'message' => 'Capital withdrawal failed: ' . $verKey['message']];
             }
+        }
+
+        // Bonus Fund is permanently non-withdrawable rule
+        $fundType = isset($options['fund_type']) ? strtolower(trim($options['fund_type'])) : 'real';
+        if ($fundType === 'bonus' || (isset($options['wallet']) && strpos(strtolower($options['wallet']), 'bonus') !== false)) {
+            return [
+                'status'  => 'error',
+                'message' => 'Bonus Fund is permanently non-withdrawable ($0.00). Only eligible remaining Real Fund principal may be withdrawn.'
+            ];
         }
 
         $inLocalTxn = false;
@@ -3656,93 +3741,148 @@ if (!function_exists('processCapitalWithdrawal')) {
 
             $cDate = date('Y-m-d');
             $cTime = date('H:i:s');
-            $maturityDate = $inv['maturity_date'];
             $lockMonths   = (int)($inv['lock_period_months'] ?? 0);
             $invDate      = $inv['date'] ?: $cDate;
 
-            // Strict Server-Side Lock Check: Auto-resolve lock months according to package rules if missing
-            if ($lockMonths <= 0 || empty($maturityDate)) {
+            if ($lockMonths <= 0) {
                 $rules = determinePackageLockingRules($inv['name'] ?? '', $inv['package_code'] ?? '');
-                if ($lockMonths <= 0) {
-                    $lockMonths = $rules['lock_period_months'];
-                }
-                if (empty($maturityDate)) {
-                    $maturityDate = date('Y-m-d', strtotime("+{$lockMonths} months", strtotime($invDate)));
-                }
+                $lockMonths = $rules['lock_period_months'];
             }
 
-            $computedMaturity = $maturityDate;
+            // Strict calendar-month maturity calculation via MySQL DATE_ADD
+            $stmtMat = $db->prepare("SELECT DATE_ADD(:inv_date, INTERVAL :months MONTH) as maturity_date");
+            $stmtMat->execute([':inv_date' => $invDate, ':months' => $lockMonths]);
+            $computedMaturity = $stmtMat->fetchColumn();
+
             if ($cDate < $computedMaturity) {
                 if ($inLocalTxn) $db->rollBack();
                 return [
                     'status'  => 'error',
-                    'message' => "Capital is locked for {$lockMonths} months. Maturity date is {$computedMaturity}. Early capital withdrawal is blocked."
+                    'message' => "Capital is locked for {$lockMonths} calendar months until {$computedMaturity}. Early capital withdrawal is blocked."
                 ];
             }
 
-            $realFundUsd  = (float)($inv['real_fund_usd'] > 0 ? $inv['real_fund_usd'] : round(((float)$inv['package']) / 90.0, 2));
-            $deductPct    = 15.00; // Strictly 15% deduction on capital withdrawal
-            $deductAmtUsd = round($realFundUsd * ($deductPct / 100.0), 2);
-            $netWdUsd     = round($realFundUsd - $deductAmtUsd, 2);
+            $realFundUsd = (float)($inv['real_fund_usd'] > 0 ? $inv['real_fund_usd'] : round(((float)$inv['package']) / 90.0, 2));
+            if ($realFundUsd <= 0) {
+                if ($inLocalTxn) $db->rollBack();
+                return ['status' => 'error', 'message' => "No eligible Real Fund principal remaining for investment #{$investment_id}."];
+            }
+
+            $withdrawAmount = isset($options['amount']) ? (float)$options['amount'] : null;
+            if ($withdrawAmount !== null && $withdrawAmount > 0) {
+                if ($withdrawAmount > $realFundUsd) {
+                    if ($inLocalTxn) $db->rollBack();
+                    return [
+                        'status' => 'error',
+                        'message' => "Requested withdrawal amount ($" . number_format($withdrawAmount, 2) . ") exceeds eligible remaining Real Fund ($" . number_format($realFundUsd, 2) . ")."
+                    ];
+                }
+                $eligibleRealFund = $withdrawAmount;
+            } else {
+                $eligibleRealFund = $realFundUsd;
+            }
+
+            $deductPct    = 15.00; // Strictly 15% deduction on Real Fund capital withdrawal
+            $deductAmtUsd = round($eligibleRealFund * ($deductPct / 100.0), 2);
+            $netWdUsd     = round($eligibleRealFund - $deductAmtUsd, 2);
+            $bonusAmtUsd  = (float)($inv['bonus_amount_usd'] ?? 0);
 
             ensureWithdrawalRemarksColumnExists($db);
 
-            // 1. Reserve capital by setting status to PENDING
-            $updInv = $db->prepare("UPDATE tbl_roi_one SET capital_withdrawal_status = 'PENDING' WHERE id = :id");
-            $updInv->execute([':id' => $investment_id]);
+            $autoApprove = !empty($options['auto_approve']);
 
-            // 2. Insert PENDING request into tbl_capital_withdrawal_request
-            $stmtReq = $db->prepare("
-                INSERT INTO tbl_capital_withdrawal_request (
-                    user_id, investment_id, package_code, real_fund_usd, deduction_percent, deduction_amount_usd,
-                    net_withdrawal_usd, bonus_reconciled_usd, status, requested_at
-                ) VALUES (
-                    :uid, :iid, :pkg, :real_fund, :ded_pct, :ded_amt,
-                    :net_wd, :bonus_rec, 'PENDING', NOW()
-                )
-            ");
-            $stmtReq->execute([
-                ':uid'       => $user_id,
-                ':iid'       => $investment_id,
-                ':pkg'       => $inv['package_code'] ?: 'ANANTA',
-                ':real_fund' => $realFundUsd,
-                ':ded_pct'   => $deductPct,
-                ':ded_amt'   => $deductAmtUsd,
-                ':net_wd'    => $netWdUsd,
-                ':bonus_rec' => 0.00
-            ]);
+            if ($autoApprove) {
+                // Immediate approval workflow (admin/test isolated mode)
+                $updRoi = $db->prepare("UPDATE tbl_roi_one SET capital_withdrawal_status = 'WITHDRAWN', status = '1' WHERE id = :id");
+                $updRoi->execute([':id' => $investment_id]);
 
-            $capReqId = $db->lastInsertId();
+                // Reconcile bonus in user.bonus_30_wallet if applicable
+                if ($bonusAmtUsd > 0) {
+                    $db->prepare("UPDATE user SET bonus_30_wallet = GREATEST(0, bonus_30_wallet - :b_amt) WHERE userid = :uid")
+                       ->execute([':b_amt' => $bonusAmtUsd, ':uid' => $user_id]);
+                }
 
-            // 3. Insert transaction record into tbl_transaction with a_status = '0' (Pending)
-            $subject = "Investment Capital Withdrawal Request (#{$investment_id}) - Net: $" . number_format($netWdUsd, 2) . " (15% Ded)";
-            $stmtTxn = $db->prepare("
-                INSERT INTO tbl_transaction (
-                    user_id, amount, act_amount, type, subject, withdrawal_method, status, a_status, created_date, time, api_txn_no
-                ) VALUES (
-                    :uid, :net_usd, :act_usd, 'Debit', :sub, 'Capital', '0', '0', :cdate, :ctime, :api_no
-                )
-            ");
-            $stmtTxn->execute([
-                ':uid'     => $user_id,
-                ':net_usd' => $netWdUsd,
-                ':act_usd' => $realFundUsd,
-                ':sub'     => $subject,
-                ':cdate'   => $cDate,
-                ':ctime'   => $cTime,
-                ':api_no'  => (string)$investment_id
-            ]);
+                $stmtReq = $db->prepare("
+                    INSERT INTO tbl_capital_withdrawal_request (
+                        user_id, investment_id, package_code, real_fund_usd, deduction_percent, deduction_amount_usd,
+                        net_withdrawal_usd, bonus_reconciled_usd, status, requested_at, processed_at
+                    ) VALUES (
+                        :uid, :iid, :pkg, :real_fund, :ded_pct, :ded_amt,
+                        :net_wd, :bonus_rec, 'PAID', NOW(), NOW()
+                    )
+                ");
+                $stmtReq->execute([
+                    ':uid'       => $user_id,
+                    ':iid'       => $investment_id,
+                    ':pkg'       => $inv['package_code'] ?: 'ANANTA',
+                    ':real_fund' => $eligibleRealFund,
+                    ':ded_pct'   => $deductPct,
+                    ':ded_amt'   => $deductAmtUsd,
+                    ':net_wd'    => $netWdUsd,
+                    ':bonus_rec' => $bonusAmtUsd
+                ]);
+                $capReqId = $db->lastInsertId();
 
-            // 4. Trigger User Notification
-            if (function_exists('createUserNotification')) {
-                createUserNotification(
-                    $user_id,
-                    'WITHDRAWAL',
-                    'Capital Withdrawal Request Submitted',
-                    "Your capital withdrawal request of $" . number_format($netWdUsd, 2) . " for investment #{$investment_id} has been submitted successfully and is awaiting admin review.",
-                    $capReqId,
-                    $db
-                );
+                $subject = "Capital Withdrawal Paid (#{$investment_id}) - Gross Real Fund: $" . number_format($eligibleRealFund, 2) . ", 15% Ded: -$" . number_format($deductAmtUsd, 2) . ", Net Payout: $" . number_format($netWdUsd, 2);
+                $stmtTxn = $db->prepare("
+                    INSERT INTO tbl_transaction (
+                        user_id, amount, act_amount, type, subject, withdrawal_method, status, a_status, created_date, time, api_txn_no, paid_date
+                    ) VALUES (
+                        :uid, :net_usd, :act_usd, 'Debit', :sub, 'Capital', '1', '1', :cdate, :ctime, :api_no, :cdate
+                    )
+                ");
+                $stmtTxn->execute([
+                    ':uid'     => $user_id,
+                    ':net_usd' => $netWdUsd,
+                    ':act_usd' => $eligibleRealFund,
+                    ':sub'     => $subject,
+                    ':cdate'   => $cDate,
+                    ':ctime'   => $cTime,
+                    ':api_no'  => (string)$investment_id
+                ]);
+
+            } else {
+                // Standard PENDING review workflow (user submitted)
+                $updInv = $db->prepare("UPDATE tbl_roi_one SET capital_withdrawal_status = 'PENDING' WHERE id = :id");
+                $updInv->execute([':id' => $investment_id]);
+
+                $stmtReq = $db->prepare("
+                    INSERT INTO tbl_capital_withdrawal_request (
+                        user_id, investment_id, package_code, real_fund_usd, deduction_percent, deduction_amount_usd,
+                        net_withdrawal_usd, bonus_reconciled_usd, status, requested_at
+                    ) VALUES (
+                        :uid, :iid, :pkg, :real_fund, :ded_pct, :ded_amt,
+                        :net_wd, 0.00, 'PENDING', NOW()
+                    )
+                ");
+                $stmtReq->execute([
+                    ':uid'       => $user_id,
+                    ':iid'       => $investment_id,
+                    ':pkg'       => $inv['package_code'] ?: 'ANANTA',
+                    ':real_fund' => $eligibleRealFund,
+                    ':ded_pct'   => $deductPct,
+                    ':ded_amt'   => $deductAmtUsd,
+                    ':net_wd'    => $netWdUsd
+                ]);
+                $capReqId = $db->lastInsertId();
+
+                $subject = "Investment Capital Withdrawal Request (#{$investment_id}) - Gross Real Fund: $" . number_format($eligibleRealFund, 2) . ", 15% Ded: -$" . number_format($deductAmtUsd, 2) . ", Net Payout: $" . number_format($netWdUsd, 2);
+                $stmtTxn = $db->prepare("
+                    INSERT INTO tbl_transaction (
+                        user_id, amount, act_amount, type, subject, withdrawal_method, status, a_status, created_date, time, api_txn_no
+                    ) VALUES (
+                        :uid, :net_usd, :act_usd, 'Debit', :sub, 'Capital', '0', '0', :cdate, :ctime, :api_no
+                    )
+                ");
+                $stmtTxn->execute([
+                    ':uid'     => $user_id,
+                    ':net_usd' => $netWdUsd,
+                    ':act_usd' => $eligibleRealFund,
+                    ':sub'     => $subject,
+                    ':cdate'   => $cDate,
+                    ':ctime'   => $cTime,
+                    ':api_no'  => (string)$investment_id
+                ]);
             }
 
             if ($inLocalTxn) {
@@ -3750,9 +3890,14 @@ if (!function_exists('processCapitalWithdrawal')) {
             }
 
             return [
-                'status'     => 'success',
-                'request_id' => $capReqId,
-                'message'    => 'Capital withdrawal request submitted successfully and is awaiting admin review.'
+                'status'                => 'success',
+                'request_id'            => $capReqId,
+                'gross_real_fund'       => $eligibleRealFund,
+                'deduction_percent'     => $deductPct,
+                'deduction_amount_usd'  => $deductAmtUsd,
+                'net_payout_usd'        => $netWdUsd,
+                'bonus_fund_usd'        => 0.00,
+                'message'               => $autoApprove ? 'Capital withdrawal approved & paid successfully.' : 'Capital withdrawal request submitted successfully and is awaiting admin review.'
             ];
 
         } catch (Exception $e) {

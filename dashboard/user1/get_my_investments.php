@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 try {
     $stmt = $pdo->prepare("
-        SELECT name, package ,date, time
+        SELECT id, name, package, package_code, real_fund_usd, bonus_amount_usd, maturity_date, capital_withdrawal_status, date, time
         FROM tbl_roi_one 
         WHERE user_id = :user_id
     ");

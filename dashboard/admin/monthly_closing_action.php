@@ -50,10 +50,10 @@ if ($action === 'preview') {
 
     // Read-only calculation of eligible investments: User must have active unlock access (active = '1') AND package >= 13050 ($145)
     $stmt = $pdo->prepare("
-        SELECT r.id, r.user_id, r.package, r.date, r.count, r.lock_day
+        SELECT r.id, r.user_id, r.package, r.package_code, r.real_fund_usd, r.bonus_amount_usd, r.date, r.count, r.lock_day
         FROM tbl_roi_one r
         JOIN user u ON u.userid = r.user_id
-        WHERE r.status = '0' AND r.count < r.lock_day AND u.active = '1' AND r.package >= 13050
+        WHERE r.status = '0' AND r.count < r.lock_day AND u.active = '1' AND (r.package >= 13050 OR r.real_fund_usd >= 145.00)
     ");
     $stmt->execute();
     $allInvs = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -68,22 +68,30 @@ if ($action === 'preview') {
     $days_in_month = (int)date('t', $closing_ts);
 
     foreach ($allInvs as $inv) {
-        $pkg = (float)$inv['package'];
-        $total_investment += $pkg;
+        $realUsd = (float)($inv['real_fund_usd'] ?? 0);
+        $bonusUsd = (float)($inv['bonus_amount_usd'] ?? 0);
+        if ($realUsd <= 0 && (float)$inv['package'] > 0) {
+            $realUsd = round(((float)$inv['package']) / 90.0, 2);
+        }
+        // Return calculation base (Real Fund + Bonus Fund, e.g. $145 + $43.50 = $188.50)
+        $returnBaseUsd = round($realUsd + $bonusUsd, 2);
+        $returnBaseInr = round($returnBaseUsd * 90.0, 2);
+
+        $total_investment += $returnBaseInr;
         $user_set[$inv['user_id']] = true;
 
         $count = (int)$inv['count'];
         $inv_date = $inv['date'];
 
         if ($count == 0 && !empty($inv_date)) {
-            // First Month Pro-rata calculation
+            // First Month Pro-rata calculation on combined return base
             $inv_day = (int)date('d', strtotime($inv_date));
             $eligible_days = max(1, $days_in_month - $inv_day + 1);
-            $full_monthly_profit = ($pkg * $profit_percentage) / 100;
+            $full_monthly_profit = ($returnBaseInr * $profit_percentage) / 100;
             $gen_profit = round(($full_monthly_profit * $eligible_days) / $days_in_month, 2);
         } else {
-            // Normal full monthly profit
-            $gen_profit = round(($pkg * $profit_percentage) / 100, 2);
+            // Normal full monthly profit on combined return base
+            $gen_profit = round(($returnBaseInr * $profit_percentage) / 100, 2);
         }
         $expected_profit += $gen_profit;
     }
@@ -93,17 +101,24 @@ if ($action === 'preview') {
     $total_profit_sharing = 0.0;
     if ($total_investment > 0 && function_exists('getmysponserid')) {
         foreach ($allInvs as $inv) {
-            $pkg = (float)$inv['package'];
+            $realUsd = (float)($inv['real_fund_usd'] ?? 0);
+            $bonusUsd = (float)($inv['bonus_amount_usd'] ?? 0);
+            if ($realUsd <= 0 && (float)$inv['package'] > 0) {
+                $realUsd = round(((float)$inv['package']) / 90.0, 2);
+            }
+            $returnBaseUsd = round($realUsd + $bonusUsd, 2);
+            $returnBaseInr = round($returnBaseUsd * 90.0, 2);
+
             $count = (int)$inv['count'];
             $inv_date = $inv['date'];
 
             if ($count == 0 && !empty($inv_date)) {
                 $inv_day = (int)date('d', strtotime($inv_date));
                 $eligible_days = max(1, $days_in_month - $inv_day + 1);
-                $full_monthly_profit = ($pkg * $profit_percentage) / 100;
+                $full_monthly_profit = ($returnBaseInr * $profit_percentage) / 100;
                 $gen_profit = round(($full_monthly_profit * $eligible_days) / $days_in_month, 2);
             } else {
-                $gen_profit = round(($pkg * $profit_percentage) / 100, 2);
+                $gen_profit = round(($returnBaseInr * $profit_percentage) / 100, 2);
             }
 
             $pinfinal = $inv['user_id'];
@@ -202,12 +217,12 @@ if ($action === 'process') {
             exit;
         }
 
-        // Fetch all active eligible investments with dual condition (User active = '1' AND package >= 13050)
+        // Fetch all active eligible investments with dual condition (User active = '1' AND (package >= 13050 OR real_fund_usd >= 145))
         $invStmt = $pdo->prepare("
-            SELECT r.id, r.user_id, r.package, r.date, r.count, r.lock_day 
+            SELECT r.id, r.user_id, r.package, r.package_code, r.real_fund_usd, r.bonus_amount_usd, r.date, r.count, r.lock_day 
             FROM tbl_roi_one r
             JOIN user u ON u.userid = r.user_id
-            WHERE r.status = '0' AND r.count < r.lock_day AND u.active = '1' AND r.package >= 13050 
+            WHERE r.status = '0' AND r.count < r.lock_day AND u.active = '1' AND (r.package >= 13050 OR r.real_fund_usd >= 145.00) 
             FOR UPDATE
         ");
         $invStmt->execute();
@@ -228,24 +243,34 @@ if ($action === 'process') {
         $days_in_month = (int)date('t', $closing_ts);
 
         foreach ($investments as &$inv) {
-            $pkg = (float)$inv['package'];
+            $realUsd = (float)($inv['real_fund_usd'] ?? 0);
+            $bonusUsd = (float)($inv['bonus_amount_usd'] ?? 0);
+            if ($realUsd <= 0 && (float)$inv['package'] > 0) {
+                $realUsd = round(((float)$inv['package']) / 90.0, 2);
+            }
+            // Return calculation base (Real Fund + Bonus Fund, e.g. $145 + $43.50 = $188.50)
+            $returnBaseUsd = round($realUsd + $bonusUsd, 2);
+            $returnBaseInr = round($returnBaseUsd * 90.0, 2);
+
             $count = (int)$inv['count'];
             $inv_date = $inv['date'];
 
             if ($count == 0 && !empty($inv_date)) {
                 $inv_day = (int)date('d', strtotime($inv_date));
                 $eligible_days = max(1, $days_in_month - $inv_day + 1);
-                $full_monthly_profit = ($pkg * $profit_percentage) / 100;
+                $full_monthly_profit = ($returnBaseInr * $profit_percentage) / 100;
                 $profit = round(($full_monthly_profit * $eligible_days) / $days_in_month, 2);
                 $inv['_is_prorata'] = true;
                 $inv['_eligible_days'] = $eligible_days;
             } else {
-                $profit = round(($pkg * $profit_percentage) / 100, 2);
+                $profit = round(($returnBaseInr * $profit_percentage) / 100, 2);
                 $inv['_is_prorata'] = false;
             }
 
+            $inv['_return_base_usd'] = $returnBaseUsd;
+            $inv['_return_base_inr'] = $returnBaseInr;
             $inv['_calculated_profit'] = $profit;
-            $total_investment += $pkg;
+            $total_investment += $returnBaseInr;
             $total_profit_paid += $profit;
             $user_set[$inv['user_id']] = true;
         }
@@ -291,10 +316,11 @@ if ($action === 'process') {
             $new_count = (int)$inv['count'] + 1;
             $new_status = ($new_count >= (int)$inv['lock_day']) ? 1 : 0;
 
+            $baseUsdStr = "$" . number_format($inv['_return_base_usd'], 2);
             if ($inv['_is_prorata']) {
-                $subject = "Monthly Profit Income ({$closing_month} @ {$profit_percentage}% - Pro-rata {$inv['_eligible_days']} days)";
+                $subject = "Monthly Profit Income ({$closing_month} @ {$profit_percentage}% - Base: {$baseUsdStr} - Pro-rata {$inv['_eligible_days']} days)";
             } else {
-                $subject = "Monthly Profit Income ({$closing_month} @ {$profit_percentage}%)";
+                $subject = "Monthly Profit Income ({$closing_month} @ {$profit_percentage}% - Base: {$baseUsdStr})";
             }
 
             // 1. Credit dedicated Profit Income Wallet

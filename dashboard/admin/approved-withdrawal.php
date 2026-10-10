@@ -38,11 +38,21 @@ if ($tid > 0) {
         // If this is a Capital Withdrawal, update tbl_roi_one & tbl_capital_withdrawal_request
         if ($method === 'Capital' || strpos(strtolower($txnRow['subject'] ?? ''), 'capital') !== false) {
             if ($invId > 0) {
+                $stmtRoi = $pdo->prepare("SELECT * FROM tbl_roi_one WHERE id = :iid AND user_id = :uid");
+                $stmtRoi->execute([':iid' => $invId, ':uid' => $userId]);
+                $roiRow = $stmtRoi->fetch(PDO::FETCH_ASSOC);
+
+                $bonusAmt = (float)($roiRow['bonus_amount_usd'] ?? 0);
+
                 $updRoi = $pdo->prepare("UPDATE tbl_roi_one SET capital_withdrawal_status = 'WITHDRAWN', status = '1' WHERE id = :iid AND user_id = :uid");
                 $updRoi->execute([':iid' => $invId, ':uid' => $userId]);
 
-                $updCapReq = $pdo->prepare("UPDATE tbl_capital_withdrawal_request SET status = 'PAID', admin_remarks = :rem, processed_at = NOW() WHERE investment_id = :iid AND user_id = :uid AND status = 'PENDING'");
-                $updCapReq->execute([':rem' => $adminRemarks, ':iid' => $invId, ':uid' => $userId]);
+                if ($bonusAmt > 0) {
+                    $pdo->prepare("UPDATE user SET bonus_30_wallet = GREATEST(0, bonus_30_wallet - :b_amt) WHERE userid = :uid")->execute([':b_amt' => $bonusAmt, ':uid' => $userId]);
+                }
+
+                $updCapReq = $pdo->prepare("UPDATE tbl_capital_withdrawal_request SET status = 'PAID', bonus_reconciled_usd = :b_amt, admin_remarks = :rem, processed_at = NOW() WHERE investment_id = :iid AND user_id = :uid AND status = 'PENDING'");
+                $updCapReq->execute([':b_amt' => $bonusAmt, ':rem' => $adminRemarks, ':iid' => $invId, ':uid' => $userId]);
             }
         }
 

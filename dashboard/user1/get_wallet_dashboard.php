@@ -92,7 +92,7 @@ switch ($action) {
 
         // 4. Active Investment Details (Total Active Investment across all active packages)
         $stmtInv = $pdo->prepare("
-            SELECT id, package, real_fund_usd, date, count, lock_day, status
+            SELECT id, package, real_fund_usd, bonus_amount_usd, date, count, lock_day, status
             FROM tbl_roi_one
             WHERE user_id = :uid 
               AND status = '0'
@@ -105,24 +105,33 @@ switch ($action) {
         $invDetails = null;
         if (!empty($activeInvs)) {
             $totalPkgInr = 0.00;
-            $totalPkgUsd = 0.00;
+            $totalReturnBaseUsd = 0.00;
+            $totalRealFundUsd = 0.00;
+            $totalBonusFundUsd = 0.00;
             foreach ($activeInvs as $invRow) {
                 $pInr = (float)$invRow['package'];
-                $pUsd = (float)($invRow['real_fund_usd'] ?? 0);
-                if ($pUsd <= 0 && $pInr > 0) {
-                    $pUsd = round($pInr / 90.0, 2);
+                $rUsd = (float)($invRow['real_fund_usd'] ?? 0);
+                $bUsd = (float)($invRow['bonus_amount_usd'] ?? 0);
+                if ($rUsd <= 0 && $pInr > 0) {
+                    $rUsd = round($pInr / 90.0, 2);
                 }
-                if ($pInr <= 0 && $pUsd > 0) {
-                    $pInr = round($pUsd * 90.0, 2);
+                $retBaseUsd = round($rUsd + $bUsd, 2);
+                if ($pInr <= 0 && $retBaseUsd > 0) {
+                    $pInr = round($retBaseUsd * 90.0, 2);
                 }
                 $totalPkgInr += $pInr;
-                $totalPkgUsd += $pUsd;
+                $totalReturnBaseUsd += $retBaseUsd;
+                $totalRealFundUsd += $rUsd;
+                $totalBonusFundUsd += $bUsd;
             }
             $latestInv = $activeInvs[0];
             $invDetails = [
                 'investment_id'   => $latestInv['id'],
                 'package_inr'     => $totalPkgInr,
-                'package_usd'     => $totalPkgUsd,
+                'package_usd'     => $totalReturnBaseUsd,
+                'real_fund_usd'   => $totalRealFundUsd,
+                'bonus_fund_usd'  => $totalBonusFundUsd,
+                'return_base_usd' => $totalReturnBaseUsd,
                 'activation_date' => $latestInv['date'],
                 'lock_day'        => (int)$latestInv['lock_day'],
                 'months_paid'     => (int)$latestInv['count'],
@@ -144,7 +153,8 @@ switch ($action) {
                     'direct_bonus_wallet'   => $directBonusWallet,
                     'mentor_income_wallet'  => $mentorIncomeWallet,
                     'vip_club_wallet'       => $vipClubWallet,
-                    'deposit_wallet'        => $depositWallet
+                    'deposit_wallet'        => $depositWallet,
+                    'bonus_30_wallet'       => round((float)($uRow['bonus_30_wallet'] ?? 0.00), 2)
                 ],
                 'cumulative_income' => [
                     'profit_income_received'      => round($totProfitIncome, 2),
