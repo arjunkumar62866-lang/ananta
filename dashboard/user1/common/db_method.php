@@ -1706,6 +1706,9 @@ if (!defined('DIRECT_BONUS_PERCENT')) {
 if (!defined('DIRECT_BONUS_MONTHS')) {
     define('DIRECT_BONUS_MONTHS', 10);
 }
+if (!defined('DIRECT_BONUS_MONTHLY_RATE')) {
+    define('DIRECT_BONUS_MONTHLY_RATE', 0.6);
+}
 if (!defined('MIN_QUALIFIED_INVESTMENT')) {
     define('MIN_QUALIFIED_INVESTMENT', 13000.0);
 }
@@ -1718,6 +1721,7 @@ if (!defined('REQUIRED_QUALIFIED_DIRECTS')) {
  * A Qualified Direct is a direct referral who:
  * 1. Has active access / user.active = '1'
  * 2. Has total active investment (SUM of tbl_roi_one packages) >= ₹13,000
+ * Evaluates both tbl_sponsor and user.sponserid for single source of truth.
  */
 if (!function_exists('getQualifiedDirectCount')) {
 function getQualifiedDirectCount($userid, $pdoConnection = null) {
@@ -1725,19 +1729,25 @@ function getQualifiedDirectCount($userid, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$userid) return 0;
 
-    $sql = "SELECT s.referral_id
-            FROM tbl_sponsor s
-            INNER JOIN user u ON u.userid = s.referral_id
+    $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
+    $prefixedUid = 'AN' . $cleanUid;
+
+    $sql = "SELECT u.userid
+            FROM user u
+            LEFT JOIN tbl_sponsor s ON s.referral_id = u.userid
             INNER JOIN tbl_roi_one r ON r.user_id = u.userid
-            WHERE s.sponsor_id = :sponsor_id
+            WHERE (s.sponsor_id = :sp1 OR s.sponsor_id = :sp2 OR u.sponserid = :sp3 OR u.sponserid = :sp4)
               AND u.active = '1'
-            GROUP BY s.referral_id
+            GROUP BY u.userid
             HAVING SUM(r.package) >= :min_inv";
 
     $stmt = $db->prepare($sql);
     $minInv = MIN_QUALIFIED_INVESTMENT;
-    $stmt->bindParam(':sponsor_id', $userid, PDO::PARAM_STR);
-    $stmt->bindParam(':min_inv', $minInv);
+    $stmt->bindValue(':sp1', (string)$userid, PDO::PARAM_STR);
+    $stmt->bindValue(':sp2', (string)$cleanUid, PDO::PARAM_STR);
+    $stmt->bindValue(':sp3', (string)$userid, PDO::PARAM_STR);
+    $stmt->bindValue(':sp4', (string)$cleanUid, PDO::PARAM_STR);
+    $stmt->bindValue(':min_inv', $minInv);
     $stmt->execute();
     
     return $stmt->rowCount();
@@ -1746,7 +1756,7 @@ function getQualifiedDirectCount($userid, $pdoConnection = null) {
 
 /**
  * Generate 10-month Direct Bonus Schedule for an eligible investment.
- * Direct Bonus = Eligible Investment * 6% divided into 10 monthly installments.
+ * Direct Bonus = Eligible Investment * 6% divided into 10 monthly installments of 0.6% each.
  * Only generated if investment >= ₹13,000 and user has active access.
  */
 if (!function_exists('generateDirectBonusSchedule')) {
@@ -1757,10 +1767,16 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
         return false;
     }
 
-    // Find direct sponsor
+    // Find direct sponsor: check tbl_sponsor first, fallback to user.sponserid
     $stmtSpon = $db->prepare("SELECT sponsor_id FROM tbl_sponsor WHERE referral_id = :ref_id LIMIT 1");
     $stmtSpon->execute([':ref_id' => $source_user_id]);
     $beneficiary_id = $stmtSpon->fetchColumn();
+
+    if (!$beneficiary_id) {
+        $stmtUserSpon = $db->prepare("SELECT sponserid FROM user WHERE userid = :ref_id LIMIT 1");
+        $stmtUserSpon->execute([':ref_id' => $source_user_id]);
+        $beneficiary_id = $stmtUserSpon->fetchColumn();
+    }
 
     if (!$beneficiary_id) {
         return false; // No sponsor found
@@ -1769,7 +1785,7 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
     $investment_amount = (float)$investment_amount;
     $total_bonus = round($investment_amount * (DIRECT_BONUS_PERCENT / 100.0), 2);
     
-    // Calculate monthly installment with rounding safety
+    // Calculate monthly installment: exactly 0.6% per month (total 6% over 10 months) with rounding safety
     $base_installment = floor(($total_bonus / DIRECT_BONUS_MONTHS) * 100) / 100;
     $remainder = round($total_bonus - ($base_installment * DIRECT_BONUS_MONTHS), 2);
 
@@ -1816,6 +1832,7 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
 /**
  * Process Direct Bonus Monthly Closing Installments.
  * Executed during admin Monthly Profit Closing.
+ * Each eligible monthly closing credits exactly 0.6% (1 installment).
  */
 if (!function_exists('processDirectBonusInstallments')) {
 function processDirectBonusInstallments($closing_month, $closing_date = null, $pdoConnection = null) {
@@ -1828,6 +1845,7 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
     $cDate = $closing_date ?: date('Y-m-d');
 
     // Fetch all pending installments for or up to the target closing_month
+    // FOR UPDATE locks rows and prevents race conditions / concurrent duplicates
     $stmt = $db->prepare("
         SELECT * FROM tbl_direct_bonus_schedule
         WHERE status = 'PENDING'
@@ -1849,7 +1867,8 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
 
     $updWallet = $db->prepare("
         UPDATE user
-        SET direct_bonus_wallet = direct_bonus_wallet + :amount
+        SET direct_bonus_wallet = direct_bonus_wallet + :amount,
+            user_growth_wallet = user_growth_wallet + :amount_growth
         WHERE userid = :userid
     ");
 
@@ -1864,25 +1883,26 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
         $benId = $inst['beneficiary_id'];
         $qCount = getQualifiedDirectCount($benId, $db);
 
-        // Requirement #3 & #8: Credit only if qualified directs >= 2
+        // Credit only if qualified directs >= 2
         if ($qCount >= REQUIRED_QUALIFIED_DIRECTS) {
             $amount = (float)$inst['installment_amount'];
             
-            // 1. Update schedule status
+            // 1. Update schedule status atomically
             $updSchedule->execute([
                 ':closing_month' => $closing_month,
                 ':id'            => $inst['id']
             ]);
 
             if ($updSchedule->rowCount() > 0) {
-                // 2. Credit direct_bonus_wallet
+                // 2. Credit direct_bonus_wallet AND user_growth_wallet
                 $updWallet->execute([
-                    ':amount' => $amount,
-                    ':userid' => $benId
+                    ':amount'        => $amount,
+                    ':amount_growth' => $amount,
+                    ':userid'        => $benId
                 ]);
 
                 // 3. Create transaction entry
-                $subject = "Direct Bonus Installment " . $inst['installment_number'] . "/10 - Investment #" . $inst['investment_id'] . " - " . $inst['installment_month'];
+                $subject = "Direct Bonus Installment " . $inst['installment_number'] . "/10 (0.6%) - Investment #" . $inst['investment_id'] . " - " . $inst['installment_month'];
                 $insTxn->execute([
                     ':user_id'      => $benId,
                     ':subject'      => $subject,
@@ -1915,19 +1935,26 @@ if (!function_exists('getQualifiedDirectDetails')) {
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userid) return [];
 
+        $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
+
         $sql = "SELECT 
                     u.userid,
                     u.name,
                     u.active as is_active,
                     COALESCE(SUM(r.package), 0) as total_investment
-                FROM tbl_sponsor s
-                INNER JOIN user u ON u.userid = s.referral_id
+                FROM user u
+                LEFT JOIN tbl_sponsor s ON s.referral_id = u.userid
                 LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
-                WHERE s.sponsor_id = :sponsor_id
+                WHERE (s.sponsor_id = :sp1 OR s.sponsor_id = :sp2 OR u.sponserid = :sp3 OR u.sponserid = :sp4)
                 GROUP BY u.userid, u.name, u.active";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute([':sponsor_id' => $userid]);
+        $stmt->execute([
+            ':sp1' => (string)$userid,
+            ':sp2' => (string)$cleanUid,
+            ':sp3' => (string)$userid,
+            ':sp4' => (string)$cleanUid
+        ]);
         $directs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $results = [];
@@ -3350,6 +3377,27 @@ if (!function_exists('formatCurrency')) {
         $curr = $targetCurrency ? strtoupper(trim($targetCurrency)) : getUserCurrency(null, $pdoConnection);
         $converted = convertCurrency($amountInUSD, $curr, $pdoConnection);
         $symbol = $includeSymbol ? getCurrencySymbol($curr) : '';
+        return $symbol . number_format($converted, 2);
+    }
+}
+
+if (!function_exists('convertCurrencyFromINR')) {
+    function convertCurrencyFromINR($amountInINR, $targetCurrency = null, $pdoConnection = null) {
+        $curr = $targetCurrency ? strtoupper(trim($targetCurrency)) : getUserCurrency(null, $pdoConnection);
+        $amt = (float)$amountInINR;
+        if ($curr === 'INR') {
+            return round($amt, 2);
+        }
+        $rate = getUSDToINRRate($pdoConnection);
+        return ($rate > 0) ? round($amt / $rate, 2) : round($amt, 2);
+    }
+}
+
+if (!function_exists('formatCurrencyFromINR')) {
+    function formatCurrencyFromINR($amountInINR, $targetCurrency = null, $includeSymbol = true, $pdoConnection = null) {
+        $curr = $targetCurrency ? strtoupper(trim($targetCurrency)) : getUserCurrency(null, $pdoConnection);
+        $converted = convertCurrencyFromINR($amountInINR, $curr, $pdoConnection);
+        $symbol = $includeSymbol ? (getCurrencySymbol($curr) . ' ') : '';
         return $symbol . number_format($converted, 2);
     }
 }
@@ -5024,7 +5072,31 @@ if (!function_exists('getUserIncomeWalletSummary')) {
 
         $turnover = max($ct1, $ct2);
 
+        // Query user table wallet balances as single-source-of-truth reconciliation fallback
+        $stmtU = $db->prepare("SELECT profit_income_wallet, profit_sharing_wallet, direct_bonus_wallet, mentor_income_wallet, rank_reward_wallet, vip_club_wallet, company_turnover_wallet, user_growth_wallet FROM user WHERE userid IN ($inClause)");
+        $stmtU->execute($ids);
+        $uWallets = $stmtU->fetchAll(PDO::FETCH_ASSOC);
+        $uPI  = !empty($uWallets) ? max(array_column($uWallets, 'profit_income_wallet')) : 0.0;
+        $uPS  = !empty($uWallets) ? max(array_column($uWallets, 'profit_sharing_wallet')) : 0.0;
+        $uDB  = !empty($uWallets) ? max(array_column($uWallets, 'direct_bonus_wallet')) : 0.0;
+        $uMI  = !empty($uWallets) ? max(array_column($uWallets, 'mentor_income_wallet')) : 0.0;
+        $uRR  = !empty($uWallets) ? max(array_column($uWallets, 'rank_reward_wallet')) : 0.0;
+        $uVIP = !empty($uWallets) ? max(array_column($uWallets, 'vip_club_wallet')) : 0.0;
+        $uCT  = !empty($uWallets) ? max(array_column($uWallets, 'company_turnover_wallet')) : 0.0;
+        $uUG  = !empty($uWallets) ? max(array_column($uWallets, 'user_growth_wallet')) : 0.0;
+
+        $profitInc   = max($pi1, $pi2, (float)$uPI);
+        $profitShare = max($ps1, $ps2, (float)$uPS);
+        $directBon   = max($db1, $db2, $db3, (float)$uDB);
+        $mentorInc   = max($mi1, $mi2, (float)$uMI);
+        $rankRew     = max($rr1, $rr2, (float)$uRR);
+        $vipClub     = max(($vip1 + $vip2), $vip3, (float)$uVIP);
+        $turnover    = max($ct1, $ct2, (float)$uCT);
+
         $totalIncBal = round($profitInc + $profitShare + $directBon + $mentorInc + $rankRew + $vipClub + $turnover, 2);
+        if ((float)$uUG > $totalIncBal) {
+            $totalIncBal = round((float)$uUG, 2);
+        }
 
         return [
             'total_income_balance' => $totalIncBal,
@@ -5036,6 +5108,22 @@ if (!function_exists('getUserIncomeWalletSummary')) {
             'vip_club'             => round($vipClub, 2),
             'company_turnover'     => round($turnover, 2)
         ];
+    }
+}
+
+if (!function_exists('syncUserGrowthWallet')) {
+    function syncUserGrowthWallet($userid, $pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db || !$userid) return 0.00;
+
+        $summary = getUserIncomeWalletSummary($userid, $db);
+        $totalGrowth = (float)($summary['total_income_balance'] ?? 0.00);
+
+        $stmt = $db->prepare("UPDATE user SET user_growth_wallet = :tot WHERE userid = :uid");
+        $stmt->execute([':tot' => $totalGrowth, ':uid' => $userid]);
+
+        return $totalGrowth;
     }
 }
 

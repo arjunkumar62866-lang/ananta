@@ -51,10 +51,12 @@ switch ($action) {
         $stmtDb = $pdo->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
         $stmtDb->execute([':uid' => $user_id]);
         $totDirectBonus = (float)$stmtDb->fetchColumn();
+        $totDirectBonus = max($totDirectBonus, $directBonusWallet);
 
         $stmtMi = $pdo->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id = :uid AND status = 'CREDITED'");
         $stmtMi->execute([':uid' => $user_id]);
         $totMentorIncome = (float)$stmtMi->fetchColumn();
+        $totMentorIncome = max($totMentorIncome, $mentorIncomeWallet);
 
         $stmtVipRewards = $pdo->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
         $stmtVipRewards->execute([':uid' => $user_id]);
@@ -69,17 +71,27 @@ switch ($action) {
         $totRankReward = (float)$pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid")->execute([':uid' => $user_id]) ? (float)$pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid")->fetchColumn() : 0.00;
 
         $totVipClubTotal = round($totVipRewards + $totVipMonthly, 2);
+        $totVipClubTotal = max($totVipClubTotal, $vipClubWallet);
 
-        // Combined User Growth Total
+        // Combined User Growth Total (All 7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor Income, VIP Club, Rank Reward, Company Turnover)
         $userGrowthTotal = round(
             $totProfitIncome +
             $totProfitSharing +
             $totDirectBonus +
             $totMentorIncome +
             $totVipClubTotal +
-            $totRankReward,
+            $totRankReward +
+            $totTurnover,
             2
         );
+
+        if (function_exists('getUserIncomeWalletSummary')) {
+            $growthSummary = getUserIncomeWalletSummary($user_id, $pdo);
+            if (!empty($growthSummary['total_income_balance'])) {
+                $userGrowthTotal = max($userGrowthTotal, round((float)$growthSummary['total_income_balance'], 2));
+            }
+        }
+        $userGrowthTotal = max($userGrowthTotal, (float)($uRow['user_growth_wallet'] ?? 0));
 
         // 3. Withdrawals Breakdown
         $stmtWdPaid = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Withdraw%' AND type = 'Credit' AND status = 1");
@@ -148,6 +160,7 @@ switch ($action) {
                 'wallets' => [
                     'main_wallet'           => $mainWalletBalance,
                     'user_growth_total'     => $userGrowthTotal,
+                    'user_growth_wallet'    => max((float)($uRow['user_growth_wallet'] ?? 0.00), $userGrowthTotal),
                     'profit_income_wallet'  => $profitIncomeWallet,
                     'profit_sharing_wallet' => $profitSharingWallet,
                     'direct_bonus_wallet'   => $directBonusWallet,

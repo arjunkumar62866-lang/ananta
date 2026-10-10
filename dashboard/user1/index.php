@@ -180,13 +180,12 @@ $generation_income = incometotalnew_exact_subject($pdo, $table,$userid,'Generati
 $generation_income= round((float)($generation_income ?? 0), 2);
 
 // Direct Bonus
-
-$stmt = $pdo->prepare("SELECT SUM(package) AS total_package FROM tbl_roi_two WHERE user_id = :userid");
-$stmt->bindParam(':userid', $userid, PDO::PARAM_INT);
-$stmt->execute();
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$direct_bonus = $result['total_package'] ?? 0;
-$direct_bonus= round((float)($direct_bonus ?? 0), 2);
+$direct_bonus = round((float)($direct_bonus_wallet ?? 0), 2);
+if ($direct_bonus <= 0) {
+    $stmtDbSched = $pdo->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
+    $stmtDbSched->execute([':uid' => $userid]);
+    $direct_bonus = round((float)($stmtDbSched->fetchColumn() ?: 0), 2);
+}
 
 
 // Ranking Income
@@ -1396,12 +1395,12 @@ body.ananta-user-dashboard {
                             <span class="font-weight-bold text-truncate" style="color: #334155; font-size: 14px;">Direct Bonus</span>
                         </div>
                         <h3 class="font-weight-bold mb-1 text-truncate" style="color: #0f172a; font-size: 20px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                            <?php echo formatCurrency($direct_bonus, $selectedCurrency); ?>
+                            <?php echo formatCurrencyFromINR($direct_bonus, $selectedCurrency); ?>
                         </h3>
-                        <!-- <div class="d-flex align-items-center justify-content-between mt-1">
-                            <span class="small font-weight-bold" style="color: #16a34a; font-size: 12.5px;">+5.4%</span>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                            <span class="small font-weight-bold" style="color: #9333ea; font-size: 12.5px;">6% (10 Months)</span>
                             <i class="zmdi zmdi-chevron-right text-muted" style="font-size: 16px;"></i>
-                        </div> -->
+                        </div>
                     </a>
                 </div>
 
