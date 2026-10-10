@@ -11,6 +11,28 @@ if (!function_exists('cleanUserId')) {
     }
 }
 
+if (!function_exists('ensureWithdrawalRemarksColumnExists')) {
+    function ensureWithdrawalRemarksColumnExists($pdoConnection = null) {
+        global $pdo;
+        $db = $pdoConnection ?: $pdo;
+        if (!$db) return;
+
+        try {
+            $stmt = $db->query("SHOW COLUMNS FROM tbl_transaction LIKE 'admin_remarks'");
+            if ($stmt->fetch() === false) {
+                $db->exec("ALTER TABLE tbl_transaction ADD COLUMN admin_remarks TEXT DEFAULT NULL AFTER api_message");
+            }
+        } catch (Exception $e) {}
+
+        try {
+            $stmt2 = $db->query("SHOW COLUMNS FROM tbl_capital_withdrawal_request LIKE 'admin_remarks'");
+            if ($stmt2->fetch() === false) {
+                $db->exec("ALTER TABLE tbl_capital_withdrawal_request ADD COLUMN admin_remarks TEXT DEFAULT NULL AFTER processed_at");
+            }
+        } catch (Exception $e) {}
+    }
+}
+
 if (!function_exists('cleanupGlobalTreeDuplicates')) {
     /**
      * Generic global tree duplicate cleaner.
