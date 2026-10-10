@@ -414,6 +414,69 @@ try {
         'Lifetime income represents gross earned sum; user_growth_wallet reflects spendable net balance'
     );
 
+    // -------------------------------------------------------------------------
+    // TEST 9: Zero Wallet Balance Preservation (100% Withdrawal to Zero Balance)
+    // -------------------------------------------------------------------------
+    // User withdraws entire remaining balance (90.00) leaving exactly 0.00
+    $fullWd = 90.00;
+    $pdo->prepare("UPDATE user SET user_growth_wallet = user_growth_wallet - :amt WHERE userid = :uid")->execute([
+        ':amt' => $fullWd,
+        ':uid' => $testUser
+    ]);
+    // Record debit transaction in ledger
+    $pdo->prepare("INSERT INTO tbl_transaction (user_id, type, subject, amount, created_date, status) VALUES (:uid, 'Debit', 'Full Withdrawal to 0.00', :amt, CURDATE(), 1)")->execute([
+        ':uid' => $testUser,
+        ':amt' => $fullWd
+    ]);
+
+    $balAtZero = (float)$pdo->query("SELECT user_growth_wallet FROM user WHERE userid = '{$testUser}'")->fetchColumn();
+
+    // 1. Calling syncUserGrowthWallet without force MUST NOT replenish the 0.00 balance
+    $syncedBal = syncUserGrowthWallet($testUser, $pdo, false);
+
+    // 2. Simulating dashboard load logic from get_wallet_dashboard.php
+    $stmtU = $pdo->prepare("SELECT user_growth_wallet FROM user WHERE userid = ?");
+    $stmtU->execute([$testUser]);
+    $dashWalletBal = round((float)($stmtU->fetchColumn() ?? 0.00), 2);
+
+    $t9_cond = ($balAtZero === 0.00 && $syncedBal === 0.00 && $dashWalletBal === 0.00);
+    recordTest(9, 'Zero Wallet Balance Preservation (100% Spend/Withdrawal Stays 0.00)',
+        'Balance: 0.00, Synced: 0.00, Dashboard: 0.00',
+        sprintf('Balance: %.2f, Synced: %.2f, Dashboard: %.2f', $balAtZero, $syncedBal, $dashWalletBal),
+        $t9_cond,
+        'A legitimate zero balance is NEVER overwritten or replenished from lifetime income totals'
+    );
+
+    // -------------------------------------------------------------------------
+    // TEST 10: Schedule Duplication & Pending Installment Spendability Protection
+    // -------------------------------------------------------------------------
+    // Create new investment for schedule test
+    $invId = 88888;
+    $sourceUser = 'SRC_' . $suffix;
+    createTestUser($pdo, $sourceUser, 'Source User', 0.00);
+    $pdo->prepare("INSERT INTO tbl_sponsor (referral_id, sponsor_id, created_date) VALUES (:uid, :sp, CURDATE())")->execute([':uid' => $sourceUser, ':sp' => $testUser]);
+
+    // First schedule generation: should create 10 installments
+    $firstGen = generateDirectBonusSchedule($invId, $sourceUser, 10000.00, '2026-01-01', $pdo);
+    $schedCount1 = (int)$pdo->query("SELECT COUNT(*) FROM tbl_direct_bonus_schedule WHERE investment_id = {$invId}")->fetchColumn();
+
+    // Second schedule generation: should be idempotent and return false/0 new rows
+    $secondGen = generateDirectBonusSchedule($invId, $sourceUser, 10000.00, '2026-01-01', $pdo);
+    $schedCount2 = (int)$pdo->query("SELECT COUNT(*) FROM tbl_direct_bonus_schedule WHERE investment_id = {$invId}")->fetchColumn();
+
+    // Pending installment spendability check:
+    // All 10 installments are PENDING. Ensure none are credited to direct_bonus_wallet or user_growth_wallet
+    $pendingSum = (float)$pdo->query("SELECT SUM(installment_amount) FROM tbl_direct_bonus_schedule WHERE investment_id = {$invId} AND status = 'PENDING'")->fetchColumn();
+    $creditedSum = (float)$pdo->query("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE investment_id = {$invId} AND status = 'CREDITED'")->fetchColumn();
+
+    $t10_cond = ($firstGen === true && $schedCount1 === 10 && $secondGen === true && $schedCount2 === 10 && $pendingSum == 600.00 && $creditedSum == 0.00);
+    recordTest(10, 'Schedule Duplication & Pending Installment Spendability Protection',
+        '1st Gen: true, Count: 10; 2nd Gen: true (Idempotent), Count: 10 (0 new rows); Pending: 600.00, Credited: 0.00',
+        sprintf('1st Gen: %s, Count: %d; 2nd Gen: %s, Count: %d; Pending: %.2f, Credited: %.2f',
+            $firstGen ? 'true' : 'false', $schedCount1, $secondGen ? 'true' : 'false', $schedCount2, $pendingSum, $creditedSum),
+        $t10_cond,
+        'Duplicate generation blocked; count remains exactly 10; pending installments are strictly not spendable'
+    );
 } catch (Exception $e) {
     echo "ERROR EXCEPTION: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
     $failCount++;
@@ -428,7 +491,7 @@ echo sprintf(" TEST SUITE SUMMARY: %d PASSED, %d FAILED (TOTAL %d)\n", $passCoun
 echo "================================================================================\n";
 
 if ($failCount === 0) {
-    echo ">>> ALL 8 USER GROWTH WALLET RECONCILIATION & SAFEGUARD TESTS PASSED! <<<\n";
+    echo ">>> ALL 10 USER GROWTH WALLET RECONCILIATION & SAFEGUARD TESTS PASSED! <<<\n";
     exit(0);
 } else {
     echo ">>> SOME TESTS FAILED. PLEASE REVIEW LOGS ABOVE. <<<\n";

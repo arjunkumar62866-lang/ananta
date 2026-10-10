@@ -1770,7 +1770,8 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
     $investment_amount = (float)$investment_amount;
     // Normalize if USD passed (< 1000)
     if ($investment_amount < 1000.0) {
-        $investment_amount = round($investment_amount * 90.0, 2);
+        $usdRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : (defined('DEFAULT_USD_TO_INR') ? DEFAULT_USD_TO_INR : 90.0);
+        $investment_amount = round($investment_amount * $usdRate, 2);
     }
 
     // Find direct sponsor: check tbl_sponsor first, fallback to user.sponserid
@@ -1871,7 +1872,8 @@ function syncDirectBonusForUser($beneficiary_id, $pdoConnection = null) {
         if ($check->fetchColumn() == 0) {
             $amt = (float)$inv['package'];
             if ($amt <= 0 && (float)$inv['real_fund_usd'] > 0) {
-                $amt = round((float)$inv['real_fund_usd'] * 90.0, 2);
+                $usdRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : (defined('DEFAULT_USD_TO_INR') ? DEFAULT_USD_TO_INR : 90.0);
+                $amt = round((float)$inv['real_fund_usd'] * $usdRate, 2);
             }
             if ($amt > 0) {
                 generateDirectBonusSchedule($inv['id'], $inv['user_id'], $amt, $inv['date'], $db);
@@ -1904,7 +1906,8 @@ function syncAllDirectBonusSchedules($pdoConnection = null) {
     foreach ($invs as $inv) {
         $amt = (float)$inv['package'];
         if ($amt <= 0 && (float)$inv['real_fund_usd'] > 0) {
-            $amt = round((float)$inv['real_fund_usd'] * 90.0, 2);
+            $usdRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : (defined('DEFAULT_USD_TO_INR') ? DEFAULT_USD_TO_INR : 90.0);
+            $amt = round((float)$inv['real_fund_usd'] * $usdRate, 2);
         }
         if ($amt > 0) {
             if (generateDirectBonusSchedule($inv['id'], $inv['user_id'], $amt, $inv['date'], $db)) {
@@ -1936,11 +1939,12 @@ function getTotalDirectBonus($beneficiary_id, $pdoConnection = null) {
 
     // 3. Direct Downline investment calculation (6% of direct downline active investments)
     $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$beneficiary_id);
+    $usdRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : (defined('DEFAULT_USD_TO_INR') ? DEFAULT_USD_TO_INR : 90.0);
     $stmtInv = $db->prepare("
         SELECT COALESCE(SUM(
             CASE 
                 WHEN r.package > 0 THEN r.package 
-                ELSE r.real_fund_usd * 90.0 
+                ELSE r.real_fund_usd * :usd_rate 
             END
         ), 0)
         FROM tbl_roi_one r
@@ -1952,6 +1956,7 @@ function getTotalDirectBonus($beneficiary_id, $pdoConnection = null) {
           )
     ");
     $stmtInv->execute([
+        ':usd_rate' => $usdRate,
         ':sp1' => (string)$beneficiary_id,
         ':sp2' => (string)$cleanUid,
         ':sp3' => (string)$beneficiary_id,
@@ -5283,22 +5288,31 @@ if (!function_exists('syncUserGrowthWallet')) {
         // Check current user_growth_wallet balance
         $stmtCur = $db->prepare("SELECT user_growth_wallet FROM user WHERE userid = :uid");
         $stmtCur->execute([':uid' => $userid]);
-        $curBal = (float)$stmtCur->fetchColumn();
+        $curRow = $stmtCur->fetch(PDO::FETCH_ASSOC);
+        $curBal = ($curRow && $curRow['user_growth_wallet'] !== null) ? (float)$curRow['user_growth_wallet'] : null;
 
-        // If user already has a valid balance and force is false, preserve it!
-        if (!$force && $curBal > 0.00) {
-            return $curBal;
+        // If user already has a valid set balance (even 0.00) and force is false, preserve it!
+        // A legitimate zero balance must NEVER be replenished from lifetime income totals when spent/withdrawn.
+        if (!$force && $curBal !== null) {
+            // Check if user has any debits or withdrawals
+            $stmtTx = $db->prepare("SELECT COUNT(*) FROM tbl_transaction WHERE user_id = :uid AND (type = 'Debit' OR subject LIKE '%Withdraw%' OR subject LIKE '%Transfer%')");
+            $stmtTx->execute([':uid' => $userid]);
+            if ((int)$stmtTx->fetchColumn() > 0 || $curBal > 0.00) {
+                return (float)$curBal;
+            }
         }
 
         $summary = getUserIncomeWalletSummary($userid, $db);
         $totalGrowth = (float)($summary['total_income_balance'] ?? 0.00);
 
-        if ($totalGrowth > 0.00 || $force) {
-            $stmt = $db->prepare("UPDATE user SET user_growth_wallet = :tot WHERE userid = :uid AND (user_growth_wallet IS NULL OR user_growth_wallet = 0.00 OR :force = 1)");
-            $stmt->execute([':tot' => $totalGrowth, ':uid' => $userid, ':force' => $force ? 1 : 0]);
+        // Only update if forced
+        if ($force) {
+            $stmt = $db->prepare("UPDATE user SET user_growth_wallet = :tot WHERE userid = :uid");
+            $stmt->execute([':tot' => $totalGrowth, ':uid' => $userid]);
+            return $totalGrowth;
         }
 
-        return $totalGrowth;
+        return $curBal !== null ? (float)$curBal : $totalGrowth;
     }
 }
 

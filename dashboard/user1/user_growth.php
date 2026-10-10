@@ -10,9 +10,6 @@ if (!isset($_SESSION['userid'])) {
 }
 
 $userid = $_SESSION['userid'];
-if (function_exists('syncUserGrowthWallet')) {
-    syncUserGrowthWallet($userid, $pdo);
-}
 $growth = getUserGrowthBreakdown($userid, $pdo);
 ?>
 

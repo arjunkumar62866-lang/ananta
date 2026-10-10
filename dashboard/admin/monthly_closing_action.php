@@ -357,22 +357,6 @@ if ($action === 'process') {
         $mentorIncomeResult = processMentorIncome($closing_month, $closing_date, $pdo);
         $vipClubResult      = processVIPMonthlyIncome($closing_month, $closing_date, $pdo);
 
-        // Safeguard: Only initialize uninitialized active user_growth_wallet (balance 0.00 / NULL)
-        // Never overwrite a valid balance, withdrawals, transfers, reversals, or adjustments
-        $pdo->exec("
-            UPDATE user 
-            SET user_growth_wallet = ROUND(
-                COALESCE(profit_income_wallet, 0) + 
-                COALESCE(profit_sharing_wallet, 0) + 
-                COALESCE(direct_bonus_wallet, 0) + 
-                COALESCE(mentor_income_wallet, 0) + 
-                COALESCE(rank_reward_wallet, 0) + 
-                COALESCE(vip_club_wallet, 0) + 
-                COALESCE(company_turnover_wallet, 0), 
-                2
-            )
-            WHERE active = '1' AND (user_growth_wallet IS NULL OR user_growth_wallet = 0.00)
-        ");
 
         $updClosing = $pdo->prepare("UPDATE tbl_monthly_closing SET status = 'COMPLETED' WHERE id = :id");
         $updClosing->execute([':id' => $closing_id]);

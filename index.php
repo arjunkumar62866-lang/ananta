@@ -361,7 +361,7 @@ include "common/header.php";
                                 </div>
                             </div>
                             <div class="px-4 pb-4">
-                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">FOREX TRADING</h5>
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">Stock Exchange Market.</h5>
                                 <p class="mb-0" style="color: #64748B; font-family: 'Roboto', sans-serif; font-size: 13.5px; line-height: 1.5;">Market-focused trading and research.</p>
                             </div>
                         </div>
@@ -447,6 +447,24 @@ include "common/header.php";
                             </div>
                         </div>
                     </div>
+
+                    <!-- Vertical 7: ANANTA VELORA -->
+
+                    <div class="col-lg-4 col-md-6 col-sm-12 framer-reveal framer-delay-6">
+                        <div class="h-100 transition-all overflow-hidden ananta-motion-card" style="background: rgba(253, 250, 244, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(197, 160, 89, 0.28); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);">
+                            <img src="assets/images/about/velora.png" alt="Gold" style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;">
+                            <div style="margin-top: -22px; margin-left: 20px; margin-bottom: 10px; position: relative; z-index: 2;">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-3 shadow-sm" style="width: 42px; height: 42px; background: #FFFDF8; border: 1.5px solid #E2D3B4;">
+                                    <i class="fa fa-cubes fs-5" style="color: #967431;"></i>
+                                </div>
+                            </div>
+                            <div class="px-4 pb-4">
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #0F172A; font-family: 'Roboto', sans-serif; font-size: 16px; letter-spacing: 0.3px;">ANANTA VELORA</h5>
+                                <p class="mb-0" style="color: #64748B; font-family: 'Roboto', sans-serif; font-size: 13.5px; line-height: 1.5;">Global E-Commerce Marketplace — connecting buyers and sellers worldwide, like Amazon & Flipkart.</p>
+                            </div>
+                        </div>
+                    </div>
+
 
                 </div>
             </div>

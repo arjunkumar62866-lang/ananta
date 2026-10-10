@@ -208,9 +208,6 @@ $leadership_income_income = incometotalnew($pdo, $table,$userid,'Leadership Inco
 $leadership_income_income= round((float)($leadership_income_income ?? 0), 2);
 
 // User Growth Combined Total (7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor/Generation Income, VIP Club/Ranking Income, Company Turnover/Leadership, Rank Reward)
-if (function_exists('syncUserGrowthWallet')) {
-    syncUserGrowthWallet($userid, $pdo);
-}
 $user_growth_breakdown_data = getUserGrowthBreakdown($userid, $pdo);
 $user_growth_total = round((float)($user_growth_breakdown_data["total_user_growth"] ?? 0), 2);
 
