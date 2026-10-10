@@ -16,7 +16,10 @@ switch ((string)$type) {
             FROM tbl_transaction
             WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
               AND subject NOT LIKE '%Investment%'
-              AND (a_status = '1' OR status = 1)
+              AND subject NOT LIKE 'Admin Adjustment%'
+              AND a_status = '1'
+              AND a_status != '2' AND status != 2
+              AND subject NOT LIKE 'Cancel Withdrawal%'
             ORDER BY id DESC
         ");
         break;
@@ -26,7 +29,11 @@ switch ((string)$type) {
             SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
             WHERE (subject LIKE '%Investment%' OR withdrawal_method = 'Capital')
-              AND (a_status = '0' OR a_status IS NULL OR status = 0)
+              AND subject NOT LIKE 'Admin Adjustment%'
+              AND (a_status = '0' OR a_status IS NULL OR a_status = '')
+              AND a_status != '1'
+              AND a_status != '2' AND status != 2
+              AND subject NOT LIKE 'Cancel Withdrawal%'
             ORDER BY id DESC
         ");
         break;
@@ -37,7 +44,11 @@ switch ((string)$type) {
             FROM tbl_transaction
             WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
               AND subject NOT LIKE '%Investment%'
-              AND (a_status = '0' OR a_status IS NULL OR status = 0)
+              AND subject NOT LIKE 'Admin Adjustment%'
+              AND (a_status = '0' OR a_status IS NULL OR a_status = '')
+              AND a_status != '1'
+              AND a_status != '2' AND status != 2
+              AND subject NOT LIKE 'Cancel Withdrawal%'
             ORDER BY id DESC
         ");
         break;
@@ -47,6 +58,7 @@ switch ((string)$type) {
             SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
             WHERE (subject LIKE '%Cancel Withdrawal%' OR a_status = '2' OR status = 2)
+              AND subject NOT LIKE 'Admin Adjustment%'
             ORDER BY id DESC
         ");
         break;
@@ -57,6 +69,9 @@ switch ((string)$type) {
             FROM tbl_transaction
             WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
               AND subject NOT LIKE '%Investment%'
+              AND subject NOT LIKE 'Admin Adjustment%'
+              AND a_status != '2' AND status != 2
+              AND subject NOT LIKE 'Cancel Withdrawal%'
               AND type = 'Debit'
             ORDER BY id DESC
         ");

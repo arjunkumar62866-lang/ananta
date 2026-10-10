@@ -3454,8 +3454,59 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
     ");
     $monthBizInr  = (float)$stmtMonth->fetchColumn();
 
-    $totWdPaid    = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') AND subject NOT LIKE 'Admin Adjustment%' AND (status = 1 OR a_status = '1') AND status != 2 AND a_status != '2'")->fetchColumn();
-    $totWdPend    = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') AND subject NOT LIKE 'Admin Adjustment%' AND (status = 0 OR a_status = '0' OR status IS NULL OR a_status IS NULL) AND status != 2 AND a_status != '2'")->fetchColumn();
+    // Audited Withdrawal Financial Metrics (Net Balance & Real Withdrawal Requests Only)
+    $totWdPaid    = (float)$db->query("
+        SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) 
+        FROM tbl_transaction 
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
+          AND subject NOT LIKE 'Admin Adjustment%' 
+          AND subject NOT LIKE 'Cancel Withdrawal%'
+          AND a_status = '1' 
+          AND status != 2 AND a_status != '2'
+    ")->fetchColumn();
+
+    $totWdPend    = (float)$db->query("
+        SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) 
+        FROM tbl_transaction 
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
+          AND subject NOT LIKE 'Admin Adjustment%' 
+          AND subject NOT LIKE 'Cancel Withdrawal%'
+          AND (a_status = '0' OR a_status IS NULL OR a_status = '') 
+          AND a_status != '1' 
+          AND status != 2 AND a_status != '2'
+    ")->fetchColumn();
+
+    // Unique User Counts for Admin Dashboard Withdrawal Cards
+    $paidWdUsers  = (int)$db->query("
+        SELECT COUNT(DISTINCT user_id) 
+        FROM tbl_transaction 
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
+          AND subject NOT LIKE 'Admin Adjustment%' 
+          AND subject NOT LIKE 'Cancel Withdrawal%'
+          AND a_status = '1' 
+          AND status != 2 AND a_status != '2'
+    ")->fetchColumn();
+
+    $pendWdUsers  = (int)$db->query("
+        SELECT COUNT(DISTINCT user_id) 
+        FROM tbl_transaction 
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
+          AND subject NOT LIKE 'Admin Adjustment%' 
+          AND subject NOT LIKE 'Cancel Withdrawal%'
+          AND (a_status = '0' OR a_status IS NULL OR a_status = '') 
+          AND a_status != '1' 
+          AND status != 2 AND a_status != '2'
+    ")->fetchColumn();
+
+    $totWdUsers   = (int)$db->query("
+        SELECT COUNT(DISTINCT user_id) 
+        FROM tbl_transaction 
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
+          AND subject NOT LIKE 'Admin Adjustment%' 
+          AND subject NOT LIKE 'Cancel Withdrawal%'
+          AND (a_status = '1' OR a_status = '0' OR a_status IS NULL OR a_status = '') 
+          AND status != 2 AND a_status != '2'
+    ")->fetchColumn();
 
     $piPaid       = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc")->fetchColumn();
     $psPaid       = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc")->fetchColumn();
@@ -3470,28 +3521,31 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
     $openTickets  = (int)$db->query("SELECT COUNT(*) FROM tbl_support_tickets WHERE status = 'OPEN'")->fetchColumn();
 
     return [
-        'today_registrations'     => $todayRegs,
-        'total_users'             => $totUsers,
-        'active_users'            => $activeUsers,
-        'inactive_users'          => $inactiveUsers,
-        'total_unlock_access'     => $totUnlockAcc,
-        'unlock_revenue_inr'      => $totRevenueUnlock,
-        'total_investment_inr'    => round($totBizInr, 2),
-        'total_investment_usd'    => round($totBizInr / $rate, 2),
-        'today_business_inr'      => round($todayBizInr, 2),
-        'today_business_usd'      => round($todayBizInr / $rate, 2),
-        'monthly_business_inr'    => round($monthBizInr, 2),
-        'monthly_business_usd'    => round($monthBizInr / $rate, 2),
-        'total_withdrawal_paid'   => round($totWdPaid, 2),
-        'pending_withdrawal'      => round($totWdPend, 2),
-        'profit_income_paid'      => round($piPaid, 2),
-        'profit_sharing_paid'     => round($psPaid, 2),
-        'direct_bonus_paid'       => round($dbPaid, 2),
-        'mentor_income_paid'      => round($miPaid, 2),
-        'vip_club_income_paid'    => round($vipPaid + $vipMonthly, 2),
-        'total_income_distributed'=> $totIncomePaid,
-        'kyc_pending_count'       => $kycPending,
-        'support_tickets_open'    => $openTickets
+        'today_registrations'          => $todayRegs,
+        'total_users'                  => $totUsers,
+        'active_users'                 => $activeUsers,
+        'inactive_users'               => $inactiveUsers,
+        'total_unlock_access'          => $totUnlockAcc,
+        'unlock_revenue_inr'           => $totRevenueUnlock,
+        'total_investment_inr'         => round($totBizInr, 2),
+        'total_investment_usd'         => round($totBizInr / $rate, 2),
+        'today_business_inr'           => round($todayBizInr, 2),
+        'today_business_usd'           => round($todayBizInr / $rate, 2),
+        'monthly_business_inr'         => round($monthBizInr, 2),
+        'monthly_business_usd'         => round($monthBizInr / $rate, 2),
+        'total_withdrawal_paid'        => round($totWdPaid, 2),
+        'pending_withdrawal'           => round($totWdPend, 2),
+        'withdrawal_paid_user_count'   => $paidWdUsers,
+        'pending_withdrawal_user_count'=> $pendWdUsers,
+        'total_withdrawal_user_count'  => $totWdUsers,
+        'profit_income_paid'           => round($piPaid, 2),
+        'profit_sharing_paid'          => round($psPaid, 2),
+        'direct_bonus_paid'            => round($dbPaid, 2),
+        'mentor_income_paid'           => round($miPaid, 2),
+        'vip_club_income_paid'         => round($vipPaid + $vipMonthly, 2),
+        'total_income_distributed'     => $totIncomePaid,
+        'kyc_pending_count'            => $kycPending,
+        'support_tickets_open'         => $openTickets
     ];
 }
 }
