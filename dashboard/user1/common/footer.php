@@ -78,6 +78,14 @@
   transform: scale(1.1);
 }
 
+button.apple-nav-link {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+}
+
 /* Persistent display on mobile screens up to 991px */
 @media (min-width: 992px) {
   .apple-glass-bottom-nav {
@@ -109,10 +117,10 @@
       <i class="fa fa-credit-card"></i>
       <span>Wallet</span>
     </a>
-    <a href="javascript:void(0);" class="apple-nav-link toggle-menu-btn" id="btnUserMoreMenu">
+    <button type="button" class="apple-nav-link toggle-menu-btn" id="btnUserMoreMenu" aria-label="Toggle navigation menu">
       <i class="fa fa-bars"></i>
       <span>More</span>
-    </a>
+    </button>
   </div>
 </div>
 

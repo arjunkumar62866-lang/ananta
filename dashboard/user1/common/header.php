@@ -394,10 +394,10 @@ setTimeout(function() {
     </li>
 
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-balance-wallet"></i><span> Wallet</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="main_wallet.php"><i class="zmdi zmdi-circle-o"></i> Main Wallet</a></li>
         <li><a href="income_wallet.php"><i class="zmdi zmdi-circle-o"></i> Income Wallet</a></li>
@@ -405,10 +405,10 @@ setTimeout(function() {
     </li>
 
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-accounts"></i><span> My Team</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="my_team.php"><i class="zmdi zmdi-circle-o"></i> My Team Structure</a></li>
         <li><a href="my_direct.php"><i class="zmdi zmdi-circle-o"></i> My Direct</a></li>
@@ -424,10 +424,10 @@ setTimeout(function() {
     </li>
 
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-trending-up"></i><span> User Growth</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="profit_income.php"><i class="zmdi zmdi-circle-o"></i> 1. Profit Income</a></li>
         <li><a href="profit_sharing_income.php"><i class="zmdi zmdi-circle-o"></i> 2. Profit Sharing Income</a></li>
@@ -452,10 +452,10 @@ setTimeout(function() {
     </li>
 
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-settings"></i><span> Settings</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="settings.php"><i class="zmdi zmdi-circle-o"></i> BEP20 Address</a></li>
         <li><a href="kyc.php"><i class="zmdi zmdi-circle-o"></i> Bank KYC</a></li>
@@ -464,10 +464,10 @@ setTimeout(function() {
     </li>
 
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-money"></i><span> Withdrawal</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="withdraw.php?tab=net_balance"><i class="zmdi zmdi-circle-o"></i> 1. Net Balance Wallet (Profit/Income)</a></li>
         <li><a href="withdraw.php?tab=capital"><i class="zmdi zmdi-circle-o"></i> 2. Investment Wallet (Capital)</a></li>
@@ -476,10 +476,10 @@ setTimeout(function() {
     </li>
 
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-help"></i><span> Help & Support</span></span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="enquery.php"><i class="zmdi zmdi-circle-o"></i> Send Query</a></li>
         <li><a href="enquery-history.php"><i class="zmdi zmdi-circle-o"></i> Query History</a></li>
@@ -554,9 +554,11 @@ setTimeout(function() {
     width: 100% !important;
     float: none !important;
 }
-.sidebar-menu > li > a {
+.sidebar-menu > li > a,
+.sidebar-menu > li > button.menu-toggle {
     display: flex !important;
     align-items: center !important;
+    justify-content: space-between !important;
     gap: 12px;
     padding: 10px 14px !important;
     border-radius: 12px !important;
@@ -567,15 +569,26 @@ setTimeout(function() {
     transition: all 0.25s ease !important;
     border-left: none !important;
     width: 100% !important;
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    box-shadow: none;
 }
-.sidebar-menu > li > a i {
+.sidebar-menu > li > a i,
+.sidebar-menu > li > button.menu-toggle i {
     font-size: 17px !important;
     color: #64748b;
     transition: color 0.25s ease;
 }
 .sidebar-menu > li:hover > a,
 .sidebar-menu > li.active > a,
-.sidebar-menu > li.has-sub.active > a {
+.sidebar-menu > li.has-sub.active > a,
+.sidebar-menu > li:hover > button.menu-toggle,
+.sidebar-menu > li.active > button.menu-toggle,
+.sidebar-menu > li.has-sub.active > button.menu-toggle {
     background: rgba(22, 163, 74, 0.1) !important;
     color: #16a34a !important;
     border-left: 3px solid #16a34a !important;
@@ -583,7 +596,11 @@ setTimeout(function() {
 .sidebar-menu > li:hover > a i,
 .sidebar-menu > li.active > a i,
 .sidebar-menu > li.has-sub.active > a i,
-.sidebar-menu > li.has-sub.active > a .arrow-icon {
+.sidebar-menu > li.has-sub.active > a .arrow-icon,
+.sidebar-menu > li:hover > button.menu-toggle i,
+.sidebar-menu > li.active > button.menu-toggle i,
+.sidebar-menu > li.has-sub.active > button.menu-toggle i,
+.sidebar-menu > li.has-sub.active > button.menu-toggle .arrow-icon {
     color: #16a34a !important;
 }
 .submenu {
@@ -624,6 +641,11 @@ setTimeout(function() {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
+}
+.has-sub > .menu-toggle > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
 }
 .arrow-icon {
     transition: transform 0.3s ease !important;
@@ -761,7 +783,9 @@ document.addEventListener("DOMContentLoaded", function() {
     document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
         item.addEventListener('click', function (e) {
             e.preventDefault();
-            this.parentElement.classList.toggle('active');
+            var parent = this.parentElement;
+            var isExpanded = parent.classList.toggle('active');
+            this.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
         });
     });
 
@@ -772,7 +796,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.querySelectorAll('#sidebar-wrapper a').forEach(function(link) {
         var href = link.getAttribute('href');
-        if (!href || href === 'javascript:void(0)') return;
+        if (!href || href === 'javascript:void(0)' || href === 'javascript:void();' || href === '#') return;
 
         if (href === fullUrl || href === currentPath) {
             var li = link.closest('li');
@@ -783,6 +807,10 @@ document.addEventListener("DOMContentLoaded", function() {
             var parentSub = link.closest('.has-sub');
             if (parentSub) {
                 parentSub.classList.add('active');
+                var toggleBtn = parentSub.querySelector('.menu-toggle');
+                if (toggleBtn) {
+                    toggleBtn.setAttribute('aria-expanded', 'true');
+                }
             }
         }
     });
@@ -885,12 +913,12 @@ document.addEventListener("DOMContentLoaded", function() {
                  NOTIFICATION BELL ICON & DROPDOWN (REAL-TIME)
             ============================================== -->
             <div class="ananta-notification-header-item dropdown mr-2" style="position: relative; display: inline-flex; align-items: center;">
-                <a href="#" class="ananta-notif-btn dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" aria-expanded="false" aria-label="Notifications" title="View Notifications" style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 50%; color: #0f172a; text-decoration: none; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); transition: all 0.2s ease;">
+                <button type="button" class="ananta-notif-btn dropdown-toggle dropdown-toggle-nocaret border-0" data-toggle="dropdown" aria-expanded="false" aria-label="Notifications" title="View Notifications" style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #ffffff; border: 1.5px solid #cbd5e1 !important; border-radius: 50%; color: #0f172a; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); transition: all 0.2s ease; cursor: pointer;">
                     <i class="zmdi zmdi-notifications" style="font-size: 20px; color: #0f172a;"></i>
                     <span class="ananta-notif-badge badge badge-pill" style="position: absolute; top: -4px; right: -4px; font-size: 9.5px; font-weight: 800; padding: 2px 5px; background: #ef4444; color: #ffffff; border: 2px solid #ffffff; border-radius: 100px; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4); display: <?php echo (!empty($unreadNotificationCount) && $unreadNotificationCount > 0) ? 'inline-block' : 'none'; ?>;">
                         <?php echo ($unreadNotificationCount > 99) ? '99+' : ($unreadNotificationCount ?? 0); ?>
                     </span>
-                </a>
+                </button>
 
                 <div class="dropdown-menu dropdown-menu-right ananta-notif-dropdown p-0 shadow-lg border-0" style="width: 320px; border-radius: 16px; overflow: hidden; background: #ffffff; margin-top: 8px;">
                     <div class="p-3 d-flex align-items-center justify-content-between text-white" style="background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);">
@@ -915,11 +943,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 <div class="dropdown">
 
-                    <a
-                        href="#"
+                    <button
+                        type="button"
                         class="ananta-profile-trigger dropdown-toggle dropdown-toggle-nocaret"
                         data-toggle="dropdown"
                         aria-expanded="false"
+                        aria-label="Open profile menu"
+                        style="cursor: pointer;"
                     >
 
                         <span class="ananta-profile-circle">
@@ -935,7 +965,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                         </span>
 
-                    </a>
+                    </button>
 
 
                     <!-- PROFILE DROPDOWN -->
@@ -943,7 +973,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                         <li class="dropdown-item ananta-user-details">
 
-                            <a href="javascript:void(0);">
+                            <a href="profile.php">
 
                                 <div class="media align-items-center">
 
@@ -1024,10 +1054,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 <div class="dropdown">
 
-                    <a
-                        href="#"
-                        class="nav-link dropdown-toggle dropdown-toggle-nocaret p-0"
+                    <button
+                        type="button"
+                        class="nav-link dropdown-toggle dropdown-toggle-nocaret p-0 border-0 bg-transparent"
                         data-toggle="dropdown"
+                        aria-expanded="false"
+                        aria-label="User profile"
+                        style="cursor: pointer;"
                     >
 
                         <span class="user-profile">
@@ -1044,7 +1077,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                         </span>
 
-                    </a>
+                    </button>
 
 
                     <ul
@@ -1066,7 +1099,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             "
                         >
 
-                            <a href="javascript:void(0);">
+                            <a href="profile.php">
 
                                 <div class="media align-items-center">
 

@@ -1299,12 +1299,13 @@ body.ananta-user-dashboard {
          BACK TO TOP
     ====================================================== -->
 
-    <a
-        href="javaScript:void(0);"
-        class="back-to-top"
+    <button
+        type="button"
+        class="back-to-top border-0"
+        aria-label="Back to top"
     >
         <i class="fa fa-angle-double-up"></i>
-    </a>
+    </button>
 
 
     <!-- =====================================================

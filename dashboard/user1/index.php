@@ -1249,7 +1249,7 @@ body.ananta-user-dashboard {
 
     <!-- Card 4: Total Withdrawal -->
     <div class="col-12">
-        <a href="javascript:void(0);" data-toggle="modal" data-target="#totalWithdrawalOptionsModal" class="card border-0 shadow-sm quick-wallet-card text-decoration-none" role="button">
+        <button type="button" data-toggle="modal" data-target="#totalWithdrawalOptionsModal" class="card border-0 shadow-sm quick-wallet-card text-decoration-none text-left w-100" style="background: #ffffff; cursor: pointer;">
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center min-w-0" style="flex: 1;">
                     <div class="rounded-xl quick-wallet-icon p-2 d-flex align-items-center justify-content-center"
@@ -1273,7 +1273,7 @@ body.ananta-user-dashboard {
                 <i class="zmdi zmdi-chevron-right text-muted flex-shrink-0 ml-2"
                    style="font-size: 20px;"></i>
             </div>
-        </a>
+        </button>
     </div>
 
 </div>
@@ -1822,7 +1822,7 @@ body.ananta-user-dashboard {
 
     </div><!--End content-wrapper-->
     <!--Start Back To Top Button-->
-    <a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i> </a>
+    <button type="button" class="back-to-top border-0" aria-label="Back to top"><i class="fa fa-angle-double-up"></i></button>
     <!--End Back To Top Button-->
 
   </div>

@@ -353,7 +353,7 @@ table.ananta-custom-table tbody td {
         </div>
 
         <!-- Back To Top Button -->
-        <a href="javaScript:void(0);" class="back-to-top"><i class="fa fa-angle-double-up"></i> </a>
+        <button type="button" class="back-to-top border-0" aria-label="Back to top"><i class="fa fa-angle-double-up"></i></button>
 
         <!-- Footer -->
         <?php include 'common/footer.php'; ?>

@@ -233,10 +233,10 @@ $news = $newsdata['news'];
 
     <!-- Profile Submenu -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-account"></i> Admin Profile</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="user_profile.php?uid=1290"><i class="zmdi zmdi-circle-o"></i> Admin Details</a></li>
         <li><a href="password.php"><i class="zmdi zmdi-circle-o"></i> Update Password</a></li>
@@ -245,10 +245,10 @@ $news = $newsdata['news'];
 
     <!-- 2. User Management -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-accounts-list"></i> 2. User Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="all_user.php"><i class="zmdi zmdi-circle-o"></i> All Users & Profiles</a></li>
         <li><a href="registration-report.php"><i class="zmdi zmdi-circle-o"></i> Registration Report</a></li>
@@ -263,10 +263,10 @@ $news = $newsdata['news'];
 
     <!-- 3. Wallet Management -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-balance-wallet"></i> 3. Wallet Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="growth_wallet.php"><i class="zmdi zmdi-circle-o"></i> Growth Wallet & Income</a></li>
         <li><a href="main_wallet.php"><i class="zmdi zmdi-circle-o"></i> Main Wallet Record</a></li>
@@ -278,10 +278,10 @@ $news = $newsdata['news'];
 
     <!-- 4. Deposit Management -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-money-box"></i> 4. Deposit Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="pending-fund-request.php"><i class="zmdi zmdi-circle-o"></i> Pending Fund Requests</a></li>
         <!-- <li><a href="fund-request.php?status=1"><i class="zmdi zmdi-circle-o"></i> Approved / Success Deposits</a></li> -->
@@ -299,10 +299,10 @@ $news = $newsdata['news'];
 
     <!-- 6. Withdrawal Management -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-card-off"></i> 6. Withdrawal Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="withdraw-history.php?type=0"><i class="zmdi zmdi-circle-o"></i> Pending Withdrawals</a></li>
         <li><a href="withdraw-history.php?type=hold"><i class="zmdi zmdi-circle-o"></i> Hold Withdrawals</a></li>
@@ -315,10 +315,10 @@ $news = $newsdata['news'];
 
     <!-- 7. Income Management -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-trending-up"></i> 7. Income Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <!-- <li><a href="income_management.php"><i class="zmdi zmdi-circle-o"></i> Income Dashboard & Overview</a></li> -->
         <li><a href="monthly-profit-closing.php"><i class="zmdi zmdi-circle-o"></i> Profit Income Closing</a></li>
@@ -333,10 +333,10 @@ $news = $newsdata['news'];
 
     <!-- 8. Rank & VIP Club -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-star"></i> 8. Rank & VIP Club</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="rank_settings.php"><i class="zmdi zmdi-circle-o"></i> Rank Settings & Matrix</a></li>
         <!-- <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> VIP Qualifications & Income</a></li> -->
@@ -346,10 +346,10 @@ $news = $newsdata['news'];
 
     <!-- 9. Referral / Team Management -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-sitemap"></i> 9. Team Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="team_management.php"><i class="zmdi zmdi-circle-o"></i> Direct & Binary Team Tree</a></li>
         <li><a href="move_team.php"><i class="zmdi zmdi-circle-o"></i> Move Team in Tree</a></li>
@@ -359,10 +359,10 @@ $news = $newsdata['news'];
 
     <!-- 10. KYC Management -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-card"></i> 10. KYC Management</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="pending_kyc.php"><i class="zmdi zmdi-circle-o"></i> Pending KYC Applications</a></li>
         <li><a href="completed_kyc.php"><i class="zmdi zmdi-circle-o"></i> Approved KYC Records</a></li>
@@ -372,10 +372,10 @@ $news = $newsdata['news'];
 
     <!-- 11. Ticket Support -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-help-outline"></i> 11. Ticket Support</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <!-- <li><a href="support_tickets.php?status=OPEN"><i class="zmdi zmdi-circle-o"></i> Open Support Tickets</a></li>
         <li><a href="support_tickets.php?status=PENDING"><i class="zmdi zmdi-circle-o"></i> Pending Support Tickets</a></li>
@@ -387,10 +387,10 @@ $news = $newsdata['news'];
 
     <!-- 12. Notification Centre -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-notifications"></i> 12. Notification Centre</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="notification_centre.php"><i class="zmdi zmdi-circle-o"></i> Global Broadcast Notification</a></li>
         <!-- <li><a href="notification_centre.php?tab=user"><i class="zmdi zmdi-circle-o"></i> User-wise Targeted Notice</a></li> -->
@@ -399,10 +399,10 @@ $news = $newsdata['news'];
 
     <!-- 13. Offer / Popup / Banner -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-image"></i> 13. Offer / Popup / Banner</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="offer_update.php"><i class="zmdi zmdi-circle-o"></i> Offer Popup & ON/OFF</a></li>
         <li><a href="manage_banner.php"><i class="zmdi zmdi-circle-o"></i> Website Banners</a></li>
@@ -411,10 +411,10 @@ $news = $newsdata['news'];
 
     <!-- 14. Reports -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-chart"></i> 14. Financial Reports</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="reports.php?type=daily"><i class="zmdi zmdi-circle-o"></i> Daily Financial Summary</a></li>
         <li><a href="reports.php?type=monthly"><i class="zmdi zmdi-circle-o"></i> Monthly Financial Summary</a></li>
@@ -430,10 +430,10 @@ $news = $newsdata['news'];
 
     <!-- 15. Admin Audit & Website Controls -->
     <li class="has-sub">
-      <a href="javascript:void(0)" class="menu-toggle">
+      <button type="button" class="menu-toggle" aria-expanded="false">
         <span><i class="zmdi zmdi-settings"></i> 15. Audit & Controls</span>
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
-      </a>
+      </button>
       <ul class="submenu">
         <li><a href="admin_audit_controls.php"><i class="zmdi zmdi-circle-o"></i> Admin Audit Log</a></li>
         <li><a href="admin_audit_controls.php?tab=controls"><i class="zmdi zmdi-circle-o"></i> Website Controls (ON/OFF)</a></li>
@@ -469,9 +469,14 @@ $news = $newsdata['news'];
 }
 
 .has-sub > .menu-toggle {
-    display: flex;
-    justify-content: space-between;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+.has-sub > .menu-toggle > span {
+    display: inline-flex;
     align-items: center;
+    gap: 12px;
 }
 /* SUBMENU & SIDEBAR MENU REDESIGN STYLING (ADMIN) */
 .sidebar-menu {
@@ -480,9 +485,11 @@ $news = $newsdata['news'];
 .sidebar-menu > li {
     margin-bottom: 4px;
 }
-.sidebar-menu > li > a {
+.sidebar-menu > li > a,
+.sidebar-menu > li > button.menu-toggle {
     display: flex !important;
     align-items: center !important;
+    justify-content: space-between !important;
     gap: 12px;
     padding: 10px 14px !important;
     border-radius: 12px !important;
@@ -492,15 +499,27 @@ $news = $newsdata['news'];
     text-decoration: none !important;
     transition: all 0.25s ease !important;
     border-left: none !important;
+    width: 100% !important;
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    box-shadow: none;
 }
-.sidebar-menu > li > a i {
+.sidebar-menu > li > a i,
+.sidebar-menu > li > button.menu-toggle i {
     font-size: 17px !important;
     color: #64748b;
     transition: color 0.25s ease;
 }
 .sidebar-menu > li:hover > a,
 .sidebar-menu > li.active > a,
-.sidebar-menu > li.has-sub.active > a {
+.sidebar-menu > li.has-sub.active > a,
+.sidebar-menu > li:hover > button.menu-toggle,
+.sidebar-menu > li.active > button.menu-toggle,
+.sidebar-menu > li.has-sub.active > button.menu-toggle {
     background: rgba(22, 163, 74, 0.1) !important;
     color: #16a34a !important;
     border-left: 3px solid #16a34a !important;
@@ -508,7 +527,11 @@ $news = $newsdata['news'];
 .sidebar-menu > li:hover > a i,
 .sidebar-menu > li.active > a i,
 .sidebar-menu > li.has-sub.active > a i,
-.sidebar-menu > li.has-sub.active > a .arrow-icon {
+.sidebar-menu > li.has-sub.active > a .arrow-icon,
+.sidebar-menu > li:hover > button.menu-toggle i,
+.sidebar-menu > li.active > button.menu-toggle i,
+.sidebar-menu > li.has-sub.active > button.menu-toggle i,
+.sidebar-menu > li.has-sub.active > button.menu-toggle .arrow-icon {
     color: #16a34a !important;
 }
 .submenu {
@@ -535,11 +558,6 @@ $news = $newsdata['news'];
     color: #16a34a !important;
     background: rgba(22, 163, 74, 0.1) !important;
     font-weight: 700 !important;
-}
-.has-sub > .menu-toggle {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
 }
 .arrow-icon {
     transition: transform 0.3s ease !important;
@@ -674,7 +692,9 @@ document.addEventListener("DOMContentLoaded", function() {
     document.querySelectorAll('.has-sub > .menu-toggle').forEach(item => {
         item.addEventListener('click', function (e) {
             e.preventDefault();
-            this.parentElement.classList.toggle('active');
+            var parent = this.parentElement;
+            var isExpanded = parent.classList.toggle('active');
+            this.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
         });
     });
 
@@ -685,7 +705,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.querySelectorAll('#sidebar-wrapper a').forEach(function(link) {
         var href = link.getAttribute('href');
-        if (!href || href === 'javascript:void(0)' || href === 'javascript:void();') return;
+        if (!href || href === 'javascript:void(0)' || href === 'javascript:void();' || href === '#') return;
 
         if (href === fullUrl || href === currentPath) {
             var li = link.closest('li');
@@ -695,6 +715,10 @@ document.addEventListener("DOMContentLoaded", function() {
             var parentSub = link.closest('.has-sub');
             if (parentSub) {
                 parentSub.classList.add('active');
+                var toggleBtn = parentSub.querySelector('.menu-toggle');
+                if (toggleBtn) {
+                    toggleBtn.setAttribute('aria-expanded', 'true');
+                }
             }
         }
     });
@@ -765,12 +789,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
       <!-- Notification Bell with Dropdown Popup -->
       <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle dropdown-toggle-nocaret p-2" data-toggle="dropdown" href="javascript:void(0);" role="button" aria-haspopup="true" aria-expanded="false" style="position: relative;">
+        <button type="button" class="nav-link dropdown-toggle dropdown-toggle-nocaret p-2 border-0 bg-transparent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Notifications" style="position: relative; cursor: pointer;">
           <i class="fa fa-bell-o text-secondary" style="font-size: 18px;"></i>
           <?php if ($topNotifCount > 0): ?>
             <span class="badge badge-danger badge-pill" style="position: absolute; top: 2px; right: 2px; font-size: 9px; padding: 2px 5px; border-radius: 100px;"><?php echo $topNotifCount; ?></span>
           <?php endif; ?>
-        </a>
+        </button>
         <div class="dropdown-menu dropdown-menu-right shadow-lg border-0 notif-dropdown-menu">
           <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="background:#f8fafc; border-top-left-radius:16px; border-top-right-radius:16px;">
             <h6 class="mb-0 font-weight-bold text-dark" style="font-size:14px;"><i class="fa fa-bell text-primary mr-1"></i> Notifications</h6>
@@ -802,11 +826,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
       <!-- Admin User Avatar & Profile Dropdown -->
       <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" data-toggle="dropdown" href="javascript:void(0);" role="button" aria-haspopup="true" aria-expanded="false">
+        <button type="button" class="nav-link dropdown-toggle dropdown-toggle-nocaret border-0 bg-transparent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Admin Profile Menu" style="cursor: pointer;">
           <span class="user-profile d-flex align-items-center justify-content-center">
             <img src="<?php echo htmlspecialchars($userImage); ?>" class="img-circle" alt="Admin Profile" style="width:36px; height:36px; object-fit:cover; border:2px solid #10b981; border-radius:50%; box-shadow:0 3px 10px rgba(16,185,129,0.25);">
           </span>
-        </a>
+        </button>
         <ul class="dropdown-menu dropdown-menu-right shadow-lg border-0" style="border-radius:16px; padding:14px; margin-top:10px; background:#ffffff; min-width:230px;">
           <li class="dropdown-item user-details" style="border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:8px;">
             <a href="user_profile.php?uid=1290" style="text-decoration:none;">

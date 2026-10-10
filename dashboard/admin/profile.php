@@ -182,7 +182,7 @@ if (isset($_POST['submit'])) {
         </div><!--End content-wrapper-->
 
         <!--Start Back To Top Button-->
-        <a href="javaScript:void(0);" class="back-to-top"><i class="fa fa-angle-double-up"></i> </a>
+        <button type="button" class="back-to-top border-0" aria-label="Back to top"><i class="fa fa-angle-double-up"></i></button>
 
         <!--Start footer-->
         <?php include 'common/footer.php' ?>

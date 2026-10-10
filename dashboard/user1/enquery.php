@@ -296,7 +296,7 @@ textarea.form-control:focus {
     </div>
 </div>
 
-<a href="javascript:void(0);" class="back-to-top"><i class="fa fa-angle-double-up"></i></a>
+<button type="button" class="back-to-top border-0" aria-label="Back to top"><i class="fa fa-angle-double-up"></i></button>
 
 <?php include 'common/footer.php'; ?>
 

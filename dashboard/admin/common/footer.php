@@ -106,6 +106,14 @@
       transform: scale(1.1);
     }
 
+    button.apple-nav-link {
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: inherit;
+      width: 100%;
+    }
+
     /* Persistent display on mobile screens up to 991px */
     @media (min-width: 992px) {
       .apple-glass-bottom-nav {
@@ -137,10 +145,10 @@
           <i class="fa fa-briefcase"></i>
           <span>Payouts</span>
         </a>
-        <a href="javascript:void(0);" class="apple-nav-link toggle-menu-btn" id="btnAdminMoreMenu">
+        <button type="button" class="apple-nav-link toggle-menu-btn" id="btnAdminMoreMenu" aria-label="Toggle navigation menu">
           <i class="fa fa-bars"></i>
           <span>More</span>
-        </a>
+        </button>
       </div>
     </div>
 
