@@ -300,7 +300,7 @@ if ($action === 'process') {
         $closing_id = $pdo->lastInsertId();
 
         // Prepared statements for user credit, investment update & transaction logging
-        $updUser = $pdo->prepare("UPDATE user SET profit_income_wallet = profit_income_wallet + :profit WHERE userid = :user_id");
+        $updUser = $pdo->prepare("UPDATE user SET profit_income_wallet = profit_income_wallet + :profit, user_growth_wallet = user_growth_wallet + :profit WHERE userid = :user_id");
         $updInv = $pdo->prepare("UPDATE tbl_roi_one SET count = count + 1, totalincome = totalincome + :profit, amount = :profit, closingdate = :closing_date, status = :status WHERE id = :id");
         $insTxn = $pdo->prepare("
             INSERT INTO tbl_transaction 
@@ -357,7 +357,8 @@ if ($action === 'process') {
         $mentorIncomeResult = processMentorIncome($closing_month, $closing_date, $pdo);
         $vipClubResult      = processVIPMonthlyIncome($closing_month, $closing_date, $pdo);
 
-        // Synchronize user_growth_wallet for all eligible active users to guarantee 100% ledger reconciliation
+        // Safeguard: Only initialize uninitialized active user_growth_wallet (balance 0.00 / NULL)
+        // Never overwrite a valid balance, withdrawals, transfers, reversals, or adjustments
         $pdo->exec("
             UPDATE user 
             SET user_growth_wallet = ROUND(
@@ -370,7 +371,7 @@ if ($action === 'process') {
                 COALESCE(company_turnover_wallet, 0), 
                 2
             )
-            WHERE active = '1'
+            WHERE active = '1' AND (user_growth_wallet IS NULL OR user_growth_wallet = 0.00)
         ");
 
         $updClosing = $pdo->prepare("UPDATE tbl_monthly_closing SET status = 'COMPLETED' WHERE id = :id");

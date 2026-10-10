@@ -5112,16 +5112,28 @@ if (!function_exists('getUserIncomeWalletSummary')) {
 }
 
 if (!function_exists('syncUserGrowthWallet')) {
-    function syncUserGrowthWallet($userid, $pdoConnection = null) {
+    function syncUserGrowthWallet($userid, $pdoConnection = null, $force = false) {
         global $pdo;
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userid) return 0.00;
 
+        // Check current user_growth_wallet balance
+        $stmtCur = $db->prepare("SELECT user_growth_wallet FROM user WHERE userid = :uid");
+        $stmtCur->execute([':uid' => $userid]);
+        $curBal = (float)$stmtCur->fetchColumn();
+
+        // If user already has a valid balance and force is false, preserve it!
+        if (!$force && $curBal > 0.00) {
+            return $curBal;
+        }
+
         $summary = getUserIncomeWalletSummary($userid, $db);
         $totalGrowth = (float)($summary['total_income_balance'] ?? 0.00);
 
-        $stmt = $db->prepare("UPDATE user SET user_growth_wallet = :tot WHERE userid = :uid");
-        $stmt->execute([':tot' => $totalGrowth, ':uid' => $userid]);
+        if ($totalGrowth > 0.00 || $force) {
+            $stmt = $db->prepare("UPDATE user SET user_growth_wallet = :tot WHERE userid = :uid AND (user_growth_wallet IS NULL OR user_growth_wallet = 0.00 OR :force = 1)");
+            $stmt->execute([':tot' => $totalGrowth, ':uid' => $userid, ':force' => $force ? 1 : 0]);
+        }
 
         return $totalGrowth;
     }

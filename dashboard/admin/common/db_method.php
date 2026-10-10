@@ -1129,7 +1129,8 @@ function updatedatabysponserid1($userid, $transactionamounta, $transactionamount
     global $pdo;
 
     $sqluser = "UPDATE `user` 
-                SET `profit_sharing_wallet` = `profit_sharing_wallet` + :transactionamounta
+                SET `profit_sharing_wallet` = `profit_sharing_wallet` + :transactionamounta,
+                    `user_growth_wallet` = `user_growth_wallet` + :transactionamounta
                 WHERE userid = :userid";
 
     $stmt = $pdo->prepare($sqluser);
@@ -2099,7 +2100,8 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
 
     $updWallet = $db->prepare("
         UPDATE user
-        SET mentor_income_wallet = mentor_income_wallet + :amount
+        SET mentor_income_wallet = mentor_income_wallet + :amount,
+            user_growth_wallet = user_growth_wallet + :amount
         WHERE userid = :userid
     ");
 
@@ -2567,7 +2569,7 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
         (:user_id, :vip_level, :closing_month, :closing_date, :weaker_leg_business, :weaker_leg_rate, :weaker_leg_payout, :company_turnover, :turnover_rate, :turnover_payout, :total_payout, 'CREDITED', NOW(), :closing_id)
     ");
 
-    $updWallet = $db->prepare("UPDATE user SET vip_club_wallet = vip_club_wallet + :amt WHERE userid = :uid");
+    $updWallet = $db->prepare("UPDATE user SET vip_club_wallet = vip_club_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt WHERE userid = :uid");
 
     $insTxn = $db->prepare("
         INSERT INTO tbl_transaction
@@ -5595,16 +5597,28 @@ if (!function_exists('getUserGrowthBreakdown')) {
 }
 
 if (!function_exists('syncUserGrowthWallet')) {
-    function syncUserGrowthWallet($userid, $pdoConnection = null) {
+    function syncUserGrowthWallet($userid, $pdoConnection = null, $force = false) {
         global $pdo;
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userid) return 0.00;
 
+        // Check current user_growth_wallet balance
+        $stmtCur = $db->prepare("SELECT user_growth_wallet FROM user WHERE userid = :uid");
+        $stmtCur->execute([':uid' => $userid]);
+        $curBal = (float)$stmtCur->fetchColumn();
+
+        // If user already has a valid balance and force is false, preserve it!
+        if (!$force && $curBal > 0.00) {
+            return $curBal;
+        }
+
         $summary = getUserIncomeWalletSummary($userid, $db);
         $totalGrowth = (float)($summary['total_income_balance'] ?? 0.00);
 
-        $stmt = $db->prepare("UPDATE user SET user_growth_wallet = :tot WHERE userid = :uid");
-        $stmt->execute([':tot' => $totalGrowth, ':uid' => $userid]);
+        if ($totalGrowth > 0.00 || $force) {
+            $stmt = $db->prepare("UPDATE user SET user_growth_wallet = :tot WHERE userid = :uid AND (user_growth_wallet IS NULL OR user_growth_wallet = 0.00 OR :force = 1)");
+            $stmt->execute([':tot' => $totalGrowth, ':uid' => $userid, ':force' => $force ? 1 : 0]);
+        }
 
         return $totalGrowth;
     }

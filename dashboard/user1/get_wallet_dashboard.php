@@ -91,7 +91,8 @@ switch ($action) {
                 $userGrowthTotal = max($userGrowthTotal, round((float)$growthSummary['total_income_balance'], 2));
             }
         }
-        $userGrowthTotal = max($userGrowthTotal, (float)($uRow['user_growth_wallet'] ?? 0));
+        // Available User Growth Wallet Balance stored in database
+        $userGrowthWallet = (float)($uRow['user_growth_wallet'] ?? 0.00);
 
         // 3. Withdrawals Breakdown
         $stmtWdPaid = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND subject LIKE '%Withdraw%' AND type = 'Credit' AND status = 1");
@@ -158,9 +159,11 @@ switch ($action) {
                 'user_id' => $user_id,
                 'user_name' => $uRow['name'],
                 'wallets' => [
-                    'main_wallet'           => $mainWalletBalance,
-                    'user_growth_total'     => $userGrowthTotal,
-                    'user_growth_wallet'    => max((float)($uRow['user_growth_wallet'] ?? 0.00), $userGrowthTotal),
+                    'main_wallet'                   => $mainWalletBalance,
+                    'user_growth_total'             => $userGrowthTotal,
+                    'user_growth_wallet'            => $userGrowthWallet,
+                    'lifetime_generated_income'     => $userGrowthTotal,
+                    'available_user_growth_balance' => $userGrowthWallet,
                     'profit_income_wallet'  => $profitIncomeWallet,
                     'profit_sharing_wallet' => $profitSharingWallet,
                     'direct_bonus_wallet'   => $directBonusWallet,

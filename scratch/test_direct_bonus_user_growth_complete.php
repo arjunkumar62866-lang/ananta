@@ -309,8 +309,8 @@ try {
     $incomeSummary = getUserIncomeWalletSummary($sponsorA, $pdo);
     $expectedTotalGrowth = round(200.00 + 50.00 + $incomeSummary['direct_bonus'] + 80.00 + 100.00 + 150.00 + 50.00, 2);
 
-    // Synchronize user_growth_wallet
-    syncUserGrowthWallet($sponsorA, $pdo);
+    // Synchronize user_growth_wallet with force flag for newly simulated incomes
+    syncUserGrowthWallet($sponsorA, $pdo, true);
     $uGrowthWalletBal = (float)$pdo->query("SELECT user_growth_wallet FROM user WHERE userid = '{$sponsorA}'")->fetchColumn();
 
     $t13_expected = sprintf('Total: %.2f, Wallet: %.2f', $expectedTotalGrowth, $expectedTotalGrowth);
