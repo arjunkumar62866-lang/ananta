@@ -217,9 +217,9 @@ $news = $newsdata['news'];
 
 <!--Start sidebar-wrapper-->
 <div id="sidebar-wrapper">
-  <div class="brand-logo" style="padding: 15px; text-align: center;">
+  <div class="brand-logo">
     <a href="index.php">
-      <img src="/assets/images/logo.png" class="logo-icon" alt="Ananta Logo" style="max-height: 50px; width: auto; object-fit: contain;">
+      <img src="/assets/images/logo.png" class="logo-icon" alt="Ananta Logo">
     </a>
   </div>
   <ul class="sidebar-menu do-nicescrol">
@@ -468,29 +468,55 @@ $news = $newsdata['news'];
     color: #fff;
 }
 
-.has-sub > .menu-toggle {
+#sidebar-wrapper .brand-logo {
+    width: 100% !important;
+    height: 70px !important;
+    min-height: 70px !important;
+    max-height: 70px !important;
+    line-height: normal !important;
+    padding: 14px 20px !important;
+    margin: 0 !important;
     display: flex !important;
-    justify-content: space-between !important;
     align-items: center !important;
+    justify-content: flex-start !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    z-index: 10 !important;
+    overflow: hidden !important;
 }
-.has-sub > .menu-toggle > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
+#sidebar-wrapper .brand-logo a {
+    display: inline-flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
+    width: auto !important;
+}
+#sidebar-wrapper .brand-logo img,
+#sidebar-wrapper .brand-logo .logo-icon {
+    max-height: 38px !important;
+    height: 38px !important;
+    width: auto !important;
+    max-width: 170px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 !important;
 }
 /* SUBMENU & SIDEBAR MENU REDESIGN STYLING (ADMIN) */
 .sidebar-menu {
-    padding: 15px 12px !important;
+    padding: 12px 10px !important;
 }
 .sidebar-menu > li {
     margin-bottom: 4px;
 }
-.sidebar-menu > li > a,
-.sidebar-menu > li > button.menu-toggle {
+.sidebar-menu > li > a {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    gap: 12px;
+    justify-content: flex-start !important;
+    gap: 12px !important;
     padding: 10px 14px !important;
     border-radius: 12px !important;
     color: #334155 !important;
@@ -504,14 +530,55 @@ $news = $newsdata['news'];
     border: none;
     outline: none;
     cursor: pointer;
-    text-align: left;
+    text-align: left !important;
     font-family: inherit;
     box-shadow: none;
+    box-sizing: border-box !important;
+}
+.sidebar-menu > li > button.menu-toggle,
+.has-sub > .menu-toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    text-decoration: none !important;
+    transition: all 0.25s ease !important;
+    border-left: none !important;
+    width: 100% !important;
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    text-align: left !important;
+    font-family: inherit;
+    box-shadow: none;
+    box-sizing: border-box !important;
+}
+.sidebar-menu > li > button.menu-toggle > span,
+.has-sub > .menu-toggle > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-grow: 1 !important;
+    text-align: left !important;
 }
 .sidebar-menu > li > a i,
-.sidebar-menu > li > button.menu-toggle i {
+.sidebar-menu > li > button.menu-toggle i:not(.arrow-icon),
+.has-sub > .menu-toggle > span i {
     font-size: 17px !important;
     color: #64748b;
+    width: 20px !important;
+    min-width: 20px !important;
+    text-align: center !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     transition: color 0.25s ease;
 }
 .sidebar-menu > li:hover > a,
@@ -544,7 +611,8 @@ $news = $newsdata['news'];
 .submenu li a {
     display: flex !important;
     align-items: center !important;
-    gap: 8px;
+    justify-content: flex-start !important;
+    gap: 8px !important;
     padding: 7px 12px !important;
     font-size: 13px !important;
     color: #64748b !important;
@@ -552,6 +620,16 @@ $news = $newsdata['news'];
     border-radius: 8px !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
+    width: 100% !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+}
+.submenu li a i {
+    font-size: 12px !important;
+    width: 14px !important;
+    min-width: 14px !important;
+    text-align: center !important;
+    flex-shrink: 0 !important;
 }
 .submenu li a:hover,
 .submenu li.active a {
@@ -559,15 +637,20 @@ $news = $newsdata['news'];
     background: rgba(22, 163, 74, 0.1) !important;
     font-weight: 700 !important;
 }
-.arrow-icon {
+.arrow-icon,
+.sidebar-menu > li > button.menu-toggle .arrow-icon,
+.has-sub > .menu-toggle .arrow-icon {
+    margin-left: auto !important;
+    font-size: 14px !important;
+    color: #94a3b8;
     transition: transform 0.3s ease !important;
     transform: rotate(0deg) !important;
-    color: #94a3b8;
-    font-size: 14px !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
 }
 .has-sub.active > .menu-toggle .arrow-icon {
     transform: rotate(180deg) !important;
-    color: #16a34a;
+    color: #16a34a !important;
 }
 .has-sub.active > .submenu {
     display: block;

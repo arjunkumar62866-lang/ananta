@@ -359,9 +359,9 @@ setTimeout(function() {
 <!--Start sidebar-wrapper-->
 <!--Start sidebar-wrapper-->
 <div id="sidebar-wrapper">
-  <div class="brand-logo" style="padding: 25px; text-align: left;">
+  <div class="brand-logo">
     <a href="index.php">
-      <img src="/assets/images/logo.png" class="logo-icon" alt="Ananta Logo" style="max-height: 50px; width: auto; object-fit: contain;">
+      <img src="/assets/images/logo.png" class="logo-icon" alt="Ananta Logo">
     </a>
   </div>
   <ul class="sidebar-menu do-nicescrol">
@@ -385,8 +385,8 @@ setTimeout(function() {
     </li>
 
     <li>
-      <a href="notifications.php" class="d-flex align-items-center justify-content-between">
-        <span><i class="zmdi zmdi-notifications"></i> <span>Notification</span></span>
+      <a href="notifications.php">
+        <i class="zmdi zmdi-notifications"></i> <span>Notification</span>
         <?php if (!empty($unreadNotificationCount) && $unreadNotificationCount > 0): ?>
           <span class="badge badge-pill badge-danger font-weight-bold ml-auto px-2 py-1" style="background: #ef4444; color: #ffffff; font-size: 11px;"><?php echo $unreadNotificationCount; ?></span>
         <?php endif; ?>
@@ -419,7 +419,7 @@ setTimeout(function() {
 
     <li>
       <a href="p2p.php">
-        <span><i class="zmdi zmdi-swap"></i><span> P2P</span></span>
+        <i class="zmdi zmdi-swap"></i> <span>P2P</span>
       </a>
     </li>
 
@@ -541,8 +541,45 @@ setTimeout(function() {
 }
 
 /* SUBMENU & SIDEBAR MENU REDESIGN STYLING */
+#sidebar-wrapper .brand-logo {
+    width: 100% !important;
+    height: 70px !important;
+    min-height: 70px !important;
+    max-height: 70px !important;
+    line-height: normal !important;
+    padding: 14px 20px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    z-index: 10 !important;
+    overflow: hidden !important;
+}
+#sidebar-wrapper .brand-logo a {
+    display: inline-flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
+    width: auto !important;
+}
+#sidebar-wrapper .brand-logo img,
+#sidebar-wrapper .brand-logo .logo-icon {
+    max-height: 38px !important;
+    height: 38px !important;
+    width: auto !important;
+    max-width: 170px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 !important;
+}
 .sidebar-menu {
-    padding: 15px 12px !important;
+    padding: 12px 10px !important;
     display: flex !important;
     flex-direction: column !important;
     list-style: none !important;
@@ -554,12 +591,11 @@ setTimeout(function() {
     width: 100% !important;
     float: none !important;
 }
-.sidebar-menu > li > a,
-.sidebar-menu > li > button.menu-toggle {
+.sidebar-menu > li > a {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    gap: 12px;
+    justify-content: flex-start !important;
+    gap: 12px !important;
     padding: 10px 14px !important;
     border-radius: 12px !important;
     color: #334155 !important;
@@ -573,15 +609,70 @@ setTimeout(function() {
     border: none;
     outline: none;
     cursor: pointer;
-    text-align: left;
+    text-align: left !important;
     font-family: inherit;
     box-shadow: none;
+    box-sizing: border-box !important;
+}
+.sidebar-menu > li > button.menu-toggle,
+.has-sub > .menu-toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    text-decoration: none !important;
+    transition: all 0.25s ease !important;
+    border-left: none !important;
+    width: 100% !important;
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    text-align: left !important;
+    font-family: inherit;
+    box-shadow: none;
+    box-sizing: border-box !important;
+}
+.sidebar-menu > li > button.menu-toggle > span,
+.has-sub > .menu-toggle > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-grow: 1 !important;
+    text-align: left !important;
 }
 .sidebar-menu > li > a i,
-.sidebar-menu > li > button.menu-toggle i {
+.sidebar-menu > li > button.menu-toggle i:not(.arrow-icon),
+.has-sub > .menu-toggle > span i {
     font-size: 17px !important;
     color: #64748b;
+    width: 20px !important;
+    min-width: 20px !important;
+    text-align: center !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     transition: color 0.25s ease;
+}
+.sidebar-menu > li > a .badge {
+    margin-left: auto !important;
+}
+.arrow-icon,
+.sidebar-menu > li > button.menu-toggle .arrow-icon,
+.has-sub > .menu-toggle .arrow-icon {
+    margin-left: auto !important;
+    font-size: 14px !important;
+    color: #94a3b8;
+    transition: transform 0.3s ease !important;
+    transform: rotate(0deg) !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
 }
 .sidebar-menu > li:hover > a,
 .sidebar-menu > li.active > a,
@@ -596,11 +687,14 @@ setTimeout(function() {
 .sidebar-menu > li:hover > a i,
 .sidebar-menu > li.active > a i,
 .sidebar-menu > li.has-sub.active > a i,
-.sidebar-menu > li.has-sub.active > a .arrow-icon,
 .sidebar-menu > li:hover > button.menu-toggle i,
 .sidebar-menu > li.active > button.menu-toggle i,
 .sidebar-menu > li.has-sub.active > button.menu-toggle i,
 .sidebar-menu > li.has-sub.active > button.menu-toggle .arrow-icon {
+    color: #16a34a !important;
+}
+.has-sub.active > .menu-toggle .arrow-icon {
+    transform: rotate(180deg) !important;
     color: #16a34a !important;
 }
 .submenu {
@@ -612,6 +706,9 @@ setTimeout(function() {
     flex-direction: column !important;
     width: 100% !important;
 }
+.has-sub.active > .submenu {
+    display: flex !important;
+}
 .submenu li {
     display: block !important;
     width: 100% !important;
@@ -621,7 +718,8 @@ setTimeout(function() {
 .submenu li a {
     display: flex !important;
     align-items: center !important;
-    gap: 8px;
+    justify-content: flex-start !important;
+    gap: 8px !important;
     padding: 7px 12px !important;
     font-size: 13px !important;
     color: #64748b !important;
@@ -630,35 +728,21 @@ setTimeout(function() {
     text-decoration: none !important;
     transition: all 0.2s ease !important;
     width: 100% !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+}
+.submenu li a i {
+    font-size: 12px !important;
+    width: 14px !important;
+    min-width: 14px !important;
+    text-align: center !important;
+    flex-shrink: 0 !important;
 }
 .submenu li a:hover,
 .submenu li.active a {
     color: #16a34a !important;
     background: rgba(22, 163, 74, 0.1) !important;
     font-weight: 700 !important;
-}
-.has-sub > .menu-toggle {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-}
-.has-sub > .menu-toggle > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-}
-.arrow-icon {
-    transition: transform 0.3s ease !important;
-    transform: rotate(0deg) !important;
-    color: #94a3b8;
-    font-size: 14px !important;
-}
-.has-sub.active > .menu-toggle .arrow-icon {
-    transform: rotate(180deg) !important;
-    color: #0284c7;
-}
-.has-sub.active > .submenu {
-    display: flex !important;
 }
 
 /* Global Page & Dashboard Layout Styles */
@@ -761,6 +845,23 @@ body, body.ananta-user-dashboard {
     #wrapper.toggled .content-wrapper,
     .content-wrapper {
         margin-left: 260px !important;
+    }
+}
+
+@media (max-width: 991px) {
+    #sidebar-wrapper {
+        margin-left: -260px !important;
+        left: 0 !important;
+        z-index: 100000 !important;
+    }
+    #wrapper.toggled #sidebar-wrapper,
+    #sidebar-wrapper.toggled {
+        margin-left: 0 !important;
+        left: 0 !important;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.3) !important;
+    }
+    .content-wrapper {
+        margin-left: 0 !important;
     }
 }
 
