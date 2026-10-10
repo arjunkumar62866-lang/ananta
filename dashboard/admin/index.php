@@ -581,7 +581,7 @@ $inactivePct = 100 - $activePct;
                   </div>
                 </div>
                 <div class="metric-title">Withdrawal Paid</div>
-                <div class="metric-value" style="color:#10b981;"><?php echo formatCurrency($stats['total_withdrawal_paid'] / getUSDToINRRate($pdo)); ?></div>
+                <div class="metric-value" style="color:#10b981;"><?php echo formatCurrency($stats['total_withdrawal_paid']); ?></div>
                 
               </div>
             </a>
@@ -597,7 +597,7 @@ $inactivePct = 100 - $activePct;
                   </div>
                 </div>
                 <div class="metric-title">Pending Withdrawal</div>
-                <div class="metric-value" style="color:#f59e0b;"><?php echo formatCurrency($stats['pending_withdrawal'] / getUSDToINRRate($pdo)); ?></div>
+                <div class="metric-value" style="color:#f59e0b;"><?php echo formatCurrency($stats['pending_withdrawal']); ?></div>
                 
               </div>
             </a>
@@ -613,7 +613,7 @@ $inactivePct = 100 - $activePct;
                   </div>
                 </div>
                 <div class="metric-title">Total Withdrawal</div>
-                <div class="metric-value" style="color:#f43f5e;"><?php echo formatCurrency(($stats['total_withdrawal_paid'] + $stats['pending_withdrawal']) / getUSDToINRRate($pdo)); ?></div>
+                <div class="metric-value" style="color:#f43f5e;"><?php echo formatCurrency($stats['total_withdrawal_paid'] + $stats['pending_withdrawal']); ?></div>
                 
               </div>
             </a>
