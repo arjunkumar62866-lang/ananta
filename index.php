@@ -33,18 +33,84 @@ header("Expires: 0");
 include "common/header.php"; 
 ?>
 <style>
-    #about .mb-3.d-flex > div {
-        width: 44px !important;
-        height: 44px !important;
-        font-size: 24px !important;
+/* ==========================================================================
+   UNIVERSAL ROBOTO TYPOGRAPHY FOR ALL LANDING PAGE TEXT
+   ========================================================================== */
+:root {
+    --ananta-font-heading: 'Roboto', sans-serif !important;
+    --ananta-font-body: 'Roboto', sans-serif !important;
+}
+
+*, html, body,
+h1, h2, h3, h4, h5, h6,
+p, span, a, button, li, ul, ol,
+input, select, textarea, label,
+.ananta-hero-section, .ananta-hero-section *,
+#corporate-video, #corporate-video *,
+#about, #about *,
+#businesses, #businesses *,
+#partners, #partners *,
+#vision, #vision *,
+#contact, #contact *,
+.main-footer, .main-footer * {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* Hero Section Mobile Text Separation & Contrast Card */
+@media (max-width: 991px) {
+    .ananta-hero-text-card {
+        background: rgba(255, 255, 255, 0.78) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
+        border-radius: 20px !important;
+        padding: 24px 20px 22px 20px !important;
+        box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08) !important;
+        margin-bottom: 24px !important;
     }
-    #about h2.display-5 {
-        font-size: 20px !important;
+    .ananta-hero-text-card h1 {
+        color: #0F172A !important;
     }
-    #about p.fw-semibold {
-        font-size: 11px !important;
-        line-height: 1.2 !important;
+    .ananta-hero-text-card p.fw-bold {
+        color: #1E293B !important;
     }
+    .ananta-hero-text-card p:not(.fw-bold) {
+        color: #334155 !important;
+    }
+}
+@media (min-width: 992px) {
+    .ananta-hero-text-card {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+}
+
+/* About Us Section — Pure Dark Black Background */
+#about {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    background-image: none !important;
+}
+
+#about .growth-stat-card {
+    background: #0d0f15 !important;
+    border: 1.5px solid #1c202d !important;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8) !important;
+}
+
+#about .mb-3.d-flex > div {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 24px !important;
+}
+#about h2.display-5 {
+    font-size: 20px !important;
+}
+#about p.fw-semibold {
+    font-size: 11px !important;
+    line-height: 1.2 !important;
 }
 
 /* Strict Contrast Overrides for Accordion & Form Controls */
@@ -79,9 +145,6 @@ include "common/header.php";
     color: #64748B !important;
     opacity: 1;
 }
-
-
-
 </style>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -127,34 +190,36 @@ include "common/header.php";
             <div class="container-fluid px-lg-5 px-md-4 px-3 position-relative" style="z-index: 5;">
                 <div class="row align-items-center">
                     
-                    <!-- Left Hero Content (Far Left Aligned) -->
+                    <!-- Left Hero Content (Far Left Aligned with Mobile Separation Card) -->
                     <div class="col-xl-5 col-lg-5 col-md-10 col-12 py-4 ps-lg-4">
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <span style="width: 26px; height: 3px; background: #967431; display: inline-block;"></span>
-                            <span class="text-uppercase fw-bold" style="font-size: 13px; letter-spacing: 1.2px; color: #1E293B;">ANANTA MULTI TRADE PRIVATE LIMITED</span>
-                        </div>
+                        <div class="ananta-hero-text-card">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span style="width: 26px; height: 3px; background: #967431; display: inline-block;"></span>
+                                <span class="text-uppercase fw-bold" style="font-size: 13px; letter-spacing: 1.2px; color: #1E293B;">ANANTA MULTI TRADE PRIVATE LIMITED</span>
+                            </div>
 
-                        <h1 class="fw-black mb-4" style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(36px, 4.2vw, 52px); font-weight: 800; color: #0F172A; line-height: 1.08; letter-spacing: -1.2px;">
-                            ONE VISION.<br>
-                            MULTIPLE<br>
-                            OPPORTUNITIES.
-                        </h1>
+                            <h1 class="fw-black mb-3" style="font-size: clamp(34px, 4.2vw, 52px); font-weight: 900; color: #0F172A; line-height: 1.08; letter-spacing: -1.2px;">
+                                ONE VISION.<br>
+                                MULTIPLE<br>
+                                OPPORTUNITIES.
+                            </h1>
 
-                        <p class="fw-bold mb-3" style="font-size: 16px; color: #334155; line-height: 1.55; max-width: 480px;">
-                            Building a diversified business ecosystem across markets, infrastructure, real estate and emerging industries.
-                        </p>
+                            <p class="fw-bold mb-3" style="font-size: 16px; color: #1E293B; line-height: 1.55; max-width: 480px;">
+                                Building a diversified business ecosystem across markets, infrastructure, real estate and emerging industries.
+                            </p>
 
-                        <p class="mb-4 pb-2" style="font-size: 14px; color: #64748B; line-height: 1.65; max-width: 480px;">
-                            Ananta Multi Trade Private Limited is creating a growing network of businesses, partners and opportunities with a focus on innovation, professional operations and long-term growth.
-                        </p>
+                            <p class="mb-4 pb-2" style="font-size: 14.5px; color: #334155; line-height: 1.65; max-width: 480px;">
+                                Ananta Multi Trade Private Limited is creating a growing network of businesses, partners and opportunities with a focus on innovation, professional operations and long-term growth.
+                            </p>
 
-                        <div class="d-flex flex-wrap align-items-center gap-3">
-                            <a href="#about" class="btn px-4 py-3 fw-bold text-uppercase d-inline-flex align-items-center gap-2" style="background: #967431; color: #FFFFFF; border-radius: 8px; font-size: 13px; letter-spacing: 0.8px; border: none; box-shadow: 0 8px 20px rgba(150, 116, 49, 0.25); transition: all 0.3s ease;">
-                                EXPLORE ANANTA <i class="fa fa-arrow-right"></i>
-                            </a>
-                            <a href="<?php echo $hmregister; ?>" class="btn px-4 py-3 fw-bold text-uppercase d-inline-flex align-items-center gap-2" style="background: rgba(255, 255, 255, 0.85); color: #0F172A; border-radius: 8px; font-size: 13px; letter-spacing: 0.8px; border: 1.5px solid #0F172A; transition: all 0.3s ease;">
-                                GET STARTED
-                            </a>
+                            <div class="d-flex flex-wrap align-items-center gap-3">
+                                <a href="#about" class="btn px-4 py-3 fw-bold text-uppercase d-inline-flex align-items-center gap-2" style="background: #967431; color: #FFFFFF; border-radius: 8px; font-size: 13px; letter-spacing: 0.8px; border: none; box-shadow: 0 8px 20px rgba(150, 116, 49, 0.25); transition: all 0.3s ease;">
+                                    EXPLORE ANANTA <i class="fa fa-arrow-right"></i>
+                                </a>
+                                <a href="<?php echo $hmregister; ?>" class="btn px-4 py-3 fw-bold text-uppercase d-inline-flex align-items-center gap-2" style="background: rgba(255, 255, 255, 0.95); color: #0F172A; border-radius: 8px; font-size: 13px; letter-spacing: 0.8px; border: 1.5px solid #0F172A; transition: all 0.3s ease;">
+                                    GET STARTED
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -164,11 +229,45 @@ include "common/header.php";
                 </div>
             </div>
         </section>
+
+        <!-- ==================================================
+             SECTION 01.5 — CORPORATE SHOWCASE VIDEO
+             Auto-plays seamlessly when scrolled into view
+             ================================================== -->
+        <section id="corporate-video" class="py-5 position-relative overflow-hidden w-100" style="background: #000000 !important; border-top: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="container px-3 px-md-4 position-relative" style="z-index: 5; max-width: 1200px;">
+                <div class="text-center mb-4">
+                    <span style="font-size: 13px; font-weight: 700; letter-spacing: 2.5px; color: #967431; text-transform: uppercase;">CORPORATE SHOWCASE</span>
+                    <h2 class="text-white mt-1 mb-2" style="font-size: clamp(24px, 3.5vw, 38px); font-weight: 800; letter-spacing: 0.5px;">ANANTA IN ACTION</h2>
+                    <p class="mx-auto mb-0" style="color: #94A3B8; font-size: 14.5px; max-width: 620px;">Experience the vision, scale, and multi-industry operations driving the Ananta business ecosystem forward.</p>
+                </div>
+
+                <div class="video-container-wrapper mx-auto position-relative" style="max-width: 1040px; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 40px rgba(150, 116, 49, 0.2); border: 1.5px solid rgba(197, 160, 89, 0.4); background: #000000;">
+                    <video id="ananta-scroll-video" 
+                           playsinline 
+                           muted 
+                           loop 
+                           preload="metadata"
+                           style="width: 100%; height: auto; aspect-ratio: 16/9; display: block; object-fit: cover;">
+                        <source src="assets/images/video/bg%20vdo.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    
+                    <!-- Video Audio Control Toggle -->
+                    <div class="video-controls-overlay position-absolute bottom-0 end-0 p-3 d-flex align-items-center gap-2" style="z-index: 10;">
+                        <button type="button" id="video-sound-toggle" class="btn btn-sm text-white d-flex align-items-center gap-2 shadow" style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 30px; font-size: 12px; padding: 7px 16px;">
+                            <i class="fa fa-volume-mute" id="sound-icon"></i> <span id="sound-label">Unmute</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- ==================================================
              SECTION 02 — ABOUT US & OUR GROWTH
              ID: #about
              ================================================== -->
-        <section id="about" class="py-5 position-relative overflow-hidden w-100" style="background: #0b0d14 !important; border-top: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+        <section id="about" class="py-5 position-relative overflow-hidden w-100" style="background: #000000 !important; border-top: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
             <div class="container-fluid p-0 position-relative" style="z-index: 5;">
                 
                 <div class="row g-0 align-items-center">
@@ -315,6 +414,47 @@ include "common/header.php";
             }, { threshold: 0.2 });
 
             observer.observe(growthSection);
+
+            // Scroll-into-view Autoplay for Corporate Showcase Video
+            const corporateVideo = document.getElementById('ananta-scroll-video');
+            const soundToggle = document.getElementById('video-sound-toggle');
+            const soundIcon = document.getElementById('sound-icon');
+            const soundLabel = document.getElementById('sound-label');
+
+            if (corporateVideo) {
+                const videoObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const playPromise = corporateVideo.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(() => {
+                                    corporateVideo.muted = true;
+                                    corporateVideo.play().catch(() => {});
+                                });
+                            }
+                        } else {
+                            corporateVideo.pause();
+                        }
+                    });
+                }, { threshold: 0.2 });
+
+                videoObserver.observe(corporateVideo);
+
+                if (soundToggle) {
+                    soundToggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (corporateVideo.muted) {
+                            corporateVideo.muted = false;
+                            if (soundIcon) soundIcon.className = 'fa fa-volume-up';
+                            if (soundLabel) soundLabel.textContent = 'Mute';
+                        } else {
+                            corporateVideo.muted = true;
+                            if (soundIcon) soundIcon.className = 'fa fa-volume-mute';
+                            if (soundLabel) soundLabel.textContent = 'Unmute';
+                        }
+                    });
+                }
+            }
         });
         </script>
 
