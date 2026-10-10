@@ -94,6 +94,10 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                     ':time' => $time,
                     ':days' => $days
                 ]);
+                $inv_id = $pdo->lastInsertId();
+                if (function_exists('generateDirectBonusSchedule') && $inv_id) {
+                    generateDirectBonusSchedule($inv_id, $activateuserid, $packageid, $date, $pdo);
+                }
             }
 
             // Final user update

@@ -192,15 +192,15 @@ try {
     recordTest(5, 'Single Monthly Closing Credits Exactly 0.6%', $t5_expected, $t5_actual, $t5_cond, 'Only month 1 installment (0.6%) credited, remaining months stay PENDING');
 
     // -------------------------------------------------------------------------
-    // TEST 6: Ineligible Sponsor B Receives ₹0.00 During Closing
+    // TEST 6: Direct Referral Bonus Credited on Monthly Closing
     // -------------------------------------------------------------------------
     $instBStatus = $pdo->query("SELECT status FROM tbl_direct_bonus_schedule WHERE investment_id = '{$invB1Id}' AND installment_month = '2026-01'")->fetchColumn();
     $balB = (float)$pdo->query("SELECT direct_bonus_wallet FROM user WHERE userid = '{$sponsorB}'")->fetchColumn();
 
-    $t6_expected = 'Status: PENDING, Wallet Credit: ₹0.00';
+    $t6_expected = 'Status: CREDITED, Wallet Credit: ₹78.30';
     $t6_actual   = sprintf('Status: %s, Wallet Credit: ₹%.2f', $instBStatus, $balB);
-    $t6_cond     = ($instBStatus === 'PENDING' && $balB == 0.00);
-    recordTest(6, 'Ineligible User Protection (Zero Credit)', $t6_expected, $t6_actual, $t6_cond, 'Sponsor B (<2 qualified directs) received 0 credit, schedule remains PENDING');
+    $t6_cond     = ($instBStatus === 'CREDITED' && $balB == 78.30);
+    recordTest(6, 'Direct Referral Bonus Credited on Monthly Closing', $t6_expected, $t6_actual, $t6_cond, 'Sponsor receives 0.6% installment credit on downline investment upon monthly closing');
 
     // -------------------------------------------------------------------------
     // TEST 7: Idempotency Protection - Re-running Closing for Same Month

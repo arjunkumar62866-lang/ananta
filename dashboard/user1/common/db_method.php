@@ -1763,18 +1763,25 @@ if (!function_exists('generateDirectBonusSchedule')) {
 function generateDirectBonusSchedule($investment_id, $source_user_id, $investment_amount, $investment_date = null, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
-    if (!$db || !$investment_id || !$source_user_id || (float)$investment_amount < MIN_QUALIFIED_INVESTMENT) {
+    if (!$db || !$investment_id || !$source_user_id || (float)$investment_amount <= 0) {
         return false;
     }
 
+    $investment_amount = (float)$investment_amount;
+    // Normalize if USD passed (< 1000)
+    if ($investment_amount < 1000.0) {
+        $investment_amount = round($investment_amount * 90.0, 2);
+    }
+
     // Find direct sponsor: check tbl_sponsor first, fallback to user.sponserid
-    $stmtSpon = $db->prepare("SELECT sponsor_id FROM tbl_sponsor WHERE referral_id = :ref_id LIMIT 1");
-    $stmtSpon->execute([':ref_id' => $source_user_id]);
+    $cleanSource = preg_replace('/^(AN|ANANTA)/i', '', (string)$source_user_id);
+    $stmtSpon = $db->prepare("SELECT sponsor_id FROM tbl_sponsor WHERE referral_id = :ref_id OR referral_id = :ref_clean LIMIT 1");
+    $stmtSpon->execute([':ref_id' => $source_user_id, ':ref_clean' => $cleanSource]);
     $beneficiary_id = $stmtSpon->fetchColumn();
 
     if (!$beneficiary_id) {
-        $stmtUserSpon = $db->prepare("SELECT sponserid FROM user WHERE userid = :ref_id LIMIT 1");
-        $stmtUserSpon->execute([':ref_id' => $source_user_id]);
+        $stmtUserSpon = $db->prepare("SELECT sponserid FROM user WHERE userid = :ref_id OR userid = :ref_clean LIMIT 1");
+        $stmtUserSpon->execute([':ref_id' => $source_user_id, ':ref_clean' => $cleanSource]);
         $beneficiary_id = $stmtUserSpon->fetchColumn();
     }
 
@@ -1782,7 +1789,6 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
         return false; // No sponsor found
     }
 
-    $investment_amount = (float)$investment_amount;
     $total_bonus = round($investment_amount * (DIRECT_BONUS_PERCENT / 100.0), 2);
     
     // Calculate monthly installment: exactly 0.6% per month (total 6% over 10 months) with rounding safety
@@ -1830,6 +1836,164 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
 }
 
 /**
+ * Synchronize all direct downline investments for a beneficiary into tbl_direct_bonus_schedule.
+ */
+if (!function_exists('syncDirectBonusForUser')) {
+function syncDirectBonusForUser($beneficiary_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$beneficiary_id) return 0;
+
+    $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$beneficiary_id);
+
+    // Find all direct referrals of beneficiary
+    $sql = "SELECT DISTINCT r.id, r.user_id, r.package, r.real_fund_usd, r.date
+            FROM tbl_roi_one r
+            WHERE (r.capital_withdrawal_status IS NULL OR r.capital_withdrawal_status != 'WITHDRAWN')
+              AND r.user_id IN (
+                  SELECT referral_id FROM tbl_sponsor WHERE sponsor_id = :sp1 OR sponsor_id = :sp2
+                  UNION
+                  SELECT userid FROM user WHERE sponserid = :sp3 OR sponserid = :sp4
+              )";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([
+        ':sp1' => (string)$beneficiary_id,
+        ':sp2' => (string)$cleanUid,
+        ':sp3' => (string)$beneficiary_id,
+        ':sp4' => (string)$cleanUid
+    ]);
+    $invs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $generated = 0;
+    foreach ($invs as $inv) {
+        $check = $db->prepare("SELECT COUNT(*) FROM tbl_direct_bonus_schedule WHERE investment_id = :inv_id");
+        $check->execute([':inv_id' => $inv['id']]);
+        if ($check->fetchColumn() == 0) {
+            $amt = (float)$inv['package'];
+            if ($amt <= 0 && (float)$inv['real_fund_usd'] > 0) {
+                $amt = round((float)$inv['real_fund_usd'] * 90.0, 2);
+            }
+            if ($amt > 0) {
+                generateDirectBonusSchedule($inv['id'], $inv['user_id'], $amt, $inv['date'], $db);
+                $generated++;
+            }
+        }
+    }
+    return $generated;
+}
+}
+
+/**
+ * Global backfill: ensures ANY existing investment in tbl_roi_one has 10 installments in tbl_direct_bonus_schedule.
+ */
+if (!function_exists('syncAllDirectBonusSchedules')) {
+function syncAllDirectBonusSchedules($pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db) return 0;
+
+    $stmt = $db->query("
+        SELECT r.id, r.user_id, r.package, r.real_fund_usd, r.date
+        FROM tbl_roi_one r
+        WHERE r.id NOT IN (SELECT DISTINCT investment_id FROM tbl_direct_bonus_schedule)
+          AND (r.capital_withdrawal_status IS NULL OR r.capital_withdrawal_status != 'WITHDRAWN')
+    ");
+    $invs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $cnt = 0;
+    foreach ($invs as $inv) {
+        $amt = (float)$inv['package'];
+        if ($amt <= 0 && (float)$inv['real_fund_usd'] > 0) {
+            $amt = round((float)$inv['real_fund_usd'] * 90.0, 2);
+        }
+        if ($amt > 0) {
+            if (generateDirectBonusSchedule($inv['id'], $inv['user_id'], $amt, $inv['date'], $db)) {
+                $cnt++;
+            }
+        }
+    }
+    return $cnt;
+}
+}
+
+/**
+ * Get Total 6% Direct Bonus earned for a user (scheduled + credited across all direct investments).
+ * Displayed on user Dashboard (Total 6% over 10 months).
+ */
+if (!function_exists('getTotalDirectBonus')) {
+function getTotalDirectBonus($beneficiary_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$beneficiary_id) return 0.00;
+
+    // 1. Sync any missing direct referral schedules
+    syncDirectBonusForUser($beneficiary_id, $db);
+
+    // 2. Sum all scheduled installments (10 installments * 0.6% = 6.0% total)
+    $stmtSched = $db->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid");
+    $stmtSched->execute([':uid' => $beneficiary_id]);
+    $totalBonus = (float)$stmtSched->fetchColumn();
+
+    // 3. Direct Downline investment calculation (6% of direct downline active investments)
+    $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$beneficiary_id);
+    $stmtInv = $db->prepare("
+        SELECT COALESCE(SUM(
+            CASE 
+                WHEN r.package > 0 THEN r.package 
+                ELSE r.real_fund_usd * 90.0 
+            END
+        ), 0)
+        FROM tbl_roi_one r
+        WHERE (r.capital_withdrawal_status IS NULL OR r.capital_withdrawal_status != 'WITHDRAWN')
+          AND r.user_id IN (
+              SELECT referral_id FROM tbl_sponsor WHERE sponsor_id = :sp1 OR sponsor_id = :sp2
+              UNION
+              SELECT userid FROM user WHERE sponserid = :sp3 OR sponserid = :sp4
+          )
+    ");
+    $stmtInv->execute([
+        ':sp1' => (string)$beneficiary_id,
+        ':sp2' => (string)$cleanUid,
+        ':sp3' => (string)$beneficiary_id,
+        ':sp4' => (string)$cleanUid
+    ]);
+    $directInvSum = (float)$stmtInv->fetchColumn();
+    $expected6Pct = round($directInvSum * (DIRECT_BONUS_PERCENT / 100.0), 2);
+
+    $totalBonus = max($totalBonus, $expected6Pct);
+
+    // 4. Also check direct_bonus_wallet in user table
+    $stmtUser = $db->prepare("SELECT direct_bonus_wallet FROM user WHERE userid = :uid");
+    $stmtUser->execute([':uid' => $beneficiary_id]);
+    $wBal = (float)$stmtUser->fetchColumn();
+    $totalBonus = max($totalBonus, $wBal);
+
+    return round($totalBonus, 2);
+}
+}
+
+/**
+ * Get Total Credited Direct Bonus (only status = 'CREDITED' or direct_bonus_wallet).
+ */
+if (!function_exists('getCreditedDirectBonus')) {
+function getCreditedDirectBonus($beneficiary_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$beneficiary_id) return 0.00;
+
+    $stmtCred = $db->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
+    $stmtCred->execute([':uid' => $beneficiary_id]);
+    $credited = (float)$stmtCred->fetchColumn();
+
+    $stmtUser = $db->prepare("SELECT direct_bonus_wallet FROM user WHERE userid = :uid");
+    $stmtUser->execute([':uid' => $beneficiary_id]);
+    $wBal = (float)$stmtUser->fetchColumn();
+
+    return round(max($credited, $wBal), 2);
+}
+}
+
+/**
  * Process Direct Bonus Monthly Closing Installments.
  * Executed during admin Monthly Profit Closing.
  * Each eligible monthly closing credits exactly 0.6% (1 installment).
@@ -1845,7 +2009,6 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
     $cDate = $closing_date ?: date('Y-m-d');
 
     // Fetch all pending installments for or up to the target closing_month
-    // FOR UPDATE locks rows and prevents race conditions / concurrent duplicates
     $stmt = $db->prepare("
         SELECT * FROM tbl_direct_bonus_schedule
         WHERE status = 'PENDING'
@@ -1881,39 +2044,34 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
 
     foreach ($pendingInstallments as $inst) {
         $benId = $inst['beneficiary_id'];
-        $qCount = getQualifiedDirectCount($benId, $db);
+        $amount = (float)$inst['installment_amount'];
+        
+        // 1. Update schedule status atomically
+        $updSchedule->execute([
+            ':closing_month' => $closing_month,
+            ':id'            => $inst['id']
+        ]);
 
-        // Credit only if qualified directs >= 2
-        if ($qCount >= REQUIRED_QUALIFIED_DIRECTS) {
-            $amount = (float)$inst['installment_amount'];
-            
-            // 1. Update schedule status atomically
-            $updSchedule->execute([
-                ':closing_month' => $closing_month,
-                ':id'            => $inst['id']
+        if ($updSchedule->rowCount() > 0) {
+            // 2. Credit direct_bonus_wallet AND user_growth_wallet
+            $updWallet->execute([
+                ':amount'        => $amount,
+                ':amount_growth' => $amount,
+                ':userid'        => $benId
             ]);
 
-            if ($updSchedule->rowCount() > 0) {
-                // 2. Credit direct_bonus_wallet AND user_growth_wallet
-                $updWallet->execute([
-                    ':amount'        => $amount,
-                    ':amount_growth' => $amount,
-                    ':userid'        => $benId
-                ]);
+            // 3. Create transaction entry
+            $subject = "Direct Bonus Installment " . $inst['installment_number'] . "/10 (0.6%) - Investment #" . $inst['investment_id'] . " - " . $inst['installment_month'];
+            $insTxn->execute([
+                ':user_id'      => $benId,
+                ':subject'      => $subject,
+                ':amount'       => $amount,
+                ':created_date' => $cDate
+            ]);
 
-                // 3. Create transaction entry
-                $subject = "Direct Bonus Installment " . $inst['installment_number'] . "/10 (0.6%) - Investment #" . $inst['investment_id'] . " - " . $inst['installment_month'];
-                $insTxn->execute([
-                    ':user_id'      => $benId,
-                    ':subject'      => $subject,
-                    ':amount'       => $amount,
-                    ':created_date' => $cDate
-                ]);
-
-                $processedCount++;
-                $totalPaid += $amount;
-                $beneficiariesPaid[$benId] = true;
-            }
+            $processedCount++;
+            $totalPaid += $amount;
+            $beneficiariesPaid[$benId] = true;
         }
     }
 
@@ -3651,6 +3809,11 @@ if (!function_exists('processAnantaPackageInvestment')) {
             ]);
 
             $invId = $db->lastInsertId();
+
+            // Generate 10-month Direct Bonus Schedule for beneficiary (6% total, 0.6%/month)
+            if (function_exists('generateDirectBonusSchedule') && $invId) {
+                generateDirectBonusSchedule($invId, $user_id, $returnBaseInr, $cDate, $db);
+            }
 
             // 3. Record Investment Transaction in tbl_transaction
             $insTxn = $db->prepare("

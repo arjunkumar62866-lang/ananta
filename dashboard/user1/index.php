@@ -179,13 +179,9 @@ $table="tbl_transaction";
 $generation_income = incometotalnew_exact_subject($pdo, $table,$userid,'Generation Income Payout');
 $generation_income= round((float)($generation_income ?? 0), 2);
 
-// Direct Bonus
-$direct_bonus = round((float)($direct_bonus_wallet ?? 0), 2);
-if ($direct_bonus <= 0) {
-    $stmtDbSched = $pdo->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
-    $stmtDbSched->execute([':uid' => $userid]);
-    $direct_bonus = round((float)($stmtDbSched->fetchColumn() ?: 0), 2);
-}
+// Direct Bonus: Total 6% bonus across all direct referrals (10 months distribution)
+$direct_bonus = function_exists('getTotalDirectBonus') ? getTotalDirectBonus($userid, $pdo) : round((float)($direct_bonus_wallet ?? 0), 2);
+
 
 
 // Ranking Income
@@ -212,6 +208,9 @@ $leadership_income_income = incometotalnew($pdo, $table,$userid,'Leadership Inco
 $leadership_income_income= round((float)($leadership_income_income ?? 0), 2);
 
 // User Growth Combined Total (7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor/Generation Income, VIP Club/Ranking Income, Company Turnover/Leadership, Rank Reward)
+if (function_exists('syncUserGrowthWallet')) {
+    syncUserGrowthWallet($userid, $pdo);
+}
 $user_growth_breakdown_data = getUserGrowthBreakdown($userid, $pdo);
 $user_growth_total = round((float)($user_growth_breakdown_data["total_user_growth"] ?? 0), 2);
 

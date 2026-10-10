@@ -10,6 +10,9 @@ if (!isset($_SESSION['userid'])) {
 }
 
 $userid = $_SESSION['userid'];
+if (function_exists('syncUserGrowthWallet')) {
+    syncUserGrowthWallet($userid, $pdo);
+}
 $growth = getUserGrowthBreakdown($userid, $pdo);
 ?>
 
@@ -35,7 +38,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                     <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap">
                         <div>
                             <span class="d-block text-white-50 font-weight-bold uppercase mb-1" style="font-size: 12px; letter-spacing: 0.5px;">TOTAL USER GROWTH (7 INCOMES)</span>
-                            <h2 class="mb-0 text-white font-weight-bold" style="font-size: 34px;"><?php echo formatCurrency($growth["total_user_growth"] ?? 0); ?></h2>
+                            <h2 class="mb-0 text-white font-weight-bold" style="font-size: 34px;"><?php echo formatCurrency($growth["total_user_growth"] ?? 0, $selectedCurrency); ?></h2>
                         </div>
                         <div class="mt-2 mt-sm-0">
                             <span class="badge badge-light p-2 font-weight-bold" style="color: #4338ca; border-radius: 10px; font-size: 13px;">Live Credited Ledger Sum</span>
@@ -51,7 +54,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                 <div class="card border-0 shadow-sm user-growth-hero-card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; border-radius: 18px; color: #ffffff !important;">
                     <div class="card-body p-3">
                         <span class="d-block small text-white-50 font-weight-bold uppercase mb-1" style="font-size: 11px;">1. Profit Income</span>
-                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['profit_income']['total_balance']); ?></h4>
+                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['profit_income']['total_balance'], $selectedCurrency); ?></h4>
                     </div>
                 </div>
             </div>
@@ -59,7 +62,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                 <div class="card border-0 shadow-sm user-growth-hero-card" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important; border-radius: 18px; color: #ffffff !important;">
                     <div class="card-body p-3">
                         <span class="d-block small text-white-50 font-weight-bold uppercase mb-1" style="font-size: 11px;">2. Profit Sharing</span>
-                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['profit_sharing']['total_balance']); ?></h4>
+                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['profit_sharing']['total_balance'], $selectedCurrency); ?></h4>
                     </div>
                 </div>
             </div>
@@ -67,7 +70,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                 <div class="card border-0 shadow-sm user-growth-hero-card" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important; border-radius: 18px; color: #ffffff !important;">
                     <div class="card-body p-3">
                         <span class="d-block small text-white-50 font-weight-bold uppercase mb-1" style="font-size: 11px;">3. Direct Bonus</span>
-                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['direct_bonus']['total_balance']); ?></h4>
+                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['direct_bonus']['total_balance'], $selectedCurrency); ?></h4>
                     </div>
                 </div>
             </div>
@@ -75,7 +78,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                 <div class="card border-0 shadow-sm user-growth-hero-card" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important; border-radius: 18px; color: #ffffff !important;">
                     <div class="card-body p-3">
                         <span class="d-block small text-white-50 font-weight-bold uppercase mb-1" style="font-size: 11px;">4. Mentor Income</span>
-                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['mentor_income']['total_balance']); ?></h4>
+                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['mentor_income']['total_balance'], $selectedCurrency); ?></h4>
                     </div>
                 </div>
             </div>
@@ -91,7 +94,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                 <div class="card border-0 shadow-sm user-growth-hero-card" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important; border-radius: 18px; color: #ffffff !important;">
                     <div class="card-body p-3">
                         <span class="d-block small text-white-50 font-weight-bold uppercase mb-1" style="font-size: 11px;">6. VIP Club Income</span>
-                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['vip_club']['total_balance']); ?></h4>
+                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['vip_club']['total_balance'], $selectedCurrency); ?></h4>
                     </div>
                 </div>
             </div>
@@ -152,7 +155,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                                 <tbody>
                                     <?php if (!empty($growth['profit_income']['history'])): ?>
                                         <?php $sr=1; foreach($growth['profit_income']['history'] as $r): ?>
-                                            <tr><td><?php echo $sr++; ?></td><td><?php echo formatCurrency($r['amount']); ?></td><td><?php echo $r['created_date']; ?></td><td><?php echo htmlspecialchars($r['subject']); ?></td></tr>
+                                            <tr><td><?php echo $sr++; ?></td><td><?php echo formatCurrency($r['amount'], $selectedCurrency); ?></td><td><?php echo $r['created_date']; ?></td><td><?php echo htmlspecialchars($r['subject']); ?></td></tr>
                                         <?php endforeach; ?>
                                     <?php else: ?><tr><td colspan="4" class="text-muted">No profit income records.</td></tr><?php endif; ?>
                                 </tbody>
@@ -172,7 +175,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                                 <tbody>
                                     <?php if (!empty($growth['profit_sharing']['history'])): ?>
                                         <?php $sr=1; foreach($growth['profit_sharing']['history'] as $r): ?>
-                                            <tr><td><?php echo $sr++; ?></td><td><?php echo formatCurrency($r['amount']); ?></td><td><?php echo $r['created_date']; ?></td><td><?php echo htmlspecialchars($r['subject']); ?></td></tr>
+                                            <tr><td><?php echo $sr++; ?></td><td><?php echo formatCurrency($r['amount'], $selectedCurrency); ?></td><td><?php echo $r['created_date']; ?></td><td><?php echo htmlspecialchars($r['subject']); ?></td></tr>
                                         <?php endforeach; ?>
                                     <?php else: ?><tr><td colspan="4" class="text-muted">No profit sharing records.</td></tr><?php endif; ?>
                                 </tbody>
@@ -192,7 +195,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                                 <tbody>
                                     <?php if (!empty($growth['direct_bonus']['history'])): ?>
                                         <?php $sr=1; foreach($growth['direct_bonus']['history'] as $r): ?>
-                                            <tr><td><?php echo $sr++; ?></td><td><?php echo htmlspecialchars($r['source_user_id']); ?></td><td><?php echo formatCurrency($r['total_bonus']); ?></td><td><?php echo formatCurrency($r['installment_amount']); ?> (Inst <?php echo $r['installment_number']; ?>/10)</td><td><?php echo $r['installment_month']; ?></td><td><span class="badge <?php echo ($r['status']==='CREDITED')?'badge-success':'badge-warning'; ?>"><?php echo $r['status']; ?></span></td></tr>
+                                            <tr><td><?php echo $sr++; ?></td><td><?php echo htmlspecialchars($r['source_user_id']); ?></td><td><?php echo formatCurrency($r['total_bonus'], $selectedCurrency); ?></td><td><?php echo formatCurrency($r['installment_amount'], $selectedCurrency); ?> (Inst <?php echo $r['installment_number']; ?>/10)</td><td><?php echo $r['installment_month']; ?></td><td><span class="badge <?php echo ($r['status']==='CREDITED')?'badge-success':'badge-warning'; ?>"><?php echo $r['status']; ?></span></td></tr>
                                         <?php endforeach; ?>
                                     <?php else: ?><tr><td colspan="6" class="text-muted">No direct bonus records.</td></tr><?php endif; ?>
                                 </tbody>
@@ -212,7 +215,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                                 <tbody>
                                     <?php if (!empty($growth['mentor_income']['history'])): ?>
                                         <?php $sr=1; foreach($growth['mentor_income']['history'] as $r): ?>
-                                            <tr><td><?php echo $sr++; ?></td><td><?php echo htmlspecialchars($r['source_user_id']); ?></td><td><?php echo $r['contribution_percentage']; ?>%</td><td><?php echo formatCurrency($r['total_payout_amount']); ?></td><td><?php echo $r['closing_month']; ?></td><td><span class="badge <?php echo ($r['status']==='CREDITED')?'badge-success':'badge-warning'; ?>"><?php echo $r['status']; ?></span></td></tr>
+                                            <tr><td><?php echo $sr++; ?></td><td><?php echo htmlspecialchars($r['source_user_id']); ?></td><td><?php echo $r['contribution_percentage']; ?>%</td><td><?php echo formatCurrency($r['total_payout_amount'], $selectedCurrency); ?></td><td><?php echo $r['closing_month']; ?></td><td><span class="badge <?php echo ($r['status']==='CREDITED')?'badge-success':'badge-warning'; ?>"><?php echo $r['status']; ?></span></td></tr>
                                         <?php endforeach; ?>
                                     <?php else: ?><tr><td colspan="6" class="text-muted">No mentor income records.</td></tr><?php endif; ?>
                                 </tbody>
@@ -232,7 +235,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                                 <tbody>
                                     <?php if (!empty($growth['rank_reward']['history'])): ?>
                                         <?php $sr=1; foreach($growth['rank_reward']['history'] as $r): ?>
-                                            <tr><td><?php echo $sr++; ?></td><td><?php echo formatCurrency($r['amount']); ?></td><td><?php echo $r['created_date']; ?></td><td><?php echo htmlspecialchars($r['subject']); ?></td></tr>
+                                            <tr><td><?php echo $sr++; ?></td><td><?php echo formatCurrency($r['amount'], $selectedCurrency); ?></td><td><?php echo $r['created_date']; ?></td><td><?php echo htmlspecialchars($r['subject']); ?></td></tr>
                                         <?php endforeach; ?>
                                     <?php else: ?><tr><td colspan="4" class="text-muted">No rank reward records.</td></tr><?php endif; ?>
                                 </tbody>
@@ -252,7 +255,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                                 <tbody>
                                     <?php if (!empty($growth['vip_club']['history'])): ?>
                                         <?php $sr=1; foreach($growth['vip_club']['history'] as $r): ?>
-                                            <tr><td><?php echo $sr++; ?></td><td>Level <?php echo $r['vip_level']; ?></td><td><?php echo formatCurrency($r['weaker_leg_business']); ?></td><td><?php echo formatCurrency($r['reward_amount']); ?></td><td><span class="badge badge-success"><?php echo $r['reward_status']; ?></span></td></tr>
+                                            <tr><td><?php echo $sr++; ?></td><td>Level <?php echo $r['vip_level']; ?></td><td><?php echo formatCurrency($r['weaker_leg_business'], $selectedCurrency); ?></td><td><?php echo formatCurrency($r['reward_amount'], $selectedCurrency); ?></td><td><span class="badge badge-success"><?php echo $r['reward_status']; ?></span></td></tr>
                                         <?php endforeach; ?>
                                     <?php else: ?><tr><td colspan="5" class="text-muted">No VIP club qualification records.</td></tr><?php endif; ?>
                                 </tbody>
@@ -272,7 +275,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                                 <tbody>
                                     <?php if (!empty($growth['company_turnover']['history'])): ?>
                                         <?php $sr=1; foreach($growth['company_turnover']['history'] as $r): ?>
-                                            <tr><td><?php echo $sr++; ?></td><td><?php echo formatCurrency($r['amount']); ?></td><td><?php echo $r['created_date']; ?></td><td><?php echo htmlspecialchars($r['subject']); ?></td></tr>
+                                            <tr><td><?php echo $sr++; ?></td><td><?php echo formatCurrency($r['amount'], $selectedCurrency); ?></td><td><?php echo $r['created_date']; ?></td><td><?php echo htmlspecialchars($r['subject']); ?></td></tr>
                                         <?php endforeach; ?>
                                     <?php else: ?><tr><td colspan="4" class="text-muted">No company turnover income records.</td></tr><?php endif; ?>
                                 </tbody>

@@ -11,7 +11,11 @@ try {
         exit;
     }
 
-    $currency = function_exists('getUserCurrency') ? getUserCurrency($userid, $pdo) : ($_SESSION['currency'] ?? 'USD');
+    if (function_exists('syncDirectBonusForUser')) {
+        syncDirectBonusForUser($userid, $pdo);
+    }
+
+    $currency = !empty($_REQUEST['currency']) ? strtoupper(trim($_REQUEST['currency'])) : (function_exists('getUserCurrency') ? getUserCurrency($userid, $pdo) : ($_SESSION['currency'] ?? 'USD'));
     $currSymbol = function_exists('getCurrencySymbol') ? getCurrencySymbol($currency) : ($currency === 'INR' ? '₹' : '$');
 
     $stmt = $pdo->prepare("

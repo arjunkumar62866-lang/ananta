@@ -142,6 +142,11 @@ if (isset($_POST["submit"])) {
                             ":inc_limitpackage" => $inc_limitpackage,
                         ]);
                         
+                        $inv_id = $pdo->lastInsertId();
+                        if (function_exists('generateDirectBonusSchedule') && $inv_id) {
+                            generateDirectBonusSchedule($inv_id, $userid, $price, $date, $pdo);
+                        }
+                        
                         $pinfinal = $userid;
                         // get sponsor code by user id
                         $mysponserid = getmysponserid($pinfinal);

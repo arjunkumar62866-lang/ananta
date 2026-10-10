@@ -6,6 +6,9 @@
 include 'common/header.php'; 
 
 // Calculate Total Scheduled & Credited Direct Bonus for header stat
+if (function_exists('syncDirectBonusForUser')) {
+    syncDirectBonusForUser($userid, $pdo);
+}
 $stmt_db = $pdo->prepare("SELECT 
     COALESCE(SUM(total_bonus), 0) as total_scheduled,
     COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN installment_amount ELSE 0 END), 0) as total_credited,
@@ -16,7 +19,7 @@ $stmt_db = $pdo->prepare("SELECT
 $stmt_db->execute([':userid' => $userid]);
 $res_db = $stmt_db->fetch(PDO::FETCH_ASSOC);
 
-$direct_bonus_total = round((float)($res_db['total_scheduled'] ?? 0), 2);
+$direct_bonus_total = function_exists('getTotalDirectBonus') ? getTotalDirectBonus($userid, $pdo) : round((float)($res_db['total_scheduled'] ?? 0), 2);
 $direct_bonus_credited = round((float)($res_db['total_credited'] ?? 0), 2);
 $direct_bonus_pending = round((float)($res_db['total_pending'] ?? 0), 2);
 $completed_inst = (int)($res_db['completed_inst'] ?? 0);
@@ -428,7 +431,10 @@ table.ananta-custom-table tbody td {
                 ajax: {
                     url: 'get_direct_bonus.php',
                     type: 'GET',
-                    data: { type: '' },
+                    data: { 
+                        type: '',
+                        currency: '<?php echo $selectedCurrency; ?>'
+                    },
                     dataSrc: ''
                 },
                 columns: [
@@ -454,7 +460,7 @@ table.ananta-custom-table tbody td {
                             if (row && row.formatted_investment_amount) {
                                 return '<span style="font-weight: 600; color: #475569;">' + row.formatted_investment_amount + '</span>';
                             }
-                            let sym = (row && row.currency_symbol) ? row.currency_symbol : '<?php echo $hmcurrency; ?>';
+                            let sym = (row && row.currency_symbol) ? row.currency_symbol : '<?php echo getCurrencySymbol($selectedCurrency); ?>';
                             let val = (row && row.display_investment_amount !== undefined) ? parseFloat(row.display_investment_amount) : parseFloat(data || 0);
                             return '<span style="font-weight: 600; color: #475569;">' + sym + ' ' + val.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span>';
                         }
@@ -465,7 +471,7 @@ table.ananta-custom-table tbody td {
                             if (row && row.formatted_installment_amount) {
                                 return '<span class="amount-badge" style="background: rgba(234, 88, 12, 0.1); color: #ea580c;">+ ' + row.formatted_installment_amount + '</span>';
                             }
-                            let sym = (row && row.currency_symbol) ? row.currency_symbol : '<?php echo $hmcurrency; ?>';
+                            let sym = (row && row.currency_symbol) ? row.currency_symbol : '<?php echo getCurrencySymbol($selectedCurrency); ?>';
                             let val = (row && row.display_installment_amount !== undefined) ? parseFloat(row.display_installment_amount) : parseFloat(data || 0);
                             return '<span class="amount-badge" style="background: rgba(234, 88, 12, 0.1); color: #ea580c;">+ ' + sym + ' ' + val.toFixed(2) + '</span>';
                         }

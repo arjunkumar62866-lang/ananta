@@ -74,6 +74,11 @@ if (isset($_POST["submit"])) {
                             ':days' => $days
                         ]);
 
+                        $inv_id = $pdo->lastInsertId();
+                        if (function_exists('generateDirectBonusSchedule') && $inv_id) {
+                            generateDirectBonusSchedule($inv_id, $userid, $price, $date, $pdo);
+                        }
+
                         $date = date("Y-m-d");
                         // id sponsorid
                         $mysponsernew = getmysponserid($userid);
