@@ -27,48 +27,36 @@ $activeCurrency = getUserCurrency();
 // require 'common/password.php';
 // require 'common/recharge_api.php';
 
-// Set userid from GET or Session
-if (isset($_GET['uid'])) {
-    $_SESSION['auserid'] = $_GET['uid']; 
-    $userid = $_SESSION['auserid']; 
-} else {
-    $userid = $_SESSION['auserid'];  
-}
+// Admin session is strictly preserved
+$admin_userid = $_SESSION['auserid'] ?? 'admin';
+$userid = 'AN1290';
 
-// error_reporting(E_ALL);
-// ini_set('display_errors', 1);
-
-
-
-// Fetch admin or user data
-$stmt = $pdo->prepare("SELECT * FROM admin WHERE auserid = :userid");
-$stmt->execute(['userid' => $userid]);
+// Fetch admin data
+$stmt = $pdo->prepare("SELECT * FROM admin WHERE auserid = :userid LIMIT 1");
+$stmt->execute(['userid' => $admin_userid]);
 $rowheader = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$rowheader) {
     // Fallback to user table for user AN1290 / 1290
-    $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', $userid);
-    $stmtUser = $pdo->prepare("SELECT * FROM user WHERE userid = :uid OR userid = :clean");
-    $stmtUser->execute([':uid' => $userid, ':clean' => $cleanUid]);
+    $stmtUser = $pdo->prepare("SELECT * FROM user WHERE userid IN ('1290', 'AN1290') LIMIT 1");
+    $stmtUser->execute();
     $rowUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
     if ($rowUser) {
-        $userid     = $rowUser['userid'];
         $username   = $rowUser['name'];
         $usermobile = $rowUser['mobile'];
         $userImage  = !empty($rowUser['image']) ? $rowUser['image'] : (!empty($rowUser['photo']) ? $rowUser['photo'] : '/assets/images/usera.png');
     } else {
-        $userid     = 'AN1290';
         $username   = 'Ananta Admin';
         $usermobile = 'Admin Account';
         $userImage  = '/assets/images/usera.png';
     }
 } else {
-    $userid     = $rowheader['auserid'] ?? 'AN1290';
     $username   = $rowheader['name'] ?? 'Ananta Admin';
     $usermobile = $rowheader['mobile'] ?? 'Admin Account';
     $userImage  = !empty($rowheader['image']) ? $rowheader['image'] : (!empty($rowheader['photo']) ? $rowheader['photo'] : '/assets/images/usera.png');
 }
+
 
 // Ensure admin image fallback from user table for AN1290
 if ($userImage === '/assets/images/usera.png') {
@@ -364,9 +352,9 @@ $news = $newsdata['news'];
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </button>
       <ul class="submenu">
-        <li><a href="pending_kyc.php"><i class="zmdi zmdi-circle-o"></i> Pending KYC Applications</a></li>
-        <li><a href="completed_kyc.php"><i class="zmdi zmdi-circle-o"></i> Approved KYC Records</a></li>
-        <li><a href="kyc.php"><i class="zmdi zmdi-circle-o"></i> Full KYC History & Review</a></li>
+        <li><a href="completed_kyc.php"><i class="zmdi zmdi-circle-o"></i> Total KYC Updated</a></li>
+        <li><a href="completed_kyc.php?filter=today"><i class="zmdi zmdi-circle-o"></i> Today's Updated KYC</a></li>
+        <li><a href="kyc.php"><i class="zmdi zmdi-circle-o"></i> KYC System Settings</a></li>
       </ul>
     </li>
 
@@ -519,8 +507,8 @@ $news = $newsdata['news'];
     gap: 12px !important;
     padding: 10px 14px !important;
     border-radius: 12px !important;
-    color: #334155 !important;
-    font-weight: 600 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
     font-size: 13.5px !important;
     text-decoration: none !important;
     transition: all 0.25s ease !important;
@@ -543,8 +531,8 @@ $news = $newsdata['news'];
     gap: 12px !important;
     padding: 10px 14px !important;
     border-radius: 12px !important;
-    color: #334155 !important;
-    font-weight: 600 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
     font-size: 13.5px !important;
     text-decoration: none !important;
     transition: all 0.25s ease !important;
@@ -571,7 +559,7 @@ $news = $newsdata['news'];
 .sidebar-menu > li > button.menu-toggle i:not(.arrow-icon),
 .has-sub > .menu-toggle > span i {
     font-size: 17px !important;
-    color: #64748b;
+    color: #1e293b !important;
     width: 20px !important;
     min-width: 20px !important;
     text-align: center !important;
@@ -607,6 +595,9 @@ $news = $newsdata['news'];
     padding-left: 28px !important;
     margin-top: 2px;
     margin-bottom: 6px;
+    background: #f8fafc !important;
+    border-radius: 10px;
+    padding: 6px 10px 6px 20px !important;
 }
 .submenu li a {
     display: flex !important;
@@ -615,8 +606,8 @@ $news = $newsdata['news'];
     gap: 8px !important;
     padding: 7px 12px !important;
     font-size: 13px !important;
-    color: #64748b !important;
-    font-weight: 500;
+    color: #1e293b !important;
+    font-weight: 600 !important;
     border-radius: 8px !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
@@ -630,11 +621,12 @@ $news = $newsdata['news'];
     min-width: 14px !important;
     text-align: center !important;
     flex-shrink: 0 !important;
+    color: #475569 !important;
 }
 .submenu li a:hover,
 .submenu li.active a {
     color: #16a34a !important;
-    background: rgba(22, 163, 74, 0.1) !important;
+    background: rgba(22, 163, 74, 0.12) !important;
     font-weight: 700 !important;
 }
 .arrow-icon,
@@ -642,7 +634,7 @@ $news = $newsdata['news'];
 .has-sub > .menu-toggle .arrow-icon {
     margin-left: auto !important;
     font-size: 14px !important;
-    color: #94a3b8;
+    color: #475569 !important;
     transition: transform 0.3s ease !important;
     transform: rotate(0deg) !important;
     flex-shrink: 0 !important;
@@ -819,10 +811,10 @@ document.addEventListener("DOMContentLoaded", function() {
             <i class="fa fa-shield"></i>
           </div>
           <div>
-            <h6 class="mb-0 font-weight-bold header-brand-title" style="color: #0f172a; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.2;">
+            <h6 class="mb-0 font-weight-bold header-brand-title" style="color: #0f172a !important; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.2;">
               Ananta Executive Command Centre
             </h6>
-            <span class="text-muted small header-brand-sub" style="font-size: 11px; font-weight: 600; display: block;">
+            <span class="header-brand-sub" style="font-size: 11px; font-weight: 700; display: block; color: #334155 !important;">
               Super Admin Overview
             </span>
           </div>

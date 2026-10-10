@@ -66,7 +66,8 @@ if (isset($_POST['update'])) {
                        idproof = :idproof,
                        card_no = :card_no,
                        pan = :pan,
-                       nominee = :nominee
+                       nominee = :nominee,
+                       status = '1'
                    WHERE userid = :userid";
 
         $stmt = $pdo->prepare($update);
@@ -89,8 +90,8 @@ if (isset($_POST['update'])) {
             ':userid'      => $userid
         ]);
     } else {
-        $insert = "INSERT INTO kyc (userid, bit_coin, holder_name, ac_number, bank, branch, ifsc, paytm, phone_pe, g_pay, mimo, bhim, idproof, card_no, pan, nominee) 
-                   VALUES (:userid, :bit_coin, :holder_name, :ac_number, :bank, :branch, :ifsc, :paytm, :phone_pe, :g_pay, :mimo, :bhim, :idproof, :card_no, :pan, :nominee)";
+        $insert = "INSERT INTO kyc (userid, bit_coin, holder_name, ac_number, bank, branch, ifsc, paytm, phone_pe, g_pay, mimo, bhim, idproof, card_no, pan, nominee, status) 
+                   VALUES (:userid, :bit_coin, :holder_name, :ac_number, :bank, :branch, :ifsc, :paytm, :phone_pe, :g_pay, :mimo, :bhim, :idproof, :card_no, :pan, :nominee, '1')";
 
         $stmt = $pdo->prepare($insert);
         $stmt->execute([
@@ -113,12 +114,12 @@ if (isset($_POST['update'])) {
         ]);
     }
 
-    // Update user table status
-    $stmt2 = $pdo->prepare("UPDATE user SET kyc = '1' WHERE userid = :userid");
+    // Update user table status to 2 (Verified)
+    $stmt2 = $pdo->prepare("UPDATE user SET kyc = '2' WHERE userid = :userid");
     $stmt2->execute([':userid' => $userid]);
-    $kyc = 1;
-    $k_status = "Pending";
-    $color = "#FEFC95";
+    $kyc = 2;
+    $k_status = "Clear / Verified";
+    $color = "#C4FBC7";
 }
 
 

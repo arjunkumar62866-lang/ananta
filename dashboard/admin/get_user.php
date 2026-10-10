@@ -75,12 +75,50 @@ switch ($type) {
         break;
         
     case 'pending_kyc':
-        $stmt = $pdo->prepare("SELECT k.userid, COALESCE(NULLIF(TRIM(k.holder_name), ''), u.name, 'N/A') AS holder_name FROM kyc k LEFT JOIN user u ON (k.userid = u.userid OR k.userid = u.id) WHERE k.status = '0' ORDER BY k.id DESC");
-        break;
-        
     case 'completed_kyc':
-        $stmt = $pdo->prepare("SELECT k.userid, COALESCE(NULLIF(TRIM(k.holder_name), ''), u.name, 'N/A') AS holder_name FROM kyc k LEFT JOIN user u ON (k.userid = u.userid OR k.userid = u.id) WHERE k.status = '1' ORDER BY k.id DESC");
-        break;
+        $filter   = trim($_GET['filter'] ?? '');
+        $fromDate = trim($_GET['from_date'] ?? '');
+        $toDate   = trim($_GET['to_date'] ?? '');
+
+        $sql = "SELECT 
+                    k.userid, 
+                    COALESCE(NULLIF(TRIM(k.holder_name), ''), u.name, 'N/A') AS holder_name,
+                    COALESCE(u.name, 'N/A') AS user_name,
+                    COALESCE(k.bank, 'N/A') AS bank,
+                    COALESCE(k.ac_number, 'N/A') AS ac_number,
+                    COALESCE(k.ifsc, 'N/A') AS ifsc,
+                    COALESCE(k.pan, 'N/A') AS pan,
+                    COALESCE(k.mimo, 'N/A') AS aadhar_number,
+                    COALESCE(k.bhim, 'N/A') AS upi_id,
+                    COALESCE(u.bep20_address, '') AS bep20_address,
+                    k.status,
+                    DATE_FORMAT(COALESCE(k.updated_at, u.joining_date), '%Y-%m-%d %H:%i') AS updated_date
+                FROM kyc k 
+                LEFT JOIN user u ON (k.userid = u.userid OR k.userid = u.id) 
+                WHERE (k.status = '1' OR (TRIM(COALESCE(k.holder_name, '')) != '' OR TRIM(COALESCE(k.ac_number, '')) != '' OR TRIM(COALESCE(k.pan, '')) != '' OR TRIM(COALESCE(k.mimo, '')) != '')) ";
+
+        $params = [];
+        if ($filter === 'today') {
+            $sql .= " AND DATE(COALESCE(k.updated_at, u.joining_date)) = CURDATE() ";
+        } elseif (!empty($fromDate) && !empty($toDate)) {
+            $sql .= " AND DATE(COALESCE(k.updated_at, u.joining_date)) BETWEEN :from_date AND :to_date ";
+            $params[':from_date'] = $fromDate;
+            $params[':to_date']   = $toDate;
+        } elseif (!empty($fromDate)) {
+            $sql .= " AND DATE(COALESCE(k.updated_at, u.joining_date)) >= :from_date ";
+            $params[':from_date'] = $fromDate;
+        } elseif (!empty($toDate)) {
+            $sql .= " AND DATE(COALESCE(k.updated_at, u.joining_date)) <= :to_date ";
+            $params[':to_date']   = $toDate;
+        }
+
+        $sql .= " ORDER BY COALESCE(k.updated_at, u.joining_date) DESC, k.id DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result);
+        exit();
+
         
     case 'active':
         $typeValue = ($_GET['type'] == "active") ? 1 : 0;
