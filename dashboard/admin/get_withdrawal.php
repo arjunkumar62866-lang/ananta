@@ -10,45 +10,45 @@ ensureWithdrawalRemarksColumnExists($pdo);
 
 switch ((string)$type) {
     case '1':
-        // Approved Withdrawals
+        // Approved & Paid Withdrawals (Confirmed completion)
         $stmt = $pdo->prepare("
             SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
-            WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
-              AND subject NOT LIKE '%Investment%'
+            WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%')
               AND subject NOT LIKE 'Admin Adjustment%'
+              AND subject NOT LIKE 'Cancel Withdrawal%'
               AND a_status = '1'
               AND a_status != '2' AND status != 2
-              AND subject NOT LIKE 'Cancel Withdrawal%'
             ORDER BY id DESC
         ");
         break;
     case '3':
-        // Investment Withdrawal Requests
+        // Investment Capital Withdrawal Requests Specifically (excludes package purchases/deposits)
         $stmt = $pdo->prepare("
             SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
-            WHERE (subject LIKE '%Investment%' OR withdrawal_method = 'Capital')
+            WHERE ((subject LIKE '%Investment%Withdraw%' OR subject LIKE '%Capital%Withdraw%') OR ((subject LIKE '%Withdraw%' OR subject LIKE '%Withdrawal%') AND withdrawal_method = 'Capital'))
               AND subject NOT LIKE 'Admin Adjustment%'
+              AND subject NOT LIKE 'Cancel Withdrawal%'
               AND (a_status = '0' OR a_status IS NULL OR a_status = '')
               AND a_status != '1'
               AND a_status != '2' AND status != 2
-              AND subject NOT LIKE 'Cancel Withdrawal%'
+              AND type = 'Debit'
             ORDER BY id DESC
         ");
         break;
     case '0':
-        // Pending Net Balance Withdrawals
+        // Pending Withdrawal Requests (Wallet & Capital awaiting admin review)
         $stmt = $pdo->prepare("
             SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
-            WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
-              AND subject NOT LIKE '%Investment%'
+            WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%')
               AND subject NOT LIKE 'Admin Adjustment%'
+              AND subject NOT LIKE 'Cancel Withdrawal%'
               AND (a_status = '0' OR a_status IS NULL OR a_status = '')
               AND a_status != '1'
               AND a_status != '2' AND status != 2
-              AND subject NOT LIKE 'Cancel Withdrawal%'
+              AND type = 'Debit'
             ORDER BY id DESC
         ");
         break;
@@ -57,22 +57,21 @@ switch ((string)$type) {
         $stmt = $pdo->prepare("
             SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
-            WHERE (subject LIKE '%Cancel Withdrawal%' OR a_status = '2' OR status = 2)
+            WHERE ((subject LIKE '%Cancel Withdrawal%' OR a_status = '2' OR status = 2) AND (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%'))
               AND subject NOT LIKE 'Admin Adjustment%'
             ORDER BY id DESC
         ");
         break;
     default:
-        // All Net Balance Withdrawals
+        // All Valid Active Withdrawals (Paid + Pending Requests)
         $stmt = $pdo->prepare("
             SELECT id, user_id, subject, act_amount, amount, type, a_status, status, withdrawal_method, admin_remarks, created_date, api_txn_no
             FROM tbl_transaction
-            WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%')
-              AND subject NOT LIKE '%Investment%'
+            WHERE (subject LIKE '%Withdrawal Request%' OR subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%')
               AND subject NOT LIKE 'Admin Adjustment%'
-              AND a_status != '2' AND status != 2
               AND subject NOT LIKE 'Cancel Withdrawal%'
-              AND type = 'Debit'
+              AND a_status != '2' AND status != 2
+              AND (a_status = '1' OR ((a_status = '0' OR a_status IS NULL OR a_status = '') AND type = 'Debit'))
             ORDER BY id DESC
         ");
 }

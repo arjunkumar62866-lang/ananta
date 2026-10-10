@@ -3454,7 +3454,7 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
     ");
     $monthBizInr  = (float)$stmtMonth->fetchColumn();
 
-    // Audited Withdrawal Financial Metrics (Net Balance & Real Withdrawal Requests Only)
+    // Audited Withdrawal Financial Metrics (Confirmed Payouts & Active Debit Requests Only)
     $totWdPaid    = (float)$db->query("
         SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) 
         FROM tbl_transaction 
@@ -3463,6 +3463,7 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
           AND subject NOT LIKE 'Cancel Withdrawal%'
           AND a_status = '1' 
           AND status != 2 AND a_status != '2'
+          AND (paid_date IS NOT NULL AND paid_date != '' AND paid_date != '0000-00-00')
     ")->fetchColumn();
 
     $totWdPend    = (float)$db->query("
@@ -3474,6 +3475,7 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
           AND (a_status = '0' OR a_status IS NULL OR a_status = '') 
           AND a_status != '1' 
           AND status != 2 AND a_status != '2'
+          AND type = 'Debit'
     ")->fetchColumn();
 
     // Unique User Counts for Admin Dashboard Withdrawal Cards
@@ -3485,6 +3487,7 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
           AND subject NOT LIKE 'Cancel Withdrawal%'
           AND a_status = '1' 
           AND status != 2 AND a_status != '2'
+          AND (paid_date IS NOT NULL AND paid_date != '' AND paid_date != '0000-00-00')
     ")->fetchColumn();
 
     $pendWdUsers  = (int)$db->query("
@@ -3496,6 +3499,7 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
           AND (a_status = '0' OR a_status IS NULL OR a_status = '') 
           AND a_status != '1' 
           AND status != 2 AND a_status != '2'
+          AND type = 'Debit'
     ")->fetchColumn();
 
     $totWdUsers   = (int)$db->query("
@@ -3504,8 +3508,8 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
         WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
           AND subject NOT LIKE 'Admin Adjustment%' 
           AND subject NOT LIKE 'Cancel Withdrawal%'
-          AND (a_status = '1' OR a_status = '0' OR a_status IS NULL OR a_status = '') 
           AND status != 2 AND a_status != '2'
+          AND (a_status = '1' OR ((a_status = '0' OR a_status IS NULL OR a_status = '') AND type = 'Debit'))
     ")->fetchColumn();
 
     $piPaid       = (float)$db->query("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc")->fetchColumn();
