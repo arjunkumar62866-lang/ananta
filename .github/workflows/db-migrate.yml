@@ -67,11 +67,17 @@ jobs:
             -p "$CLEAN_PORT" \
             $SSH_OPTS \
             "$CLEAN_USER@$CLEAN_HOST" \
-            'cd /home/u914531711/domains/anantamtptl.com/public_html && if [ -d .git ]; then echo "GIT FOUND: Pulling latest..."; (git fetch origin main && git reset --hard origin/main) || echo "Git pull skipped on server, deploying via rsync..."; else echo "NO .GIT in public_html"; fi'
+            'cd /home/u914531711/domains/anantamtptl.com/public_html && mkdir -p assets && if [ -d .git ]; then echo "GIT FOUND: Pulling latest..."; (git fetch origin main && git reset --hard origin/main) || echo "Git pull skipped on server, deploying via rsync..."; else echo "NO .GIT in public_html"; fi'
 
-          # Sync all files to Hostinger (preserving connection credentials and logs)
+          # Sync all files to Hostinger (preserving connection credentials, uploads, and logs)
           echo "Deploying repository files via rsync..."
-          rsync -avz \
+          rsync -av \
+            --whole-file \
+            --checksum \
+            --no-owner \
+            --no-group \
+            --omit-dir-times \
+            --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r \
             --exclude '.git' \
             --exclude '.github' \
             --exclude 'error.log' \
@@ -81,6 +87,13 @@ jobs:
             --exclude 'dashboard/user1/common/connection.php' \
             --exclude 'dashboard/use r/common/connection.php' \
             --exclude 'dashboard1 1/' \
+            --exclude 'scratch/' \
+            --exclude 'particles.js-master/' \
+            --exclude '*.sqlite' \
+            --exclude '*.zip' \
+            --exclude '*.tar' \
+            --exclude '.DS_Store' \
+            --exclude 'dashboard/uploads/' \
             -e "ssh -i ~/.ssh/hostinger_key -p $CLEAN_PORT $SSH_OPTS" \
             ./ "$CLEAN_USER@$CLEAN_HOST:/home/u914531711/domains/anantamtptl.com/public_html/"
 
