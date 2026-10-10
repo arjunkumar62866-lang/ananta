@@ -146,16 +146,25 @@ switch ($module) {
         break;
 
     case 'transactions':
-        $from_date = trim($_GET['from_date'] ?? '');
-        $to_date   = trim($_GET['to_date'] ?? '');
-        $rate      = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+        $from_date   = trim($_GET['from_date'] ?? '');
+        $to_date     = trim($_GET['to_date'] ?? '');
+        $user_search = trim($_GET['user_search'] ?? '');
+        $rate        = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
         if ($rate <= 0) $rate = 90.0;
-        $query = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.type, t.status, t.created_date, t.time FROM tbl_transaction t LEFT JOIN user u ON t.user_id = u.userid WHERE 1=1";
+
+        $query = "SELECT t.id, t.user_id, u.name, t.amount, t.subject, t.type, t.status, t.a_status, t.created_date, t.time 
+                  FROM tbl_transaction t 
+                  LEFT JOIN user u ON t.user_id = u.userid 
+                  WHERE 1=1";
         $params = [];
         if (!empty($from_date) && !empty($to_date)) {
             $query .= " AND DATE(t.created_date) BETWEEN :from_date AND :to_date";
             $params[':from_date'] = $from_date;
             $params[':to_date']   = $to_date;
+        }
+        if (!empty($user_search)) {
+            $query .= " AND (t.user_id LIKE :usearch OR u.name LIKE :usearch)";
+            $params[':usearch'] = "%{$user_search}%";
         }
         $query .= " ORDER BY t.id DESC LIMIT 10000";
         $stmt = $pdo->prepare($query);
@@ -163,29 +172,64 @@ switch ($module) {
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if ($format === 'csv' || $format === 'excel') {
-            fputcsv($output, ['Txn ID', 'User ID', 'Name', 'Stored Amount', 'Subject', 'Type', 'Status', 'USD Equivalent ($)', 'INR Equivalent (₹)', 'Date', 'Time']);
+            fputcsv($output, ['Txn ID', 'User ID', 'Member Name', 'Type', 'Stored Amount', 'Currency', 'USD Equivalent ($)', 'INR Equivalent (₹)', 'Status', 'Accounting Category', 'Description / Subject', 'Date', 'Time'], ",", '"', "\\");
             foreach ($rows as $r) {
-                $stText = ($r['status'] == '1') ? 'COMPLETED/APPROVED' : (($r['status'] == '2') ? 'REJECTED/CANCELLED' : 'PENDING');
                 $rawAmt = (float)$r['amount'];
                 $subj   = $r['subject'] ?? '';
+                $st     = (int)($r['status'] ?? 1);
+
                 $isINR  = ((strpos($subj, 'Ananta Package Investment') !== false) || (strpos($subj, 'Unlock Access Fee') !== false));
                 $usdVal = $isINR ? round($rawAmt / $rate, 2) : round($rawAmt, 2);
-                $inrVal = round($usdVal * $rate, 2);
-                fputcsv($output, [$r['id'], $r['user_id'], $r['name'], $r['amount'], $r['subject'], $r['type'], $stText, number_format($usdVal, 2), number_format($inrVal, 2), $r['created_date'], $r['time']]);
+                $inrVal = $isINR ? round($rawAmt, 2) : round($usdVal * $rate, 2);
+                $curr   = $isINR ? 'INR' : 'USD';
+
+                if ($st === 2) {
+                    $stText  = 'REJECTED';
+                    $catText = 'REJECTED (EXCLUDED)';
+                } elseif (strpos($subj, 'Admin Adjustment') !== false) {
+                    $stText  = 'COMPLETED';
+                    $catText = 'ADMIN ADJUSTMENT';
+                } elseif (strpos($subj, 'Withdrawal') !== false) {
+                    $stText  = ($st === 1) ? 'APPROVED/PAID' : 'PENDING';
+                    $catText = 'APPROVED PAYOUT';
+                } else {
+                    $stText  = 'COMPLETED';
+                    $catText = 'BUSINESS INFLOW';
+                }
+
+                fputcsv($output, [
+                    $r['id'], $r['user_id'], $r['name'] ?? 'Member', $r['type'],
+                    $r['amount'], $curr, number_format($usdVal, 2), number_format($inrVal, 2),
+                    $stText, $catText, $r['subject'], $r['created_date'], $r['time']
+                ], ",", '"', "\\");
             }
             fclose($output);
             exit;
         } else {
             echo "<h2>Ananta Wallet Transaction Summary Report</h2>";
-            echo "<table border='1' cellpadding='8' cellspacing='0'><thead><tr><th>ID</th><th>User ID</th><th>Name</th><th>Stored Amount</th><th>Subject</th><th>Status</th><th>USD Equivalent</th><th>INR Equivalent</th><th>Date</th></tr></thead><tbody>";
+            echo "<p><strong>Filter Period:</strong> " . htmlspecialchars($from_date) . " to " . htmlspecialchars($to_date) . "</p>";
+            echo "<table border='1' cellpadding='8' cellspacing='0' style='width:100%; border-collapse:collapse;'><thead><tr style='background:#f8fafc;'><th>ID</th><th>User ID</th><th>Name</th><th>Type</th><th>Stored Amt</th><th>USD ($)</th><th>INR (₹)</th><th>Category</th><th>Subject</th><th>Date</th></tr></thead><tbody>";
             foreach ($rows as $r) {
-                $stText = ($r['status'] == '1') ? 'COMPLETED' : (($r['status'] == '2') ? 'REJECTED' : 'PENDING');
                 $rawAmt = (float)$r['amount'];
                 $subj   = $r['subject'] ?? '';
+                $st     = (int)($r['status'] ?? 1);
+
                 $isINR  = ((strpos($subj, 'Ananta Package Investment') !== false) || (strpos($subj, 'Unlock Access Fee') !== false));
                 $usdVal = $isINR ? round($rawAmt / $rate, 2) : round($rawAmt, 2);
-                $inrVal = round($usdVal * $rate, 2);
-                echo "<tr><td>{$r['id']}</td><td>{$r['user_id']}</td><td>{$r['name']}</td><td>{$r['amount']}</td><td>{$r['subject']}</td><td>{$stText}</td><td>\${$usdVal}</td><td>₹{$inrVal}</td><td>{$r['created_date']}</td></tr>";
+                $inrVal = $isINR ? round($rawAmt, 2) : round($usdVal * $rate, 2);
+                $curr   = $isINR ? 'INR' : 'USD';
+
+                if ($st === 2) {
+                    $catText = 'REJECTED (EXCLUDED)';
+                } elseif (strpos($subj, 'Admin Adjustment') !== false) {
+                    $catText = 'ADMIN ADJUSTMENT';
+                } elseif (strpos($subj, 'Withdrawal') !== false) {
+                    $catText = 'APPROVED PAYOUT';
+                } else {
+                    $catText = 'BUSINESS INFLOW';
+                }
+
+                echo "<tr><td>{$r['id']}</td><td>{$r['user_id']}</td><td>" . htmlspecialchars($r['name'] ?? '') . "</td><td>{$r['type']}</td><td>{$curr} {$r['amount']}</td><td>\${$usdVal}</td><td>₹{$inrVal}</td><td>{$catText}</td><td>" . htmlspecialchars($r['subject']) . "</td><td>{$r['created_date']}</td></tr>";
             }
             echo "</tbody></table>";
             exit;

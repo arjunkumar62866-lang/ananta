@@ -10,11 +10,11 @@ $user_search = trim($_GET['user_search'] ?? '');
 $cToday = date('Y-m-d');
 $cMonthStart = date('Y-m-01');
 
-// Default date range: today for daily/investment/withdrawal/income/business/company, start of month for monthly
+// Default date range: today for daily/investment/withdrawal/income/business/company, start of month for monthly/yearly/wallet
 if (isset($_GET['from_date']) && !empty($_GET['from_date'])) {
     $from_date = trim($_GET['from_date']);
 } else {
-    $from_date = ($type === 'monthly' || $type === 'yearly') ? $cMonthStart : $cToday;
+    $from_date = ($type === 'monthly' || $type === 'yearly' || $type === 'wallet') ? $cMonthStart : $cToday;
 }
 
 if (isset($_GET['to_date']) && !empty($_GET['to_date'])) {
@@ -113,28 +113,53 @@ switch ($type) {
                 FROM tbl_transaction t 
                 LEFT JOIN user u ON t.user_id = u.userid 
                 {$whereClause} 
-                ORDER BY t.id DESC LIMIT 500";
+                ORDER BY t.id DESC LIMIT 10000";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $rawRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $walletInflowUSD   = 0.0;
+        $walletOutflowUSD  = 0.0;
+        $walletAdminAdjUSD = 0.0;
+        $walletRejectedUSD = 0.0;
+
         foreach ($rawRows as $r) { 
             $rawAmt = (float)$r['amount'];
             $subj   = $r['subject'] ?? '';
-            // Documented Authoritative Currency Classification Rules:
-            // 1. Package Investments ('Ananta Package Investment%'): Stored in INR (package amount).
-            // 2. Unlock Access Fees ('Unlock Access Fee%'): Stored in INR (₹990.00).
-            // 3. All other transactions (Withdrawals, Admin Adjustments, Deposits, Payouts): Stored in Base USD.
+            $st     = (int)($r['status'] ?? 1);
+
             $isINR = (
                 (strpos($subj, 'Ananta Package Investment') !== false) ||
                 (strpos($subj, 'Unlock Access Fee') !== false)
             );
             $usdAmount = $isINR ? ($rawAmt / $rate) : $rawAmt;
+            $inrAmount = $isINR ? $rawAmt : ($usdAmount * $rate);
+
             $r['usd_amount'] = $usdAmount;
-            $reportData[] = $r;
-            if ((int)($r['status'] ?? 1) !== 2) {
-                $totalSum += $usdAmount; 
+            $r['inr_amount'] = $inrAmount;
+            $r['currency']   = $isINR ? 'INR' : 'USD';
+
+            if ($st === 2) {
+                $r['category']  = 'REJECTED';
+                $r['cat_badge'] = '<span class="badge badge-danger">REJECTED (EXCLUDED)</span>';
+                $walletRejectedUSD += $usdAmount;
+            } elseif (strpos($subj, 'Admin Adjustment') !== false) {
+                $r['category']  = 'ADMIN_ADJUSTMENT';
+                $r['cat_badge'] = '<span class="badge badge-warning">ADMIN ADJUSTMENT</span>';
+                $walletAdminAdjUSD += $usdAmount;
+            } elseif (strpos($subj, 'Withdrawal') !== false) {
+                $r['category']  = 'OUTFLOW';
+                $r['cat_badge'] = '<span class="badge badge-info">APPROVED PAYOUT</span>';
+                $walletOutflowUSD += $usdAmount;
+            } else {
+                $r['category']  = 'INFLOW';
+                $r['cat_badge'] = '<span class="badge badge-success">BUSINESS INFLOW</span>';
+                $walletInflowUSD += $usdAmount;
             }
+
+            $reportData[] = $r;
         }
+        $totalSum   = $walletInflowUSD;
         $totalCount = count($reportData);
         break;
 
@@ -422,10 +447,10 @@ label.form-label-custom {
           <p class="mb-0 text-white-50 small">Filter financial records by date range, user ID/name, and export official CSV or PDF reports.</p>
         </div>
         <div class="header-actions-group">
-          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':($type==='wallet'?'transactions':'audit')); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=csv" class="btn btn-light font-weight-bold px-3 py-2 mr-2" style="border-radius: 10px;">
+          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':($type==='wallet'?'transactions':'audit')); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&user_search=<?php echo urlencode($user_search); ?>&format=csv" class="btn btn-light font-weight-bold px-3 py-2 mr-2" style="border-radius: 10px;">
             <i class="fa fa-file-excel-o text-success mr-1"></i> Export CSV / Excel
           </a>
-          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':($type==='wallet'?'transactions':'audit')); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&format=pdf" class="btn btn-outline-light font-weight-bold px-3 py-2" style="border-radius: 10px;" target="_blank">
+          <a href="export.php?module=<?php echo $type==='withdrawal'?'withdrawals':($type==='investment'?'users':($type==='wallet'?'transactions':'audit')); ?>&from_date=<?php echo urlencode($from_date); ?>&to_date=<?php echo urlencode($to_date); ?>&user_search=<?php echo urlencode($user_search); ?>&format=pdf" class="btn btn-outline-light font-weight-bold px-3 py-2" style="border-radius: 10px;" target="_blank">
             <i class="fa fa-file-pdf-o text-danger mr-1"></i> Export PDF
           </a>
         </div>
@@ -499,20 +524,53 @@ label.form-label-custom {
     </div>
 
     <!-- Summary Metrics -->
-    <div class="row mb-4">
-      <div class="col-md-6 mb-3">
-        <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
-          <span class="text-muted small font-weight-bold d-block mb-1">TOTAL REPORT VOLUME / REVENUE</span>
-          <h3 class="mb-0 font-weight-bold text-success"><?php echo formatCurrency($totalSum); ?></h3>
+    <?php if ($type === 'wallet'): ?>
+      <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+          <div class="p-3 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">GROSS BUSINESS INFLOW (USD)</span>
+            <h4 class="mb-0 font-weight-bold text-success">$<?php echo number_format($walletInflowUSD, 2); ?></h4>
+            <small class="text-muted">₹<?php echo number_format($walletInflowUSD * $rate, 2); ?> INR</small>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+          <div class="p-3 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">APPROVED PAYOUTS (USD)</span>
+            <h4 class="mb-0 font-weight-bold text-info">$<?php echo number_format($walletOutflowUSD, 2); ?></h4>
+            <small class="text-muted">Settled Withdrawals</small>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+          <div class="p-3 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">ADMIN ADJUSTMENTS (USD)</span>
+            <h4 class="mb-0 font-weight-bold text-warning">$<?php echo number_format($walletAdminAdjUSD, 2); ?></h4>
+            <small class="text-muted">Internal Ledger Balances</small>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+          <div class="p-3 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">TOTAL AUDIT RECORDS</span>
+            <h4 class="mb-0 font-weight-bold text-primary"><?php echo number_format($totalCount); ?> Txns</h4>
+            <small class="text-muted">Excl. $<?php echo number_format($walletRejectedUSD, 2); ?> Rejected</small>
+          </div>
         </div>
       </div>
-      <div class="col-md-6 mb-3">
-        <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
-          <span class="text-muted small font-weight-bold d-block mb-1">TOTAL RECORD COUNT</span>
-          <h3 class="mb-0 font-weight-bold text-primary"><?php echo number_format($totalCount); ?> Records</h3>
+    <?php else: ?>
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">TOTAL REPORT VOLUME / REVENUE</span>
+            <h3 class="mb-0 font-weight-bold text-success"><?php echo formatCurrency($totalSum); ?></h3>
+          </div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <div class="p-4 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">TOTAL RECORD COUNT</span>
+            <h3 class="mb-0 font-weight-bold text-primary"><?php echo number_format($totalCount); ?> Records</h3>
+          </div>
         </div>
       </div>
-    </div>
+    <?php endif; ?>
 
     <!-- Specialized Table Output for Each Report Type -->
     <div class="card border-0" style="background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15,23,42,0.05);">
@@ -580,6 +638,47 @@ label.form-label-custom {
                     <td class="font-weight-bold text-info"><?php echo formatCurrency((float)$row['total_income']); ?></td>
                     <td class="font-weight-bold text-danger"><?php echo formatCurrency((float)$row['total_withdrawal']); ?></td>
                     <td class="px-4 small text-muted"><?php echo htmlspecialchars($row['joining_date']); ?></td>
+                  </tr>
+                <?php endforeach; endif; ?>
+              </tbody>
+
+            <?php elseif ($type === 'wallet'): ?>
+              <thead style="background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase;">
+                <tr>
+                  <th class="py-3 px-4">Txn ID</th>
+                  <th class="py-3">User ID & Name</th>
+                  <th class="py-3">Type</th>
+                  <th class="py-3">Stored Amount</th>
+                  <th class="py-3">USD Equivalent ($)</th>
+                  <th class="py-3">INR Equivalent (₹)</th>
+                  <th class="py-3">Accounting Category</th>
+                  <th class="py-3">Description / Subject</th>
+                  <th class="py-3 px-4">Date & Time</th>
+                </tr>
+              </thead>
+              <tbody style="font-size: 13.5px; color: #0f172a;">
+                <?php if (empty($reportData)): ?>
+                  <tr><td colspan="9" class="text-center py-5 text-muted">No wallet transaction records found matching filter criteria.</td></tr>
+                <?php else: foreach ($reportData as $row): ?>
+                  <tr>
+                    <td class="px-4 font-weight-bold">#<?php echo $row['id']; ?></td>
+                    <td>
+                      <strong><?php echo htmlspecialchars($row['user_id']); ?></strong>
+                      <br><small class="text-muted"><?php echo htmlspecialchars($row['name'] ?? 'Member'); ?></small>
+                    </td>
+                    <td>
+                      <span class="badge badge-<?php echo strtolower($row['type'] ?? '') === 'credit' ? 'success' : 'secondary'; ?>">
+                        <?php echo htmlspecialchars($row['type'] ?? 'Txn'); ?>
+                      </span>
+                    </td>
+                    <td class="font-weight-bold">
+                      <?php echo ($row['currency'] === 'INR' ? '₹' : '$') . number_format((float)$row['amount'], 2); ?>
+                    </td>
+                    <td class="font-weight-bold text-success">$<?php echo number_format((float)$row['usd_amount'], 2); ?></td>
+                    <td class="font-weight-bold text-info">₹<?php echo number_format((float)$row['inr_amount'], 2); ?></td>
+                    <td><?php echo $row['cat_badge']; ?></td>
+                    <td class="small text-muted"><?php echo htmlspecialchars($row['subject'] ?? ''); ?></td>
+                    <td class="px-4 small text-muted"><?php echo htmlspecialchars($row['created_at']); ?></td>
                   </tr>
                 <?php endforeach; endif; ?>
               </tbody>
