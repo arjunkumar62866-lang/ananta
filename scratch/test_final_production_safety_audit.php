@@ -260,6 +260,30 @@ try {
         'INR mode renders with ₹, USD mode renders with $ after exactly one division by exchange rate'
     );
 
+    // -------------------------------------------------------------------------
+    // TEST 8: Inactive Beneficiary Eligibility Evaluation (active = 0)
+    // -------------------------------------------------------------------------
+    $inactUid = 'INACT_BEN_' . $suffix;
+    $inactSrc = 'INACT_SRC_' . $suffix;
+    createAuditSandboxUser($pdo, $inactUid, 'Inactive Beneficiary', '0', '', 0.00, 'INR');
+    createAuditSandboxUser($pdo, $inactSrc, 'Inactive Source User', '1', $inactUid, 0.00, 'INR');
+
+    // Create schedule for inactive beneficiary
+    $inactInvId = 991111 + $suffix;
+    generateDirectBonusSchedule($inactInvId, $inactSrc, 13050.00, '2026-10-01', $pdo);
+
+    // Fetch schedule status
+    $inactSchedRow = $pdo->query("SELECT * FROM tbl_direct_bonus_schedule WHERE investment_id = {$inactInvId} AND installment_number = 1")->fetch(PDO::FETCH_ASSOC);
+    $inactUserActive = $pdo->query("SELECT active FROM user WHERE userid = '{$inactUid}'")->fetchColumn();
+
+    $t8_pass = ($inactUserActive == '0' && ($inactSchedRow['status'] ?? '') === 'PENDING' && $inactSchedRow['beneficiary_id'] === $inactUid);
+    recordAssertion(8, 'Inactive Beneficiary Eligibility & Schedule Generation',
+        'Beneficiary Active: 0, Schedule Status: PENDING, Beneficiary Match: true',
+        sprintf('Beneficiary Active: %s, Schedule Status: %s, Beneficiary Match: %s', $inactUserActive, $inactSchedRow['status'] ?? 'NONE', ($inactSchedRow['beneficiary_id'] ?? '') === $inactUid ? 'true' : 'false'),
+        $t8_pass,
+        'Schedule generated for inactive sponsor retains PENDING status awaiting policy enforcement'
+    );
+
 } catch (Exception $e) {
     echo "AUDIT EXCEPTION: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
     $failCount++;
@@ -274,7 +298,7 @@ echo sprintf(" FINAL AUDIT SUITE SUMMARY: %d PASSED, %d FAILED (TOTAL %d)\n", $p
 echo "================================================================================\n";
 
 if ($failCount === 0) {
-    echo ">>> ALL 7 CRITICAL PRODUCTION-SAFETY TESTS PASSED WITH 100% SUCCESS! <<<\n";
+    echo ">>> ALL 8 CRITICAL PRODUCTION-SAFETY TESTS PASSED WITH 100% SUCCESS! <<<\n";
     exit(0);
 } else {
     echo ">>> ERRORS ENCOUNTERED IN AUDIT SUITE. <<<\n";
