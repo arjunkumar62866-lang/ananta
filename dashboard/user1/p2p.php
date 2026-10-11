@@ -72,15 +72,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $msg = "Invalid session token. Please refresh the page and try again.";
         $msgType = 'danger';
     } else {
-        $fromWallet = trim($_POST['from_wallet'] ?? '');
-        $toWallet   = trim($_POST['to_wallet'] ?? '');
-        $receiverId = trim($_POST['receiver_id'] ?? '');
-        $amount     = (float)($_POST['amount'] ?? 0);
-        $txnKey     = trim($_POST['txn_key'] ?? '');
-        $remarks    = trim($_POST['remarks'] ?? '');
+        $fromWallet   = trim($_POST['from_wallet'] ?? '');
+        $toWallet     = trim($_POST['to_wallet'] ?? '');
+        $receiverId   = trim($_POST['receiver_id'] ?? '');
+        $amount       = (float)($_POST['amount'] ?? 0);
+        $currencyMode = trim($_POST['currency_mode'] ?? $selectedCurrency);
+        $txnKey       = trim($_POST['txn_key'] ?? '');
+        $remarks      = trim($_POST['remarks'] ?? '');
 
         // Process P2P Transfer with complete validations & atomic transaction
-        $res = processP2PTransfer($userid, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $remarks, $pdo);
+        $res = processP2PTransfer($userid, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $remarks, $pdo, $currencyMode);
         if ($res['status'] === 'success') {
             $msg = $res['message'];
             $msgType = 'success';
@@ -233,6 +234,8 @@ foreach ($receivedReport as $r) {
                         </div>
                     </div>
 
+                    <input type="hidden" name="currency_mode" id="currency_mode" value="<?php echo htmlspecialchars($selectedCurrency); ?>">
+                    
                     <div class="form-row">
                         <!-- Receiver User ID & Verified Name Display -->
                         <div class="form-group col-md-4 mb-3">
@@ -243,8 +246,15 @@ foreach ($receivedReport as $r) {
 
                         <!-- Amount -->
                         <div class="form-group col-md-4 mb-3">
-                            <label for="amount" class="font-weight-bold small text-uppercase" style="color: #475569;">Transfer Amount ($ USD)</label>
-                            <input type="number" step="0.01" min="0.01" class="form-control form-control-lg" id="amount" name="amount" placeholder="Enter amount" required style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;">
+                            <label for="amount" id="lblTransferAmount" class="font-weight-bold small text-uppercase" style="color: #475569;">
+                                Transfer Amount (<?php echo ($selectedCurrency === 'INR') ? '₹ INR' : '$ USD'; ?>)
+                            </label>
+                            <input type="number" step="0.01" min="0.01" class="form-control form-control-lg" id="amount" name="amount" placeholder="Enter amount in <?php echo $selectedCurrency; ?>" required style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px;" oninput="updateLiveConversionDisplay()" onchange="updateLiveConversionDisplay()">
+                            <div id="live_conversion_preview" class="mt-2" style="display: none;">
+                                <span class="badge badge-pill px-3 py-1 font-weight-semibold" style="background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; font-size: 12.5px;">
+                                    <i class="zmdi zmdi-swap mr-1"></i> <span id="conversion_text"></span>
+                                </span>
+                            </div>
                         </div>
 
                         <!-- Transaction Key -->
@@ -338,6 +348,29 @@ foreach ($receivedReport as $r) {
             const div = document.createElement('div');
             div.innerText = text;
             return div.innerHTML;
+        }
+
+        function updateLiveConversionDisplay() {
+            const amtInput = parseFloat(document.getElementById('amount').value) || 0;
+            const currMode = document.getElementById('currency_mode').value || 'USD';
+            const previewBox = document.getElementById('live_conversion_preview');
+            const previewText = document.getElementById('conversion_text');
+            const rate = 90.0;
+
+            if (amtInput <= 0) {
+                previewBox.style.display = 'none';
+                previewText.innerText = '';
+                return;
+            }
+
+            if (currMode === 'INR') {
+                const usdEquiv = (amtInput / rate).toFixed(2);
+                previewText.innerText = '₹' + amtInput.toFixed(2) + ' INR ≈ $' + usdEquiv + ' USD will be deducted & credited';
+            } else {
+                const inrEquiv = (amtInput * rate).toFixed(2);
+                previewText.innerText = '$' + amtInput.toFixed(2) + ' USD ≈ ₹' + inrEquiv + ' INR equivalent (1 USD = ₹90)';
+            }
+            previewBox.style.display = 'block';
         }
 
         document.getElementById('p2pTransferForm').addEventListener('submit', function(e) {

@@ -21,7 +21,7 @@ if (!empty($status_filter)) {
 }
 
 if (!empty($user_filter)) {
-    $whereClause .= " AND (p.sender_id LIKE :user OR p.receiver_id LIKE :user OR p.transaction_id LIKE :user)";
+    $whereClause .= " AND (p.sender_id LIKE :user OR p.receiver_id LIKE :user OR p.transfer_ref LIKE :user)";
     $params[':user'] = "%{$user_filter}%";
 }
 
@@ -156,7 +156,7 @@ $pendingCount = (int)$pdo->query("SELECT COUNT(*) FROM tbl_p2p_transfer WHERE st
                 </tr>
               <?php else: foreach ($transfers as $p): ?>
                 <tr>
-                  <td class="px-4 font-weight-bold"><code><?php echo htmlspecialchars($p['transaction_id']); ?></code></td>
+                  <td class="px-4 font-weight-bold"><code><?php echo htmlspecialchars($p['transfer_ref'] ?? $p['transaction_id'] ?? '—'); ?></code></td>
                   <td>
                     <strong><?php echo htmlspecialchars($p['sender_id']); ?></strong>
                     <div class="small text-muted"><?php echo htmlspecialchars($p['sender_name']??''); ?></div>

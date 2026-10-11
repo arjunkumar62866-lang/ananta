@@ -2797,7 +2797,7 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
  * Requirement #21: Process P2P Fund Transfer.
  */
 if (!function_exists('processP2PTransfer')) {
-function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $remarks = '', $pdoConnection = null) {
+function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWallet, $txnKey, $remarks = '', $pdoConnection = null, $currencyMode = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$senderId || !$receiverId) {
@@ -2825,12 +2825,37 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
     }
 
     // 3. Amount Validation
-    $amount = (float)$amount;
-    if ($amount <= 0 || is_nan($amount) || is_infinite($amount)) {
+    $inputAmount = (float)$amount;
+    if ($inputAmount <= 0 || is_nan($inputAmount) || is_infinite($inputAmount)) {
         return ['status' => 'error', 'message' => 'Transfer amount must be a valid positive number greater than 0.'];
     }
 
-    $amount = round($amount, 2);
+    // Determine Active Currency Mode (USD or INR)
+    $currMode = strtoupper(trim((string)$currencyMode));
+    if (!in_array($currMode, ['USD', 'INR'], true)) {
+        $currMode = function_exists('getUserCurrency') ? getUserCurrency(null, $db) : 'USD';
+    }
+    if (!in_array($currMode, ['USD', 'INR'], true)) {
+        $currMode = 'USD';
+    }
+
+    // Conversion rate: 1 USD = 90 INR
+    $usdRate = function_exists('getUSDToINRRate') ? (float)getUSDToINRRate($db) : 90.0;
+    if ($usdRate <= 0) {
+        $usdRate = 90.0;
+    }
+
+    if ($currMode === 'INR') {
+        $enteredAmount = round($inputAmount, 2);
+        $amountUSD     = round($enteredAmount / $usdRate, 2);
+        if ($amountUSD <= 0) {
+            return ['status' => 'error', 'message' => "Transfer amount in INR (₹" . number_format($enteredAmount, 2) . ") is too small to transfer."];
+        }
+    } else {
+        $enteredAmount = round($inputAmount, 2);
+        $amountUSD     = $enteredAmount;
+    }
+
     $cleanRemarks = mb_substr(trim($remarks ?? ''), 0, 250);
 
     $senderId = trim($senderId);
@@ -2864,16 +2889,22 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
 
         $senderId = $sender['userid']; // Use exact database userid for sender
 
-        // Determine available sender balance
+        // Determine available sender balance (stored in USD)
         if ($fromWallet === 'Main Wallet') {
-            $senderPrevBal = (float)($sender['deposite_wallet'] ?? $sender['pin_wallet'] ?? $sender['amount'] ?? 0);
+            $senderPrevBalUSD = (float)($sender['deposite_wallet'] ?? $sender['pin_wallet'] ?? $sender['amount'] ?? 0);
         } else {
-            $senderPrevBal = (float)($sender['amount'] ?? 0);
+            $senderPrevBalUSD = (float)($sender['amount'] ?? 0);
         }
 
-        if ($senderPrevBal < $amount) {
+        // Compare available balance against required USD amount
+        if ($senderPrevBalUSD < $amountUSD) {
             if ($inLocalTxn) $db->rollBack();
-            return ['status' => 'error', 'message' => "Insufficient {$fromWallet} balance ($" . number_format($senderPrevBal, 2) . "). Requested: $" . number_format($amount, 2)];
+            if ($currMode === 'INR') {
+                $availINR = round($senderPrevBalUSD * $usdRate, 2);
+                return ['status' => 'error', 'message' => "Insufficient {$fromWallet} balance (₹" . number_format($availINR, 2) . " INR / $" . number_format($senderPrevBalUSD, 2) . " USD). Requested: ₹" . number_format($enteredAmount, 2) . " INR."];
+            } else {
+                return ['status' => 'error', 'message' => "Insufficient {$fromWallet} balance ($" . number_format($senderPrevBalUSD, 2) . " USD). Requested: $" . number_format($amountUSD, 2) . " USD."];
+            }
         }
 
         // Lock Receiver Row FOR UPDATE
@@ -2891,28 +2922,28 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
 
         $receiverId = $receiver['userid']; // Use exact database userid for receiver
 
-        // Perform Atomic Debit on Sender
+        // Perform Atomic Debit on Sender (in USD)
         if ($fromWallet === 'Main Wallet') {
             $db->prepare("UPDATE user SET deposite_wallet = GREATEST(0, deposite_wallet - :amt), pin_wallet = GREATEST(0, pin_wallet - :amt) WHERE userid = :uid")
-                ->execute([':amt' => $amount, ':uid' => $senderId]);
+                ->execute([':amt' => $amountUSD, ':uid' => $senderId]);
         } else {
             $db->prepare("UPDATE user SET amount = GREATEST(0, amount - :amt) WHERE userid = :uid")
-                ->execute([':amt' => $amount, ':uid' => $senderId]);
+                ->execute([':amt' => $amountUSD, ':uid' => $senderId]);
         }
 
-        // Perform Atomic Credit on Receiver
+        // Perform Atomic Credit on Receiver (in USD)
         if ($toWallet === 'Main Wallet') {
             $db->prepare("UPDATE user SET deposite_wallet = deposite_wallet + :amt, pin_wallet = pin_wallet + :amt, total_deposit = total_deposit + :amt WHERE userid = :uid")
-                ->execute([':amt' => $amount, ':uid' => $receiverId]);
+                ->execute([':amt' => $amountUSD, ':uid' => $receiverId]);
         } else {
             $db->prepare("UPDATE user SET amount = amount + :amt WHERE userid = :uid")
-                ->execute([':amt' => $amount, ':uid' => $receiverId]);
+                ->execute([':amt' => $amountUSD, ':uid' => $receiverId]);
         }
 
         // Generate Server-Side Unique Transaction ID
         $txRef = 'P2P-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
 
-        // Save complete P2P transfer record with Remarks
+        // Save complete P2P transfer record with Remarks (stores authoritative amountUSD)
         $insP2p = $db->prepare("
             INSERT INTO tbl_p2p_transfer (transfer_ref, from_wallet, to_wallet, sender_id, receiver_id, amount, remarks, status, created_at)
             VALUES (:ref, :from_w, :to_w, :sender, :receiver, :amt, :remarks, 'COMPLETED', NOW())
@@ -2923,11 +2954,24 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
             ':to_w'     => $toWallet,
             ':sender'   => $senderId,
             ':receiver' => $receiverId,
-            ':amt'      => $amount,
+            ':amt'      => $amountUSD,
             ':remarks'  => $cleanRemarks
         ]);
 
         $subSuffix = !empty($cleanRemarks) ? " [Remarks: {$cleanRemarks}]" : "";
+
+        // Currency details for readable ledger subjects & notifications
+        if ($currMode === 'INR') {
+            $currencyDetails = " (INR " . number_format($enteredAmount, 2) . " / $" . number_format($amountUSD, 2) . " USD)";
+            $senderNotifMsg  = "You have successfully sent INR " . number_format($enteredAmount, 2) . " ($" . number_format($amountUSD, 2) . " USD) from {$fromWallet} to {$receiver['name']} ({$receiverId}).";
+            $recNotifMsg     = "You have received INR " . number_format($enteredAmount, 2) . " ($" . number_format($amountUSD, 2) . " USD) into {$toWallet} from {$sender['name']} ({$senderId}).";
+            $successMsg      = "P2P Transfer of INR " . number_format($enteredAmount, 2) . " ($" . number_format($amountUSD, 2) . " USD) from {$fromWallet} to {$toWallet} ({$receiverId}) completed successfully.";
+        } else {
+            $currencyDetails = " ($" . number_format($amountUSD, 2) . " USD)";
+            $senderNotifMsg  = "You have successfully sent $" . number_format($amountUSD, 2) . " USD from {$fromWallet} to {$receiver['name']} ({$receiverId}).";
+            $recNotifMsg     = "You have received $" . number_format($amountUSD, 2) . " USD into {$toWallet} from {$sender['name']} ({$senderId}).";
+            $successMsg      = "P2P Transfer of $" . number_format($amountUSD, 2) . " USD from {$fromWallet} to {$toWallet} ({$receiverId}) completed successfully.";
+        }
 
         // Record Sender Transaction Log
         $db->prepare("
@@ -2935,8 +2979,8 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
             VALUES (:uid, :amt, 'Debit', :sub, CURTIME(), CURDATE(), '1')
         ")->execute([
             ':uid' => $senderId,
-            ':amt' => $amount,
-            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) to {$receiverId} ({$receiver['name']}) [Ref: {$txRef}]" . $subSuffix
+            ':amt' => $amountUSD,
+            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) to {$receiverId} ({$receiver['name']}) [Ref: {$txRef}]{$currencyDetails}" . $subSuffix
         ]);
 
         // Record Receiver Transaction Log
@@ -2945,8 +2989,8 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
             VALUES (:uid, :amt, 'Credit', :sub, CURTIME(), CURDATE(), '1')
         ")->execute([
             ':uid' => $receiverId,
-            ':amt' => $amount,
-            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) received from {$senderId} ({$sender['name']}) [Ref: {$txRef}]" . $subSuffix
+            ':amt' => $amountUSD,
+            ':sub' => "P2P Transfer ({$fromWallet} -> {$toWallet}) received from {$senderId} ({$sender['name']}) [Ref: {$txRef}]{$currencyDetails}" . $subSuffix
         ]);
 
         // Trigger Notifications for Sender and Receiver
@@ -2955,7 +2999,7 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
                 $senderId,
                 'P2P',
                 'P2P Transfer Sent',
-                "You have successfully sent $" . number_format($amount, 2) . " from {$fromWallet} to {$receiver['name']} ({$receiverId}).",
+                $senderNotifMsg,
                 $txRef,
                 $db
             );
@@ -2963,7 +3007,7 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
                 $receiverId,
                 'P2P',
                 'P2P Transfer Received',
-                "You have received $" . number_format($amount, 2) . " into {$toWallet} from {$sender['name']} ({$senderId}).",
+                $recNotifMsg,
                 $txRef,
                 $db
             );
@@ -2974,9 +3018,12 @@ function processP2PTransfer($senderId, $receiverId, $amount, $fromWallet, $toWal
         }
 
         return [
-            'status'       => 'success',
-            'message'      => "P2P Transfer of $" . number_format($amount, 2) . " from {$fromWallet} to {$toWallet} ({$receiverId}) completed successfully.",
-            'transfer_ref' => $txRef
+            'status'        => 'success',
+            'message'       => $successMsg,
+            'transfer_ref'  => $txRef,
+            'amount_usd'    => $amountUSD,
+            'amount_entered'=> $enteredAmount,
+            'currency_mode' => $currMode
         ];
 
     } catch (Exception $e) {
