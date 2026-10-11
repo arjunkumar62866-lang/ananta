@@ -152,12 +152,62 @@ if (!function_exists('sponser')) {
         }
     }
 }
+
+/**
+ * Global Income Eligibility Rule:
+ * 1. User must have an Active ID (`user.active = '1'`).
+ * 2. User must have a minimum of $145 active investment (or >= ₹13,050 at $1=₹90) in `tbl_roi_one`.
+ * 3. Both conditions must be satisfied for a user to be eligible to generate or receive ANY income.
+ */
+if (!function_exists('isUserIncomeEligible')) {
+function isUserIncomeEligible($userid, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || empty($userid)) return false;
+
+    $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
+    $stmt = $db->prepare("
+        SELECT u.userid, u.active, 
+               COALESCE(SUM(r.package), 0) as total_pkg_inr,
+               COALESCE(SUM(r.real_fund_usd), 0) as total_real_usd
+        FROM user u
+        LEFT JOIN tbl_roi_one r ON r.user_id = u.userid 
+             AND (r.capital_withdrawal_status IS NULL OR r.capital_withdrawal_status != 'WITHDRAWN')
+             AND r.status = '0'
+        WHERE u.userid = :uid OR u.userid = :clean_uid
+        GROUP BY u.userid, u.active
+        LIMIT 1
+    ");
+    $stmt->execute([':uid' => (string)$userid, ':clean_uid' => (string)$cleanUid]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) return false;
+
+    // Condition 1: Must be Active ID
+    if ((string)$row['active'] !== '1') return false;
+
+    // Condition 2: Minimum $145 investment (or ₹13,050)
+    $totalUsd = (float)$row['total_real_usd'];
+    $totalInr = (float)$row['total_pkg_inr'];
+    if ($totalUsd < 145.00 && $totalInr < 13050.00) {
+        return false;
+    }
+
+    return true;
+}
+}
+
 if (!function_exists('rank_reward')) {
 
 
 function rank_reward($userid)
 {
     global $pdo;
+
+    // Income Eligibility: User must have active ID and minimum $145 investment
+    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($userid, $pdo)) {
+        return false;
+    }
+
     $time = date("H:i:s");
 
     // Step 1: get current user data
@@ -216,7 +266,7 @@ function rank_reward($userid)
 
             $stmtu = $pdo->prepare("
                 UPDATE user 
-                SET amount = amount + :amt, total_inc = total_inc + :amt, rank = :rk , ranking_percentage = :ranking_per
+                SET amount = amount + :amt, total_inc = total_inc + :amt, rank_reward_wallet = rank_reward_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt, rank = :rk , ranking_percentage = :ranking_per
                 WHERE userid = :uid
             ");
 
@@ -1214,7 +1264,7 @@ if (!function_exists('updatenonworkwallet')) {
 
 function updatenonworkwallet($sponsorcode, $newamount,$pdo)
 {
-    $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc WHERE userid = :sponsorcode";
+    $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc, user_growth_wallet = user_growth_wallet + :newamount WHERE userid = :sponsorcode";
     
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':newamount', $newamount, PDO::PARAM_STR);
@@ -1790,6 +1840,11 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
         return false; // No sponsor found
     }
 
+    // Income Eligibility: Beneficiary must have an active ID and minimum $145 investment
+    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($beneficiary_id, $db)) {
+        return false; // Sponsor not eligible (inactive ID or investment < $145)
+    }
+
     $total_bonus = round($investment_amount * (DIRECT_BONUS_PERCENT / 100.0), 2);
     
     // Calculate monthly installment: exactly 0.6% per month (total 6% over 10 months) with rounding safety
@@ -1929,6 +1984,11 @@ function getTotalDirectBonus($beneficiary_id, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$beneficiary_id) return 0.00;
 
+    // Income Eligibility: User must have an active ID and minimum $145 investment
+    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($beneficiary_id, $db)) {
+        return 0.00;
+    }
+
     // 1. Sync any missing direct referral schedules
     syncDirectBonusForUser($beneficiary_id, $db);
 
@@ -2035,7 +2095,8 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
 
     $updWallet = $db->prepare("
         UPDATE user
-        SET direct_bonus_wallet = direct_bonus_wallet + :amount,
+        SET amount = amount + :amount,
+            direct_bonus_wallet = direct_bonus_wallet + :amount,
             user_growth_wallet = user_growth_wallet + :amount_growth
         WHERE userid = :userid
     ");
@@ -2051,6 +2112,11 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
         $benId = $inst['beneficiary_id'];
         $amount = (float)$inst['installment_amount'];
         
+        // Income Eligibility: Beneficiary must be active and have minimum $145 investment
+        if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($benId, $db)) {
+            continue; // Skip inactive or under-$145 user until they qualify
+        }
+
         // 1. Update schedule status atomically
         $updSchedule->execute([
             ':closing_month' => $closing_month,

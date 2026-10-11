@@ -139,6 +139,49 @@ if (!function_exists('cleanupGlobalTreeDuplicates')) {
 
 require_once 'common/connection.php'; 
 
+/**
+ * Global Income Eligibility Rule:
+ * 1. User must have an Active ID (`user.active = '1'`).
+ * 2. User must have a minimum of $145 active investment (or >= ₹13,050 at $1=₹90) in `tbl_roi_one`.
+ * 3. Both conditions must be satisfied for a user to be eligible to generate or receive ANY income.
+ */
+if (!function_exists('isUserIncomeEligible')) {
+function isUserIncomeEligible($userid, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || empty($userid)) return false;
+
+    $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
+    $stmt = $db->prepare("
+        SELECT u.userid, u.active, 
+               COALESCE(SUM(r.package), 0) as total_pkg_inr,
+               COALESCE(SUM(r.real_fund_usd), 0) as total_real_usd
+        FROM user u
+        LEFT JOIN tbl_roi_one r ON r.user_id = u.userid 
+             AND (r.capital_withdrawal_status IS NULL OR r.capital_withdrawal_status != 'WITHDRAWN')
+             AND r.status = '0'
+        WHERE u.userid = :uid OR u.userid = :clean_uid
+        GROUP BY u.userid, u.active
+        LIMIT 1
+    ");
+    $stmt->execute([':uid' => (string)$userid, ':clean_uid' => (string)$cleanUid]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) return false;
+
+    // Condition 1: Must be Active ID
+    if ((string)$row['active'] !== '1') return false;
+
+    // Condition 2: Minimum $145 investment (or ₹13,050)
+    $totalUsd = (float)$row['total_real_usd'];
+    $totalInr = (float)$row['total_pkg_inr'];
+    if ($totalUsd < 145.00 && $totalInr < 13050.00) {
+        return false;
+    }
+
+    return true;
+}
+}
+
 if (!function_exists('newtime')) {
     function newtime($st)
     {
@@ -288,7 +331,7 @@ function registerUser($referrer_id, $name, $email, $mobile, $password, $terms_ac
 if (!function_exists('updatenonworkwallet')) {
     function updatenonworkwallet($sponsorcode, $newamount,$pdo)
     {
-        $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc WHERE userid = :sponsorcode";
+        $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc, user_growth_wallet = user_growth_wallet + :newamount WHERE userid = :sponsorcode";
         
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':newamount', $newamount, PDO::PARAM_STR);
@@ -1129,7 +1172,8 @@ function updatedatabysponserid1($userid, $transactionamounta, $transactionamount
     global $pdo;
 
     $sqluser = "UPDATE `user` 
-                SET `profit_sharing_wallet` = `profit_sharing_wallet` + :transactionamounta,
+                SET `amount` = `amount` + :transactionamounta,
+                    `profit_sharing_wallet` = `profit_sharing_wallet` + :transactionamounta,
                     `user_growth_wallet` = `user_growth_wallet` + :transactionamounta
                 WHERE userid = :userid";
 
@@ -1270,7 +1314,10 @@ function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userl
 
                     $directactive = getmydirectactive($spcode1);
 
-                    if ($isidactive == 1) {
+                    // Income Eligibility: User must have active ID and minimum $145 investment
+                    $isIncomeEligible = function_exists('isUserIncomeEligible') ? isUserIncomeEligible($spcode1, $pdo) : ($isidactive == 1);
+
+                    if ($isidactive == 1 && $isIncomeEligible) {
                         $level_num = $i + 1;
                         $transactionamount = 0;
                         $eligible = false;
@@ -1633,6 +1680,11 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
         return false; // No sponsor found
     }
 
+    // Income Eligibility: Beneficiary must have an active ID and minimum $145 investment
+    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($beneficiary_id, $db)) {
+        return false; // Sponsor not eligible (inactive ID or investment < $145)
+    }
+
     $total_bonus = round($investment_amount * (DIRECT_BONUS_PERCENT / 100.0), 2);
     
     // Calculate monthly installment: exactly 0.6% per month (total 6% over 10 months) with rounding safety
@@ -1772,6 +1824,11 @@ function getTotalDirectBonus($beneficiary_id, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$beneficiary_id) return 0.00;
 
+    // Income Eligibility: User must have an active ID and minimum $145 investment
+    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($beneficiary_id, $db)) {
+        return 0.00;
+    }
+
     // 1. Sync any missing direct referral schedules
     syncDirectBonusForUser($beneficiary_id, $db);
 
@@ -1878,7 +1935,8 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
 
     $updWallet = $db->prepare("
         UPDATE user
-        SET direct_bonus_wallet = direct_bonus_wallet + :amount,
+        SET amount = amount + :amount,
+            direct_bonus_wallet = direct_bonus_wallet + :amount,
             user_growth_wallet = user_growth_wallet + :amount_growth
         WHERE userid = :userid
     ");
@@ -1894,6 +1952,11 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
         $benId = $inst['beneficiary_id'];
         $amount = (float)$inst['installment_amount'];
         
+        // Income Eligibility: Beneficiary must be active and have minimum $145 investment
+        if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($benId, $db)) {
+            continue; // Skip inactive or under-$145 user until they qualify
+        }
+
         // 1. Update schedule status atomically
         $updSchedule->execute([
             ':closing_month' => $closing_month,
@@ -2263,7 +2326,8 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
 
     $updWallet = $db->prepare("
         UPDATE user
-        SET mentor_income_wallet = mentor_income_wallet + :amount,
+        SET amount = amount + :amount,
+            mentor_income_wallet = mentor_income_wallet + :amount,
             user_growth_wallet = user_growth_wallet + :amount
         WHERE userid = :userid
     ");
@@ -2281,6 +2345,12 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
         $totalMentorInc = round($monthlyInc * (MENTOR_INCOME_PERCENT / 100.0), 2);
 
         if ($totalMentorInc <= 0) continue;
+
+        // Income Eligibility: Mentor must have active ID and minimum $145 investment
+        if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($mentorId, $db)) {
+            $blockedMentors++;
+            continue;
+        }
 
         // 2. Validate Contribution Total for this Mentor
         $val = validateMentorContributions($mentorId, $db);
@@ -2301,6 +2371,11 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
 
             $payoutAmount = round(($totalMentorInc * $contribPct) / 100.0, 2);
             if ($payoutAmount <= 0) continue;
+
+            // Income Eligibility: Direct recipient must have active ID and minimum $145 investment
+            if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($directUserId, $db)) {
+                continue; // Direct recipient is inactive or under $145
+            }
 
             // Check database-level idempotency to prevent duplicate credit for (mentor, direct_user, closing_month)
             $chkIdem = $db->prepare("SELECT COUNT(*) FROM tbl_mentor_income_schedule WHERE mentor_id = :m_id AND direct_user_id = :d_id AND closing_month = :c_month");
@@ -2606,6 +2681,11 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$user_id) return ['newly_qualified' => [], 'all_qualified' => []];
 
+    // Income Eligibility: User must have active ID and minimum $145 investment
+    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($user_id, $db)) {
+        return ['newly_qualified' => [], 'all_qualified' => []];
+    }
+
     $legDetails = getBinaryLegDetails($user_id, $db);
 
     $configs = $db->query("SELECT * FROM tbl_vip_level_config ORDER BY level_id ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -2617,7 +2697,7 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
         (:user_id, :vip_level, :left_ids, :right_ids, :left_biz, :right_biz, :weaker_biz, :reward_amt, 'CREDITED')
     ");
 
-    $updWallet = $db->prepare("UPDATE user SET vip_club_wallet = vip_club_wallet + :amt WHERE userid = :uid");
+    $updWallet = $db->prepare("UPDATE user SET amount = amount + :amt, vip_club_wallet = vip_club_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt WHERE userid = :uid");
 
     $insTxn = $db->prepare("
         INSERT INTO tbl_transaction
@@ -2732,7 +2812,7 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
         (:user_id, :vip_level, :closing_month, :closing_date, :weaker_leg_business, :weaker_leg_rate, :weaker_leg_payout, :company_turnover, :turnover_rate, :turnover_payout, :total_payout, 'CREDITED', NOW(), :closing_id)
     ");
 
-    $updWallet = $db->prepare("UPDATE user SET vip_club_wallet = vip_club_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt WHERE userid = :uid");
+    $updWallet = $db->prepare("UPDATE user SET amount = amount + :amt, vip_club_wallet = vip_club_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt WHERE userid = :uid");
 
     $insTxn = $db->prepare("
         INSERT INTO tbl_transaction
@@ -2747,6 +2827,11 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
     foreach ($qualUsers as $u) {
         $userId = $u['user_id'];
         $highestLvl = (int)$u['highest_level'];
+
+        // Income Eligibility: User must have active ID and minimum $145 investment
+        if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($userId, $db)) {
+            continue; // Skip user if inactive or investment < $145
+        }
 
         $getConfig->execute([':lvl' => $highestLvl]);
         $c = $getConfig->fetch(PDO::FETCH_ASSOC);

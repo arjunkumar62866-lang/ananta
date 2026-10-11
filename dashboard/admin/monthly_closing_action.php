@@ -300,7 +300,7 @@ if ($action === 'process') {
         $closing_id = $pdo->lastInsertId();
 
         // Prepared statements for user credit, investment update & transaction logging
-        $updUser = $pdo->prepare("UPDATE user SET profit_income_wallet = profit_income_wallet + :profit, user_growth_wallet = user_growth_wallet + :profit WHERE userid = :user_id");
+        $updUser = $pdo->prepare("UPDATE user SET amount = amount + :profit, profit_income_wallet = profit_income_wallet + :profit, user_growth_wallet = user_growth_wallet + :profit WHERE userid = :user_id");
         $updInv = $pdo->prepare("UPDATE tbl_roi_one SET count = count + 1, totalincome = totalincome + :profit, amount = :profit, closingdate = :closing_date, status = :status WHERE id = :id");
         $insTxn = $pdo->prepare("
             INSERT INTO tbl_transaction 
