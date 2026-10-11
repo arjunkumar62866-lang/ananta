@@ -5749,12 +5749,12 @@ if (!function_exists('getUserIncomeWalletSummary')) {
 
         $rankRew = max($rr1, $rr2);
 
-        // 6. VIP Club (Sum of CREDITED tbl_vip_user_qualification + tbl_vip_monthly_schedule + tbl_transaction)
+        // 6. VIP Club (Sum of CREDITED tbl_vip_user_qualification + weaker_leg_payout in tbl_vip_monthly_schedule + tbl_transaction)
         $stmtVIP1 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id IN ($inClause) AND reward_status = 'CREDITED'");
         $stmtVIP1->execute($ids);
         $vip1 = (float)$stmtVIP1->fetchColumn();
 
-        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(weaker_leg_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
         $stmtVIP2->execute($ids);
         $vip2 = (float)$stmtVIP2->fetchColumn();
 
