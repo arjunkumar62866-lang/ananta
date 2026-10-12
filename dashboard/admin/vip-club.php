@@ -703,7 +703,7 @@ table.dataTable.no-footer {
                     let rows = '';
                     res.data.forEach(c => {
                         let isTurnover = parseInt(c.has_turnover_share) === 1;
-                        let turnoverBadge = isTurnover ? '<span class="badge bg-purple text-white fw-bold">+ 0.50% Company Turnover</span>' : '<span class="badge bg-secondary">None</span>';
+                        let turnoverBadge = isTurnover ? '<span class="badge bg-purple text-dark fw-bold" style="color: #000000 !important;">+ 0.50% Company Turnover</span>' : '<span class="badge bg-secondary">None</span>';
                         let bizText = formatAdminCurrency(c.req_left_business);
                         let rptText = formatAdminCurrency(c.monthly_repeat_business);
 
