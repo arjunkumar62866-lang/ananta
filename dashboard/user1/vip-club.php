@@ -246,7 +246,7 @@ table.dataTable.no-footer {
                             </div>
                             <div>
                                 <span class="text-muted fw-bold d-block" style="font-size: 12px;">VIP CLUB WALLET</span>
-                                <h4 class="mb-0 fw-extrabold" id="statVipWallet" style="color: #f59e0b;">$ 0.00</h4>
+                                <h4 class="mb-0 fw-extrabold" id="statVipWallet" style="color: #f59e0b;"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</h4>
                             </div>
                         </div>
                     </div>
@@ -257,7 +257,7 @@ table.dataTable.no-footer {
                             </div>
                             <div>
                                 <span class="text-muted fw-bold d-block" style="font-size: 12px;">TOTAL REWARDS EARNED</span>
-                                <h4 class="mb-0 fw-extrabold" id="statRewardsEarned" style="color: #10b981;">$ 0.00</h4>
+                                <h4 class="mb-0 fw-extrabold" id="statRewardsEarned" style="color: #10b981;"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</h4>
                             </div>
                         </div>
                     </div>
@@ -268,7 +268,7 @@ table.dataTable.no-footer {
                             </div>
                             <div>
                                 <span class="text-muted fw-bold d-block" style="font-size: 12px;">WEAKER LEG BUSINESS</span>
-                                <h4 class="mb-0 fw-extrabold" id="statWeakerBiz" style="color: #0284c7;">$ 0.00</h4>
+                                <h4 class="mb-0 fw-extrabold" id="statWeakerBiz" style="color: #0284c7;"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</h4>
                             </div>
                         </div>
                     </div>
@@ -296,7 +296,7 @@ table.dataTable.no-footer {
                             </div>
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted fw-bold">Left Subtree Business</span>
-                                <span class="fw-extrabold text-primary" id="txtLeftBiz">$ 0.00</span>
+                                <span class="fw-extrabold text-primary" id="txtLeftBiz"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</span>
                             </div>
                             <div class="progress">
                                 <div class="progress-bar" id="barLeft" role="progressbar" style="width: 0%;"></div>
@@ -312,7 +312,7 @@ table.dataTable.no-footer {
                             </div>
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted fw-bold">Right Subtree Business</span>
-                                <span class="fw-extrabold text-success" id="txtRightBiz">$ 0.00</span>
+                                <span class="fw-extrabold text-success" id="txtRightBiz"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</span>
                             </div>
                             <div class="progress">
                                 <div class="progress-bar bg-success" id="barRight" role="progressbar" style="width: 0%;"></div>
@@ -357,10 +357,10 @@ table.dataTable.no-footer {
                                             <tr>
                                                 <th>Level</th>
                                                 <th>Required Left : Right IDs</th>
-                                                <th>Required Left : Right Business ($)</th>
-                                                <th>Reward ($)</th>
+                                                <th>Required Left : Right Business (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
+                                                <th>Reward (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
                                                 <th>VIP Income Rate</th>
-                                                <th>Monthly Repeat ($)</th>
+                                                <th>Monthly Repeat (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
                                                 <th>Status</th>
                                             </tr>
                                         </thead>
@@ -388,8 +388,8 @@ table.dataTable.no-footer {
                                         <thead>
                                             <tr>
                                                 <th>VIP Level</th>
-                                                <th>Weaker Leg Business</th>
-                                                <th>Reward Amount</th>
+                                                <th>Weaker Leg Business (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
+                                                <th>Reward Amount (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
                                                 <th>Status</th>
                                                 <th>Qualified Date</th>
                                             </tr>
@@ -419,10 +419,10 @@ table.dataTable.no-footer {
                                             <tr>
                                                 <th>Closing Month</th>
                                                 <th>VIP Level</th>
-                                                <th>Weaker Leg Biz</th>
-                                                <th>Weaker Leg Payout</th>
-                                                <th>Turnover Share Payout</th>
-                                                <th>Total Payout ($)</th>
+                                                <th>Weaker Leg Biz (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
+                                                <th>Weaker Leg Payout (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
+                                                <th>Turnover Share Payout (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
+                                                <th>Total Payout (<?php echo htmlspecialchars($selectedCurrency); ?>)</th>
                                                 <th>Status</th>
                                                 <th>Credit Date</th>
                                             </tr>
@@ -457,18 +457,22 @@ table.dataTable.no-footer {
 
     <script>
         $(document).ready(function () {
+            let activeCurrency = '<?php echo htmlspecialchars($selectedCurrency); ?>';
+            let activeSymbol   = '<?php echo htmlspecialchars(getCurrencySymbol($selectedCurrency)); ?>';
+
             let userQualsTable = $('#userQualsTable').DataTable({ pageLength: 10 });
             let userHistoryTable = $('#userHistoryTable').DataTable({ pageLength: 10 });
 
-            $.getJSON('get_vip_club.php', function(res) {
+            $.getJSON('get_vip_club.php', { currency: activeCurrency }, function(res) {
                 if (res.status === 'success' && res.data) {
                     let u = res.data.user;
                     let leg = res.data.leg_details;
+                    let sym = (res.currency && res.currency.symbol) ? res.currency.symbol : activeSymbol;
 
                     $('#userVipBadge').text('Current: VIP Level ' + u.highest_level);
-                    $('#statVipWallet').text('$ ' + parseFloat(u.vip_club_wallet).toLocaleString('en-US', {minimumFractionDigits:2}));
-                    $('#statRewardsEarned').text('$ ' + parseFloat(res.data.total_rewards_earned).toLocaleString('en-US', {minimumFractionDigits:2}));
-                    $('#statWeakerBiz').text('$ ' + parseFloat(leg.weaker_leg_business_usd).toLocaleString('en-US', {minimumFractionDigits:2}));
+                    $('#statVipWallet').text(u.formatted_vip_club_wallet || (sym + ' ' + parseFloat(u.display_vip_club_wallet || u.vip_club_wallet).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+                    $('#statRewardsEarned').text(res.data.formatted_total_rewards_earned || (sym + ' ' + parseFloat(res.data.display_total_rewards_earned || res.data.total_rewards_earned).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+                    $('#statWeakerBiz').text(leg.formatted_weaker_leg_business || (sym + ' ' + parseFloat(leg.display_weaker_leg_business || leg.weaker_leg_business_usd).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
 
                     if (res.data.next_level) {
                         $('#statNextLevel').text('VIP Level ' + res.data.next_level.level_id);
@@ -479,8 +483,8 @@ table.dataTable.no-footer {
                     // Leg Progress
                     $('#txtLeftIds').text(leg.left_ids_count + ' IDs');
                     $('#txtRightIds').text(leg.right_ids_count + ' IDs');
-                    $('#txtLeftBiz').text('$ ' + parseFloat(leg.left_business_usd).toLocaleString());
-                    $('#txtRightBiz').text('$ ' + parseFloat(leg.right_business_usd).toLocaleString());
+                    $('#txtLeftBiz').text(leg.formatted_left_business || (sym + ' ' + parseFloat(leg.display_left_business || leg.left_business_usd).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+                    $('#txtRightBiz').text(leg.formatted_right_business || (sym + ' ' + parseFloat(leg.display_right_business || leg.right_business_usd).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
 
                     let maxBiz = Math.max(parseFloat(leg.left_business_usd), parseFloat(leg.right_business_usd), 1);
                     let pctLeft = Math.min(100, Math.round((parseFloat(leg.left_business_usd) / maxBiz) * 100));
@@ -495,15 +499,26 @@ table.dataTable.no-footer {
                     res.data.configs.forEach(c => {
                         let isAchieved = achievedLevels.has(parseInt(c.level_id));
                         let badgeHtml = isAchieved ? '<span class="badge bg-success"><i class="fa fa-check me-1"></i> Achieved</span>' : '<span class="badge bg-secondary">Pending</span>';
-                        let bizText = (parseFloat(c.req_left_business) >= 1000000) ? ('$ ' + (parseFloat(c.req_left_business)/10000000).toFixed(2) + ' Crore') : ('$ ' + parseFloat(c.req_left_business).toLocaleString());
-                        let rptText = (parseFloat(c.monthly_repeat_business) >= 1000000) ? ('$ ' + (parseFloat(c.monthly_repeat_business)/10000000).toFixed(2) + ' Crore') : ('$ ' + parseFloat(c.monthly_repeat_business).toLocaleString());
+
+                        // Display business requirement preserving Crore denomination if >= 10,000,000 in nominal currency
+                        let reqVal = (c.display_req_left_business !== undefined) ? parseFloat(c.display_req_left_business) : parseFloat(c.req_left_business);
+                        let bizText = (reqVal >= 10000000) 
+                            ? (sym + ' ' + (reqVal / 10000000).toFixed(2) + ' Crore') 
+                            : (c.formatted_req_left_business || (sym + ' ' + reqVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+
+                        let rptVal = (c.display_monthly_repeat_business !== undefined) ? parseFloat(c.display_monthly_repeat_business) : parseFloat(c.monthly_repeat_business);
+                        let rptText = (rptVal >= 10000000) 
+                            ? (sym + ' ' + (rptVal / 10000000).toFixed(2) + ' Crore') 
+                            : (c.formatted_monthly_repeat_business || (sym + ' ' + rptVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+
+                        let rwText = c.formatted_reward_amount || (sym + ' ' + parseFloat(c.display_reward_amount || c.reward_amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
                         let isTurnover = parseInt(c.has_turnover_share) === 1;
 
                         roadmapRows += `<tr class="${isAchieved ? 'table-success' : ''}">
                             <td class="fw-bold text-primary">Level ${c.level_id}</td>
                             <td>${c.req_left_ids} : ${c.req_right_ids}</td>
                             <td>${bizText} : ${bizText}</td>
-                            <td class="fw-bold text-warning">$ ${parseFloat(c.reward_amount).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                            <td class="fw-bold text-warning">${rwText}</td>
                             <td class="fw-bold text-info">${parseFloat(c.vip_income_rate).toFixed(2)}% Weaker Leg ${isTurnover ? ' + 0.5% Turnover' : ''}</td>
                             <td>${rptText}</td>
                             <td>${badgeHtml}</td>
@@ -514,10 +529,13 @@ table.dataTable.no-footer {
                     // Qualifications Data
                     userQualsTable.clear();
                     res.data.qualifications.forEach(q => {
+                        let qWkBizFmt = q.formatted_weaker_leg_business || (sym + ' ' + parseFloat(q.display_weaker_leg_business || q.weaker_leg_business).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
+                        let qRwFmt = q.formatted_reward_amount || (sym + ' ' + parseFloat(q.display_reward_amount || q.reward_amount).toFixed(2));
+
                         userQualsTable.row.add([
                             '<span class="badge bg-warning text-dark fw-bold">VIP Level ' + q.vip_level + '</span>',
-                            '$' + parseFloat(q.weaker_leg_business).toLocaleString(),
-                            '<span class="text-success fw-bold">$' + parseFloat(q.reward_amount).toFixed(2) + '</span>',
+                            qWkBizFmt,
+                            '<span class="text-success fw-bold">' + qRwFmt + '</span>',
                             '<span class="badge bg-success">' + q.reward_status + '</span>',
                             '<small class="text-muted">' + q.qualified_at + '</small>'
                         ]);
@@ -527,13 +545,18 @@ table.dataTable.no-footer {
                     // Monthly Payout Data
                     userHistoryTable.clear();
                     res.data.monthly_payouts.forEach(m => {
+                        let mWkBizFmt = m.formatted_weaker_leg_business || (sym + ' ' + parseFloat(m.display_weaker_leg_business || m.weaker_leg_business).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
+                        let mWkPayFmt = m.formatted_weaker_leg_payout || (sym + ' ' + parseFloat(m.display_weaker_leg_payout || m.weaker_leg_payout).toFixed(2));
+                        let mToPayFmt = m.formatted_turnover_payout || (sym + ' ' + parseFloat(m.display_turnover_payout || m.turnover_payout).toFixed(2));
+                        let mTotPayFmt = m.formatted_total_payout || (sym + ' ' + parseFloat(m.display_total_payout || m.total_payout).toFixed(2));
+
                         userHistoryTable.row.add([
                             '<span class="badge bg-light text-dark border">' + m.closing_month + '</span>',
                             '<span class="badge bg-warning text-dark fw-bold">VIP Level ' + m.vip_level + '</span>',
-                            '$' + parseFloat(m.weaker_leg_business).toLocaleString(),
-                            '<span class="text-info fw-bold">$' + parseFloat(m.weaker_leg_payout).toFixed(2) + '</span>',
-                            '<span class="text-purple fw-bold">$' + parseFloat(m.turnover_payout).toFixed(2) + '</span>',
-                            '<span class="text-success fw-bold">$' + parseFloat(m.total_payout).toFixed(2) + '</span>',
+                            mWkBizFmt,
+                            '<span class="text-info fw-bold">' + mWkPayFmt + '</span>',
+                            '<span class="text-purple fw-bold">' + mToPayFmt + '</span>',
+                            '<span class="text-success fw-bold">' + mTotPayFmt + '</span>',
                             '<span class="badge bg-success">' + m.status + '</span>',
                             '<small class="text-muted">' + m.credited_at + '</small>'
                         ]);
