@@ -97,7 +97,7 @@ if (!function_exists("getUserNormalizedIds")) {
     }
 }
 
-require_once 'common/connection.php'; 
+require_once 'common/connection.php';
 
 if (!function_exists('newtime')) {
     function newtime($st)
@@ -167,11 +167,11 @@ function isUserIncomeEligible($userid, $pdoConnection = null) {
 
     $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
     $stmt = $db->prepare("
-        SELECT u.userid, u.active, 
+        SELECT u.userid, u.active,
                COALESCE(SUM(r.package), 0) as total_pkg_inr,
                COALESCE(SUM(r.real_fund_usd), 0) as total_real_usd
         FROM user u
-        LEFT JOIN tbl_roi_one r ON r.user_id = u.userid 
+        LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
              AND (r.capital_withdrawal_status IS NULL OR r.capital_withdrawal_status != 'WITHDRAWN')
              AND r.status = '0'
         WHERE u.userid = :uid OR u.userid = :clean_uid
@@ -345,7 +345,7 @@ function getUserTreeData($userid)
 
 
 if (!function_exists('getHomeSettings')) {
-function getHomeSettings($pdo) 
+function getHomeSettings($pdo)
 {
     $sql = "SELECT * FROM tbl_homest LIMIT 1";
     $stmt = $pdo->prepare($sql);
@@ -394,7 +394,7 @@ function loginUser($userid, $password, $pdo)
     $stmt = $pdo->prepare("
         SELECT userid, pass, status
         FROM user
-        WHERE (userid = :clean OR userid = :raw) 
+        WHERE (userid = :clean OR userid = :raw)
         AND status IN (0, 1)
         LIMIT 1
     ");
@@ -446,14 +446,14 @@ function loginUser($userid, $password, $pdo)
 
 // function registerUser($referrer_id, $name, $email, $mobile, $password, $terms_accepted, $pdo)
 // {
-    
+
 //     if (empty($name) || empty($email) || empty($mobile) || empty($password)) {
 //         return [
 //             'status' => false,
 //             'message' => 'All fields are required!'
 //         ];
 //     }
-  
+
 //     if (!$terms_accepted) {
 //         return [
 //             'status' => false,
@@ -501,7 +501,7 @@ function loginUser($userid, $password, $pdo)
 // }
 
 if (!function_exists('insertSponsor')) {
-    function insertSponsor($pdo, $sponsorId, $referralId, $createdDate) 
+    function insertSponsor($pdo, $sponsorId, $referralId, $createdDate)
     {
         $sql = "INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (?, ?, ?)";
         $stmt = $pdo->prepare($sql);
@@ -510,7 +510,7 @@ if (!function_exists('insertSponsor')) {
 }
 if (!function_exists('insertUser')) {
 
-function insertUser($pdo, $data) 
+function insertUser($pdo, $data)
 {
     // Sanitize date fields for MySQL 8.0 strict mode compatibility
     if (isset($data[19]) && ($data[19] === '' || $data[19] === '0000-00-00')) {
@@ -549,7 +549,7 @@ function insertKYC($pdo, $userId, $aadhar) {
 }
 if (!function_exists('insertUserLevel')) {
 
-function insertUserLevel($pdo, $sponsorId, $userId, $level) 
+function insertUserLevel($pdo, $sponsorId, $userId, $level)
 {
     $sql = "INSERT INTO user_level (sponsorid, downid, level) VALUES (?, ?, ?)";
     $stmt = $pdo->prepare($sql);
@@ -588,7 +588,7 @@ if (!function_exists('getuserdatabysponserid')) {
 
 
 function getuserdatabysponserid($userid)
-{ 
+{
     global $pdo;
     $sql = "SELECT * FROM user WHERE userid = :userid";
     $stmt = $pdo->prepare($sql);
@@ -621,7 +621,7 @@ function getuserdatabysponserid($userid)
             "plan" => $rowuser["plan"]
         ];
 
-        
+
     }
 
     return null;
@@ -648,7 +648,7 @@ if (!function_exists('getmysponserid')) {
 
 function getmysponserid($userid)
 {
-    global $pdo; 
+    global $pdo;
     $sql = "SELECT sponsor_id FROM tbl_sponsor WHERE referral_id = :referral_id";
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':referral_id', $userid, PDO::PARAM_STR);
@@ -668,10 +668,10 @@ if (!function_exists('getmydirect')) {
 function getmydirect($direct)
 {
     global $pdo;
-    $sql = "SELECT COUNT(*) as alluser 
-            FROM user tbsign  
-            INNER JOIN tbl_sponsor tbspon 
-            ON tbspon.referral_id = tbsign.userid  
+    $sql = "SELECT COUNT(*) as alluser
+            FROM user tbsign
+            INNER JOIN tbl_sponsor tbspon
+            ON tbspon.referral_id = tbsign.userid
             WHERE tbspon.sponsor_id = :sponsor_id";
 
     $stmt = $pdo->prepare($sql);
@@ -718,8 +718,8 @@ function getmydirectactiveright($sponsorId)
         SELECT COUNT(DISTINCT u.userid) AS total
         FROM user u
         INNER JOIN (
-            SELECT downline_id 
-            FROM tbl_userlevel_b 
+            SELECT downline_id
+            FROM tbl_userlevel_b
             WHERE sponser_id = :sponsor_id
         ) d ON d.downline_id = u.userid
         WHERE (
@@ -745,8 +745,8 @@ function getmydirectactiveleft($sponsorId)
         SELECT COUNT(DISTINCT u.userid) AS total
         FROM user u
         INNER JOIN (
-            SELECT downline_id 
-            FROM tbl_userlevel_a 
+            SELECT downline_id
+            FROM tbl_userlevel_a
             WHERE sponser_id = :sponsor_id
         ) d ON d.downline_id = u.userid
         WHERE (
@@ -851,7 +851,7 @@ function insert_userlevel_a($sponserid, $downlineid, $level)
 {
     global $pdo;
 
-    $sql = "INSERT INTO tbl_userlevel_a (sponser_id, downline_id, level, date) 
+    $sql = "INSERT INTO tbl_userlevel_a (sponser_id, downline_id, level, date)
             VALUES (:sponser_id, :downline_id, :level, CURDATE())";
 
     $stmt = $pdo->prepare($sql);
@@ -867,7 +867,7 @@ function insert_userlevel_b($sponserid, $downlineid, $level)
 {
     global $pdo;
 
-    $sql = "INSERT INTO tbl_userlevel_b (sponser_id, downline_id, level, date) 
+    $sql = "INSERT INTO tbl_userlevel_b (sponser_id, downline_id, level, date)
             VALUES (:sponser_id, :downline_id, :level, CURDATE())";
 
     $stmt = $pdo->prepare($sql);
@@ -882,9 +882,9 @@ if (!function_exists('incometotalnew')) {
 
 function incometotalnew($pdo, $table, $userid, $subject)
 {
-    $sql = "SELECT SUM(amount) AS totalamount 
-            FROM {$table} 
-            WHERE user_id = :userid 
+    $sql = "SELECT SUM(amount) AS totalamount
+            FROM {$table}
+            WHERE user_id = :userid
             AND subject LIKE :subject";
 
     $stmt = $pdo->prepare($sql);
@@ -902,9 +902,9 @@ if (!function_exists('incometotalnew_exact_subject')) {
 
 function incometotalnew_exact_subject($pdo, $table, $userid, $subject)
 {
-    $sql = "SELECT SUM(amount) AS totalamount 
-            FROM {$table} 
-            WHERE user_id = :userid 
+    $sql = "SELECT SUM(amount) AS totalamount
+            FROM {$table}
+            WHERE user_id = :userid
             AND subject LIKE :subject";
 
     $stmt = $pdo->prepare($sql);
@@ -925,10 +925,10 @@ if (!function_exists('incometotalnewdate')) {
 function incometotalnewdate($date, $table, $userid, $subject)
 {
     global $pdo; // Assuming $pdo is your PDO connection
-    $sqluser = "SELECT SUM(amount) as totalamount 
-                FROM $table 
-                WHERE created_date = '$date' 
-                AND user_id = '$userid' 
+    $sqluser = "SELECT SUM(amount) as totalamount
+                FROM $table
+                WHERE created_date = '$date'
+                AND user_id = '$userid'
                 AND subject LIKE '%$subject%'";
 
     $resultuser = $pdo->query($sqluser);
@@ -947,8 +947,8 @@ if (!function_exists('getlevelDirectbusiness')) {
 function getlevelDirectbusiness($userid, $level)
 {
     global $pdo;
-    $sqlac = "SELECT SUM(total_package) as totalbusiness  
-              FROM user 
+    $sqlac = "SELECT SUM(total_package) as totalbusiness
+              FROM user
               WHERE sponserid = '$userid'";
 
     $resultac = $pdo->query($sqlac);
@@ -1000,9 +1000,9 @@ function leftLevelBusiness($userid, $level)
     $sql = "
         SELECT SUM(u.total_package) AS leftbusiness
         FROM user u
-        INNER JOIN tbl_userlevel_a t 
+        INNER JOIN tbl_userlevel_a t
             ON t.downline_id = u.userid
-        WHERE t.sponser_id = :userid 
+        WHERE t.sponser_id = :userid
           AND t.level = :level
     ";
 
@@ -1023,9 +1023,9 @@ function rightLevelBusiness($userid, $level)
     $sql = "
         SELECT SUM(u.total_package) AS rightbusiness
         FROM user u
-        INNER JOIN tbl_userlevel_b t 
+        INNER JOIN tbl_userlevel_b t
             ON t.downline_id = u.userid
-        WHERE t.sponser_id = :userid 
+        WHERE t.sponser_id = :userid
           AND t.level = :level
     ";
 
@@ -1044,7 +1044,7 @@ if (!function_exists('gettotallevelbusiness')) {
 
 function gettotallevelbusiness($userid)
 {
-    global $pdo; 
+    global $pdo;
 
     $totallevelbusiness =
         getlevelbusiness($userid, 1) +
@@ -1074,7 +1074,7 @@ function gettotallevelbusiness($userid)
 if (!function_exists('gettotallevelbusinessleft')) {
 function gettotallevelbusinessleft($userid)
 {
-    global $pdo; 
+    global $pdo;
 
     $totallevelbusiness =
         leftLevelBusiness($userid, 1) +
@@ -1104,7 +1104,7 @@ function gettotallevelbusinessleft($userid)
 if (!function_exists('gettotallevelbusinessright')) {
 function gettotallevelbusinessright($userid)
 {
-    global $pdo; 
+    global $pdo;
 
     $totallevelbusiness =
         rightLevelBusiness($userid, 1) +
@@ -1135,7 +1135,7 @@ if (!function_exists('getnews')) {
 
 function getnews()
 {
-    global $pdo; 
+    global $pdo;
 
     $sqluser = "SELECT * FROM tbl_news WHERE id = '1'";
     $resultuser = $pdo->query($sqluser);
@@ -1156,12 +1156,12 @@ if (!function_exists('updatenonworkwallet')) {
 function updatenonworkwallet($sponsorcode, $newamount,$pdo)
 {
     $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc, user_growth_wallet = user_growth_wallet + :newamount WHERE userid = :sponsorcode";
-    
+
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':newamount', $newamount, PDO::PARAM_STR);
     $stmt->bindParam(':totalinc', $newamount, PDO::PARAM_STR);
     $stmt->bindParam(':sponsorcode', $sponsorcode, PDO::PARAM_STR);
-    
+
     if ($stmt->execute()) {
         // Update successful
         return true;
@@ -1217,8 +1217,8 @@ function getUserActiveInvestmentTotal($userid, $pdoConnection = null) {
     $sql = "
         SELECT id, package_code, real_fund_usd, bonus_amount_usd, bonus_percent_snapshot, package, date, time, count, lock_day, lock_period_months, maturity_date, capital_withdrawal_status, status
         FROM tbl_roi_one
-        WHERE user_id = :uid 
-          AND status = '0' 
+        WHERE user_id = :uid
+          AND status = '0'
           AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
         ORDER BY id DESC
     ";
@@ -1289,10 +1289,10 @@ function getroionedatanew($userid)
 {
     global $pdo;
 
-    $sqluser = "SELECT * 
-                FROM tbl_roi_one 
-                WHERE user_id = :userid 
-                  AND status = '0' 
+    $sqluser = "SELECT *
+                FROM tbl_roi_one
+                WHERE user_id = :userid
+                  AND status = '0'
                   AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
                 ORDER BY id DESC";
 
@@ -1325,7 +1325,7 @@ function getroionedatanew($userid)
             "count"         => $latest["count"],
             "amount"        => $latest["amount"],
             "date"          => $latest["date"],
-            "time"          => $latest["time"], 
+            "time"          => $latest["time"],
             "status"        => $latest["status"],
             "active_count"  => count($rows),
             "investments"   => $rows
@@ -1377,7 +1377,7 @@ if (!function_exists('getpercentage')) {
 
 function getpercentage()
 {
-    global $pdo; 
+    global $pdo;
 
     $sql = "SELECT * FROM tbl_levelpercantage LIMIT 1";
     $stmt = $pdo->prepare($sql);
@@ -1398,7 +1398,7 @@ function getpercentage()
         return $percenset;
     }
 
-    return null; 
+    return null;
 }
 }
 if (!function_exists('updatedatabysponserid')) {
@@ -1407,9 +1407,9 @@ if (!function_exists('updatedatabysponserid')) {
 function updatedatabysponserid($userid, $amount, $transactionamount)
 {
     try {
-        $sql = "UPDATE user 
-                   SET amount = amount + :amount, 
-                       total_inc = total_inc + :transactionamount 
+        $sql = "UPDATE user
+                   SET amount = amount + :amount,
+                       total_inc = total_inc + :transactionamount
                  WHERE userid = :userid";
 
         $stmt = $pdo->prepare($sql);
@@ -1417,7 +1417,7 @@ function updatedatabysponserid($userid, $amount, $transactionamount)
         $stmt->bindParam(':transactionamount', $transactionamount, PDO::PARAM_STR);
         $stmt->bindParam(':userid', $userid, PDO::PARAM_STR);
 
-        return $stmt->execute(); 
+        return $stmt->execute();
     } catch (PDOException $e) {
         error_log("Error updating sponsor: " . $e->getMessage());
         return false;
@@ -1434,7 +1434,7 @@ function insert_transction($table, $userid, $amount, $trasction_type, $time, $cd
     $updatetime = newtime("time");
 
     try {
-        $sql = "INSERT INTO $table (user_id, subject, type, amount, status, a_status, time, created_date) 
+        $sql = "INSERT INTO $table (user_id, subject, type, amount, status, a_status, time, created_date)
                 VALUES (:userid, :trasction_type, :cdtype, :amount, '1', '0', :time, :updatedate)";
 
         $stmt = $pdo->prepare($sql);
@@ -1458,11 +1458,11 @@ if (!function_exists('getroionedata')) {
 
 function getroionedata($userid)
 {
-    global $pdo; 
-    $sql = "SELECT * 
-            FROM tbl_roi_one 
-            WHERE user_id = :userid AND status = '1' 
-            ORDER BY id DESC 
+    global $pdo;
+    $sql = "SELECT *
+            FROM tbl_roi_one
+            WHERE user_id = :userid AND status = '1'
+            ORDER BY id DESC
             LIMIT 1";
 
     $stmt = $pdo->prepare($sql);
@@ -1478,7 +1478,7 @@ function getroionedata($userid)
             "count"      => $row["count"],
             "amount"     => $row["amount"],
             "date"       => $row["date"],
-            "time"       => $row["time"], 
+            "time"       => $row["time"],
             "status"     => $row["status"],
         ];
 
@@ -1542,19 +1542,19 @@ if (!function_exists('updateTreeCounts')) {
 
 
 function updateTreeCounts($pdo, $userid) {
-    
+
     $stmt = $pdo->prepare("SELECT * FROM tree WHERE left_id = :uid OR right_id = :uid");
     $stmt->execute([':uid' => $userid]);
     $rf = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if(!$rf){ 
-        return; 
+    if(!$rf){
+        return;
     }
 
-    $temp_underuserid = $rf["userid"];  
-    $side = ($rf["left_id"] == $userid) ? "left" : "right"; 
-    
-    $temp_side_count = $side.'count'; 
+    $temp_underuserid = $rf["userid"];
+    $side = ($rf["left_id"] == $userid) ? "left" : "right";
+
+    $temp_side_count = $side.'count';
     $total_count = 1;
 
     while($total_count > 0){
@@ -1564,18 +1564,18 @@ function updateTreeCounts($pdo, $userid) {
 
         if(!$r){ break; }
 
-       
+
         $current_temp_side_count = $r[$temp_side_count] + 1;
         $stmt3 = $pdo->prepare("UPDATE tree SET $temp_side_count = :count WHERE userid = :uid");
         $stmt3->execute([':count' => $current_temp_side_count, ':uid' => $temp_underuserid]);
 
-        
-        $next_under_userid = getUnderId($pdo, $temp_underuserid);    
-        $temp_side = getUnderIdPlace($pdo, $temp_underuserid);      
+
+        $next_under_userid = getUnderId($pdo, $temp_underuserid);
+        $temp_side = getUnderIdPlace($pdo, $temp_underuserid);
         $temp_side_count = $temp_side.'count';
-        $temp_underuserid = $next_under_userid; 
-        
-        
+        $temp_underuserid = $next_under_userid;
+
+
         if(empty($temp_underuserid)){
             $total_count = 0;
         }
@@ -1614,7 +1614,7 @@ function find_parent($sponser, $side, $pdo) {
     $stmt = $pdo->prepare("SELECT * FROM tree WHERE userid = :userid");
     $stmt->bindParam(':userid', $sponser, PDO::PARAM_STR);
     $stmt->execute();
-    
+
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$row) {
@@ -1690,7 +1690,7 @@ function getQualifiedDirectCount($userid, $pdoConnection = null) {
     $stmt->bindValue(':sp4', (string)$cleanUid, PDO::PARAM_STR);
     $stmt->bindValue(':min_inv', $minInv);
     $stmt->execute();
-    
+
     return $stmt->rowCount();
 }
 }
@@ -1737,13 +1737,13 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
     }
 
     $total_bonus = round($investment_amount * (DIRECT_BONUS_PERCENT / 100.0), 2);
-    
+
     // Calculate monthly installment: exactly 0.6% per month (total 6% over 10 months) with rounding safety
     $base_installment = floor(($total_bonus / DIRECT_BONUS_MONTHS) * 100) / 100;
     $remainder = round($total_bonus - ($base_installment * DIRECT_BONUS_MONTHS), 2);
 
     $invDateObj = $investment_date ? new DateTime($investment_date) : new DateTime();
-    
+
     // Check if schedule already exists for this investment to prevent duplicates
     $checkStmt = $db->prepare("SELECT COUNT(*) FROM tbl_direct_bonus_schedule WHERE investment_id = :inv_id");
     $checkStmt->execute([':inv_id' => $investment_id]);
@@ -1893,9 +1893,9 @@ function getTotalDirectBonus($beneficiary_id, $pdoConnection = null) {
     $usdRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : (defined('DEFAULT_USD_TO_INR') ? DEFAULT_USD_TO_INR : 90.0);
     $stmtInv = $db->prepare("
         SELECT COALESCE(SUM(
-            CASE 
-                WHEN r.package > 0 THEN r.package 
-                ELSE r.real_fund_usd * :usd_rate 
+            CASE
+                WHEN r.package > 0 THEN r.package
+                ELSE r.real_fund_usd * :usd_rate
             END
         ), 0)
         FROM tbl_roi_one r
@@ -2002,7 +2002,7 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
     foreach ($pendingInstallments as $inst) {
         $benId = $inst['beneficiary_id'];
         $amount = (float)$inst['installment_amount'];
-        
+
         // Income Eligibility: Beneficiary must be active and have minimum $145 investment
         if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($benId, $db)) {
             continue; // Skip inactive or under-$145 user until they qualify
@@ -2057,7 +2057,7 @@ if (!function_exists('getQualifiedDirectDetails')) {
 
         $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
 
-        $sql = "SELECT 
+        $sql = "SELECT
                     u.userid,
                     u.name,
                     u.active as is_active,
@@ -2277,7 +2277,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
 
         // Bulk load all users, tree nodes, investments, and direct count in single queries
         $stmtUsers = $db->query("
-            SELECT 
+            SELECT
                 u.userid, u.name, COALESCE(u.`rank`, 'Member') as `rank`, u.joining_date, u.active, u.status,
                 COALESCE(u.total_package, 0) as user_total_package, COALESCE(u.package, 0) as user_package, COALESCE(u.amount, 0) as user_amount,
                 u.join_side, u.sponserid, u.underuserid,
@@ -2537,7 +2537,7 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
 
     if ($teamType === 'MY_DIRECT') {
         $sql = "
-            SELECT 
+            SELECT
                 u.userid,
                 u.name,
                 COALESCE(u.`rank`, 'Member') as `rank`,
@@ -2612,8 +2612,8 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
         return $members;
     } elseif ($teamType === 'LEFT' || $teamType === 'RIGHT') {
         $stmtUsers = $db->query("
-            SELECT u.userid, u.join_side, u.underuserid, t.left_id, t.right_id 
-            FROM user u 
+            SELECT u.userid, u.join_side, u.underuserid, t.left_id, t.right_id
+            FROM user u
             LEFT JOIN tree t ON t.userid = u.userid
         ");
         $treeMap = [];
@@ -2813,6 +2813,10 @@ function getBinaryAncestors($user_id, $pdoConnection = null) {
 /**
  * Evaluate and process VIP Club Qualifications & One-Time Rewards for a user.
  */
+/**
+ * Evaluate and process Canonical 10-Rank Qualifications & One-Time Rank Rewards for a user.
+ * Streams: One-time Rank Reward credits user.rank_reward_wallet & updates rank/rankid.
+ */
 if (!function_exists('evaluateUserVIPQualifications')) {
 function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
     global $pdo;
@@ -2835,7 +2839,22 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
         (:user_id, :vip_level, :left_ids, :right_ids, :left_biz, :right_biz, :weaker_biz, :reward_amt, 'CREDITED')
     ");
 
-    $updWallet = $db->prepare("UPDATE user SET amount = amount + :amt, vip_club_wallet = vip_club_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt WHERE userid = :uid");
+    $updRankWallet = $db->prepare("
+        UPDATE user
+        SET amount = amount + :amt,
+            rank_reward_wallet = rank_reward_wallet + :amt,
+            user_growth_wallet = user_growth_wallet + :amt,
+            `rank` = :rank_name,
+            rankid = :rank_id
+        WHERE userid = :uid
+    ");
+
+    $updRankOnly = $db->prepare("
+        UPDATE user
+        SET `rank` = :rank_name,
+            rankid = :rank_id
+        WHERE userid = :uid AND (rankid < :rank_id OR rankid IS NULL)
+    ");
 
     $insTxn = $db->prepare("
         INSERT INTO tbl_transaction
@@ -2848,9 +2867,12 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
 
     $newlyQualified = [];
     $allQualified = [];
+    $highestQualifiedLevel = 0;
+    $highestRankName = '';
 
     foreach ($configs as $c) {
         $lvl = (int)$c['level_id'];
+        $rankName = trim($c['name'] ?? ('Rank ' . $lvl));
         $reqLeftIds  = (int)$c['req_left_ids'];
         $reqRightIds = (int)$c['req_right_ids'];
         $reqLeftBiz  = (float)$c['req_left_business'];
@@ -2866,10 +2888,14 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
 
         if ($isQualified) {
             $allQualified[] = $lvl;
+            if ($lvl > $highestQualifiedLevel) {
+                $highestQualifiedLevel = $lvl;
+                $highestRankName = $rankName;
+            }
 
             $chkQual->execute([':uid' => $user_id, ':lvl' => $lvl]);
             if ($chkQual->fetchColumn() == 0) {
-                // Idempotent first-time qualification & reward distribution
+                // Idempotent first-time qualification & rank reward distribution
                 $insQual->execute([
                     ':user_id'    => $user_id,
                     ':vip_level'  => $lvl,
@@ -2882,20 +2908,41 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
                 ]);
 
                 if ($rewardAmt > 0) {
-                    $updWallet->execute([':amt' => $rewardAmt, ':uid' => $user_id]);
-                    $subject = "VIP Club Level {$lvl} Reward ($ " . number_format($rewardAmt, 2) . ")";
+                    $updRankWallet->execute([
+                        ':amt'       => $rewardAmt,
+                        ':rank_name' => $rankName,
+                        ':rank_id'   => $lvl,
+                        ':uid'       => $user_id
+                    ]);
+                    $subject = "Rank Reward - {$rankName} ($ " . number_format($rewardAmt, 2) . ")";
                     $insTxn->execute([':user_id' => $user_id, ':subject' => $subject, ':amount' => $rewardAmt]);
+                } else {
+                    $updRankOnly->execute([
+                        ':rank_name' => $rankName,
+                        ':rank_id'   => $lvl,
+                        ':uid'       => $user_id
+                    ]);
                 }
 
-                $newlyQualified[] = ['level' => $lvl, 'reward' => $rewardAmt];
+                $newlyQualified[] = ['level' => $lvl, 'rank_name' => $rankName, 'reward' => $rewardAmt];
             }
         }
+    }
+
+    if ($highestQualifiedLevel > 0) {
+        $updRankOnly->execute([
+            ':rank_name' => $highestRankName,
+            ':rank_id'   => $highestQualifiedLevel,
+            ':uid'       => $user_id
+        ]);
     }
 
     return [
         'leg_details'     => $legDetails,
         'newly_qualified' => $newlyQualified,
-        'all_qualified'   => $allQualified
+        'all_qualified'   => $allQualified,
+        'current_rank'    => $highestRankName,
+        'current_rank_id' => $highestQualifiedLevel
     ];
 }
 }
@@ -3223,7 +3270,7 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
 
     try {
         $sql = "
-            SELECT 
+            SELECT
                 p.id,
                 p.transfer_ref,
                 COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
@@ -3284,7 +3331,7 @@ function getUserP2PReceivedReport($userid, $filterType = 'today', $fromDate = nu
         }
 
         $sql = "
-            SELECT 
+            SELECT
                 p.id,
                 p.transfer_ref,
                 COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
@@ -3371,7 +3418,7 @@ function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pd
     $cleanUid = (stripos($userid, 'AN') === 0) ? trim(substr($userid, 2)) : $userid;
     $anUid    = (stripos($userid, 'AN') === 0) ? $userid : 'AN' . $userid;
     $downlineIds = getUserNetworkDownlineIds($userid, $db);
-    
+
     // Ensure all target IDs include both raw, clean, and AN-prefixed representations
     $expandedTargetIds = [];
     foreach (array_merge([$userid, $cleanUid, $anUid], $downlineIds) as $rawId) {
@@ -3392,21 +3439,21 @@ function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pd
     // Build SQL for investments (Self + Downline Network)
     $inPlaceholders = implode(',', array_fill(0, count($allTargetUserIds), '?'));
     $sqlInv = "
-        SELECT 
-            r.id, 
+        SELECT
+            r.id,
             r.user_id,
             u.name as investor_name,
             u.sponserid as investor_sponsor,
-            r.package_code, 
-            r.real_fund_usd, 
-            r.bonus_amount_usd, 
-            r.lock_period_months, 
-            r.maturity_date, 
-            r.deduction_percent_snapshot, 
-            r.capital_withdrawal_status, 
-            r.package, 
-            r.date, 
-            r.time 
+            r.package_code,
+            r.real_fund_usd,
+            r.bonus_amount_usd,
+            r.lock_period_months,
+            r.maturity_date,
+            r.deduction_percent_snapshot,
+            r.capital_withdrawal_status,
+            r.package,
+            r.date,
+            r.time
         FROM tbl_roi_one r
         LEFT JOIN user u ON u.userid = r.user_id
         WHERE r.user_id IN ($inPlaceholders)
@@ -3440,17 +3487,17 @@ function getUserFundStatementData($userid, $fromDate = null, $toDate = null, $pd
     // Build SQL for unlock access debit history (Self + Downline Network)
     $sqlDeb = "
         SELECT DISTINCT
-            t.id, 
+            t.id,
             t.user_id,
             u.name as investor_name,
-            t.amount, 
-            t.subject, 
-            t.created_date, 
-            t.time 
+            t.amount,
+            t.subject,
+            t.created_date,
+            t.time
         FROM tbl_transaction t
         LEFT JOIN user u ON u.userid = t.user_id
         LEFT JOIN tbl_account_activation a ON a.activator_user_id = t.user_id AND DATE(a.created_at) = DATE(t.created_date)
-        WHERE (t.user_id IN ($inPlaceholders) OR a.target_user_id IN ($inPlaceholders)) 
+        WHERE (t.user_id IN ($inPlaceholders) OR a.target_user_id IN ($inPlaceholders))
           AND (t.subject LIKE '%Unlock Access%' OR t.subject LIKE '%Activation%')
     ";
     $paramsDeb = array_merge(array_values($allTargetUserIds), array_values($allTargetUserIds));
@@ -3952,12 +3999,12 @@ if (!function_exists('processAnantaPackageInvestment')) {
         try {
             // Idempotency / duplicate submission protection: prevent duplicate investment and crediting bonus twice
             $dupStmt = $db->prepare("
-                SELECT id, real_fund_usd, bonus_amount_usd, maturity_date 
-                FROM tbl_roi_one 
-                WHERE user_id = :uid 
-                  AND package_code = :pkg 
-                  AND ABS(real_fund_usd - :amt) < 0.01 
-                  AND date = :cdate 
+                SELECT id, real_fund_usd, bonus_amount_usd, maturity_date
+                FROM tbl_roi_one
+                WHERE user_id = :uid
+                  AND package_code = :pkg
+                  AND ABS(real_fund_usd - :amt) < 0.01
+                  AND date = :cdate
                   AND TIME_TO_SEC(TIMEDIFF(:ctime, time)) < 15
                 LIMIT 1
             ");
@@ -4828,7 +4875,7 @@ if (!function_exists('getUserAccountActivationStatus')) {
         }
 
         $stmt = $db->prepare("
-            SELECT userid, name, active, activation_start_date, activation_expiry_date 
+            SELECT userid, name, active, activation_start_date, activation_expiry_date
             FROM user WHERE userid = :uid
         ");
         $stmt->execute([':uid' => $userid]);
@@ -4933,7 +4980,7 @@ if (!function_exists('searchUserForActivation')) {
         $cleanId = preg_replace('/^(AN|ANANTA)/i', '', $targetUserid);
 
         $stmt = $db->prepare("
-            SELECT userid, name, active, activation_start_date, activation_expiry_date 
+            SELECT userid, name, active, activation_start_date, activation_expiry_date
             FROM user WHERE userid = :uid OR userid = :clean
         ");
         $stmt->execute([':uid' => $targetUserid, ':clean' => $cleanId]);
@@ -5047,19 +5094,19 @@ if (!function_exists('processAccountActivation')) {
 
             // 6. Deduct $11 from activator wallet (updating all matching wallet fields safely)
             $db->prepare("
-                UPDATE user 
+                UPDATE user
                 SET amount = GREATEST(0, amount - :amt),
                     deposite_wallet = GREATEST(0, deposite_wallet - :amt),
-                    pin_wallet = GREATEST(0, pin_wallet - :amt) 
+                    pin_wallet = GREATEST(0, pin_wallet - :amt)
                 WHERE userid = :uid
             ")->execute([':amt' => $activationAmountUSD, ':uid' => $activatorId]);
 
             // 7. Update target user active status & dates
             $db->prepare("
-                UPDATE user 
-                SET active = '1', 
-                    activation_start_date = :start_dt, 
-                    activation_expiry_date = :exp_dt 
+                UPDATE user
+                SET active = '1',
+                    activation_start_date = :start_dt,
+                    activation_expiry_date = :exp_dt
                 WHERE userid = :uid
             ")->execute([
                 ':start_dt' => $startDtStr,
@@ -5072,7 +5119,7 @@ if (!function_exists('processAccountActivation')) {
 
             // 9. Insert into tbl_account_activation
             $insAct = $db->prepare("
-                INSERT INTO tbl_account_activation 
+                INSERT INTO tbl_account_activation
                 (transaction_id, activator_user_id, target_user_id, activation_type, amount_usd, amount_inr, activation_start_date, activation_expiry_date, status, created_at)
                 VALUES (:txnid, :activator, :target, :type, :usd, :inr, :start_dt, :exp_dt, 'ACTIVE', NOW())
             ");
@@ -5090,7 +5137,7 @@ if (!function_exists('processAccountActivation')) {
             // 10. Record financial transaction log in tbl_transaction
             $subDesc = "Unlock Access Fee ($11) - " . ($isSelf ? "Self Account Activation" : "Activated User {$target['name']} ({$targetId})");
             $insTxn = $db->prepare("
-                INSERT INTO tbl_transaction 
+                INSERT INTO tbl_transaction
                 (user_id, amount, act_amount, type, subject, status, created_date, time)
                 VALUES (:uid, :amt, :act_amt, 'Debit', :sub, '1', :cdate, :ctime)
             ");
@@ -5181,8 +5228,8 @@ if (!function_exists('getMyActivationHistory')) {
 
         if ($hasFilter) {
             $sql = "
-                SELECT 
-                    a.*, 
+                SELECT
+                    a.*,
                     u.name as target_name
                 FROM tbl_account_activation a
                 LEFT JOIN user u ON u.userid = a.target_user_id
@@ -5198,8 +5245,8 @@ if (!function_exists('getMyActivationHistory')) {
             ]);
         } else {
             $sql = "
-                SELECT 
-                    a.*, 
+                SELECT
+                    a.*,
                     u.name as target_name
                 FROM tbl_account_activation a
                 LEFT JOIN user u ON u.userid = a.target_user_id
@@ -5225,8 +5272,8 @@ if (!function_exists('getOtherUserActivationHistory')) {
 
         if ($hasFilter) {
             $sql = "
-                SELECT 
-                    a.*, 
+                SELECT
+                    a.*,
                     u.name as target_name
                 FROM tbl_account_activation a
                 LEFT JOIN user u ON u.userid = a.target_user_id
@@ -5243,8 +5290,8 @@ if (!function_exists('getOtherUserActivationHistory')) {
             ]);
         } else {
             $sql = "
-                SELECT 
-                    a.*, 
+                SELECT
+                    a.*,
                     u.name as target_name
                 FROM tbl_account_activation a
                 LEFT JOIN user u ON u.userid = a.target_user_id
@@ -5298,7 +5345,7 @@ if (!function_exists('getAdminActivationHistory')) {
 
         $whereSql = implode(" AND ", $where);
         $sql = "
-            SELECT 
+            SELECT
                 a.*,
                 u1.name as activator_name,
                 u2.name as target_name
@@ -5377,7 +5424,7 @@ if (!function_exists('getUserMainWalletTransactions')) {
         $whereSql = implode(' AND ', $where);
 
         $sql = "
-            SELECT 
+            SELECT
                 id,
                 user_id,
                 amount,
@@ -5896,15 +5943,15 @@ if (!function_exists('sendTransactionKeyOTP')) {
                                     <td style="padding: 35px 30px;">
                                         <h2 style="color: #0f172a; margin: 0 0 10px; font-size: 20px; font-weight: 800;">Hello, ' . htmlspecialchars($name) . '!</h2>
                                         <p style="color: #475569; margin: 0 0 24px; font-size: 14.5px; line-height: 1.6;">Your OTP for changing your Transaction Key is:</p>
-                                        
+
                                         <div style="text-align: center; margin: 30px 0;">
                                             <span style="font-size: 34px; font-weight: 800; font-family: monospace; letter-spacing: 8px; color: #0284c7; background: #f0f9ff; padding: 14px 28px; border-radius: 14px; border: 1.5px solid #bae6fd; display: inline-block;">' . $otp . '</span>
                                         </div>
-                                        
+
                                         <div style="background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 28px;">
                                             <p style="color: #991b1b; margin: 0; font-size: 13px; font-weight: 600;">⏱️ This OTP is valid for 10 minutes and can be used only once. If you did not request this Transaction Key change, please ignore this email.</p>
                                         </div>
-                                        
+
                                         <p style="color: #64748b; font-size: 13px; margin: 0;">Regards,<br><strong>ANANTA Security</strong><br>Ananta Multi Trade Private Limited</p>
                                     </td>
                                 </tr>
@@ -6122,26 +6169,26 @@ if (!function_exists('getUserNotifications')) {
         try {
             // Fetch direct user notifications AND global/targeted admin system broadcasts
             $sql = "
-                SELECT 
-                    n.id, 
-                    n.type, 
-                    n.title, 
-                    n.message, 
-                    n.ref_id, 
-                    n.is_read, 
+                SELECT
+                    n.id,
+                    n.type,
+                    n.title,
+                    n.message,
+                    n.ref_id,
+                    n.is_read,
                     n.created_at
                 FROM tbl_user_notifications n
                 WHERE n.user_id = :uid OR n.user_id = :clean OR n.user_id = :an
 
                 UNION ALL
 
-                SELECT 
-                    (1000000 + s.id) as id, 
-                    'ADMIN' as type, 
-                    s.title, 
-                    s.message, 
-                    s.id as ref_id, 
-                    s.is_read as is_read, 
+                SELECT
+                    (1000000 + s.id) as id,
+                    'ADMIN' as type,
+                    s.title,
+                    s.message,
+                    s.id as ref_id,
+                    s.is_read as is_read,
                     s.created_at
                 FROM tbl_system_notifications s
                 WHERE s.target_type = 'GLOBAL' OR (s.target_type = 'USER' AND (s.target_user_id = :uid_target OR s.target_user_id = :clean_target OR s.target_user_id = :an_target))

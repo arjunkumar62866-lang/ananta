@@ -225,13 +225,13 @@ table.dataTable.no-footer {
                                 <i class="fa fa-trophy"></i>
                             </div>
                             <div>
-                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">VIP Club & Reward Portal</h3>
-                                <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">Track your binary network progression, unlock one-time VIP rewards & monthly VIP club income.</p>
+                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">10-Level Rank Reward & VIP Club Portal</h3>
+                                <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">Track your binary network progression, unlock one-time Rank Rewards, monthly VIP Club income & Company Turnover share.</p>
                             </div>
                         </div>
                         <div>
                             <span class="badge bg-warning text-dark fs-6 px-3 py-2 fw-extrabold shadow-sm" id="userVipBadge">
-                                Current: VIP Level 0
+                                Current Rank: None
                             </span>
                         </div>
                     </div>
@@ -241,8 +241,19 @@ table.dataTable.no-footer {
                 <div class="row g-3 mb-4">
                     <div class="col-xl-3 col-sm-6">
                         <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                                <i class="fa fa-trophy"></i>
+                            </div>
+                            <div>
+                                <span class="text-muted fw-bold d-block" style="font-size: 12px;">RANK REWARD WALLET</span>
+                                <h4 class="mb-0 fw-extrabold" id="statRankRewardWallet" style="color: #10b981;"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-sm-6">
+                        <div class="stat-card">
                             <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-                                <i class="fa fa-wallet"></i>
+                                <i class="fa fa-star"></i>
                             </div>
                             <div>
                                 <span class="text-muted fw-bold d-block" style="font-size: 12px;">VIP CLUB WALLET</span>
@@ -252,34 +263,23 @@ table.dataTable.no-footer {
                     </div>
                     <div class="col-xl-3 col-sm-6">
                         <div class="stat-card">
-                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
-                                <i class="fa fa-gift"></i>
+                            <div class="stat-icon" style="background: rgba(147, 51, 234, 0.1); color: #9333ea;">
+                                <i class="fa fa-pie-chart"></i>
                             </div>
                             <div>
-                                <span class="text-muted fw-bold d-block" style="font-size: 12px;">TOTAL REWARDS EARNED</span>
-                                <h4 class="mb-0 fw-extrabold" id="statRewardsEarned" style="color: #10b981;"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</h4>
+                                <span class="text-muted fw-bold d-block" style="font-size: 12px;">TURNOVER SHARE WALLET</span>
+                                <h4 class="mb-0 fw-extrabold" id="statTurnoverWallet" style="color: #9333ea;"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</h4>
                             </div>
                         </div>
                     </div>
                     <div class="col-xl-3 col-sm-6">
                         <div class="stat-card">
                             <div class="stat-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7;">
-                                <i class="fa fa-balance-scale"></i>
-                            </div>
-                            <div>
-                                <span class="text-muted fw-bold d-block" style="font-size: 12px;">WEAKER LEG BUSINESS</span>
-                                <h4 class="mb-0 fw-extrabold" id="statWeakerBiz" style="color: #0284c7;"><?php echo getCurrencySymbol($selectedCurrency); ?> 0.00</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-sm-6">
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: rgba(147, 51, 234, 0.1); color: #9333ea;">
                                 <i class="fa fa-arrow-circle-right"></i>
                             </div>
                             <div>
-                                <span class="text-muted fw-bold d-block" style="font-size: 12px;">NEXT TARGET LEVEL</span>
-                                <h4 class="mb-0 fw-extrabold" id="statNextLevel" style="color: #9333ea;">VIP Level 1</h4>
+                                <span class="text-muted fw-bold d-block" style="font-size: 12px;">NEXT TARGET RANK</span>
+                                <h4 class="mb-0 fw-extrabold" id="statNextLevel" style="color: #0284c7;">PRIME</h4>
                             </div>
                         </div>
                     </div>
@@ -469,15 +469,16 @@ table.dataTable.no-footer {
                     let leg = res.data.leg_details;
                     let sym = (res.currency && res.currency.symbol) ? res.currency.symbol : activeSymbol;
 
-                    $('#userVipBadge').text('Current: VIP Level ' + u.highest_level);
-                    $('#statVipWallet').text(u.formatted_vip_club_wallet || (sym + ' ' + parseFloat(u.display_vip_club_wallet || u.vip_club_wallet).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
-                    $('#statRewardsEarned').text(res.data.formatted_total_rewards_earned || (sym + ' ' + parseFloat(res.data.display_total_rewards_earned || res.data.total_rewards_earned).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
-                    $('#statWeakerBiz').text(leg.formatted_weaker_leg_business || (sym + ' ' + parseFloat(leg.display_weaker_leg_business || leg.weaker_leg_business_usd).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+                    let rankDisplay = (u.rank && u.rank !== 'None') ? u.rank : (u.highest_level > 0 ? ('Level ' + u.highest_level) : 'No Rank');
+                    $('#userVipBadge').text('Current Rank: ' + rankDisplay);
+                    $('#statRankRewardWallet').text(u.formatted_rank_reward_wallet || (sym + ' ' + parseFloat(u.display_rank_reward_wallet || u.rank_reward_wallet || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+                    $('#statVipWallet').text(u.formatted_vip_club_wallet || (sym + ' ' + parseFloat(u.display_vip_club_wallet || u.vip_club_wallet || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+                    $('#statTurnoverWallet').text(u.formatted_company_turnover_wallet || (sym + ' ' + parseFloat(u.display_company_turnover_wallet || u.company_turnover_wallet || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
 
                     if (res.data.next_level) {
-                        $('#statNextLevel').text('VIP Level ' + res.data.next_level.level_id);
+                        $('#statNextLevel').text(res.data.next_level.name || ('Level ' + res.data.next_level.level_id));
                     } else {
-                        $('#statNextLevel').text('MAX LEVEL ACHIEVED!');
+                        $('#statNextLevel').text('ANANT (MAX)');
                     }
 
                     // Leg Progress
@@ -500,22 +501,17 @@ table.dataTable.no-footer {
                         let isAchieved = achievedLevels.has(parseInt(c.level_id));
                         let badgeHtml = isAchieved ? '<span class="badge bg-success"><i class="fa fa-check me-1"></i> Achieved</span>' : '<span class="badge bg-secondary">Pending</span>';
 
-                        // Display business requirement preserving Crore denomination if >= 10,000,000 in nominal currency
                         let reqVal = (c.display_req_left_business !== undefined) ? parseFloat(c.display_req_left_business) : parseFloat(c.req_left_business);
-                        let bizText = (reqVal >= 10000000) 
-                            ? (sym + ' ' + (reqVal / 10000000).toFixed(2) + ' Crore') 
-                            : (c.formatted_req_left_business || (sym + ' ' + reqVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+                        let bizText = (c.formatted_req_left_business || (sym + ' ' + reqVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
 
                         let rptVal = (c.display_monthly_repeat_business !== undefined) ? parseFloat(c.display_monthly_repeat_business) : parseFloat(c.monthly_repeat_business);
-                        let rptText = (rptVal >= 10000000) 
-                            ? (sym + ' ' + (rptVal / 10000000).toFixed(2) + ' Crore') 
-                            : (c.formatted_monthly_repeat_business || (sym + ' ' + rptVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
+                        let rptText = (c.formatted_monthly_repeat_business || (sym + ' ' + rptVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
 
                         let rwText = c.formatted_reward_amount || (sym + ' ' + parseFloat(c.display_reward_amount || c.reward_amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
                         let isTurnover = parseInt(c.has_turnover_share) === 1;
 
                         roadmapRows += `<tr class="${isAchieved ? 'table-success' : ''}">
-                            <td class="fw-bold text-primary">Level ${c.level_id}</td>
+                            <td class="fw-bold text-primary">Level ${c.level_id} (${c.name})</td>
                             <td>${c.req_left_ids} : ${c.req_right_ids}</td>
                             <td>${bizText} : ${bizText}</td>
                             <td class="fw-bold text-warning">${rwText}</td>
@@ -531,9 +527,10 @@ table.dataTable.no-footer {
                     res.data.qualifications.forEach(q => {
                         let qWkBizFmt = q.formatted_weaker_leg_business || (sym + ' ' + parseFloat(q.display_weaker_leg_business || q.weaker_leg_business).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
                         let qRwFmt = q.formatted_reward_amount || (sym + ' ' + parseFloat(q.display_reward_amount || q.reward_amount).toFixed(2));
+                        let rankLabel = q.rank_name ? (q.rank_name + ' (Lvl ' + q.vip_level + ')') : ('VIP Level ' + q.vip_level);
 
                         userQualsTable.row.add([
-                            '<span class="badge bg-warning text-dark fw-bold">VIP Level ' + q.vip_level + '</span>',
+                            '<span class="badge bg-warning text-dark fw-bold">' + rankLabel + '</span>',
                             qWkBizFmt,
                             '<span class="text-success fw-bold">' + qRwFmt + '</span>',
                             '<span class="badge bg-success">' + q.reward_status + '</span>',
@@ -549,10 +546,11 @@ table.dataTable.no-footer {
                         let mWkPayFmt = m.formatted_weaker_leg_payout || (sym + ' ' + parseFloat(m.display_weaker_leg_payout || m.weaker_leg_payout).toFixed(2));
                         let mToPayFmt = m.formatted_turnover_payout || (sym + ' ' + parseFloat(m.display_turnover_payout || m.turnover_payout).toFixed(2));
                         let mTotPayFmt = m.formatted_total_payout || (sym + ' ' + parseFloat(m.display_total_payout || m.total_payout).toFixed(2));
+                        let rankLabel = m.rank_name ? (m.rank_name + ' (Lvl ' + m.vip_level + ')') : ('VIP Level ' + m.vip_level);
 
                         userHistoryTable.row.add([
                             '<span class="badge bg-light text-dark border">' + m.closing_month + '</span>',
-                            '<span class="badge bg-warning text-dark fw-bold">VIP Level ' + m.vip_level + '</span>',
+                            '<span class="badge bg-warning text-dark fw-bold">' + rankLabel + '</span>',
                             mWkBizFmt,
                             '<span class="text-info fw-bold">' + mWkPayFmt + '</span>',
                             '<span class="text-purple fw-bold">' + mToPayFmt + '</span>',

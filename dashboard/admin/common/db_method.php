@@ -137,7 +137,7 @@ if (!function_exists('cleanupGlobalTreeDuplicates')) {
 }
 }
 
-require_once 'common/connection.php'; 
+require_once 'common/connection.php';
 
 /**
  * Global Income Eligibility Rule:
@@ -153,11 +153,11 @@ function isUserIncomeEligible($userid, $pdoConnection = null) {
 
     $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
     $stmt = $db->prepare("
-        SELECT u.userid, u.active, 
+        SELECT u.userid, u.active,
                COALESCE(SUM(r.package), 0) as total_pkg_inr,
                COALESCE(SUM(r.real_fund_usd), 0) as total_real_usd
         FROM user u
-        LEFT JOIN tbl_roi_one r ON r.user_id = u.userid 
+        LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
              AND (r.capital_withdrawal_status IS NULL OR r.capital_withdrawal_status != 'WITHDRAWN')
              AND r.status = '0'
         WHERE u.userid = :uid OR u.userid = :clean_uid
@@ -198,7 +198,7 @@ if (!function_exists('newtime')) {
 }
 
 if (!function_exists('getHomeSettings')) {
-    function getHomeSettings($pdo) 
+    function getHomeSettings($pdo)
     {
         $sql = "SELECT * FROM tbl_homest LIMIT 1";
     $stmt = $pdo->prepare($sql);
@@ -236,7 +236,7 @@ if (!function_exists('loginAdmin')) {
 
 function loginAdmin($auserid, $password, $pdo)
 {
-    
+
 
     // Optimized query: only fetch required columns, use LIMIT 1
     $stmt = $pdo->prepare("
@@ -272,14 +272,14 @@ if (!function_exists('registerUser')) {
 
 function registerUser($referrer_id, $name, $email, $mobile, $password, $terms_accepted, $pdo)
 {
-    
+
     if (empty($name) || empty($email) || empty($mobile) || empty($password)) {
         return [
             'status' => false,
             'message' => 'All fields are required!'
         ];
     }
-  
+
     if (!$terms_accepted) {
         return [
             'status' => false,
@@ -332,12 +332,12 @@ if (!function_exists('updatenonworkwallet')) {
     function updatenonworkwallet($sponsorcode, $newamount,$pdo)
     {
         $sql = "UPDATE user SET amount = amount + :newamount, total_inc=total_inc+:totalinc, user_growth_wallet = user_growth_wallet + :newamount WHERE userid = :sponsorcode";
-        
+
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':newamount', $newamount, PDO::PARAM_STR);
         $stmt->bindParam(':totalinc', $newamount, PDO::PARAM_STR);
         $stmt->bindParam(':sponsorcode', $sponsorcode, PDO::PARAM_STR);
-        
+
         if ($stmt->execute()) {
             // Update successful
             return true;
@@ -350,7 +350,7 @@ if (!function_exists('updatenonworkwallet')) {
 
 
 if (!function_exists('insertSponsor')) {
-    function insertSponsor($pdo, $sponsorId, $referralId, $createdDate) 
+    function insertSponsor($pdo, $sponsorId, $referralId, $createdDate)
     {
         $sql = "INSERT INTO tbl_sponsor (sponsor_id, referral_id, created_date) VALUES (?, ?, ?)";
         $stmt = $pdo->prepare($sql);
@@ -359,7 +359,7 @@ if (!function_exists('insertSponsor')) {
 }
 
 if (!function_exists('insertUser')) {
-    function insertUser($pdo, $data) 
+    function insertUser($pdo, $data)
     {
         $sql = "INSERT INTO `user` (
             `userid`, `name`, `mobile`, `email`, `pan`, `pass`, `txn_pass`, `sponserid`, `sponsername`, `underuserid`,
@@ -391,7 +391,7 @@ if (!function_exists('insertKYC')) {
 }
 
 if (!function_exists('insertUserLevel')) {
-    function insertUserLevel($pdo, $sponsorId, $userId, $level) 
+    function insertUserLevel($pdo, $sponsorId, $userId, $level)
     {
         $sql = "INSERT INTO user_level (sponsorid, downid, level) VALUES (?, ?, ?)";
         $stmt = $pdo->prepare($sql);
@@ -453,7 +453,7 @@ if (!function_exists('getuserdatabysponserid')) {
 
 
 function getuserdatabysponserid($userid)
-{ 
+{
     global $pdo;
     $sql = "SELECT * FROM user WHERE userid = :userid";
     $stmt = $pdo->prepare($sql);
@@ -484,7 +484,7 @@ function getuserdatabysponserid($userid)
             "total_inc" => $rowuser["total_inc"]
         ];
 
-        
+
     }
 
     return null;
@@ -518,8 +518,8 @@ function getmydirectactiveright($sponsorId)
         SELECT COUNT(DISTINCT u.userid) AS total
         FROM user u
         INNER JOIN (
-            SELECT downline_id 
-            FROM tbl_userlevel_b 
+            SELECT downline_id
+            FROM tbl_userlevel_b
             WHERE sponser_id = :sponsor_id
         ) d ON d.downline_id = u.userid
         WHERE u.active = 1
@@ -541,8 +541,8 @@ function getmydirectactiveleft($sponsorId)
         SELECT COUNT(DISTINCT u.userid) AS total
         FROM user u
         INNER JOIN (
-            SELECT downline_id 
-            FROM tbl_userlevel_a 
+            SELECT downline_id
+            FROM tbl_userlevel_a
             WHERE sponser_id = :sponsor_id
         ) d ON d.downline_id = u.userid
         WHERE u.active = 1
@@ -560,7 +560,7 @@ if (!function_exists('getmysponserid')) {
 
 function getmysponserid($userid)
 {
-    global $pdo; 
+    global $pdo;
     $sql = "SELECT sponsor_id FROM tbl_sponsor WHERE referral_id = :referral_id";
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':referral_id', $userid, PDO::PARAM_STR);
@@ -580,11 +580,11 @@ if (!function_exists('getmydirectactive')) {
 function getmydirectactive($direct)
 {
     global $pdo;
-    $sql = "SELECT COUNT(*) as alluser 
-            FROM user tbsign  
-            INNER JOIN tbl_sponsor tbspon 
-            ON tbspon.referral_id = tbsign.userid  
-            WHERE tbspon.sponsor_id = :sponsor_id 
+    $sql = "SELECT COUNT(*) as alluser
+            FROM user tbsign
+            INNER JOIN tbl_sponsor tbspon
+            ON tbspon.referral_id = tbsign.userid
+            WHERE tbspon.sponsor_id = :sponsor_id
             AND tbsign.active = '1'";
 
     $stmt = $pdo->prepare($sql);
@@ -605,7 +605,7 @@ function insert_userlevel($sponserid, $downlineid, $level)
 {
     global $pdo;
 
-    $sql = "INSERT INTO tbl_userlevel (sponser_id, downline_id, level, date) 
+    $sql = "INSERT INTO tbl_userlevel (sponser_id, downline_id, level, date)
             VALUES (:sponser_id, :downline_id, :level, CURDATE())";
 
     $stmt = $pdo->prepare($sql);
@@ -620,8 +620,8 @@ if (!function_exists('incometotalnew')) {
 
 function incometotalnew($pdo, $table, $subject)
 {
-    $sql = "SELECT SUM(amount) AS totalamount 
-            FROM {$table} 
+    $sql = "SELECT SUM(amount) AS totalamount
+            FROM {$table}
             WHERE subject LIKE :subject";
 
     $stmt = $pdo->prepare($sql);
@@ -645,9 +645,9 @@ function incometotalnewdate($date, $table, $arg3, $arg4 = null)
     if ($arg4 === null) {
         // 3 arguments passed: ($date, $table, $subject)
         $subject = $arg3;
-        $sql = "SELECT SUM(amount) AS totalamount 
-                FROM {$table} 
-                WHERE created_date = :date 
+        $sql = "SELECT SUM(amount) AS totalamount
+                FROM {$table}
+                WHERE created_date = :date
                 AND subject LIKE :subject";
 
         $stmt = $pdo->prepare($sql);
@@ -659,10 +659,10 @@ function incometotalnewdate($date, $table, $arg3, $arg4 = null)
         // 4 arguments passed: ($date, $table, $userid, $subject)
         $userid = $arg3;
         $subject = $arg4;
-        $sql = "SELECT SUM(amount) AS totalamount 
-                FROM {$table} 
-                WHERE created_date = :date 
-                AND user_id = :userid 
+        $sql = "SELECT SUM(amount) AS totalamount
+                FROM {$table}
+                WHERE created_date = :date
+                AND user_id = :userid
                 AND subject LIKE :subject";
 
         $stmt = $pdo->prepare($sql);
@@ -683,8 +683,8 @@ if (!function_exists('getlevelDirectbusiness')) {
 function getlevelDirectbusiness($userid, $level)
 {
     global $pdo; // Assuming $pdo is your PDO connection
-    $sqlac = "SELECT SUM(total_package) as totalbusiness  
-              FROM user 
+    $sqlac = "SELECT SUM(total_package) as totalbusiness
+              FROM user
               WHERE sponserid = '$userid'";
 
     $resultac = $pdo->query($sqlac);
@@ -701,10 +701,10 @@ function getlevelDirectbusiness($userid, $level)
 // function getlevelbusiness_left($userid, $level)
 // {
 //     global $pdo; // Assuming $pdo is your PDO connection
-//     $sqlac = "SELECT SUM(total_package) as totalbusiness  
-//               FROM tbl_userlevel_a tblevel  
-//               INNER JOIN user tbuser ON tblevel.downline_id = tbuser.userid  
-//               WHERE tblevel.sponser_id = '$userid' 
+//     $sqlac = "SELECT SUM(total_package) as totalbusiness
+//               FROM tbl_userlevel_a tblevel
+//               INNER JOIN user tbuser ON tblevel.downline_id = tbuser.userid
+//               WHERE tblevel.sponser_id = '$userid'
 //               AND tblevel.level = '$level'";
 
 //     $resultac = $pdo->query($sqlac);
@@ -724,9 +724,9 @@ function getlevelbusiness_left($userid, $level)
     $sql = "
         SELECT SUM(u.total_package) AS leftbusiness
         FROM user u
-        INNER JOIN tbl_userlevel_a t 
+        INNER JOIN tbl_userlevel_a t
             ON t.downline_id = u.userid
-        WHERE t.sponser_id = :userid 
+        WHERE t.sponser_id = :userid
           AND t.level = :level
     ";
 
@@ -746,9 +746,9 @@ function getlevelbusiness_right($userid, $level)
     $sql = "
         SELECT SUM(u.total_package) AS rightbusiness
         FROM user u
-        INNER JOIN tbl_userlevel_b t 
+        INNER JOIN tbl_userlevel_b t
             ON t.downline_id = u.userid
-        WHERE t.sponser_id = :userid 
+        WHERE t.sponser_id = :userid
           AND t.level = :level
     ";
 
@@ -825,7 +825,7 @@ if (!function_exists('getnews')) {
 
 function getnews()
 {
-    global $pdo; 
+    global $pdo;
 
     $sqluser = "SELECT * FROM tbl_news WHERE id = '1'";
     $resultuser = $pdo->query($sqluser);
@@ -894,7 +894,7 @@ function getuserdatabyid($userid)
         return $userdata;
     }
 
-    return null; 
+    return null;
 }
 }
 if (!function_exists('paybinaycloing')) {
@@ -953,9 +953,9 @@ function insert_transction($table, $userid, $amount, $transaction_type, $time, $
     global $pdo; // Assuming $pdo is your PDO connection
 
     $stmt = $pdo->prepare("
-        INSERT INTO $table 
+        INSERT INTO $table
             (name, user_id, subject, type, amount, status, a_status, time, created_date, wallet_type, beneficiary_id, api_status, api_txn_no, api_bank_ref_no, api_message)
-        VALUES 
+        VALUES
             ('', :userid, :subject, :type, :amount, 1, 0, :time, CURDATE(), '', '', '', '', '', '')
     ");
 
@@ -1025,11 +1025,11 @@ function repurchasecheckpedningincome($userid, $day, $getdate)
     global $pdo; // Use PDO connection
 
     $stmt = $pdo->prepare("
-        SELECT SUM(weekly_earning) AS totalamount 
-        FROM tbl_repurchase_data 
+        SELECT SUM(weekly_earning) AS totalamount
+        FROM tbl_repurchase_data
         WHERE user_id = :userid AND status = '0'
     ");
-    
+
     $stmt->execute([':userid' => $userid]);
 
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -1049,8 +1049,8 @@ function repurchaseupdateuseramount($newamount, $sponsorcode)
     global $pdo; // Use your PDO connection variable
 
     $stmt = $pdo->prepare("
-        UPDATE user 
-        SET amount = amount + :newamount 
+        UPDATE user
+        SET amount = amount + :newamount
         WHERE userid = :sponsorcode
     ");
 
@@ -1069,8 +1069,8 @@ function repurchaseupdateuserincome($sponserid, $ytdate)
     global $pdo; // your PDO connection
 
     $stmt = $pdo->prepare("
-        UPDATE tbl_repurchase_data 
-        SET status = 1, paid_date = :ytdate 
+        UPDATE tbl_repurchase_data
+        SET status = 1, paid_date = :ytdate
         WHERE user_id = :sponserid
     ");
 
@@ -1145,7 +1145,7 @@ function repurchasepaybinaycloing()
                         // ✅ (Optional) Level income logic commented intentionally for clarity
                         // You can re-enable that loop here if you wish.
                     }
-                } 
+                }
                 else {
                     // ✅ If income < package
                     if (!empty($user_sponsor_code) && !empty($userfinalincome)) {
@@ -1157,7 +1157,7 @@ function repurchasepaybinaycloing()
                         repurchaseupdateuserincome($user_sponsor_code, $getdate);
                         insert_transction($user_sponsor_code, $userfinalincome, $messagenew, $time, $cdtype);
 
-                        
+
                     }
                 }
             }
@@ -1171,7 +1171,7 @@ function updatedatabysponserid1($userid, $transactionamounta, $transactionamount
 {
     global $pdo;
 
-    $sqluser = "UPDATE `user` 
+    $sqluser = "UPDATE `user`
                 SET `amount` = `amount` + :transactionamounta,
                     `profit_sharing_wallet` = `profit_sharing_wallet` + :transactionamounta,
                     `user_growth_wallet` = `user_growth_wallet` + :transactionamounta
@@ -1190,9 +1190,9 @@ function updatedatabysponserid($userid, $transactionamounta, $transactionamountb
 {
     global $pdo;
 
-    $sqluser = "UPDATE `user` 
-                SET `amount` = `amount` + :transactionamounta, 
-                    total_inc = total_inc + :transactionamountb 
+    $sqluser = "UPDATE `user`
+                SET `amount` = `amount` + :transactionamounta,
+                    total_inc = total_inc + :transactionamountb
                 WHERE userid = :userid";
 
     $stmt = $pdo->prepare($sqluser);
@@ -1284,17 +1284,17 @@ function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userl
 
             // Prepare statements for idempotency check and insertion
             $checkStmt = $pdo->prepare("
-                SELECT COUNT(*) FROM tbl_daily_levelinc 
-                WHERE source_investment_id = :source_id 
-                  AND closing_month = :closing_month 
-                  AND user_id = :recipient_id 
+                SELECT COUNT(*) FROM tbl_daily_levelinc
+                WHERE source_investment_id = :source_id
+                  AND closing_month = :closing_month
+                  AND user_id = :recipient_id
                   AND level_num = :level_num
             ");
 
             $insTxnStmt = $pdo->prepare("
-                INSERT INTO tbl_daily_levelinc 
+                INSERT INTO tbl_daily_levelinc
                     (name, user_id, source_investment_id, closing_month, level_num, subject, type, amount, status, a_status, time, created_date, wallet_type, beneficiary_id, api_status, api_txn_no, api_bank_ref_no, api_message)
-                VALUES 
+                VALUES
                     ('', :user_id, :source_id, :closing_month, :level_num, :subject, 'Credit', :amount, 1, 0, :time, CURDATE(), '', '', '', '', '', '')
             ");
 
@@ -1381,7 +1381,7 @@ function pay_roi_one_income($sponserid, $package, $roipercentage, $newid, $userl
 
                             if ($exists === 0) {
                                 $messagenew = "Profit Sharing Income on Level-{$level_num}.of Id ({$userid})";
-                                
+
                                 // Credit dedicated Profit Sharing Wallet
                                 updatedatabysponserid1($spcode1, $transactionamount, $transactionamount);
 
@@ -1437,7 +1437,7 @@ function manual_pay_roi_one_income($uid)
     $income = $row['pending_geninc'];
 
     // Update user
-    $sqluser = "UPDATE user 
+    $sqluser = "UPDATE user
                 SET amount = amount + pending_geninc,
                     total_inc = total_inc + pending_geninc,
                     pending_geninc = 0
@@ -1448,11 +1448,11 @@ function manual_pay_roi_one_income($uid)
     if ($stmt->execute([$uid])) {
 
         $insert = $pdo->prepare("
-            INSERT INTO tbl_transaction 
+            INSERT INTO tbl_transaction
                 (user_id, type, subject, amount, created_date, status)
-            VALUES 
-                (:user_id, 'Pending Generation Income', 
-                 'Pending Generation Income Payout', 
+            VALUES
+                (:user_id, 'Pending Generation Income',
+                 'Pending Generation Income Payout',
                  :amount, :date, '1')
         ");
 
@@ -1563,9 +1563,9 @@ function checkcloing($ytdate)
 {
     global $pdo;
     // Prepare SQL query with a placeholder
-    $sql = "SELECT COUNT(*) AS alluser 
-            FROM tbl_temp_data 
-            WHERE paid_date = :ytdate 
+    $sql = "SELECT COUNT(*) AS alluser
+            FROM tbl_temp_data
+            WHERE paid_date = :ytdate
               AND status = '1'";
 
     // Prepare the statement
@@ -1639,7 +1639,7 @@ function getQualifiedDirectCount($userid, $pdoConnection = null) {
     $stmt->bindValue(':sp4', (string)$cleanUid, PDO::PARAM_STR);
     $stmt->bindValue(':min_inv', $minInv);
     $stmt->execute();
-    
+
     return $stmt->rowCount();
 }
 }
@@ -1686,13 +1686,13 @@ function generateDirectBonusSchedule($investment_id, $source_user_id, $investmen
     }
 
     $total_bonus = round($investment_amount * (DIRECT_BONUS_PERCENT / 100.0), 2);
-    
+
     // Calculate monthly installment: exactly 0.6% per month (total 6% over 10 months) with rounding safety
     $base_installment = floor(($total_bonus / DIRECT_BONUS_MONTHS) * 100) / 100;
     $remainder = round($total_bonus - ($base_installment * DIRECT_BONUS_MONTHS), 2);
 
     $invDateObj = $investment_date ? new DateTime($investment_date) : new DateTime();
-    
+
     // Check if schedule already exists for this investment to prevent duplicates
     $checkStmt = $db->prepare("SELECT COUNT(*) FROM tbl_direct_bonus_schedule WHERE investment_id = :inv_id");
     $checkStmt->execute([':inv_id' => $investment_id]);
@@ -1842,9 +1842,9 @@ function getTotalDirectBonus($beneficiary_id, $pdoConnection = null) {
     $usdRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : (defined('DEFAULT_USD_TO_INR') ? DEFAULT_USD_TO_INR : 90.0);
     $stmtInv = $db->prepare("
         SELECT COALESCE(SUM(
-            CASE 
-                WHEN r.package > 0 THEN r.package 
-                ELSE r.real_fund_usd * :usd_rate 
+            CASE
+                WHEN r.package > 0 THEN r.package
+                ELSE r.real_fund_usd * :usd_rate
             END
         ), 0)
         FROM tbl_roi_one r
@@ -1951,7 +1951,7 @@ function processDirectBonusInstallments($closing_month, $closing_date = null, $p
     foreach ($pendingInstallments as $inst) {
         $benId = $inst['beneficiary_id'];
         $amount = (float)$inst['installment_amount'];
-        
+
         // Income Eligibility: Beneficiary must be active and have minimum $145 investment
         if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($benId, $db)) {
             continue; // Skip inactive or under-$145 user until they qualify
@@ -2007,7 +2007,7 @@ function getQualifiedDirectDetails($userid, $pdoConnection = null) {
 
     $cleanUid = preg_replace('/^(AN|ANANTA)/i', '', (string)$userid);
 
-    $sql = "SELECT 
+    $sql = "SELECT
                 u.userid,
                 u.name,
                 u.active as is_active,
@@ -2196,7 +2196,7 @@ function getMentorDirectContributions($mentor_id, $pdoConnection = null) {
     if (!$db || !$mentor_id) return [];
 
     $stmt = $db->prepare("
-        SELECT 
+        SELECT
             s.referral_id as direct_user_id,
             u.name as direct_user_name,
             u.active as is_active,
@@ -2728,7 +2728,8 @@ function triggerVIPQualificationsForAncestors($user_id, $pdoConnection = null) {
 }
 
 /**
- * Evaluate and process VIP Club Qualifications & One-Time Rewards for a user.
+ * Evaluate and process Canonical 10-Rank Qualifications & One-Time Rank Rewards for a user.
+ * Streams: One-time Rank Reward credits user.rank_reward_wallet & updates rank/rankid.
  */
 if (!function_exists('evaluateUserVIPQualifications')) {
 function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
@@ -2752,7 +2753,22 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
         (:user_id, :vip_level, :left_ids, :right_ids, :left_biz, :right_biz, :weaker_biz, :reward_amt, 'CREDITED')
     ");
 
-    $updWallet = $db->prepare("UPDATE user SET amount = amount + :amt, vip_club_wallet = vip_club_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt WHERE userid = :uid");
+    $updRankWallet = $db->prepare("
+        UPDATE user
+        SET amount = amount + :amt,
+            rank_reward_wallet = rank_reward_wallet + :amt,
+            user_growth_wallet = user_growth_wallet + :amt,
+            `rank` = :rank_name,
+            rankid = :rank_id
+        WHERE userid = :uid
+    ");
+
+    $updRankOnly = $db->prepare("
+        UPDATE user
+        SET `rank` = :rank_name,
+            rankid = :rank_id
+        WHERE userid = :uid AND (rankid < :rank_id OR rankid IS NULL)
+    ");
 
     $insTxn = $db->prepare("
         INSERT INTO tbl_transaction
@@ -2765,9 +2781,12 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
 
     $newlyQualified = [];
     $allQualified = [];
+    $highestQualifiedLevel = 0;
+    $highestRankName = '';
 
     foreach ($configs as $c) {
         $lvl = (int)$c['level_id'];
+        $rankName = trim($c['name'] ?? ('Rank ' . $lvl));
         $reqLeftIds  = (int)$c['req_left_ids'];
         $reqRightIds = (int)$c['req_right_ids'];
         $reqLeftBiz  = (float)$c['req_left_business'];
@@ -2783,10 +2802,14 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
 
         if ($isQualified) {
             $allQualified[] = $lvl;
+            if ($lvl > $highestQualifiedLevel) {
+                $highestQualifiedLevel = $lvl;
+                $highestRankName = $rankName;
+            }
 
             $chkQual->execute([':uid' => $user_id, ':lvl' => $lvl]);
             if ($chkQual->fetchColumn() == 0) {
-                // Idempotent first-time qualification & reward distribution
+                // Idempotent first-time qualification & rank reward distribution
                 $insQual->execute([
                     ':user_id'    => $user_id,
                     ':vip_level'  => $lvl,
@@ -2799,20 +2822,179 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
                 ]);
 
                 if ($rewardAmt > 0) {
-                    $updWallet->execute([':amt' => $rewardAmt, ':uid' => $user_id]);
-                    $subject = "VIP Club Level {$lvl} Reward ($ " . number_format($rewardAmt, 2) . ")";
+                    $updRankWallet->execute([
+                        ':amt'       => $rewardAmt,
+                        ':rank_name' => $rankName,
+                        ':rank_id'   => $lvl,
+                        ':uid'       => $user_id
+                    ]);
+                    $subject = "Rank Reward - {$rankName} ($ " . number_format($rewardAmt, 2) . ")";
                     $insTxn->execute([':user_id' => $user_id, ':subject' => $subject, ':amount' => $rewardAmt]);
+                } else {
+                    $updRankOnly->execute([
+                        ':rank_name' => $rankName,
+                        ':rank_id'   => $lvl,
+                        ':uid'       => $user_id
+                    ]);
                 }
 
-                $newlyQualified[] = ['level' => $lvl, 'reward' => $rewardAmt];
+                $newlyQualified[] = ['level' => $lvl, 'rank_name' => $rankName, 'reward' => $rewardAmt];
             }
         }
+    }
+
+    if ($highestQualifiedLevel > 0) {
+        $updRankOnly->execute([
+            ':rank_name' => $highestRankName,
+            ':rank_id'   => $highestQualifiedLevel,
+            ':uid'       => $user_id
+        ]);
     }
 
     return [
         'leg_details'     => $legDetails,
         'newly_qualified' => $newlyQualified,
-        'all_qualified'   => $allQualified
+        'all_qualified'   => $allQualified,
+        'current_rank'    => $highestRankName,
+        'current_rank_id' => $highestQualifiedLevel
+    ];
+}
+}
+
+/**
+ * Preview Monthly VIP Club Income & Company Turnover Share Payouts without financial mutations.
+ */
+if (!function_exists('previewVIPMonthlyIncome')) {
+function previewVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$closing_month) {
+        return ['status' => 'error', 'message' => 'Invalid parameters for preview.'];
+    }
+
+    $cDate = $closing_date ?: date('Y-m-d');
+    $closingDay = (int)date('d', strtotime($cDate));
+
+    // Base Company Monthly Turnover in USD ($1 = ₹90) for closing month
+    $stmtTurnover = $db->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one WHERE DATE_FORMAT(`date`, '%Y-%m') = :c_month");
+    $stmtTurnover->execute([':c_month' => $closing_month]);
+    $companyTurnoverInr = (float)$stmtTurnover->fetchColumn();
+    if ($companyTurnoverInr <= 0) {
+        $stmtTurnoverAll = $db->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one");
+        $companyTurnoverInr = (float)$stmtTurnoverAll->fetchColumn();
+    }
+    $companyTurnoverUsd = round($companyTurnoverInr / 90.0, 2);
+
+    // Fetch all users who qualified for any VIP / Rank level
+    $stmtQuals = $db->query("
+        SELECT q.user_id, MAX(q.vip_level) as highest_level
+        FROM tbl_vip_user_qualification q
+        GROUP BY q.user_id
+    ");
+    $qualUsers = $stmtQuals->fetchAll(PDO::FETCH_ASSOC);
+
+    $eligibleUsers = [];
+    $ineligibleUsers = [];
+    $totalVipPayout = 0.0;
+    $totalTurnoverPayout = 0.0;
+
+    $getConfig = $db->prepare("SELECT * FROM tbl_vip_level_config WHERE level_id = :lvl LIMIT 1");
+    $chkIdem = $db->prepare("SELECT COUNT(*) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND vip_level = :lvl AND closing_month = :c_month");
+    $stmtUser = $db->prepare("SELECT userid, name, active FROM user WHERE userid = :uid LIMIT 1");
+
+    foreach ($qualUsers as $u) {
+        $userId = $u['user_id'];
+        $highestLvl = (int)$u['highest_level'];
+
+        $stmtUser->execute([':uid' => $userId]);
+        $uInfo = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        $userName = $uInfo['name'] ?? $userId;
+
+        $getConfig->execute([':lvl' => $highestLvl]);
+        $c = $getConfig->fetch(PDO::FETCH_ASSOC);
+        if (!$c) continue;
+
+        $rankName = trim($c['name'] ?? ('Level ' . $highestLvl));
+
+        if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($userId, $db)) {
+            $ineligibleUsers[] = [
+                'user_id' => $userId,
+                'name' => $userName,
+                'rank' => $rankName,
+                'reason' => 'User ID is inactive or total active investment is below $145.'
+            ];
+            continue;
+        }
+
+        $legDetails = getBinaryLegDetails($userId, $db);
+        $weakerBizUsd = (float)$legDetails['weaker_leg_business_usd'];
+        $repeatReqUsd = (float)$c['monthly_repeat_business'];
+
+        if ($weakerBizUsd < $repeatReqUsd) {
+            $ineligibleUsers[] = [
+                'user_id' => $userId,
+                'name' => $userName,
+                'rank' => $rankName,
+                'weaker_leg_business' => $weakerBizUsd,
+                'repeat_required' => $repeatReqUsd,
+                'reason' => "Weaker-leg business ($" . number_format($weakerBizUsd, 2) . ") did not meet monthly repeat requirement ($" . number_format($repeatReqUsd, 2) . ")."
+            ];
+            continue;
+        }
+
+        $incomeRate = (float)$c['vip_income_rate'];
+        $weakerLegPayout = round($weakerBizUsd * ($incomeRate / 100.0), 2);
+
+        $hasTurnoverShare = ((int)$c['has_turnover_share'] === 1);
+        $turnoverRate = $hasTurnoverShare ? 0.50 : 0.00;
+        // Option B: Each qualified PEAK, APEX, ICON, ANANT user independently gets 0.5% of company turnover
+        $turnoverPayout = $hasTurnoverShare ? round($companyTurnoverUsd * 0.005, 2) : 0.00;
+
+        $totalPayout = round($weakerLegPayout + $turnoverPayout, 2);
+        if ($totalPayout <= 0) continue;
+
+        $chkIdem->execute([':uid' => $userId, ':lvl' => $highestLvl, ':c_month' => $closing_month]);
+        $alreadyClosed = ((int)$chkIdem->fetchColumn() > 0);
+
+        $eligibleUsers[] = [
+            'user_id'             => $userId,
+            'name'                => $userName,
+            'rank'                => $rankName,
+            'vip_level'           => $highestLvl,
+            'left_ids'            => $legDetails['left_ids_count'],
+            'right_ids'           => $legDetails['right_ids_count'],
+            'left_business'       => $legDetails['left_business_usd'],
+            'right_business'      => $legDetails['right_business_usd'],
+            'weaker_leg_business' => $weakerBizUsd,
+            'monthly_repeat_met'  => true,
+            'vip_income_rate'     => $incomeRate,
+            'vip_payout'          => $weakerLegPayout,
+            'company_turnover'    => $companyTurnoverUsd,
+            'turnover_rate'       => $turnoverRate,
+            'turnover_payout'     => $turnoverPayout,
+            'total_payout'        => $totalPayout,
+            'already_credited'    => $alreadyClosed
+        ];
+
+        if (!$alreadyClosed) {
+            $totalVipPayout += $weakerLegPayout;
+            $totalTurnoverPayout += $turnoverPayout;
+        }
+    }
+
+    return [
+        'status'                 => 'success',
+        'closing_month'          => $closing_month,
+        'closing_date'           => $cDate,
+        'closing_day'            => $closingDay,
+        'company_turnover_usd'   => $companyTurnoverUsd,
+        'eligible_users'         => $eligibleUsers,
+        'ineligible_users'       => $ineligibleUsers,
+        'eligible_count'         => count($eligibleUsers),
+        'ineligible_count'       => count($ineligibleUsers),
+        'total_vip_payout'       => round($totalVipPayout, 2),
+        'total_turnover_payout'  => round($totalTurnoverPayout, 2),
+        'total_aggregate_payout' => round($totalVipPayout + $totalTurnoverPayout, 2)
     ];
 }
 }
@@ -2820,6 +3002,7 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
 /**
  * Process Monthly VIP Club Income & Company Turnover Share Payouts during Monthly Closing.
  * Rule: VIP Monthly closing MUST occur on the 11th date of the month (unless explicitly bypassed via $skip_date_check).
+ * Streams: Weaker-leg income credits user.vip_club_wallet. Company turnover share credits user.company_turnover_wallet.
  */
 if (!function_exists('processVIPMonthlyIncome')) {
 function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConnection = null, $skip_date_check = false) {
@@ -2832,20 +3015,25 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
     $cDate = $closing_date ?: date('Y-m-d');
     $closingDay = (int)date('d', strtotime($cDate));
 
-    // Requirement #17 Rule: VIP Monthly closing is restricted to 11th date of the month
+    // Requirement: VIP Monthly closing is restricted to 11th date of the month
     if (!$skip_date_check && $closingDay !== 11) {
         return [
             'processed'      => 0,
             'total_paid'     => 0.0,
             'eligible_users' => 0,
             'status'         => 'blocked_non_11th_date',
-            'message'        => "VIP Club Monthly Income closing is strictly restricted to the 11th date of the month. Given date: {$cDate} (Day: {$closingDay})."
+            'message'        => "VIP Club & Company Turnover Monthly closing is strictly restricted to the 11th date of the month. Given date: {$cDate} (Day: {$closingDay})."
         ];
     }
 
-    // Total Company Monthly Turnover in USD ($1 = ₹90)
-    $stmtTurnover = $db->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one");
+    // Base Company Monthly Turnover in USD ($1 = ₹90) for closing month
+    $stmtTurnover = $db->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one WHERE DATE_FORMAT(`date`, '%Y-%m') = :c_month");
+    $stmtTurnover->execute([':c_month' => $closing_month]);
     $companyTurnoverInr = (float)$stmtTurnover->fetchColumn();
+    if ($companyTurnoverInr <= 0) {
+        $stmtTurnoverAll = $db->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one");
+        $companyTurnoverInr = (float)$stmtTurnoverAll->fetchColumn();
+    }
     $companyTurnoverUsd = round($companyTurnoverInr / 90.0, 2);
 
     // Fetch all users who qualified for VIP levels
@@ -2867,7 +3055,14 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
         (:user_id, :vip_level, :closing_month, :closing_date, :weaker_leg_business, :weaker_leg_rate, :weaker_leg_payout, :company_turnover, :turnover_rate, :turnover_payout, :total_payout, 'CREDITED', NOW(), :closing_id)
     ");
 
-    $updWallet = $db->prepare("UPDATE user SET amount = amount + :amt, vip_club_wallet = vip_club_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt WHERE userid = :uid");
+    $updWallets = $db->prepare("
+        UPDATE user
+        SET amount = amount + :total_amt,
+            vip_club_wallet = vip_club_wallet + :vip_amt,
+            company_turnover_wallet = company_turnover_wallet + :to_amt,
+            user_growth_wallet = user_growth_wallet + :total_amt
+        WHERE userid = :uid
+    ");
 
     $insTxn = $db->prepare("
         INSERT INTO tbl_transaction
@@ -2892,6 +3087,7 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
         $c = $getConfig->fetch(PDO::FETCH_ASSOC);
         if (!$c) continue;
 
+        $rankName = trim($c['name'] ?? ('Level ' . $highestLvl));
         $legDetails = getBinaryLegDetails($userId, $db);
         $weakerBizUsd = (float)$legDetails['weaker_leg_business_usd'];
         $repeatReqUsd = (float)$c['monthly_repeat_business'];
@@ -2901,13 +3097,14 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
             continue; // Weaker leg repeat condition not met
         }
 
-        // Weaker Leg Component Calculation
+        // Weaker Leg Component Calculation (credited to vip_club_wallet)
         $incomeRate = (float)$c['vip_income_rate'];
         $weakerLegPayout = round($weakerBizUsd * ($incomeRate / 100.0), 2);
 
-        // Company Turnover Component Calculation (Levels 7-10)
+        // Company Turnover Component Calculation (credited to company_turnover_wallet)
         $hasTurnoverShare = ((int)$c['has_turnover_share'] === 1);
         $turnoverRate = $hasTurnoverShare ? 0.50 : 0.00;
+        // Option B: Flat 0.5% of eligible turnover to each qualifying user
         $turnoverPayout = $hasTurnoverShare ? round($companyTurnoverUsd * 0.005, 2) : 0.00;
 
         $totalPayout = round($weakerLegPayout + $turnoverPayout, 2);
@@ -2923,7 +3120,7 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
         $insSchedule->execute([
             ':user_id'             => $userId,
             ':vip_level'           => $highestLvl,
-            ':closing_month'        => $closing_month,
+            ':closing_month'       => $closing_month,
             ':closing_date'        => $cDate,
             ':weaker_leg_business' => $weakerBizUsd,
             ':weaker_leg_rate'     => $incomeRate,
@@ -2935,20 +3132,34 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
             ':closing_id'          => $closing_month
         ]);
 
-        // 2. Credit vip_club_wallet
-        $updWallet->execute([':amt' => $totalPayout, ':uid' => $userId]);
-
-        // 3. Record Transaction Entry
-        $subject = "VIP Club Level {$highestLvl} Monthly Income ({$closing_month}) - Weaker Leg: $" . number_format($weakerLegPayout, 2);
-        if ($hasTurnoverShare) {
-            $subject .= " + Turnover Share: $" . number_format($turnoverPayout, 2);
-        }
-        $insTxn->execute([
-            ':user_id'      => $userId,
-            ':subject'      => $subject,
-            ':amount'       => $totalPayout,
-            ':created_date' => $cDate
+        // 2. Credit Wallets strictly segregated
+        $updWallets->execute([
+            ':total_amt' => $totalPayout,
+            ':vip_amt'   => $weakerLegPayout,
+            ':to_amt'    => $turnoverPayout,
+            ':uid'       => $userId
         ]);
+
+        // 3. Record Distinct Transaction Entries
+        if ($weakerLegPayout > 0) {
+            $subjectVip = "VIP Club Monthly Income - {$rankName} ({$closing_month}) - Weaker Leg: $" . number_format($weakerLegPayout, 2);
+            $insTxn->execute([
+                ':user_id'      => $userId,
+                ':subject'      => $subjectVip,
+                ':amount'       => $weakerLegPayout,
+                ':created_date' => $cDate
+            ]);
+        }
+
+        if ($turnoverPayout > 0) {
+            $subjectTurnover = "Company Turnover Income - {$rankName} ({$closing_month}) - Turnover Share: $" . number_format($turnoverPayout, 2);
+            $insTxn->execute([
+                ':user_id'      => $userId,
+                ':subject'      => $subjectTurnover,
+                ':amount'       => $turnoverPayout,
+                ':created_date' => $cDate
+            ]);
+        }
 
         $processedCount++;
         $totalPaid += $totalPayout;
@@ -2960,7 +3171,7 @@ function processVIPMonthlyIncome($closing_month, $closing_date = null, $pdoConne
         'total_paid'     => round($totalPaid, 2),
         'eligible_users' => $eligibleUsersCount,
         'status'         => 'success',
-        'message'        => 'VIP Club Monthly Income processed successfully.'
+        'message'        => 'VIP Club & Company Turnover Monthly Income processed successfully.'
     ];
 }
 }
@@ -3313,13 +3524,13 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                     ];
                 }
                 $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
-                $updStmt = $db->prepare("UPDATE user SET 
+                $updStmt = $db->prepare("UPDATE user SET
                     deposite_wallet = GREATEST(0, deposite_wallet - :amt),
                     pin_wallet = GREATEST(0, pin_wallet - :amt)
                     WHERE userid = :userid");
             } else {
                 $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
-                $updStmt = $db->prepare("UPDATE user SET 
+                $updStmt = $db->prepare("UPDATE user SET
                     deposite_wallet = deposite_wallet + :amt,
                     pin_wallet = pin_wallet + :amt
                     WHERE userid = :userid");
@@ -3357,13 +3568,13 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                     ];
                 }
                 $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
-                $updStmt = $db->prepare("UPDATE user SET 
+                $updStmt = $db->prepare("UPDATE user SET
                     amount = GREATEST(0, amount - :amt),
                     net_balance = GREATEST(0, net_balance - :amt)
                     WHERE userid = :userid");
             } else {
                 $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
-                $updStmt = $db->prepare("UPDATE user SET 
+                $updStmt = $db->prepare("UPDATE user SET
                     amount = amount + :amt,
                     net_balance = net_balance + :amt
                     WHERE userid = :userid");
@@ -3392,8 +3603,8 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             $stmtInv = $db->prepare("
                 SELECT id, package_code, real_fund_usd, package, status, capital_withdrawal_status
                 FROM tbl_roi_one
-                WHERE user_id = :uid 
-                  AND status = '0' 
+                WHERE user_id = :uid
+                  AND status = '0'
                   AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
                 ORDER BY id ASC
                 FOR UPDATE
@@ -3467,7 +3678,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                 $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
                 $newBalINR = round($newBalUSD * $rate, 2);
 
-                $updUser = $db->prepare("UPDATE user SET 
+                $updUser = $db->prepare("UPDATE user SET
                     active_investment = :new_usd,
                     total_package = :new_inr
                     WHERE userid = :userid");
@@ -3483,7 +3694,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                 $newBalINR = round($newBalUSD * $rate, 2);
 
                 $insRoi = $db->prepare("
-                    INSERT INTO tbl_roi_one 
+                    INSERT INTO tbl_roi_one
                     (user_id, level, name, package_code, real_fund_usd, bonus_percent_snapshot, bonus_amount_usd, lock_period_months, maturity_date, deduction_percent_snapshot, capital_withdrawal_status, package, percentage, count, amount, totalincome, capping, lock_day, date, time, closingdate, status)
                     VALUES
                     (:uid, 1, 'Admin Investment Credit', 'ADMIN_ADJ', :fund_usd, 0.00, 0.00, 48, DATE_ADD(CURDATE(), INTERVAL 48 MONTH), 15.00, 'LOCKED', :pkg_inr, 3.00, 0, 0, 0, :capping, 1460, CURDATE(), CURTIME(), CURDATE(), '0')
@@ -3495,7 +3706,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                     ':capping'  => $amountInINR * 2
                 ]);
 
-                $updUser = $db->prepare("UPDATE user SET 
+                $updUser = $db->prepare("UPDATE user SET
                     active_investment = :new_usd,
                     total_package = :new_inr
                     WHERE userid = :userid");
@@ -3527,9 +3738,9 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             $prevBalUSD = (float)($userRow['total_withdrawal'] ?? 0.00);
             if ($prevBalUSD <= 0.00) {
                 $stmtWd = $db->prepare("
-                    SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) 
-                    FROM tbl_transaction 
-                    WHERE (user_id = :uid OR user_id = :clean OR user_id = :an) 
+                    SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0)
+                    FROM tbl_transaction
+                    WHERE (user_id = :uid OR user_id = :clean OR user_id = :an)
                       AND (subject LIKE '%Withdraw%' OR type = 'Withdrawal Request')
                       AND subject NOT LIKE 'Admin Adjustment%'
                 ");
@@ -3560,13 +3771,13 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                 // Clear/reduce the underlying withdrawal transactions in tbl_transaction so dynamic recalculation matches $newBalUSD
                 $remToDebit = $amountInUSD;
                 $stmtTxns = $db->prepare("
-                    SELECT id, amount 
-                    FROM tbl_transaction 
-                    WHERE (user_id = :uid OR user_id = :clean OR user_id = :an) 
+                    SELECT id, amount
+                    FROM tbl_transaction
+                    WHERE (user_id = :uid OR user_id = :clean OR user_id = :an)
                       AND (subject LIKE '%Withdraw%' OR type = 'Withdrawal Request')
                       AND subject NOT LIKE 'Admin Adjustment%'
                       AND status != 2
-                    ORDER BY id DESC 
+                    ORDER BY id DESC
                     FOR UPDATE
                 ");
                 $stmtTxns->execute([':uid' => $target_user_id, ':clean' => $cleanUid, ':an' => $prefixedUid]);
@@ -3761,90 +3972,90 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
 
     $stmtBiz      = $db->query("
         SELECT COALESCE(SUM(
-            CASE 
+            CASE
                 WHEN real_fund_usd > 0 THEN real_fund_usd * {$rate}
-                ELSE package 
+                ELSE package
             END
-        ), 0) 
+        ), 0)
         FROM tbl_roi_one
     ");
     $totBizInr    = (float)$stmtBiz->fetchColumn();
 
     $stmtToday    = $db->query("
         SELECT COALESCE(SUM(
-            CASE 
+            CASE
                 WHEN real_fund_usd > 0 THEN real_fund_usd * {$rate}
-                ELSE package 
+                ELSE package
             END
-        ), 0) 
+        ), 0)
         FROM tbl_roi_one WHERE DATE(date) = CURDATE()
     ");
     $todayBizInr  = (float)$stmtToday->fetchColumn();
 
     $stmtMonth    = $db->query("
         SELECT COALESCE(SUM(
-            CASE 
+            CASE
                 WHEN real_fund_usd > 0 THEN real_fund_usd * {$rate}
-                ELSE package 
+                ELSE package
             END
-        ), 0) 
+        ), 0)
         FROM tbl_roi_one WHERE DATE_FORMAT(date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
     ");
     $monthBizInr  = (float)$stmtMonth->fetchColumn();
 
     // Audited Withdrawal Financial Metrics (Confirmed Payouts & Active Debit Requests Only)
     $totWdPaid    = (float)$db->query("
-        SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) 
-        FROM tbl_transaction 
-        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
-          AND subject NOT LIKE 'Admin Adjustment%' 
+        SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0)
+        FROM tbl_transaction
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%')
+          AND subject NOT LIKE 'Admin Adjustment%'
           AND subject NOT LIKE 'Cancel Withdrawal%'
-          AND a_status = '1' 
+          AND a_status = '1'
           AND status != 2 AND a_status != '2'
           AND (paid_date IS NOT NULL AND paid_date != '' AND paid_date != '0000-00-00')
     ")->fetchColumn();
 
     $totWdPend    = (float)$db->query("
-        SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) 
-        FROM tbl_transaction 
-        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
-          AND subject NOT LIKE 'Admin Adjustment%' 
+        SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0)
+        FROM tbl_transaction
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%')
+          AND subject NOT LIKE 'Admin Adjustment%'
           AND subject NOT LIKE 'Cancel Withdrawal%'
-          AND (a_status = '0' OR a_status IS NULL OR a_status = '') 
-          AND a_status != '1' 
+          AND (a_status = '0' OR a_status IS NULL OR a_status = '')
+          AND a_status != '1'
           AND status != 2 AND a_status != '2'
           AND type = 'Debit'
     ")->fetchColumn();
 
     // Unique User Counts for Admin Dashboard Withdrawal Cards
     $paidWdUsers  = (int)$db->query("
-        SELECT COUNT(DISTINCT user_id) 
-        FROM tbl_transaction 
-        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
-          AND subject NOT LIKE 'Admin Adjustment%' 
+        SELECT COUNT(DISTINCT user_id)
+        FROM tbl_transaction
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%')
+          AND subject NOT LIKE 'Admin Adjustment%'
           AND subject NOT LIKE 'Cancel Withdrawal%'
-          AND a_status = '1' 
+          AND a_status = '1'
           AND status != 2 AND a_status != '2'
           AND (paid_date IS NOT NULL AND paid_date != '' AND paid_date != '0000-00-00')
     ")->fetchColumn();
 
     $pendWdUsers  = (int)$db->query("
-        SELECT COUNT(DISTINCT user_id) 
-        FROM tbl_transaction 
-        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
-          AND subject NOT LIKE 'Admin Adjustment%' 
+        SELECT COUNT(DISTINCT user_id)
+        FROM tbl_transaction
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%')
+          AND subject NOT LIKE 'Admin Adjustment%'
           AND subject NOT LIKE 'Cancel Withdrawal%'
-          AND (a_status = '0' OR a_status IS NULL OR a_status = '') 
-          AND a_status != '1' 
+          AND (a_status = '0' OR a_status IS NULL OR a_status = '')
+          AND a_status != '1'
           AND status != 2 AND a_status != '2'
           AND type = 'Debit'
     ")->fetchColumn();
 
     $totWdUsers   = (int)$db->query("
-        SELECT COUNT(DISTINCT user_id) 
-        FROM tbl_transaction 
-        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%') 
-          AND subject NOT LIKE 'Admin Adjustment%' 
+        SELECT COUNT(DISTINCT user_id)
+        FROM tbl_transaction
+        WHERE (subject LIKE '%Withdrawal%' OR subject LIKE '%Withdraw%')
+          AND subject NOT LIKE 'Admin Adjustment%'
           AND subject NOT LIKE 'Cancel Withdrawal%'
           AND status != 2 AND a_status != '2'
           AND (a_status = '1' OR ((a_status = '0' OR a_status IS NULL OR a_status = '') AND type = 'Debit'))
@@ -4047,12 +4258,12 @@ function processAnantaPackageInvestment($user_id, $package_id, $amount_usd, $pdo
     try {
         // Idempotency / duplicate submission protection: prevent duplicate investment and crediting bonus twice
         $dupStmt = $db->prepare("
-            SELECT id, real_fund_usd, bonus_amount_usd, maturity_date 
-            FROM tbl_roi_one 
-            WHERE user_id = :uid 
-              AND package_code = :pkg 
-              AND ABS(real_fund_usd - :amt) < 0.01 
-              AND date = :cdate 
+            SELECT id, real_fund_usd, bonus_amount_usd, maturity_date
+            FROM tbl_roi_one
+            WHERE user_id = :uid
+              AND package_code = :pkg
+              AND ABS(real_fund_usd - :amt) < 0.01
+              AND date = :cdate
               AND TIME_TO_SEC(TIMEDIFF(:ctime, time)) < 15
             LIMIT 1
         ");
@@ -4578,8 +4789,8 @@ if (!function_exists('getUserActiveInvestmentTotal')) {
         $sql = "
             SELECT id, package_code, real_fund_usd, bonus_amount_usd, bonus_percent_snapshot, package, date, time, count, lock_day, lock_period_months, maturity_date, capital_withdrawal_status, status
             FROM tbl_roi_one
-            WHERE user_id = :uid 
-              AND status = '0' 
+            WHERE user_id = :uid
+              AND status = '0'
               AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
             ORDER BY id DESC
         ";
@@ -4693,7 +4904,7 @@ if (!function_exists('getUserAccountActivationStatus')) {
         }
 
         $stmt = $db->prepare("
-            SELECT userid, name, active, activation_start_date, activation_expiry_date 
+            SELECT userid, name, active, activation_start_date, activation_expiry_date
             FROM user WHERE userid = :uid
         ");
         $stmt->execute([':uid' => $userid]);
@@ -4817,7 +5028,7 @@ if (!function_exists('getAdminActivationHistory')) {
 
         $whereSql = implode(" AND ", $where);
         $sql = "
-            SELECT 
+            SELECT
                 a.*,
                 u1.name as activator_name,
                 u2.name as target_name
@@ -4838,21 +5049,35 @@ if (!function_exists('getVIPClubReportStats')) {
     function getVIPClubReportStats($pdoConnection = null) {
         global $pdo;
         $db = $pdoConnection ?: $pdo;
-        
+
         $totalQualified = 0;
-        $totalPayout = 0.00;
+        $totalRewards = 0.00;
+        $totalMonthlyPayout = 0.00;
+        $totalAdjusted = 0.00;
         $activeLevels = 0;
 
         try {
-            $totalQualified = (int)($db->query("SELECT COUNT(*) FROM tbl_vip_user_qualifications WHERE is_qualified = 1")->fetchColumn() ?: 0);
+            $totalQualified = (int)($db->query("SELECT COUNT(DISTINCT user_id) FROM tbl_vip_user_qualification WHERE reward_status = 'CREDITED'")->fetchColumn() ?: 0);
         } catch (\Throwable $e) {
             $totalQualified = 0;
         }
 
         try {
-            $totalPayout = (float)($db->query("SELECT COALESCE(SUM(credited_amount), 0) FROM tbl_vip_closing_schedule WHERE status = 'COMPLETED'")->fetchColumn() ?: 0);
+            $totalRewards = (float)($db->query("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE reward_status = 'CREDITED'")->fetchColumn() ?: 0);
         } catch (\Throwable $e) {
-            $totalPayout = 0.00;
+            $totalRewards = 0.00;
+        }
+
+        try {
+            $totalMonthlyPayout = (float)($db->query("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE status = 'CREDITED'")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $totalMonthlyPayout = 0.00;
+        }
+
+        try {
+            $totalAdjusted = (float)($db->query("SELECT COALESCE(SUM(amount), 0) FROM tbl_vip_admin_audit")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $totalAdjusted = 0.00;
         }
 
         try {
@@ -4862,9 +5087,12 @@ if (!function_exists('getVIPClubReportStats')) {
         }
 
         return [
-            'total_qualified_users' => $totalQualified,
-            'total_payout_distributed' => $totalPayout,
-            'active_vip_levels' => $activeLevels
+            'total_qualified_users'    => $totalQualified,
+            'total_rewards'            => round($totalRewards, 2),
+            'total_monthly_payout'     => round($totalMonthlyPayout, 2),
+            'total_adjusted'           => round($totalAdjusted, 2),
+            'total_payout_distributed' => round($totalRewards + $totalMonthlyPayout, 2),
+            'active_vip_levels'        => $activeLevels
         ];
     }
 }
@@ -5438,9 +5666,9 @@ function processPermanentUserAccountDeletion($admin_id, $target_user_id, $pdoCon
 
         // 3. Delete records from all user-related tables with 'userid' column
         $useridTables = [
-            'kyc', 'pin_generate_detail', 'pin_list', 'tbl_cart', 'tbl_check_user', 
-            'tbl_deposit_withdrawal_history', 'tbl_log', 'tbl_order', 'tbl_otp', 
-            'tbl_payment', 'tbl_pool2', 'tbl_pool3', 'tbl_query', 'tbl_royalty_user', 
+            'kyc', 'pin_generate_detail', 'pin_list', 'tbl_cart', 'tbl_check_user',
+            'tbl_deposit_withdrawal_history', 'tbl_log', 'tbl_order', 'tbl_otp',
+            'tbl_payment', 'tbl_pool2', 'tbl_pool3', 'tbl_query', 'tbl_royalty_user',
             'tbl_singleg_user', 'tbl_singleg_user2', 'tbl_singleg_user3', 'tree', 'user1'
         ];
         foreach ($useridTables as $tbl) {
@@ -5454,13 +5682,13 @@ function processPermanentUserAccountDeletion($admin_id, $target_user_id, $pdoCon
 
         // 4. Delete records from all user-related tables with 'user_id' column
         $userIdTables = [
-            'tbl_bonus', 'tbl_capital_withdrawal_request', 'tbl_daily_levelinc', 
-            'tbl_direct_bonus_admin_audit', 'tbl_directinc', 'tbl_flush', 'tbl_franchise', 
-            'tbl_inr_deposits', 'tbl_levelinc', 'tbl_mentor_income_admin_audit', 
-            'tbl_oneroyalty_user', 'tbl_recharge', 'tbl_repurchase_data', 'tbl_rewardinc', 
-            'tbl_roi_one', 'tbl_roi_three', 'tbl_roi_two', 'tbl_roiinc', 'tbl_sponserinc', 
-            'tbl_support_tickets', 'tbl_temp_data', 'tbl_transaction', 'tbl_user_login_history', 
-            'tbl_user_notifications', 'tbl_user_welcome', 'tbl_vip_admin_audit', 
+            'tbl_bonus', 'tbl_capital_withdrawal_request', 'tbl_daily_levelinc',
+            'tbl_direct_bonus_admin_audit', 'tbl_directinc', 'tbl_flush', 'tbl_franchise',
+            'tbl_inr_deposits', 'tbl_levelinc', 'tbl_mentor_income_admin_audit',
+            'tbl_oneroyalty_user', 'tbl_recharge', 'tbl_repurchase_data', 'tbl_rewardinc',
+            'tbl_roi_one', 'tbl_roi_three', 'tbl_roi_two', 'tbl_roiinc', 'tbl_sponserinc',
+            'tbl_support_tickets', 'tbl_temp_data', 'tbl_transaction', 'tbl_user_login_history',
+            'tbl_user_notifications', 'tbl_user_welcome', 'tbl_vip_admin_audit',
             'tbl_vip_monthly_schedule', 'tbl_vip_user_qualification'
         ];
         foreach ($userIdTables as $tbl) {
@@ -5501,15 +5729,15 @@ function processPermanentUserAccountDeletion($admin_id, $target_user_id, $pdoCon
 
         // 6. Log Admin Audit Action BEFORE deleting primary user record
         logAdminAuditAction(
-            $admin_id, 
-            'USER_PERMANENT_DELETE', 
-            $actualUserId, 
-            0.00, 
-            'user', 
-            1, 
-            0, 
-            "Admin {$admin_id} permanently deleted user account {$actualUserId} ({$userRecord['name']}) and all associated records.", 
-            null, 
+            $admin_id,
+            'USER_PERMANENT_DELETE',
+            $actualUserId,
+            0.00,
+            'user',
+            1,
+            0,
+            "Admin {$admin_id} permanently deleted user account {$actualUserId} ({$userRecord['name']}) and all associated records.",
+            null,
             $db
         );
 

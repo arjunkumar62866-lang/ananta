@@ -253,8 +253,11 @@ table.dataTable.no-footer {
                                 <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">10 VIP Levels with Left/Right ID & Business criteria, Rewards & Monthly Repeat Income.</p>
                             </div>
                         </div>
-                        <div>
-                            <button class="btn btn-adjust-modal" data-bs-toggle="modal" data-bs-target="#adjustmentModal">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary fw-bold px-3 py-2" data-bs-toggle="modal" data-bs-target="#monthlyClosingModal" style="border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none;">
+                                <i class="fa fa-calendar-check-o me-1"></i> Run 11th Monthly Closing
+                            </button>
+                            <button class="btn btn-adjust-modal fw-bold" data-bs-toggle="modal" data-bs-target="#adjustmentModal">
                                 <i class="fa fa-pencil-square-o"></i> Authorized VIP Wallet Adjustment
                             </button>
                         </div>
@@ -557,9 +560,117 @@ table.dataTable.no-footer {
                 </form>
             </div>
         </div>
-    </div>
+    <!-- Monthly Closing Modal -->
+    <div class="modal fade" id="monthlyClosingModal" tabindex="-1" aria-labelledby="monthlyClosingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff;">
+                    <h5 class="modal-title fw-bold" id="monthlyClosingModalLabel">
+                        <i class="fa fa-calendar-check-o me-2"></i> Monthly VIP Club & Company Turnover Closing (11th of Month)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning py-2 px-3 fw-bold mb-3" style="font-size: 13px;">
+                        <i class="fa fa-info-circle me-1"></i> VIP Club weaker-leg payouts and 0.5% Company Turnover shares are strictly executed on the <strong>11th date of each month</strong>.
+                        Preview Mode is 100% read-only and causes zero financial changes.
+                    </div>
 
-    <!-- Scripts -->
+                    <div class="row g-3 mb-4 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" style="color: #0f172a;">Closing Month (YYYY-MM)</label>
+                            <input type="month" id="modalClosingMonth" class="form-control fw-bold" value="<?php echo date('Y-m'); ?>" style="border-radius: 10px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" style="color: #0f172a;">Closing Date (Must be 11th)</label>
+                            <input type="date" id="modalClosingDate" class="form-control fw-bold" value="<?php echo date('Y-m-11'); ?>" style="border-radius: 10px;">
+                        </div>
+                        <div class="col-md-4">
+                            <button id="btnPreviewClosing" class="btn btn-info text-white fw-bold w-100 py-2" style="border-radius: 10px;">
+                                <i class="fa fa-search me-1"></i> Fetch Read-Only Preview
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preview Container -->
+                    <div id="previewResultsContainer" style="display: none;">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded border text-center">
+                                    <span class="text-muted small fw-bold d-block">COMPANY TURNOVER</span>
+                                    <h5 class="mb-0 fw-bold text-dark" id="prevCompanyTurnover">$0.00</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded border text-center">
+                                    <span class="text-muted small fw-bold d-block">ELIGIBLE USERS</span>
+                                    <h5 class="mb-0 fw-bold text-primary" id="prevEligibleCount">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded border text-center">
+                                    <span class="text-muted small fw-bold d-block">VIP PAYOUT TOTAL</span>
+                                    <h5 class="mb-0 fw-bold text-info" id="prevVipTotal">$0.00</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light rounded border text-center">
+                                    <span class="text-muted small fw-bold d-block">TURNOVER SHARE TOTAL</span>
+                                    <h5 class="mb-0 fw-bold text-purple" id="prevTurnoverTotal">$0.00</h5>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aggregate Warning Alert -->
+                        <div class="alert alert-info py-2 px-3 fw-bold mb-3 small" id="prevAggregateAlert"></div>
+
+                        <!-- Eligible Users Table -->
+                        <h6 class="fw-bold text-success mb-2"><i class="fa fa-check-circle me-1"></i> Qualified Users for Payout</h6>
+                        <div class="table-responsive mb-4" style="max-height: 250px;">
+                            <table class="table table-sm table-hover table-bordered mb-0" id="prevEligibleTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>User ID</th>
+                                        <th>Name</th>
+                                        <th>Rank</th>
+                                        <th>Weaker Leg Biz</th>
+                                        <th>VIP Rate</th>
+                                        <th>VIP Payout</th>
+                                        <th>Turnover Share</th>
+                                        <th>Total Payout</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Ineligible Users Table -->
+                        <h6 class="fw-bold text-danger mb-2"><i class="fa fa-times-circle me-1"></i> Ineligible / Excluded Users</h6>
+                        <div class="table-responsive" style="max-height: 200px;">
+                            <table class="table table-sm table-hover table-bordered mb-0" id="prevIneligibleTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>User ID</th>
+                                        <th>Name</th>
+                                        <th>Current Rank</th>
+                                        <th>Exclusion Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal" style="border-radius: 10px;">Close</button>
+                    <button type="button" id="btnExecuteClosing" class="btn btn-success fw-bold" style="border-radius: 10px;" disabled>
+                        <i class="fa fa-check me-1"></i> Confirm & Execute 11th Closing
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -739,6 +850,110 @@ table.dataTable.no-footer {
                 }, 'json').fail(function () {
                     $('#btnSubmitAdjustment').prop('disabled', false).text('Submit Adjustment');
                     alert('Network error occurred while submitting adjustment.');
+                });
+            });
+
+            // Handle Monthly Closing Preview
+            $('#btnPreviewClosing').on('click', function() {
+                let m = $('#modalClosingMonth').val();
+                let d = $('#modalClosingDate').val();
+                if (!m) {
+                    alert('Please select a closing month.');
+                    return;
+                }
+                $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Fetching...');
+                $('#btnExecuteClosing').prop('disabled', true);
+                $('#previewResultsContainer').hide();
+
+                $.getJSON('vip_club_action.php', { action: 'preview_closing', closing_month: m, closing_date: d }, function(res) {
+                    $('#btnPreviewClosing').prop('disabled', false).html('<i class="fa fa-search me-1"></i> Fetch Read-Only Preview');
+                    if (res.status === 'success') {
+                        $('#prevCompanyTurnover').text(formatAdminCurrency(res.company_turnover_usd));
+                        $('#prevEligibleCount').text(res.eligible_count);
+                        $('#prevVipTotal').text(formatAdminCurrency(res.total_vip_payout));
+                        $('#prevTurnoverTotal').text(formatAdminCurrency(res.total_turnover_payout));
+
+                        let aggNote = `Aggregate Proposed Payout: ${formatAdminCurrency(res.total_aggregate_payout)} (VIP: ${formatAdminCurrency(res.total_vip_payout)}, Turnover: ${formatAdminCurrency(res.total_turnover_payout)}). Under Option B, each qualified PEAK/APEX/ICON/ANANT user independently receives 0.5% of company turnover.`;
+                        $('#prevAggregateAlert').text(aggNote);
+
+                        // Populate Eligible Users
+                        let eRows = '';
+                        if (res.eligible_users && res.eligible_users.length > 0) {
+                            res.eligible_users.forEach(u => {
+                                let stBadge = u.already_credited ? '<span class="badge bg-secondary">Already Credited</span>' : '<span class="badge bg-success">Ready</span>';
+                                eRows += `<tr>
+                                    <td><strong>${u.user_id}</strong></td>
+                                    <td>${u.name}</td>
+                                    <td><span class="badge bg-warning text-dark">${u.rank}</span></td>
+                                    <td>${formatAdminCurrency(u.weaker_leg_business)}</td>
+                                    <td>${parseFloat(u.vip_income_rate).toFixed(2)}%</td>
+                                    <td class="text-info fw-bold">${formatAdminCurrency(u.vip_payout)}</td>
+                                    <td class="text-purple fw-bold">${formatAdminCurrency(u.turnover_payout)}</td>
+                                    <td class="text-success fw-bold">${formatAdminCurrency(u.total_payout)}</td>
+                                    <td>${stBadge}</td>
+                                </tr>`;
+                            });
+                        } else {
+                            eRows = '<tr><td colspan="9" class="text-center text-muted">No users eligible for this closing month.</td></tr>';
+                        }
+                        $('#prevEligibleTable tbody').html(eRows);
+
+                        // Populate Ineligible Users
+                        let iRows = '';
+                        if (res.ineligible_users && res.ineligible_users.length > 0) {
+                            res.ineligible_users.forEach(u => {
+                                iRows += `<tr>
+                                    <td><strong>${u.user_id}</strong></td>
+                                    <td>${u.name}</td>
+                                    <td><span class="badge bg-light text-dark">${u.rank}</span></td>
+                                    <td class="text-danger small">${u.reason}</td>
+                                </tr>`;
+                            });
+                        } else {
+                            iRows = '<tr><td colspan="4" class="text-center text-muted">No excluded users.</td></tr>';
+                        }
+                        $('#prevIneligibleTable tbody').html(iRows);
+
+                        $('#previewResultsContainer').fadeIn();
+                        if (res.eligible_count > 0) {
+                            $('#btnExecuteClosing').prop('disabled', false);
+                        }
+                    } else {
+                        alert('Preview Error: ' + res.message);
+                    }
+                }).fail(function() {
+                    $('#btnPreviewClosing').prop('disabled', false).html('<i class="fa fa-search me-1"></i> Fetch Read-Only Preview');
+                    alert('Network error while generating preview.');
+                });
+            });
+
+            // Handle Monthly Closing Execution
+            $('#btnExecuteClosing').on('click', function() {
+                let m = $('#modalClosingMonth').val();
+                let d = $('#modalClosingDate').val();
+                if (!confirm(`Are you certain you want to run Monthly Closing for ${m} on date ${d}?\n\nThis will credit eligible VIP weaker-leg income to vip_club_wallet and 0.5% turnover share to company_turnover_wallet.`)) {
+                    return;
+                }
+
+                $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Processing...');
+
+                $.post('vip_club_action.php', {
+                    action: 'trigger_11th_closing',
+                    closing_month: m,
+                    closing_date: d
+                }, function(res) {
+                    $('#btnExecuteClosing').prop('disabled', false).html('<i class="fa fa-check me-1"></i> Confirm & Execute 11th Closing');
+                    if (res.status === 'success') {
+                        alert(`Closing Success!\n\nProcessed: ${res.processed} users.\nTotal Paid: ${formatAdminCurrency(res.total_paid)}.`);
+                        $('#monthlyClosingModal').modal('hide');
+                        historyTable.ajax.reload();
+                        loadReportStats();
+                    } else {
+                        alert('Closing Failed / Blocked: ' + res.message);
+                    }
+                }, 'json').fail(function() {
+                    $('#btnExecuteClosing').prop('disabled', false).html('<i class="fa fa-check me-1"></i> Confirm & Execute 11th Closing');
+                    alert('Network error while executing closing.');
                 });
             });
         });

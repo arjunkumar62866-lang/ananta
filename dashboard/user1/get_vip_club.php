@@ -29,7 +29,7 @@ $currSymbol = function_exists('getCurrencySymbol') ? getCurrencySymbol($currency
 $usdToInrRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
 
 // User Wallet & Details
-$stmtUser = $pdo->prepare("SELECT userid, name, active, vip_club_wallet FROM user WHERE userid = :uid LIMIT 1");
+$stmtUser = $pdo->prepare("SELECT userid, name, active, rank, rankid, vip_club_wallet, rank_reward_wallet, company_turnover_wallet FROM user WHERE userid = :uid LIMIT 1");
 $stmtUser->execute([':uid' => $userid]);
 $userInfo = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
@@ -37,22 +37,34 @@ $vipWalletUSD = (float)($userInfo['vip_club_wallet'] ?? 0);
 $vipWalletDisp = function_exists('convertCurrency') ? convertCurrency($vipWalletUSD, $currency, $pdo) : ($currency === 'INR' ? round($vipWalletUSD * $usdToInrRate, 2) : $vipWalletUSD);
 $vipWalletFmt  = function_exists('formatCurrency') ? formatCurrency($vipWalletUSD, $currency, true, $pdo) : ($currSymbol . ' ' . number_format($vipWalletDisp, 2));
 
+$rankRewardWalletUSD = (float)($userInfo['rank_reward_wallet'] ?? 0);
+$rankRewardWalletDisp = function_exists('convertCurrency') ? convertCurrency($rankRewardWalletUSD, $currency, $pdo) : ($currency === 'INR' ? round($rankRewardWalletUSD * $usdToInrRate, 2) : $rankRewardWalletUSD);
+$rankRewardWalletFmt  = function_exists('formatCurrency') ? formatCurrency($rankRewardWalletUSD, $currency, true, $pdo) : ($currSymbol . ' ' . number_format($rankRewardWalletDisp, 2));
+
+$companyTurnoverWalletUSD = (float)($userInfo['company_turnover_wallet'] ?? 0);
+$companyTurnoverWalletDisp = function_exists('convertCurrency') ? convertCurrency($companyTurnoverWalletUSD, $currency, $pdo) : ($currency === 'INR' ? round($companyTurnoverWalletUSD * $usdToInrRate, 2) : $companyTurnoverWalletUSD);
+$companyTurnoverWalletFmt  = function_exists('formatCurrency') ? formatCurrency($companyTurnoverWalletUSD, $currency, true, $pdo) : ($currSymbol . ' ' . number_format($companyTurnoverWalletDisp, 2));
+
 // Qualification History
-$stmtQuals = $pdo->prepare("SELECT * FROM tbl_vip_user_qualification WHERE user_id = :uid ORDER BY vip_level ASC");
+$stmtQuals = $pdo->prepare("SELECT q.*, c.name as rank_name FROM tbl_vip_user_qualification q LEFT JOIN tbl_vip_level_config c ON c.level_id = q.vip_level WHERE q.user_id = :uid ORDER BY q.vip_level ASC");
 $stmtQuals->execute([':uid' => $userid]);
 $quals = $stmtQuals->fetchAll(PDO::FETCH_ASSOC);
 
 // Monthly Payout History
-$stmtSchedules = $pdo->prepare("SELECT * FROM tbl_vip_monthly_schedule WHERE user_id = :uid ORDER BY id DESC");
+$stmtSchedules = $pdo->prepare("SELECT s.*, c.name as rank_name FROM tbl_vip_monthly_schedule s LEFT JOIN tbl_vip_level_config c ON c.level_id = s.vip_level WHERE s.user_id = :uid ORDER BY s.id DESC");
 $stmtSchedules->execute([':uid' => $userid]);
 $schedules = $stmtSchedules->fetchAll(PDO::FETCH_ASSOC);
 
 // Highest level & Total rewards earned
 $highestLevel = 0;
+$highestRankName = $userInfo['rank'] ?? '';
 $totalRewardsEarnedUSD = 0.0;
 foreach ($quals as &$q) {
     if ((int)$q['vip_level'] > $highestLevel) {
         $highestLevel = (int)$q['vip_level'];
+        if (!empty($q['rank_name'])) {
+            $highestRankName = $q['rank_name'];
+        }
     }
     $rwAmtUSD = (float)($q['reward_amount'] ?? 0);
     $totalRewardsEarnedUSD += $rwAmtUSD;
@@ -146,9 +158,17 @@ echo json_encode([
         'user' => [
             'userid'                  => $userInfo['userid'],
             'name'                    => $userInfo['name'],
+            'rank'                    => $highestRankName ?: 'None',
+            'rankid'                  => $highestLevel,
             'vip_club_wallet'         => $vipWalletUSD,
             'display_vip_club_wallet' => $vipWalletDisp,
             'formatted_vip_club_wallet' => $vipWalletFmt,
+            'rank_reward_wallet'         => $rankRewardWalletUSD,
+            'display_rank_reward_wallet' => $rankRewardWalletDisp,
+            'formatted_rank_reward_wallet' => $rankRewardWalletFmt,
+            'company_turnover_wallet'         => $companyTurnoverWalletUSD,
+            'display_company_turnover_wallet' => $companyTurnoverWalletDisp,
+            'formatted_company_turnover_wallet' => $companyTurnoverWalletFmt,
             'highest_level'           => $highestLevel
         ],
         'leg_details'                => $legDetails,

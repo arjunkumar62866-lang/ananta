@@ -50,7 +50,7 @@ switch ($action) {
         $limit = (int)($_GET['limit'] ?? 500);
 
         $query = "
-            SELECT 
+            SELECT
                 q.*,
                 u.name as username,
                 u.vip_club_wallet
@@ -83,7 +83,7 @@ switch ($action) {
         $limit = (int)($_GET['limit'] ?? 500);
 
         $query = "
-            SELECT 
+            SELECT
                 s.*,
                 u.name as username,
                 u.vip_club_wallet
@@ -141,7 +141,7 @@ switch ($action) {
             $limit = 100;
         }
 
-        $query = "SELECT a.*, u.auserid as admin_name, target.name as target_username 
+        $query = "SELECT a.*, u.auserid as admin_name, target.name as target_username
                   FROM tbl_vip_admin_audit a
                   LEFT JOIN admin u ON (CONVERT(a.admin_id USING utf8mb4) = CONVERT(u.auserid USING utf8mb4) OR CONVERT(a.admin_id USING utf8mb4) = CONVERT(u.id USING utf8mb4))
                   LEFT JOIN user target ON CONVERT(a.user_id USING utf8mb4) = CONVERT(target.userid USING utf8mb4)";
@@ -162,6 +162,13 @@ switch ($action) {
             'status' => 'success',
             'data' => $history
         ]);
+        break;
+
+    case 'preview_closing':
+        $closing_month = trim($_POST['closing_month'] ?? $_GET['closing_month'] ?? date('Y-m'));
+        $closing_date  = trim($_POST['closing_date'] ?? $_GET['closing_date'] ?? date('Y-m-d'));
+        $res = previewVIPMonthlyIncome($closing_month, $closing_date, $pdo);
+        echo json_encode($res);
         break;
 
     case 'trigger_11th_closing':
