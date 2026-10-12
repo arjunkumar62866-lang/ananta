@@ -5797,9 +5797,6 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $turnover    = max($ct1, $ct2, (float)$uCT);
 
         $totalIncBal = round($profitInc + $profitShare + $directBon + $mentorInc + $rankRew + $vipClub + $turnover, 2);
-        if ((float)$uUG > $totalIncBal) {
-            $totalIncBal = round((float)$uUG, 2);
-        }
 
         return [
             'total_income_balance' => $totalIncBal,
