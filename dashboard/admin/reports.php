@@ -42,8 +42,8 @@ $uSearchParam = '%' . $user_search . '%';
 
 // Report title & meta mapping
 $reportTitles = [
-    'daily'      => 'Daily Financial & Business Summary',
-    'monthly'    => 'Monthly Financial & Payout Summary',
+    'daily'      => 'Today Business Report (ID-Wise Details)',
+    'monthly'    => 'Monthly Business Report (ID-Wise Details)',
     'wallet'     => 'Monthly Wallet Transaction Summary',
     'yearly'     => 'Yearly Business & Tax Statement',
     'user'       => 'User-Wise Financial Statement Report',
@@ -65,152 +65,90 @@ if ($rate <= 0) $rate = 90.0;
 
 switch ($type) {
     case 'daily':
-        // Daily Financial Summary: Authoritative Package Investments, Income distributions, and Settled Withdrawals
-        $uInvFilter = "";
-        $uIncFilter = "";
-        $uWdFilter  = "";
-        $params = [
-            ':from_date1' => $from_date, ':to_date1' => $to_date,
-            ':from_date2' => $from_date, ':to_date2' => $to_date,
-            ':from_date3' => $from_date, ':to_date3' => $to_date,
-            ':from_date4' => $from_date, ':to_date4' => $to_date,
-            ':from_date5' => $from_date, ':to_date5' => $to_date
-        ];
+        // Today & Daily Business Report: ID-wise Complete Details (User ID, Name, Business Amount USD & INR, Package & Txn Details)
+        $whereClause = "WHERE DATE(r.date) BETWEEN :from_date AND :to_date";
+        $params = [':from_date' => $from_date, ':to_date' => $to_date];
         if (!empty($user_search)) {
-            $uInvFilter = " AND (r.user_id LIKE :usearch_inv OR u.name LIKE :usearch_inv)";
-            $uIncFilter = " AND (t.user_id LIKE :usearch_inc OR u.name LIKE :usearch_inc)";
-            $uWdFilter  = " AND (t.user_id LIKE :usearch_wd OR u.name LIKE :usearch_wd)";
-            $params[':usearch_inv'] = $uSearchParam;
-            $params[':usearch_inc'] = $uSearchParam;
-            $params[':usearch_wd']  = $uSearchParam;
+            $whereClause .= " AND (r.user_id LIKE :usearch OR u.name LIKE :usearch OR r.name LIKE :usearch OR r.package_code LIKE :usearch)";
+            $params[':usearch'] = $uSearchParam;
         }
 
-        $sql = "SELECT dt.report_date,
-                       COALESCE(inv.total_users, 0) as total_users,
-                       COALESCE(inv.total_investment, 0) as total_investment,
-                       COALESCE(inc.total_income, 0) as total_income,
-                       COALESCE(wd.total_withdrawals, 0) as total_withdrawals,
-                       COALESCE(inv.total_txns, 0) as total_txns
-                FROM (
-                    SELECT DATE(r.date) as report_date FROM tbl_roi_one r LEFT JOIN user u ON r.user_id = u.userid WHERE DATE(r.date) BETWEEN :from_date1 AND :to_date1 {$uInvFilter}
-                    UNION
-                    SELECT DATE(t.created_date) as report_date FROM tbl_transaction t LEFT JOIN user u ON t.user_id = u.userid WHERE DATE(t.created_date) BETWEEN :from_date2 AND :to_date2 {$uWdFilter}
-                ) dt
-                LEFT JOIN (
-                    SELECT DATE(r.date) as report_date,
-                           COUNT(DISTINCT r.user_id) as total_users,
-                           SUM(CASE WHEN r.real_fund_usd > 0 THEN r.real_fund_usd ELSE (r.package / {$rate}) END) as total_investment,
-                           COUNT(*) as total_txns
-                    FROM tbl_roi_one r
-                    LEFT JOIN user u ON r.user_id = u.userid
-                    WHERE DATE(r.date) BETWEEN :from_date3 AND :to_date3 {$uInvFilter}
-                    GROUP BY DATE(r.date)
-                ) inv ON dt.report_date = inv.report_date
-                LEFT JOIN (
-                    SELECT DATE(t.created_date) as report_date,
-                           SUM(t.amount / {$rate}) as total_income
-                    FROM tbl_transaction t
-                    LEFT JOIN user u ON t.user_id = u.userid
-                    WHERE (t.subject LIKE '%Income%' OR t.subject LIKE '%Bonus%' OR t.subject LIKE '%ROI%' OR t.subject LIKE '%Profit%' OR t.subject LIKE '%Reward%')
-                      AND t.subject NOT LIKE 'Admin Adjustment%' AND t.status = 1
-                      AND DATE(t.created_date) BETWEEN :from_date4 AND :to_date4 {$uIncFilter}
-                    GROUP BY DATE(t.created_date)
-                ) inc ON dt.report_date = inc.report_date
-                LEFT JOIN (
-                    SELECT DATE(t.created_date) as report_date,
-                           SUM(t.amount) as total_withdrawals
-                    FROM tbl_transaction t
-                    LEFT JOIN user u ON t.user_id = u.userid
-                    WHERE (t.subject LIKE '%Withdrawal%' OR t.subject LIKE '%Withdraw%')
-                      AND t.subject NOT LIKE 'Admin Adjustment%'
-                      AND (t.status = 1 OR t.a_status = '1') AND t.status != 2
-                      AND DATE(t.created_date) BETWEEN :from_date5 AND :to_date5 {$uWdFilter}
-                    GROUP BY DATE(t.created_date)
-                ) wd ON dt.report_date = wd.report_date
-                HAVING (total_investment > 0 OR total_income > 0 OR total_withdrawals > 0 OR total_txns > 0)
-                ORDER BY dt.report_date DESC";
+        $sql = "SELECT r.id, r.user_id, 
+                       COALESCE(NULLIF(u.name, ''), NULLIF(r.name, '0'), 'Member') as name,
+                       CASE 
+                           WHEN r.real_fund_usd > 0 THEN r.real_fund_usd 
+                           ELSE (r.package / {$rate}) 
+                       END as bus_usd,
+                       CASE 
+                           WHEN r.package > 0 THEN r.package 
+                           ELSE (r.real_fund_usd * {$rate}) 
+                       END as bus_inr,
+                       COALESCE(NULLIF(r.package_code, ''), 'STANDARD') as package_code,
+                       r.percentage,
+                       r.capital_withdrawal_status,
+                       r.status,
+                       r.date as created_date,
+                       r.time as created_time
+                FROM tbl_roi_one r
+                LEFT JOIN user u ON (r.user_id = u.userid OR r.user_id = CONCAT('AN', u.userid) OR u.userid = CONCAT('AN', r.user_id))
+                {$whereClause}
+                ORDER BY r.id DESC";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totBizUSD = 0.0;
+        $totBizINR = 0.0;
         foreach ($reportData as $r) { 
-            $totalSum += (float)$r['total_investment']; 
+            $totBizUSD += (float)$r['bus_usd'];
+            $totBizINR += (float)$r['bus_inr'];
         }
+        $totalSum   = $totBizUSD;
         $totalCount = count($reportData);
         break;
 
     case 'monthly':
-        // Monthly Financial Summary
-        $uInvFilter = "";
-        $uIncFilter = "";
-        $uWdFilter  = "";
-        $params = [
-            ':from_date1' => $from_date, ':to_date1' => $to_date,
-            ':from_date2' => $from_date, ':to_date2' => $to_date,
-            ':from_date3' => $from_date, ':to_date3' => $to_date,
-            ':from_date4' => $from_date, ':to_date4' => $to_date,
-            ':from_date5' => $from_date, ':to_date5' => $to_date
-        ];
+        // Monthly Business Report: ID-wise Complete Details (User ID, Name, Business Amount USD & INR, Package & Txn Details)
+        $whereClause = "WHERE DATE(r.date) BETWEEN :from_date AND :to_date";
+        $params = [':from_date' => $from_date, ':to_date' => $to_date];
         if (!empty($user_search)) {
-            $uInvFilter = " AND (r.user_id LIKE :usearch_inv OR u.name LIKE :usearch_inv)";
-            $uIncFilter = " AND (t.user_id LIKE :usearch_inc OR u.name LIKE :usearch_inc)";
-            $uWdFilter  = " AND (t.user_id LIKE :usearch_wd OR u.name LIKE :usearch_wd)";
-            $params[':usearch_inv'] = $uSearchParam;
-            $params[':usearch_inc'] = $uSearchParam;
-            $params[':usearch_wd']  = $uSearchParam;
+            $whereClause .= " AND (r.user_id LIKE :usearch OR u.name LIKE :usearch OR r.name LIKE :usearch OR r.package_code LIKE :usearch)";
+            $params[':usearch'] = $uSearchParam;
         }
 
-        $sql = "SELECT dt.report_month,
-                       COALESCE(inv.total_users, 0) as total_users,
-                       COALESCE(inv.total_investment, 0) as total_investment,
-                       COALESCE(inc.total_income, 0) as total_income,
-                       COALESCE(wd.total_withdrawals, 0) as total_withdrawals,
-                       COALESCE(inv.total_txns, 0) as total_txns
-                FROM (
-                    SELECT DATE_FORMAT(r.date, '%Y-%m') as report_month FROM tbl_roi_one r LEFT JOIN user u ON r.user_id = u.userid WHERE DATE(r.date) BETWEEN :from_date1 AND :to_date1 {$uInvFilter}
-                    UNION
-                    SELECT DATE_FORMAT(t.created_date, '%Y-%m') as report_month FROM tbl_transaction t LEFT JOIN user u ON t.user_id = u.userid WHERE DATE(t.created_date) BETWEEN :from_date2 AND :to_date2 {$uWdFilter}
-                ) dt
-                LEFT JOIN (
-                    SELECT DATE_FORMAT(r.date, '%Y-%m') as report_month,
-                           COUNT(DISTINCT r.user_id) as total_users,
-                           SUM(CASE WHEN r.real_fund_usd > 0 THEN r.real_fund_usd ELSE (r.package / {$rate}) END) as total_investment,
-                           COUNT(*) as total_txns
-                    FROM tbl_roi_one r
-                    LEFT JOIN user u ON r.user_id = u.userid
-                    WHERE DATE(r.date) BETWEEN :from_date3 AND :to_date3 {$uInvFilter}
-                    GROUP BY DATE_FORMAT(r.date, '%Y-%m')
-                ) inv ON dt.report_month = inv.report_month
-                LEFT JOIN (
-                    SELECT DATE_FORMAT(t.created_date, '%Y-%m') as report_month,
-                           SUM(t.amount / {$rate}) as total_income
-                    FROM tbl_transaction t
-                    LEFT JOIN user u ON t.user_id = u.userid
-                    WHERE (t.subject LIKE '%Income%' OR t.subject LIKE '%Bonus%' OR t.subject LIKE '%ROI%' OR t.subject LIKE '%Profit%' OR t.subject LIKE '%Reward%')
-                      AND t.subject NOT LIKE 'Admin Adjustment%' AND t.status = 1
-                      AND DATE(t.created_date) BETWEEN :from_date4 AND :to_date4 {$uIncFilter}
-                    GROUP BY DATE_FORMAT(t.created_date, '%Y-%m')
-                ) inc ON dt.report_month = inc.report_month
-                LEFT JOIN (
-                    SELECT DATE_FORMAT(t.created_date, '%Y-%m') as report_month,
-                           SUM(t.amount) as total_withdrawals
-                    FROM tbl_transaction t
-                    LEFT JOIN user u ON t.user_id = u.userid
-                    WHERE (t.subject LIKE '%Withdrawal%' OR t.subject LIKE '%Withdraw%')
-                      AND t.subject NOT LIKE 'Admin Adjustment%'
-                      AND (t.status = 1 OR t.a_status = '1') AND t.status != 2
-                      AND DATE(t.created_date) BETWEEN :from_date5 AND :to_date5 {$uWdFilter}
-                    GROUP BY DATE_FORMAT(t.created_date, '%Y-%m')
-                ) wd ON dt.report_month = wd.report_month
-                HAVING (total_investment > 0 OR total_income > 0 OR total_withdrawals > 0 OR total_txns > 0)
-                ORDER BY dt.report_month DESC";
+        $sql = "SELECT r.id, r.user_id, 
+                       COALESCE(NULLIF(u.name, ''), NULLIF(r.name, '0'), 'Member') as name,
+                       CASE 
+                           WHEN r.real_fund_usd > 0 THEN r.real_fund_usd 
+                           ELSE (r.package / {$rate}) 
+                       END as bus_usd,
+                       CASE 
+                           WHEN r.package > 0 THEN r.package 
+                           ELSE (r.real_fund_usd * {$rate}) 
+                       END as bus_inr,
+                       COALESCE(NULLIF(r.package_code, ''), 'STANDARD') as package_code,
+                       r.percentage,
+                       r.capital_withdrawal_status,
+                       r.status,
+                       r.date as created_date,
+                       r.time as created_time
+                FROM tbl_roi_one r
+                LEFT JOIN user u ON (r.user_id = u.userid OR r.user_id = CONCAT('AN', u.userid) OR u.userid = CONCAT('AN', r.user_id))
+                {$whereClause}
+                ORDER BY r.id DESC";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $reportData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totBizUSD = 0.0;
+        $totBizINR = 0.0;
         foreach ($reportData as $r) { 
-            $totalSum += (float)$r['total_investment']; 
+            $totBizUSD += (float)$r['bus_usd'];
+            $totBizINR += (float)$r['bus_inr'];
         }
+        $totalSum   = $totBizUSD;
         $totalCount = count($reportData);
         break;
 
@@ -679,8 +617,8 @@ label.form-label-custom {
           <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
             <label class="form-label-custom">Report Category / Type</label>
             <select name="type" class="form-control" onchange="this.form.submit()">
-              <option value="daily" <?php echo $type==='daily'?'selected':''; ?>>📅 Daily Financial Summary</option>
-              <option value="monthly" <?php echo $type==='monthly'?'selected':''; ?>>📆 Monthly Financial Summary</option>
+              <option value="daily" <?php echo $type==='daily'?'selected':''; ?>>📅 Today Business Report (ID-Wise)</option>
+              <option value="monthly" <?php echo $type==='monthly'?'selected':''; ?>>📆 Monthly Business Report (ID-Wise)</option>
               <option value="wallet" <?php echo $type==='wallet'?'selected':''; ?>>💳 Wallet Transaction Summary</option>
               <option value="yearly" <?php echo $type==='yearly'?'selected':''; ?>>📊 Yearly Business Summary</option>
               <option value="user" <?php echo $type==='user'?'selected':''; ?>>👤 User-Wise Financial Statement</option>
@@ -791,6 +729,30 @@ label.form-label-custom {
           </div>
         </div>
       </div>
+    <?php elseif (in_array($type, ['daily', 'monthly'])): ?>
+      <div class="row mb-4">
+        <div class="col-xl-4 col-md-6 mb-3">
+          <div class="p-3 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">TOTAL BUSINESS (USD)</span>
+            <h4 class="mb-0 font-weight-bold text-success">$<?php echo number_format($totalSum, 2); ?></h4>
+            <small class="text-muted">Authoritative Platform Volume</small>
+          </div>
+        </div>
+        <div class="col-xl-4 col-md-6 mb-3">
+          <div class="p-3 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">TOTAL BUSINESS (INR)</span>
+            <h4 class="mb-0 font-weight-bold text-info">₹<?php echo number_format($totalSum * $rate, 2); ?></h4>
+            <small class="text-muted">Converted @ ₹<?php echo number_format($rate, 2); ?> / USD</small>
+          </div>
+        </div>
+        <div class="col-xl-4 col-md-12 mb-3">
+          <div class="p-3 bg-white border rounded-lg shadow-sm" style="border-radius:16px; border-color:#e2e8f0 !important;">
+            <span class="text-muted small font-weight-bold d-block mb-1">TRANSACTION COUNT</span>
+            <h4 class="mb-0 font-weight-bold text-primary"><?php echo number_format($totalCount); ?> Records</h4>
+            <small class="text-muted">Active Package Investments</small>
+          </div>
+        </div>
+      </div>
     <?php else: ?>
       <div class="row mb-4">
         <div class="col-md-6 mb-3">
@@ -820,10 +782,63 @@ label.form-label-custom {
         <div class="table-responsive">
           <table class="table table-hover align-items-center mb-0">
             
-            <?php if (in_array($type, ['daily', 'monthly', 'yearly'])): ?>
+            <?php if (in_array($type, ['daily', 'monthly'])): ?>
               <thead style="background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase;">
                 <tr>
-                  <th class="py-3 px-4"><?php echo ucfirst($type); ?> Period</th>
+                  <th class="py-3 px-4"># Record ID</th>
+                  <th class="py-3">User ID</th>
+                  <th class="py-3">Member Name</th>
+                  <th class="py-3">Business (USD)</th>
+                  <th class="py-3">Business (INR)</th>
+                  <th class="py-3">Package / Plan</th>
+                  <th class="py-3">Investment Status</th>
+                  <th class="py-3 px-4">Transaction Date & Time</th>
+                </tr>
+              </thead>
+              <tbody style="font-size: 13.5px; color: #0f172a;">
+                <?php if (empty($reportData)): ?>
+                  <tr><td colspan="8" class="text-center py-5 text-muted">No business transaction records found for selected period.</td></tr>
+                <?php else: foreach ($reportData as $row): ?>
+                  <tr>
+                    <td class="px-4 font-weight-bold text-secondary">#<?php echo $row['id']; ?></td>
+                    <td>
+                      <strong class="text-primary"><?php echo htmlspecialchars($row['user_id']); ?></strong>
+                    </td>
+                    <td>
+                      <strong><?php echo htmlspecialchars($row['name']); ?></strong>
+                    </td>
+                    <td class="font-weight-bold text-success">$<?php echo number_format((float)$row['bus_usd'], 2); ?></td>
+                    <td class="font-weight-bold text-info">₹<?php echo number_format((float)$row['bus_inr'], 2); ?></td>
+                    <td>
+                      <span class="badge badge-light border text-dark font-weight-bold px-2 py-1">
+                        <?php echo htmlspecialchars($row['package_code'] ?: 'STANDARD'); ?>
+                        <?php if ((float)($row['percentage'] ?? 0) > 0): ?>
+                          (<?php echo number_format((float)$row['percentage'], 2); ?>%)
+                        <?php endif; ?>
+                      </span>
+                    </td>
+                    <td>
+                      <?php if ((int)($row['status'] ?? 0) === 0): ?>
+                        <span class="badge badge-success px-2 py-1">ACTIVE</span>
+                      <?php else: ?>
+                        <span class="badge badge-secondary px-2 py-1">WITHDRAWN / CLOSED</span>
+                      <?php endif; ?>
+                      <?php if (!empty($row['capital_withdrawal_status']) && $row['capital_withdrawal_status'] !== 'LOCKED'): ?>
+                        <small class="d-block text-muted"><?php echo htmlspecialchars($row['capital_withdrawal_status']); ?></small>
+                      <?php endif; ?>
+                    </td>
+                    <td class="px-4 small text-muted">
+                      <?php echo htmlspecialchars($row['created_date']); ?> 
+                      <span class="text-secondary"><?php echo htmlspecialchars($row['created_time'] ?? ''); ?></span>
+                    </td>
+                  </tr>
+                <?php endforeach; endif; ?>
+              </tbody>
+
+            <?php elseif ($type === 'yearly'): ?>
+              <thead style="background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase;">
+                <tr>
+                  <th class="py-3 px-4">Yearly Period</th>
                   <th class="py-3">Active Transacting Members</th>
                   <th class="py-3">Total Investment</th>
                   <th class="py-3">Total Income Distributed</th>
@@ -837,7 +852,7 @@ label.form-label-custom {
                 <?php else: foreach ($reportData as $row): ?>
                   <tr>
                     <td class="px-4 font-weight-bold text-primary">
-                      <?php echo htmlspecialchars($row['report_date'] ?? $row['report_month'] ?? $row['report_year'] ?? ''); ?>
+                      <?php echo htmlspecialchars($row['report_year'] ?? ''); ?>
                     </td>
                     <td><span class="badge badge-secondary px-2 py-1"><?php echo number_format($row['total_users']); ?> Users</span></td>
                     <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$row['total_investment']); ?></td>
