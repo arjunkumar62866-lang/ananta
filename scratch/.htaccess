@@ -1,0 +1,16 @@
+# ==============================================================================
+# SECURE SCRATCH DIRECTORY - BLOCK ALL HTTP ACCESS
+# Protects test scripts, diagnostics, backups, and audits from public execution
+# Compatible with Apache 2.2 (mod_authz_host) and Apache 2.4+ (mod_authz_core)
+# ==============================================================================
+
+<IfModule mod_authz_core.c>
+    # Apache 2.4+
+    Require all denied
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    # Apache 2.2 fallback
+    Order deny,allow
+    Deny from all
+</IfModule>
