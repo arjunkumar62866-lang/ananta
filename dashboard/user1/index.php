@@ -162,8 +162,10 @@ $my_left_active_directs  = count(array_filter($leftBranchMembers,  function($m) 
 $my_right_active_directs = count(array_filter($rightBranchMembers, function($m) { return (($m['status'] ?? '') === 'Active'); }));
 
 
-// Reward achiever check 
-rank_reward($userid);
+// VIP Club qualification check (authoritative 10-level VIP Club system)
+if (function_exists('evaluateUserVIPQualifications')) {
+    evaluateUserVIPQualifications($userid, $pdo);
+}
 
 // withdraw ammount
 $table="tbl_transaction";
@@ -1419,22 +1421,18 @@ body.ananta-user-dashboard {
                     </a>
                 </div>
 
-                <!-- 5. Rank Reward -->
+                <!-- 5. VIP Club & Rewards -->
                 <div class="col-6 col-md-4 mb-3">
-                    <a href="reward_income.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
+                    <a href="vip-club.php" class="card border-0 shadow-sm p-3 h-100 text-decoration-none" style="background: #ffffff; border: 1px solid #e2e8f0 !important; border-radius: 18px; transition: transform 0.2s;">
                         <div class="d-flex align-items-center mb-2">
                             <div class="rounded-circle p-2 mr-2 d-flex align-items-center justify-content-center" style="background: #e11d48; color: #ffffff; width: 40px; height: 40px; flex-shrink: 0;">
                                 <i class="zmdi zmdi-card-giftcard" style="font-size: 18px;"></i>
                             </div>
-                            <span class="font-weight-bold text-truncate" style="color: #334155; font-size: 14px;">Rank Reward</span>
+                            <span class="font-weight-bold text-truncate" style="color: #334155; font-size: 14px;">VIP Rewards</span>
                         </div>
                         <h3 class="font-weight-bold mb-1 text-truncate" style="color: #0f172a; font-size: 20px; font-family: 'Plus Jakarta Sans', sans-serif;">
                             <?php echo formatCurrency($reward_income, $selectedCurrency); ?>
                         </h3>
-                        <!-- <div class="d-flex align-items-center justify-content-between mt-1">
-                            <span class="small font-weight-bold" style="color: #16a34a; font-size: 12.5px;">+3.8%</span>
-                            <i class="zmdi zmdi-chevron-right text-muted" style="font-size: 16px;"></i>
-                        </div> -->
                     </a>
                 </div>
 

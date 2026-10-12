@@ -326,8 +326,8 @@ $news = $newsdata['news'];
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </button>
       <ul class="submenu">
-        <li><a href="rank_settings.php"><i class="zmdi zmdi-circle-o"></i> Rank Settings & Matrix</a></li>
-        <!-- <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> VIP Qualifications & Income</a></li> -->
+        <li><a href="rank_settings.php"><i class="zmdi zmdi-circle-o"></i> Rank Matrix (Levels 1-10)</a></li>
+        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> VIP Club Qualifications</a></li>
         <li><a href="vip-club.php?tab=history"><i class="zmdi zmdi-circle-o"></i> VIP History & Closing</a></li>
       </ul>
     </li>

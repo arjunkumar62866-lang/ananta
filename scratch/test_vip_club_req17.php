@@ -83,6 +83,7 @@ try {
     // Left: $15,000 (₹13,50,000) | Right: $20,000 (₹18,00,000)
     // ---------------------------------------------------------
     $stmtPkg = $pdo->prepare("INSERT INTO tbl_roi_one (user_id, level, package, percentage, amount, totalincome, capping, status, count, lock_day, date, time) VALUES (:uid, 1, :pkg, 1, 0, 0, 0, '0', 1, 10, CURDATE(), '00:00:00')");
+    $stmtPkg->execute([':uid' => $testParent, ':pkg' => 13500]); // $150 (satisfies minimum $145 requirement)
     $stmtPkg->execute([':uid' => $testLeft, ':pkg' => 1350000]); // $15,000
     $stmtPkg->execute([':uid' => $testRight, ':pkg' => 1800000]); // $20,000
 

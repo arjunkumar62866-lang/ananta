@@ -199,125 +199,16 @@ function isUserIncomeEligible($userid, $pdoConnection = null) {
 if (!function_exists('rank_reward')) {
 
 
+/**
+ * Obsolete Legacy Rank Reward function - DEACTIVATED.
+ * Superseded by the 10-level VIP Club qualification and reward system (evaluateUserVIPQualifications).
+ * Preserved as a safe no-op stub for backward compatibility without generating obsolete credits or table modifications.
+ */
 function rank_reward($userid)
 {
-    global $pdo;
-
-    // Income Eligibility: User must have active ID and minimum $145 investment
-    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($userid, $pdo)) {
-        return false;
-    }
-
-    $time = date("H:i:s");
-
-    // Step 1: get current user data
-    $stmt = $pdo->prepare("SELECT `rank` FROM user WHERE userid = :id");
-    $stmt->execute([':id' => $userid]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$user) return false;
-
-    // Existing values
-    $current_rank = $user['rank'];   
-
-    // Step 2: Get left & right directs
-    $left = getmydirectactiveleft($userid);
-    $right = getmydirectactiveright($userid);
-    
-
-    // Step 3: Fetch all reward levels sorted by requirement
-    $stmt = $pdo->prepare("SELECT * FROM tbl_rewardlevel ORDER BY act_req_direct DESC, id DESC");
-    $stmt->execute();
-    $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach ($levels as $lvl) {
-
-        $req = (int)$lvl['req_direct'];   // required directs (left+right)
-        $reward = (int)$lvl['reward'];        // reward amount
-        $rank = $lvl['rank'];                 // Manager, Gold, etc.
-        $rank_percentage = $lvl['ranking_percentage'];
-        
-        // Skip already achieved ranks
-        if ($current_rank == $rank){
-            if($rank == "Red Diamond" || $rank == "Director"){
-                $stmt = $pdo->prepare("SELECT * FROM tbl_royalty_user WHERE userid= :uid");
-                $stmt->execute([':uid'=>$userid]);
-                $exists = $stmt->fetchColumn();
-                
-                if($exists==0){
-                    $stmt = $pdo->prepare("INSERT INTO tbl_royalty_user (userid, level, created_date, time, full_status)
-                    VALUES (:uid, :level, NOW(), :time, 0)");
-                    
-                    $stmt->execute([
-                        ':uid'=> $userid,
-                        ':level'=> $rank,
-                        ':time'=> $time
-                    ]);
-                }
-            }
-            return;
-        };
-
-        // Step 4: Check eligibility → both sides must match requirement
-          
-        if ($left >= $req && $right >= $req &&(getmydirectactive($userid)>=10)) {
-
-            // Step 5: Update user wallet & income
-
-            $stmtu = $pdo->prepare("
-                UPDATE user 
-                SET amount = amount + :amt, total_inc = total_inc + :amt, rank_reward_wallet = rank_reward_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt, rank = :rk , ranking_percentage = :ranking_per
-                WHERE userid = :uid
-            ");
-
-            $stmtu->execute([
-                ':amt' => $reward,
-                ':rk'  => $rank,
-                ':uid' => $userid,
-                ':ranking_per'=> $rank_percentage,
-            ]);
-
-            // Step 6: Insert rewardinc table transaction
-            $subject = "$reward Reward Income ($rank) Achieved";
-            
-
-            $stmt3 = $pdo->prepare("
-                INSERT INTO tbl_rewardinc
-                    (user_id, type, subject, time, created_date, status, amount)
-                VALUES
-                    (:uid, 'reward', :subj, :t, NOW(), 1, :amt)
-            ");
-
-            $stmt3->execute([
-                ':uid' => $userid,
-                ':subj'=> $subject,
-                ':t'   => $time,
-                ':amt' => $reward
-            ]);
-            
-            // Step 6: Insert transaction
-            $subject = "$reward Reward Income ($rank) Achieved";
-            $time = date("H:i:s");
-
-            $stmt3 = $pdo->prepare("
-                INSERT INTO tbl_transaction 
-                    (user_id, type, subject, time, created_date, status, amount)
-                VALUES
-                    (:uid, 'credit', :subj, :t, NOW(), 1, :amt)
-            ");
-
-            $stmt3->execute([
-                ':uid' => $userid,
-                ':subj'=> $subject,
-                ':t'   => $time,
-                ':amt' => $reward
-            ]);
-
-            return true; // reward granted
-        }
-    }
-
-    return false; // no reward matched
+    // Obsolete X1-X5 rank reward flow deactivated.
+    // VIP Club qualification is handled authoritatively by evaluateUserVIPQualifications().
+    return false;
 }
 }
 if (!function_exists('getmydirectidleft')) {
@@ -2794,6 +2685,246 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
 }
 
 /**
+ * Helper: Recursively or iteratively collect all descendant user IDs in a binary subtree.
+ */
+if (!function_exists('getBinarySubtreeUserIds')) {
+function getBinarySubtreeUserIds($start_user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$start_user_id) return [];
+
+    $visited = [];
+    $queue = [$start_user_id];
+
+    $stmt = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+
+    while (!empty($queue)) {
+        $curr = array_shift($queue);
+        if (isset($visited[$curr])) continue;
+        $visited[$curr] = true;
+
+        $stmt->execute([':uid' => $curr]);
+        $node = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($node) {
+            if (!empty($node['left_id']) && !isset($visited[$node['left_id']])) {
+                $queue[] = $node['left_id'];
+            }
+            if (!empty($node['right_id']) && !isset($visited[$node['right_id']])) {
+                $queue[] = $node['right_id'];
+            }
+        }
+    }
+
+    // Return list of descendants excluding start node itself
+    unset($visited[$start_user_id]);
+    return array_keys($visited);
+}
+}
+
+/**
+ * Get detailed Left Leg and Right Leg statistics (ID counts and Business in USD) for a user.
+ */
+if (!function_exists('getBinaryLegDetails')) {
+function getBinaryLegDetails($user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$user_id) {
+        return [
+            'left_id' => '', 'right_id' => '',
+            'left_ids_count' => 0, 'right_ids_count' => 0,
+            'left_business_usd' => 0.0, 'right_business_usd' => 0.0,
+            'weaker_leg_business_usd' => 0.0
+        ];
+    }
+
+    $stmtTree = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
+    $stmtTree->execute([':uid' => $user_id]);
+    $treeNode = $stmtTree->fetch(PDO::FETCH_ASSOC);
+
+    $leftId  = $treeNode['left_id'] ?? '';
+    $rightId = $treeNode['right_id'] ?? '';
+
+    $leftSubtreeUsers  = $leftId ? array_merge([$leftId], getBinarySubtreeUserIds($leftId, $db)) : [];
+    $rightSubtreeUsers = $rightId ? array_merge([$rightId], getBinarySubtreeUserIds($rightId, $db)) : [];
+
+    // Helper to calculate active count & business in USD ($1 = ₹90)
+    $calcLegStats = function($userList) use ($db) {
+        if (empty($userList)) return ['count' => 0, 'business_usd' => 0.0];
+
+        $inClause = "'" . implode("','", array_map('addslashes', $userList)) . "'";
+        $stmtCount = $db->query("SELECT COUNT(*) FROM user WHERE userid IN ({$inClause}) AND active = '1'");
+        $activeCount = (int)$stmtCount->fetchColumn();
+
+        $stmtBiz = $db->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one WHERE user_id IN ({$inClause})");
+        $bizInr = (float)$stmtBiz->fetchColumn();
+        $bizUsd = round($bizInr / 90.0, 2);
+
+        return ['count' => $activeCount, 'business_usd' => $bizUsd];
+    };
+
+    $leftStats  = $calcLegStats($leftSubtreeUsers);
+    $rightStats = $calcLegStats($rightSubtreeUsers);
+
+    $weakerBizUsd = min($leftStats['business_usd'], $rightStats['business_usd']);
+
+    return [
+        'left_id'                 => $leftId,
+        'right_id'                => $rightId,
+        'left_ids_count'          => $leftStats['count'],
+        'right_ids_count'         => $rightStats['count'],
+        'left_business_usd'       => $leftStats['business_usd'],
+        'right_business_usd'      => $rightStats['business_usd'],
+        'weaker_leg_business_usd' => $weakerBizUsd
+    ];
+}
+}
+
+/**
+ * Traverse binary tree upwards to retrieve all upline ancestors of a user.
+ */
+if (!function_exists('getBinaryAncestors')) {
+function getBinaryAncestors($user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$user_id) return [];
+
+    $ancestors = [];
+    $current = (string)$user_id;
+    $visited = [];
+
+    $stmtParent = $db->prepare("SELECT userid FROM tree WHERE left_id = :uid OR right_id = :uid LIMIT 1");
+
+    while (!empty($current) && !isset($visited[$current])) {
+        $visited[$current] = true;
+        $stmtParent->execute([':uid' => $current]);
+        $parent = $stmtParent->fetchColumn();
+        if ($parent && !isset($visited[$parent])) {
+            $ancestors[] = $parent;
+            $current = $parent;
+        } else {
+            break;
+        }
+    }
+
+    return $ancestors;
+}
+}
+
+/**
+ * Evaluate and process VIP Club Qualifications & One-Time Rewards for a user.
+ */
+if (!function_exists('evaluateUserVIPQualifications')) {
+function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$user_id) return ['newly_qualified' => [], 'all_qualified' => []];
+
+    // Income Eligibility: User must have active ID and minimum $145 investment
+    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($user_id, $db)) {
+        return ['newly_qualified' => [], 'all_qualified' => []];
+    }
+
+    $legDetails = getBinaryLegDetails($user_id, $db);
+
+    $configs = $db->query("SELECT * FROM tbl_vip_level_config ORDER BY level_id ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+    $insQual = $db->prepare("
+        INSERT INTO tbl_vip_user_qualification
+        (user_id, vip_level, left_ids_achieved, right_ids_achieved, left_business_achieved, right_business_achieved, weaker_leg_business, reward_amount, reward_status)
+        VALUES
+        (:user_id, :vip_level, :left_ids, :right_ids, :left_biz, :right_biz, :weaker_biz, :reward_amt, 'CREDITED')
+    ");
+
+    $updWallet = $db->prepare("UPDATE user SET amount = amount + :amt, vip_club_wallet = vip_club_wallet + :amt, user_growth_wallet = user_growth_wallet + :amt WHERE userid = :uid");
+
+    $insTxn = $db->prepare("
+        INSERT INTO tbl_transaction
+        (user_id, type, subject, amount, created_date, status)
+        VALUES
+        (:user_id, 'Credit', :subject, :amount, NOW(), 1)
+    ");
+
+    $chkQual = $db->prepare("SELECT COUNT(*) FROM tbl_vip_user_qualification WHERE user_id = :uid AND vip_level = :lvl");
+
+    $newlyQualified = [];
+    $allQualified = [];
+
+    foreach ($configs as $c) {
+        $lvl = (int)$c['level_id'];
+        $reqLeftIds  = (int)$c['req_left_ids'];
+        $reqRightIds = (int)$c['req_right_ids'];
+        $reqLeftBiz  = (float)$c['req_left_business'];
+        $reqRightBiz = (float)$c['req_right_business'];
+        $rewardAmt   = (float)$c['reward_amount'];
+
+        $isQualified = (
+            $legDetails['left_ids_count'] >= $reqLeftIds &&
+            $legDetails['right_ids_count'] >= $reqRightIds &&
+            $legDetails['left_business_usd'] >= $reqLeftBiz &&
+            $legDetails['right_business_usd'] >= $reqRightBiz
+        );
+
+        if ($isQualified) {
+            $allQualified[] = $lvl;
+
+            $chkQual->execute([':uid' => $user_id, ':lvl' => $lvl]);
+            if ($chkQual->fetchColumn() == 0) {
+                // Idempotent first-time qualification & reward distribution
+                $insQual->execute([
+                    ':user_id'    => $user_id,
+                    ':vip_level'  => $lvl,
+                    ':left_ids'   => $legDetails['left_ids_count'],
+                    ':right_ids'  => $legDetails['right_ids_count'],
+                    ':left_biz'   => $legDetails['left_business_usd'],
+                    ':right_biz'  => $legDetails['right_business_usd'],
+                    ':weaker_biz' => $legDetails['weaker_leg_business_usd'],
+                    ':reward_amt' => $rewardAmt
+                ]);
+
+                if ($rewardAmt > 0) {
+                    $updWallet->execute([':amt' => $rewardAmt, ':uid' => $user_id]);
+                    $subject = "VIP Club Level {$lvl} Reward ($ " . number_format($rewardAmt, 2) . ")";
+                    $insTxn->execute([':user_id' => $user_id, ':subject' => $subject, ':amount' => $rewardAmt]);
+                }
+
+                $newlyQualified[] = ['level' => $lvl, 'reward' => $rewardAmt];
+            }
+        }
+    }
+
+    return [
+        'leg_details'     => $legDetails,
+        'newly_qualified' => $newlyQualified,
+        'all_qualified'   => $allQualified
+    ];
+}
+}
+
+/**
+ * Trigger VIP Club qualification evaluation for a user and all their binary upline ancestors.
+ * Designed for event-driven execution on activation, investment, and tree placement.
+ */
+if (!function_exists('triggerVIPQualificationsForAncestors')) {
+function triggerVIPQualificationsForAncestors($user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$user_id) return [];
+
+    $results = [];
+    // 1. Evaluate user themself
+    $results[$user_id] = evaluateUserVIPQualifications($user_id, $db);
+
+    // 2. Evaluate all binary ancestors
+    $ancestors = getBinaryAncestors($user_id, $db);
+    foreach ($ancestors as $ancestorId) {
+        $results[$ancestorId] = evaluateUserVIPQualifications($ancestorId, $db);
+    }
+
+    return $results;
+}
+}
+
+/**
  * Requirement #21: Process P2P Fund Transfer.
  */
 if (!function_exists('processP2PTransfer')) {
@@ -3988,6 +4119,15 @@ if (!function_exists('processAnantaPackageInvestment')) {
                 $db->commit();
             }
 
+            // Real-time Event-Driven VIP Club Qualification Evaluation for user & upline binary ancestors
+            if (function_exists('triggerVIPQualificationsForAncestors')) {
+                try {
+                    triggerVIPQualificationsForAncestors($user_id, $db);
+                } catch (\Throwable $eVIP) {
+                    error_log("VIP qualification ancestor trigger warning: " . $eVIP->getMessage());
+                }
+            }
+
             return [
                 'status'                 => 'success',
                 'message'                => "Investment of $" . number_format($realFundUsd, 2) . " in {$pkg['package_name']} completed successfully!",
@@ -4995,6 +5135,15 @@ if (!function_exists('processAccountActivation')) {
             }
 
             if ($inLocalTxn) $db->commit();
+
+            // Real-time Event-Driven VIP Club Qualification Evaluation for target user & upline binary ancestors
+            if (function_exists('triggerVIPQualificationsForAncestors')) {
+                try {
+                    triggerVIPQualificationsForAncestors($targetId, $db);
+                } catch (\Throwable $eVIP) {
+                    error_log("VIP qualification ancestor trigger warning on activation: " . $eVIP->getMessage());
+                }
+            }
 
             $remDays = (int)ceil((strtotime($expiryDtStr) - strtotime($startDtStr)) / 86400);
 

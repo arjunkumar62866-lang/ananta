@@ -433,9 +433,8 @@ setTimeout(function() {
         <li><a href="profit_sharing_income.php"><i class="zmdi zmdi-circle-o"></i> 2. Profit Sharing Income</a></li>
         <li><a href="direct_bonus.php"><i class="zmdi zmdi-circle-o"></i> 3. Direct Bonus</a></li>
         <li><a href="mentor_income.php"><i class="zmdi zmdi-circle-o"></i> 4. Mentor Income</a></li>
-        <li><a href="reward_income.php"><i class="zmdi zmdi-circle-o"></i> 5. Rank Reward</a></li>
-        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> 6. VIP Club Income</a></li>
-        <li><a href="company_turnover_income.php"><i class="zmdi zmdi-circle-o"></i> 7. Company Turnover Income</a></li>
+        <li><a href="vip-club.php"><i class="zmdi zmdi-circle-o"></i> 5. VIP Club & Rewards</a></li>
+        <li><a href="company_turnover_income.php"><i class="zmdi zmdi-circle-o"></i> 6. Company Turnover Income</a></li>
       </ul>
     </li>
 

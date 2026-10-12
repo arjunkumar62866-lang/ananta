@@ -2673,6 +2673,61 @@ function getBinaryLegDetails($user_id, $pdoConnection = null) {
 }
 
 /**
+ * Traverse binary tree upwards to retrieve all upline ancestors of a user.
+ */
+if (!function_exists('getBinaryAncestors')) {
+function getBinaryAncestors($user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$user_id) return [];
+
+    $ancestors = [];
+    $current = (string)$user_id;
+    $visited = [];
+
+    $stmtParent = $db->prepare("SELECT userid FROM tree WHERE left_id = :uid OR right_id = :uid LIMIT 1");
+
+    while (!empty($current) && !isset($visited[$current])) {
+        $visited[$current] = true;
+        $stmtParent->execute([':uid' => $current]);
+        $parent = $stmtParent->fetchColumn();
+        if ($parent && !isset($visited[$parent])) {
+            $ancestors[] = $parent;
+            $current = $parent;
+        } else {
+            break;
+        }
+    }
+
+    return $ancestors;
+}
+}
+
+/**
+ * Trigger VIP Club qualification evaluation for a user and all their binary upline ancestors.
+ * Designed for event-driven execution on activation, investment, and tree placement.
+ */
+if (!function_exists('triggerVIPQualificationsForAncestors')) {
+function triggerVIPQualificationsForAncestors($user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || !$user_id) return [];
+
+    $results = [];
+    // 1. Evaluate user themself
+    $results[$user_id] = evaluateUserVIPQualifications($user_id, $db);
+
+    // 2. Evaluate all binary ancestors
+    $ancestors = getBinaryAncestors($user_id, $db);
+    foreach ($ancestors as $ancestorId) {
+        $results[$ancestorId] = evaluateUserVIPQualifications($ancestorId, $db);
+    }
+
+    return $results;
+}
+}
+
+/**
  * Evaluate and process VIP Club Qualifications & One-Time Rewards for a user.
  */
 if (!function_exists('evaluateUserVIPQualifications')) {
@@ -4145,6 +4200,15 @@ function processAnantaPackageInvestment($user_id, $package_id, $amount_usd, $pdo
 
         if ($inLocalTxn) {
             $db->commit();
+        }
+
+        // Real-time Event-Driven VIP Club Qualification Evaluation for user & upline binary ancestors
+        if (function_exists('triggerVIPQualificationsForAncestors')) {
+            try {
+                triggerVIPQualificationsForAncestors($user_id, $db);
+            } catch (\Throwable $eVIP) {
+                error_log("VIP qualification ancestor trigger warning: " . $eVIP->getMessage());
+            }
         }
 
         return [

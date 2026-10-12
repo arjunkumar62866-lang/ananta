@@ -1,4 +1,12 @@
-<?php ob_start(); ?>
+<?php 
+ob_start(); 
+// Requirement #3: Redirect obsolete reward_income.php to vip-club.php
+// Historical records remain accessible if explicitly viewing archive mode (?archive=1 or ?history=1)
+if (!isset($_GET['archive']) && !isset($_GET['history'])) {
+    header("Location: vip-club.php");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -328,6 +336,19 @@ table.ananta-custom-table tbody td {
                                     </div>
                                 </div>
                             </div>
+                <!-- Archive Notice Banner -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-radius: 14px; background: #eff6ff; border: 1px solid #bfdbfe !important; color: #1e40af;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa fa-info-circle text-primary" style="font-size: 18px;"></i>
+                                <span style="font-weight: 600; font-size: 13.5px;">
+                                    This archive statement shows historical rank reward records. The official active incentive system is the <strong>10-Level VIP Club & Rewards</strong>.
+                                </span>
+                            </div>
+                            <a href="vip-club.php" class="btn btn-sm btn-primary font-weight-bold px-3 py-1" style="border-radius: 8px;">
+                                View VIP Club <i class="fa fa-arrow-right ms-1"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
