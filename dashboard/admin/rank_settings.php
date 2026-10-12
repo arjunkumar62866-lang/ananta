@@ -43,9 +43,9 @@ $ranks = $pdo->query("SELECT * FROM tbl_vip_level_config ORDER BY level_id ASC")
                 <th class="py-3 px-4">Level</th>
                 <th class="py-3">Rank Name</th>
                 <th class="py-3">Left / Right ID Req</th>
-                <th class="py-3">Left / Right Volume ($)</th>
+                <th class="py-3">Left / Right Volume (<?php echo getCurrencySymbol($activeCurrency); ?>)</th>
                 <th class="py-3">One-Time Reward</th>
-                <th class="py-3">Monthly Repeat ($)</th>
+                <th class="py-3">Monthly Repeat (<?php echo getCurrencySymbol($activeCurrency); ?>)</th>
                 <th class="py-3">VIP Income %</th>
                 <th class="py-3 px-4">Turnover Share (0.5%)</th>
               </tr>
@@ -56,9 +56,9 @@ $ranks = $pdo->query("SELECT * FROM tbl_vip_level_config ORDER BY level_id ASC")
                   <td class="px-4 font-weight-bold"><span class="badge badge-primary px-2 py-1">Level <?php echo $r['level_id']; ?></span></td>
                   <td><strong><?php echo htmlspecialchars($r['name'] ?? ('VIP Level ' . $r['level_id'])); ?></strong></td>
                   <td><?php echo number_format($r['req_left_ids']); ?> / <?php echo number_format($r['req_right_ids']); ?> IDs</td>
-                  <td>$<?php echo number_format($r['req_left_business'], 2); ?> / $<?php echo number_format($r['req_right_business'], 2); ?></td>
-                  <td class="font-weight-bold text-success">$<?php echo number_format((float)$r['reward_amount'], 2); ?></td>
-                  <td>$<?php echo number_format((float)$r['monthly_repeat_business'], 2); ?></td>
+                  <td><?php echo formatCurrency((float)$r['req_left_business'], $activeCurrency); ?> / <?php echo formatCurrency((float)$r['req_right_business'], $activeCurrency); ?></td>
+                  <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$r['reward_amount'], $activeCurrency); ?></td>
+                  <td><?php echo formatCurrency((float)$r['monthly_repeat_business'], $activeCurrency); ?></td>
                   <td class="font-weight-bold text-info"><?php echo number_format((float)$r['vip_income_rate'], 2); ?>%</td>
                   <td class="px-4">
                     <?php if ($r['has_turnover_share'] == 1): ?>

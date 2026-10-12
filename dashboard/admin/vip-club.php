@@ -273,7 +273,7 @@ table.dataTable.no-footer {
                             </div>
                             <div>
                                 <span class="text-muted fw-bold d-block" style="font-size: 12px;">TOTAL REWARDS DISTRIBUTED</span>
-                                <h4 class="mb-0 fw-extrabold" id="statTotalRewards" style="color: #f59e0b;">$ 0.00</h4>
+                                <h4 class="mb-0 fw-extrabold" id="statTotalRewards" style="color: #f59e0b;"><?php echo formatCurrency(0, $activeCurrency); ?></h4>
                             </div>
                         </div>
                     </div>
@@ -284,7 +284,7 @@ table.dataTable.no-footer {
                             </div>
                             <div>
                                 <span class="text-muted fw-bold d-block" style="font-size: 12px;">TOTAL MONTHLY PAYOUTS</span>
-                                <h4 class="mb-0 fw-extrabold" id="statTotalMonthly" style="color: #10b981;">$ 0.00</h4>
+                                <h4 class="mb-0 fw-extrabold" id="statTotalMonthly" style="color: #10b981;"><?php echo formatCurrency(0, $activeCurrency); ?></h4>
                             </div>
                         </div>
                     </div>
@@ -306,7 +306,7 @@ table.dataTable.no-footer {
                             </div>
                             <div>
                                 <span class="text-muted fw-bold d-block" style="font-size: 12px;">TOTAL ADMIN ADJUSTMENTS</span>
-                                <h4 class="mb-0 fw-extrabold" id="statTotalAdjusted" style="color: #9333ea;">$ 0.00</h4>
+                                <h4 class="mb-0 fw-extrabold" id="statTotalAdjusted" style="color: #9333ea;"><?php echo formatCurrency(0, $activeCurrency); ?></h4>
                             </div>
                         </div>
                     </div>
@@ -353,11 +353,11 @@ table.dataTable.no-footer {
                                             <tr>
                                                 <th>Level</th>
                                                 <th>Left : Right IDs</th>
-                                                <th>Left : Right Business ($)</th>
-                                                <th>One-Time Reward ($)</th>
+                                                <th>Left : Right Business (<?php echo getCurrencySymbol($activeCurrency); ?>)</th>
+                                                <th>One-Time Reward (<?php echo getCurrencySymbol($activeCurrency); ?>)</th>
                                                 <th>VIP Club Income Rate</th>
                                                 <th>Company Turnover Share</th>
-                                                <th>Monthly Repeat Business ($)</th>
+                                                <th>Monthly Repeat Business (<?php echo getCurrencySymbol($activeCurrency); ?>)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -488,7 +488,7 @@ table.dataTable.no-footer {
                                                 <th>Admin User ID</th>
                                                 <th>Target User ID</th>
                                                 <th>Action Type</th>
-                                                <th>Amount ($)</th>
+                                                <th>Amount (<?php echo getCurrencySymbol($activeCurrency); ?>)</th>
                                                 <th>Previous Balance</th>
                                                 <th>New Balance</th>
                                                 <th>Mandatory Reason</th>
@@ -541,7 +541,7 @@ table.dataTable.no-footer {
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold" style="color: #0f172a;">Amount ($)</label>
+                            <label class="form-label fw-bold" style="color: #0f172a;">Amount (USD / $)</label>
                             <input type="number" step="0.01" min="0.01" name="amount" class="form-control fw-bold" placeholder="0.00" required style="border-radius: 10px;">
                         </div>
                         <div class="mb-3">
@@ -598,7 +598,7 @@ table.dataTable.no-footer {
                             <div class="col-md-3">
                                 <div class="p-3 bg-light rounded border text-center">
                                     <span class="text-muted small fw-bold d-block">COMPANY TURNOVER</span>
-                                    <h5 class="mb-0 fw-bold text-dark" id="prevCompanyTurnover">$0.00</h5>
+                                    <h5 class="mb-0 fw-bold text-dark" id="prevCompanyTurnover"><?php echo formatCurrency(0, $activeCurrency); ?></h5>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -610,13 +610,13 @@ table.dataTable.no-footer {
                             <div class="col-md-3">
                                 <div class="p-3 bg-light rounded border text-center">
                                     <span class="text-muted small fw-bold d-block">VIP PAYOUT TOTAL</span>
-                                    <h5 class="mb-0 fw-bold text-info" id="prevVipTotal">$0.00</h5>
+                                    <h5 class="mb-0 fw-bold text-info" id="prevVipTotal"><?php echo formatCurrency(0, $activeCurrency); ?></h5>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="p-3 bg-light rounded border text-center">
                                     <span class="text-muted small fw-bold d-block">TURNOVER SHARE TOTAL</span>
-                                    <h5 class="mb-0 fw-bold text-purple" id="prevTurnoverTotal">$0.00</h5>
+                                    <h5 class="mb-0 fw-bold text-purple" id="prevTurnoverTotal"><?php echo formatCurrency(0, $activeCurrency); ?></h5>
                                 </div>
                             </div>
                         </div>
