@@ -212,7 +212,7 @@ table.dataTable.no-footer {
                             <span style="color: #94a3b8; font-weight: 400;">/</span>
                             <span style="color: #475569; font-weight: 600;">User Growth</span>
                             <span style="color: #94a3b8; font-weight: 400;">/</span>
-                            <span style="color: #0f172a; font-weight: 700;">6. VIP Club Income</span>
+                            <span style="color: #0f172a; font-weight: 700;">5. VIP Club & Rewards</span>
                         </div>
                     </nav>
                 </div>
