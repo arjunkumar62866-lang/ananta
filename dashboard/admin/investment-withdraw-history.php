@@ -274,35 +274,58 @@ table.dataTable.no-footer {
     color: #0f172a;
 }
 
-/* Mobile Responsiveness Improvements */
-@media (max-width: 767.98px) {
+/* Mobile & Tablet Responsiveness Improvements */
+@media (max-width: 991.98px) {
     .content-wrapper {
-        padding-left: 12px !important;
-        padding-right: 12px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
         padding-top: 75px !important;
     }
     .income-header-card {
-        padding: 16px !important;
+        padding: 14px 16px !important;
         border-radius: 14px !important;
+        margin-bottom: 14px;
+    }
+    .card-body.p-4 {
+        padding: 8px 4px !important;
     }
     .card-header-bar {
         flex-direction: column !important;
         align-items: flex-start !important;
-        padding: 10px 0 !important;
+        padding: 10px 4px !important;
+        gap: 10px !important;
     }
     .btn-export-excel {
         width: 100% !important;
         justify-content: center !important;
+    }
+    .table-responsive {
+        border-radius: 10px !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    .table thead th, .table tbody td {
+        padding: 10px 10px !important;
+        font-size: 12.5px !important;
     }
     .dataTables_wrapper .dataTables_length,
     .dataTables_wrapper .dataTables_filter {
         float: none !important;
         text-align: left !important;
         width: 100% !important;
+        margin-bottom: 10px !important;
+    }
+    .dataTables_wrapper .dataTables_filter label,
+    .dataTables_wrapper .dataTables_length label {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
     }
     .dataTables_wrapper .dataTables_filter input {
         width: 100% !important;
         margin-left: 0 !important;
+        flex: 1 1 auto;
     }
     .dataTables_wrapper .dataTables_info,
     .dataTables_wrapper .dataTables_paginate {
@@ -314,6 +337,7 @@ table.dataTable.no-footer {
         display: flex !important;
         justify-content: center !important;
         flex-wrap: wrap !important;
+        gap: 4px;
     }
 }
 </style>
@@ -328,12 +352,29 @@ table.dataTable.no-footer {
     </div>
     <!-- End Loader -->
 
+    <?php
+    $invType = isset($_GET['type']) ? (string)$_GET['type'] : '3';
+    if ($invType === '1') {
+        $invHeading = "Investment Withdrawals Paid";
+        $invSubHeading = "Approved and paid capital principal refund transactions.";
+        $invBadge = "Paid Capital Withdrawals";
+    } elseif ($invType === '2') {
+        $invHeading = "Investment Withdrawals Rejected";
+        $invSubHeading = "Cancelled and rejected capital refund requests.";
+        $invBadge = "Rejected Capital Withdrawals";
+    } else {
+        $invHeading = "Pending Investment Withdrawals";
+        $invSubHeading = "Review, approve, or cancel member capital principal withdrawal requests.";
+        $invBadge = "Pending Capital Requests";
+    }
+    ?>
+
     <!-- Wrapper -->
     <div id="wrapper">
         <div class="clearfix"></div>
 
         <div class="content-wrapper">
-            <div class="container-fluid">
+            <div class="container-fluid px-2 px-md-3">
 
                 <!-- Header Banner Card -->
                 <div class="card income-header-card p-4">
@@ -342,8 +383,8 @@ table.dataTable.no-footer {
                             <i class="fa fa-briefcase"></i>
                         </div>
                         <div>
-                            <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">Investment Withdrawal Management</h3>
-                            <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">Review, approve, or cancel member capital principal withdrawal requests.</p>
+                            <h3 class="mb-1" style="font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($invHeading); ?></h3>
+                            <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;"><?php echo htmlspecialchars($invSubHeading); ?></p>
                         </div>
                     </div>
                 </div>
@@ -353,14 +394,14 @@ table.dataTable.no-footer {
                         <div class="card ananta-fintech-card">
                             <div class="card-header-bar">
                                 <div class="card-header-title">
-                                    <h4>Investment Withdrawal Requests Log</h4>
+                                    <h4><?php echo htmlspecialchars($invBadge); ?></h4>
                                     <p>Live capital payout records & audit log</p>
                                 </div>
                                 <button id="customExportBtn" class="btn btn-export-excel">
                                     <i class="fa fa-file-excel-o"></i> Export to Excel
                                 </button>
                             </div>
-                            <div class="card-body p-4">
+                            <div class="card-body p-2 p-md-4">
 
                                 <!-- Table -->
                                 <div class="table-responsive" id="tblData">
@@ -537,7 +578,17 @@ table.dataTable.no-footer {
                         extend: 'excelHtml5',
                         title: 'Investment_Withdrawal_Report'
                     }
-                ]
+                ],
+                initComplete: function () {
+                    table.columns.adjust();
+                }
+            });
+
+            // Adjust columns on window resize or mobile orientation change
+            $(window).on('resize orientationchange', function() {
+                if (table) {
+                    table.columns.adjust();
+                }
             });
 
             // Custom export button

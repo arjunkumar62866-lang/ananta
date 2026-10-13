@@ -6643,8 +6643,3 @@ if (!function_exists('auto_link_new_registration_tree')) {
         }
     }
 }
-
-?>
-
-
-

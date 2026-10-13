@@ -583,7 +583,17 @@ table.dataTable.no-footer {
                         extend: 'excelHtml5',
                         title: 'Withdrawal_History_Report'
                     }
-                ]
+                ],
+                initComplete: function () {
+                    table.columns.adjust();
+                }
+            });
+
+            // Adjust columns on window resize or mobile orientation change
+            $(window).on('resize orientationchange', function() {
+                if (table) {
+                    table.columns.adjust();
+                }
             });
 
             // Custom export button
