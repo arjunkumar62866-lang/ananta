@@ -123,10 +123,13 @@ $receivedReport = getUserP2PReceivedReport($userid, $recFilterType, $recFromDate
 $activeTab = isset($_GET['tab']) && $_GET['tab'] === 'received' ? 'received' : (isset($_GET['rec_filter']) ? 'received' : 'transfer');
 
 // Calculate lifetime completed transfers for sent and received overview cards
+$cleanUserid = (stripos($userid, 'AN') === 0) ? substr($userid, 2) : $userid;
+$anUserid    = (stripos($userid, 'AN') === 0) ? $userid : 'AN' . $userid;
+
 $totalSentUSD = 0;
 try {
-    $stmtSent = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM tbl_p2p_transfer WHERE sender_id = ? AND status = 'COMPLETED'");
-    $stmtSent->execute([$userid]);
+    $stmtSent = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM tbl_p2p_transfer WHERE (sender_id = ? OR sender_id = ? OR sender_id = ?) AND status = 'COMPLETED'");
+    $stmtSent->execute([$userid, $cleanUserid, $anUserid]);
     $totalSentUSD = (float)$stmtSent->fetchColumn();
 } catch (Exception $e) {
     foreach ($sentHistory as $s) {
@@ -136,8 +139,8 @@ try {
 
 $totalReceivedUSD = 0;
 try {
-    $stmtRec = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM tbl_p2p_transfer WHERE receiver_id = ? AND status = 'COMPLETED'");
-    $stmtRec->execute([$userid]);
+    $stmtRec = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM tbl_p2p_transfer WHERE (receiver_id = ? OR receiver_id = ? OR receiver_id = ?) AND status = 'COMPLETED'");
+    $stmtRec->execute([$userid, $cleanUserid, $anUserid]);
     $totalReceivedUSD = (float)$stmtRec->fetchColumn();
 } catch (Exception $e) {
     foreach ($receivedReport as $r) {

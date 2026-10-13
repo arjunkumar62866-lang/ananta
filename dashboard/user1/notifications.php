@@ -11,7 +11,7 @@ if (!isset($_SESSION['userid'])) {
 
 $userid = $_SESSION['userid'];
 
-// Handle Mark as Read / Mark All as Read actions
+// Handle Mark as Read / Mark All as Read actions BEFORE fetching notifications
 $msg = '';
 $msgType = '';
 
@@ -29,17 +29,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$filterType = $_GET['type'] ?? '';
+$filterType = trim($_GET['type'] ?? '');
 $unreadOnly = isset($_GET['unread']) && $_GET['unread'] == '1';
 
-// Fetch user notifications
-$notifications = getUserNotifications($userid, 100, 0, $pdo);
+// Fetch all available notifications for the user
+$allUserNotifications = getUserNotifications($userid, 200, 0, $pdo);
+$unreadCount = getUnreadNotificationCount($userid, $pdo);
 
-// Filter by type or unread if requested
+// Calculate counts per tab
+$tabCounts = [
+    'ALL'        => count($allUserNotifications),
+    'UNREAD'     => 0,
+    'LOGIN'      => 0,
+    'WITHDRAWAL' => 0,
+    'P2P'        => 0,
+    'DEPOSIT'    => 0,
+    'INVESTMENT' => 0,
+    'KYC'        => 0,
+    'SECURITY'   => 0,
+    'ADMIN'      => 0,
+];
+
+foreach ($allUserNotifications as $n) {
+    if (intval($n['is_read']) === 0) {
+        $tabCounts['UNREAD']++;
+    }
+    $t = strtoupper(trim($n['type'] ?? ''));
+    if ($t === 'LOGIN') {
+        $tabCounts['LOGIN']++;
+    } elseif ($t === 'WITHDRAWAL') {
+        $tabCounts['WITHDRAWAL']++;
+    } elseif ($t === 'P2P' || $t === 'TRANSFER') {
+        $tabCounts['P2P']++;
+    } elseif ($t === 'DEPOSIT') {
+        $tabCounts['DEPOSIT']++;
+    } elseif ($t === 'INVESTMENT' || $t === 'PACKAGE') {
+        $tabCounts['INVESTMENT']++;
+    } elseif ($t === 'KYC') {
+        $tabCounts['KYC']++;
+    } elseif ($t === 'SECURITY') {
+        $tabCounts['SECURITY']++;
+    } elseif ($t === 'ADMIN' || $t === 'SYSTEM' || $t === 'GENERAL') {
+        $tabCounts['ADMIN']++;
+    }
+}
+
+// Filter notifications for active view
+$notifications = $allUserNotifications;
 if (!empty($filterType)) {
     $filterTypeUpper = strtoupper($filterType);
     $notifications = array_filter($notifications, function($n) use ($filterTypeUpper) {
-        $type = strtoupper($n['type'] ?? '');
+        $type = strtoupper(trim($n['type'] ?? ''));
         if ($filterTypeUpper === 'P2P' || $filterTypeUpper === 'TRANSFER') {
             return ($type === 'P2P' || $type === 'TRANSFER');
         }
@@ -47,7 +87,7 @@ if (!empty($filterType)) {
             return ($type === 'INVESTMENT' || $type === 'PACKAGE');
         }
         if ($filterTypeUpper === 'ADMIN' || $filterTypeUpper === 'SYSTEM') {
-            return ($type === 'ADMIN' || $type === 'SYSTEM');
+            return ($type === 'ADMIN' || $type === 'SYSTEM' || $type === 'GENERAL');
         }
         return $type === $filterTypeUpper;
     });
@@ -57,8 +97,6 @@ if ($unreadOnly) {
         return intval($n['is_read']) === 0;
     });
 }
-
-$unreadCount = getUnreadNotificationCount($userid, $pdo);
 ?>
 
 <style>
@@ -283,16 +321,16 @@ $unreadCount = getUnreadNotificationCount($userid, $pdo);
 
                     <!-- Filter Tabs -->
                     <div class="notif-tabs mb-4">
-                        <a href="notifications.php" class="notif-tab <?php echo (empty($filterType) && !$unreadOnly) ? 'active' : ''; ?>">All</a>
+                        <a href="notifications.php" class="notif-tab <?php echo (empty($filterType) && !$unreadOnly) ? 'active' : ''; ?>">All (<?php echo $tabCounts['ALL']; ?>)</a>
                         <a href="notifications.php?unread=1" class="notif-tab <?php echo $unreadOnly ? 'active' : ''; ?>">Unread (<?php echo $unreadCount; ?>)</a>
-                        <a href="notifications.php?type=LOGIN" class="notif-tab <?php echo $filterType === 'LOGIN' ? 'active' : ''; ?>">Login</a>
-                        <a href="notifications.php?type=WITHDRAWAL" class="notif-tab <?php echo $filterType === 'WITHDRAWAL' ? 'active' : ''; ?>">Withdrawal</a>
-                        <a href="notifications.php?type=P2P" class="notif-tab <?php echo ($filterType === 'P2P' || $filterType === 'TRANSFER') ? 'active' : ''; ?>">Transfer & P2P</a>
-                        <a href="notifications.php?type=DEPOSIT" class="notif-tab <?php echo $filterType === 'DEPOSIT' ? 'active' : ''; ?>">Deposit</a>
-                        <a href="notifications.php?type=INVESTMENT" class="notif-tab <?php echo ($filterType === 'INVESTMENT' || $filterType === 'PACKAGE') ? 'active' : ''; ?>">Investment</a>
-                        <a href="notifications.php?type=KYC" class="notif-tab <?php echo $filterType === 'KYC' ? 'active' : ''; ?>">KYC</a>
-                        <a href="notifications.php?type=SECURITY" class="notif-tab <?php echo $filterType === 'SECURITY' ? 'active' : ''; ?>">Security</a>
-                        <a href="notifications.php?type=ADMIN" class="notif-tab <?php echo $filterType === 'ADMIN' ? 'active' : ''; ?>">Admin</a>
+                        <a href="notifications.php?type=LOGIN" class="notif-tab <?php echo $filterType === 'LOGIN' ? 'active' : ''; ?>">Login <?php echo $tabCounts['LOGIN'] > 0 ? "({$tabCounts['LOGIN']})" : ''; ?></a>
+                        <a href="notifications.php?type=WITHDRAWAL" class="notif-tab <?php echo $filterType === 'WITHDRAWAL' ? 'active' : ''; ?>">Withdrawal <?php echo $tabCounts['WITHDRAWAL'] > 0 ? "({$tabCounts['WITHDRAWAL']})" : ''; ?></a>
+                        <a href="notifications.php?type=P2P" class="notif-tab <?php echo ($filterType === 'P2P' || $filterType === 'TRANSFER') ? 'active' : ''; ?>">Transfer & P2P <?php echo $tabCounts['P2P'] > 0 ? "({$tabCounts['P2P']})" : ''; ?></a>
+                        <a href="notifications.php?type=DEPOSIT" class="notif-tab <?php echo $filterType === 'DEPOSIT' ? 'active' : ''; ?>">Deposit <?php echo $tabCounts['DEPOSIT'] > 0 ? "({$tabCounts['DEPOSIT']})" : ''; ?></a>
+                        <a href="notifications.php?type=INVESTMENT" class="notif-tab <?php echo ($filterType === 'INVESTMENT' || $filterType === 'PACKAGE') ? 'active' : ''; ?>">Investment <?php echo $tabCounts['INVESTMENT'] > 0 ? "({$tabCounts['INVESTMENT']})" : ''; ?></a>
+                        <a href="notifications.php?type=KYC" class="notif-tab <?php echo $filterType === 'KYC' ? 'active' : ''; ?>">KYC <?php echo $tabCounts['KYC'] > 0 ? "({$tabCounts['KYC']})" : ''; ?></a>
+                        <a href="notifications.php?type=SECURITY" class="notif-tab <?php echo $filterType === 'SECURITY' ? 'active' : ''; ?>">Security <?php echo $tabCounts['SECURITY'] > 0 ? "({$tabCounts['SECURITY']})" : ''; ?></a>
+                        <a href="notifications.php?type=ADMIN" class="notif-tab <?php echo $filterType === 'ADMIN' ? 'active' : ''; ?>">Admin & Alerts <?php echo $tabCounts['ADMIN'] > 0 ? "({$tabCounts['ADMIN']})" : ''; ?></a>
                     </div>
 
                     <!-- Notification List -->
@@ -307,7 +345,7 @@ $unreadCount = getUnreadNotificationCount($userid, $pdo);
                             <?php
                             $typeClass = 'icon-default';
                             $icon = 'zmdi-info-outline';
-                            switch (strtoupper($n['type'])) {
+                            switch (strtoupper(trim($n['type'] ?? ''))) {
                                 case 'LOGIN':
                                     $typeClass = 'icon-login';
                                     $icon = 'zmdi-sign-in';
@@ -340,6 +378,7 @@ $unreadCount = getUnreadNotificationCount($userid, $pdo);
                                     break;
                                 case 'ADMIN':
                                 case 'SYSTEM':
+                                case 'GENERAL':
                                     $typeClass = 'icon-admin';
                                     $icon = 'zmdi-speaker';
                                     break;

@@ -4,11 +4,14 @@
 
 <?php 
 include 'common/header.php'; 
+require_once 'common/db_method.php';
 
-// Calculate Total Leadership Income for header stat
-$table = "tbl_transaction";
-$leadership_income_total = incometotalnew($pdo, $table, $userid, 'Leadership Income');
-$leadership_income_total = round((float)($leadership_income_total ?? 0), 2);
+// Calculate Total Leadership / Company Turnover Income for header stat (Single source of truth)
+$turnoverSummary = function_exists('getUserIncomeWalletSummary') ? getUserIncomeWalletSummary($userid, $pdo) : [];
+$leadership_income_total = round((float)($turnoverSummary['company_turnover'] ?? ($company_turnover_wallet ?? 0)), 2);
+if ($leadership_income_total <= 0) {
+    $leadership_income_total = round((float)incometotalnew($pdo, "tbl_transaction", $userid, 'Leadership Income'), 2);
+}
 ?>
 
 <style>

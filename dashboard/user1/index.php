@@ -206,6 +206,9 @@ $reward_income = round((float)($user_growth_breakdown_data['rank_reward']['total
 // Total Income (Profit Income Wallet + Profit Sharing Wallet)
 $total_income = round((float)$profit_income_wallet + (float)$profit_sharing_wallet, 2);
 
+// Mentor Income (Single source of truth)
+$mentor_income = round((float)($user_growth_breakdown_data['mentor_income']['total_balance'] ?? ($mentor_income_wallet ?? 0)), 2);
+
 // Company Turnover / Leadership Income (Single source of truth)
 $leadership_income_income = round((float)($user_growth_breakdown_data['company_turnover']['total_balance'] ?? ($company_turnover_wallet ?? 0)), 2);
 
@@ -1408,7 +1411,7 @@ body.ananta-user-dashboard {
                             <span class="font-weight-bold text-truncate" style="color: #334155; font-size: 14px;">Mentor Income</span>
                         </div>
                         <h3 class="font-weight-bold mb-1 text-truncate" style="color: #0f172a; font-size: 20px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                            <?php echo formatCurrency($mentor_income_wallet, $selectedCurrency); ?>
+                            <?php echo formatCurrency($mentor_income, $selectedCurrency); ?>
                         </h3>
                         <!-- <div class="d-flex align-items-center justify-content-between mt-1">
                             <span class="small font-weight-bold" style="color: #16a34a; font-size: 12.5px;">+4.9%</span>

@@ -9,8 +9,8 @@
 $_SESSION = [];
 $_SESSION['auserid'] = 'admin_req15_test';
 
-require_once '/Users/sumit/Desktop/ananta/ananta/public_html/dashboard/admin/common/connection.php';
-require_once '/Users/sumit/Desktop/ananta/ananta/public_html/dashboard/admin/common/db_method.php';
+require_once dirname(__DIR__) . '/dashboard/admin/common/connection.php';
+require_once dirname(__DIR__) . '/dashboard/admin/common/db_method.php';
 
 function runReq15Tests() {
     global $pdo;

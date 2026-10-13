@@ -235,17 +235,17 @@ body {
 
                     <!-- Glossy Round Social Icon Buttons -->
                     <div class="d-flex align-items-center gap-2">
-                        <a href="https://www.facebook.com/p/Ananta-Melody-Verse-61585786533006" target="_blank" class="ananta-social-btn" title="Facebook">
+                        <!-- <a href="https://www.facebook.com/profile.php?id=61585818552622" target="_blank" class="ananta-social-btn" title="Facebook">
                             <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="https://www.instagram.com/anantamelodyverses?igsh=NmQ1NGItY3VqZGhw&utm_source=qr" target="_blank" class="ananta-social-btn" title="Instagram">
+                        </a> -->
+                        <a href="https://www.instagram.com/theananta117" target="_blank" class="ananta-social-btn" title="Instagram">
                             <i class="fab fa-instagram"></i>
                         </a>
-                        <a href="https://t.me/anantamultitreadpvt" target="_blank" class="ananta-social-btn" title="Telegram">
+                        <!-- <a href="https://t.me/anantamultitreadpvt" target="_blank" class="ananta-social-btn" title="Telegram">
                             <i class="fab fa-telegram-plane"></i>
-                        </a>
-                        <a href="https://www.youtube.com/@anantamelodyverse?si=qIDQyBt9kS0s4A0F" target="_blank" class="ananta-social-btn" title="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
+                        </a> -->
+                        <a href="https://www.youtube.com/@anantapvtltd" target="_blank" class="ananta-social-btn" title="YouTube">
+                            <i class="fab fa-youtube"></i>
                         </a>
                     </div>
                    <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap w-100">

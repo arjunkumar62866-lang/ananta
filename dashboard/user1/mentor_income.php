@@ -2,7 +2,13 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<?php include 'common/header.php'; ?>
+<?php 
+include 'common/header.php'; 
+require_once 'common/db_method.php';
+
+$mentorIncomeSummary = function_exists('getUserIncomeWalletSummary') ? getUserIncomeWalletSummary($userid, $pdo) : [];
+$mentor_income_display = round((float)($mentorIncomeSummary['mentor_income'] ?? ($mentor_income_wallet ?? 0)), 2);
+?>
 
 <body class="bg-theme bg-theme1">
 
@@ -135,7 +141,7 @@ body.bg-theme1 {
                         <div>
                             <div class="p-3 bg-white border rounded-3 text-end shadow-sm">
                                 <span class="text-muted d-block text-uppercase fw-bold" style="font-size:11px;">Mentor Income Wallet</span>
-                                <span class="h4 fw-extrabold text-success mb-0"><?php echo $hmcurrency . " " . number_format((float)($mentor_income_wallet ?? 0), 2); ?></span>
+                                <span class="h4 fw-extrabold text-success mb-0"><?php echo $hmcurrency . " " . number_format((float)($mentor_income_display ?? 0), 2); ?></span>
                             </div>
                         </div>
                     </div>

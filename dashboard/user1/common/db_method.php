@@ -3297,6 +3297,9 @@ function ensureP2PTableExists($dbConnection = null) {
 /**
  * Requirement #21: Fetch P2P Transfer History (Sent).
  */
+/**
+ * Requirement #21: Fetch P2P Transfer History (Sent).
+ */
 if (!function_exists('getUserP2PTransferHistory')) {
 function getUserP2PTransferHistory($userid, $pdoConnection = null) {
     global $pdo;
@@ -3304,6 +3307,9 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
     if (!$db || !$userid) return [];
 
     ensureP2PTableExists($db);
+
+    $cleanUid = (stripos($userid, 'AN') === 0) ? substr($userid, 2) : $userid;
+    $anUid    = (stripos($userid, 'AN') === 0) ? $userid : 'AN' . $userid;
 
     try {
         $sql = "
@@ -3314,18 +3320,23 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
                 COALESCE(p.to_wallet, 'Net Balance') as to_wallet,
                 p.sender_id,
                 p.receiver_id,
-                u.name as receiver_name,
+                COALESCE(u.name, u_alt.name, 'Member') as receiver_name,
                 p.amount,
                 p.remarks,
                 p.status,
                 p.created_at
             FROM tbl_p2p_transfer p
             LEFT JOIN user u ON u.userid = p.receiver_id
-            WHERE p.sender_id = :userid
+            LEFT JOIN user u_alt ON u_alt.userid = TRIM(LEADING 'AN' FROM p.receiver_id)
+            WHERE (p.sender_id = :uid OR p.sender_id = :clean OR p.sender_id = :an)
             ORDER BY p.id DESC
         ";
         $stmt = $db->prepare($sql);
-        $stmt->execute([':userid' => $userid]);
+        $stmt->execute([
+            ':uid'   => (string)$userid,
+            ':clean' => (string)$cleanUid,
+            ':an'    => (string)$anUid
+        ]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     } catch (PDOException $e) {
         return [];
@@ -3349,9 +3360,16 @@ function getUserP2PReceivedReport($userid, $filterType = 'all', $fromDate = null
 
     ensureP2PTableExists($db);
 
+    $cleanUid = (stripos($userid, 'AN') === 0) ? substr($userid, 2) : $userid;
+    $anUid    = (stripos($userid, 'AN') === 0) ? $userid : 'AN' . $userid;
+
     try {
-        $where = "WHERE p.receiver_id = :userid AND p.status = 'COMPLETED'";
-        $params = [':userid' => $userid];
+        $where = "WHERE (p.receiver_id = :uid OR p.receiver_id = :clean OR p.receiver_id = :an) AND p.status = 'COMPLETED'";
+        $params = [
+            ':uid'   => (string)$userid,
+            ':clean' => (string)$cleanUid,
+            ':an'    => (string)$anUid
+        ];
 
         if ($filterType === 'today') {
             $where .= " AND DATE(p.created_at) = CURDATE()";
@@ -3379,7 +3397,7 @@ function getUserP2PReceivedReport($userid, $filterType = 'all', $fromDate = null
                 COALESCE(p.from_wallet, 'Main Wallet') as from_wallet,
                 COALESCE(p.to_wallet, 'Net Balance') as to_wallet,
                 p.sender_id,
-                u.name as sender_name,
+                COALESCE(u.name, u_alt.name, 'Member') as sender_name,
                 p.receiver_id,
                 p.amount,
                 p.remarks,
@@ -3387,6 +3405,7 @@ function getUserP2PReceivedReport($userid, $filterType = 'all', $fromDate = null
                 p.created_at
             FROM tbl_p2p_transfer p
             LEFT JOIN user u ON u.userid = p.sender_id
+            LEFT JOIN user u_alt ON u_alt.userid = TRIM(LEADING 'AN' FROM p.sender_id)
             {$where}
             {$orderBy}
             {$limit}
