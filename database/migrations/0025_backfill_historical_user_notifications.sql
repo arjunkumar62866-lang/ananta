@@ -1,10 +1,20 @@
 -- database/migrations/0025_backfill_historical_user_notifications.sql
--- Backfill historical user notifications from existing verified records:
--- 1. Account Welcome / Registration for all existing members
--- 2. Approved KYC notifications for all verified KYC accounts
--- 3. Package investment activation notifications for historical investments
+-- 1. Ensure tbl_user_notifications table exists on production
+CREATE TABLE IF NOT EXISTS `tbl_user_notifications` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` VARCHAR(50) NOT NULL,
+  `type` VARCHAR(30) NOT NULL DEFAULT 'GENERAL',
+  `title` VARCHAR(255) NOT NULL,
+  `message` TEXT NOT NULL,
+  `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+  `ref_id` VARCHAR(100) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_read` (`user_id`, `is_read`),
+  KEY `idx_type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 1. Backfill Account Registration / Welcome notifications
+-- 2. Backfill Account Registration / Welcome notifications
 INSERT INTO `tbl_user_notifications` (`user_id`, `type`, `title`, `message`, `ref_id`, `is_read`, `created_at`)
 SELECT 
     u.`userid` AS `user_id`,
@@ -25,7 +35,7 @@ WHERE u.`userid` NOT LIKE 'TEST%' AND u.`userid` NOT LIKE 'TST%'
         AND n.`ref_id` = 'REGISTRATION'
   );
 
--- 2. Backfill Verified KYC notifications
+-- 3. Backfill Verified KYC notifications
 INSERT INTO `tbl_user_notifications` (`user_id`, `type`, `title`, `message`, `ref_id`, `is_read`, `created_at`)
 SELECT 
     u.`userid` AS `user_id`,
@@ -44,7 +54,7 @@ WHERE u.`userid` NOT LIKE 'TEST%' AND u.`userid` NOT LIKE 'TST%'
         AND n.`ref_id` = 'KYC_VERIFIED'
   );
 
--- 3. Backfill Historical Package Investment notifications
+-- 4. Backfill Historical Package Investment notifications
 INSERT INTO `tbl_user_notifications` (`user_id`, `type`, `title`, `message`, `ref_id`, `is_read`, `created_at`)
 SELECT 
     t.`user_id` AS `user_id`,
