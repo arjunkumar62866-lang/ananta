@@ -499,8 +499,8 @@ $(document).ready(function(){
                 }
 
                 if ((res.mentor_ambiguous_count || 0) > 0) {
-                    let ambHtml = '<strong><i class="fa fa-exclamation-triangle me-1"></i> ' + res.mentor_ambiguous_count + ' Ambiguous / Legacy Profit Income Transaction(s) Detected:</strong>' +
-                                  '<div class="small mt-1">Existing records on this date do not match canonical monthly profit format. They will be <strong>strictly excluded</strong> from automatic mentor income calculation to preserve ledger safety.</div>';
+                    let ambHtml = '<strong><i class="fa fa-exclamation-triangle me-1"></i> ' + res.mentor_ambiguous_count + ' Ambiguous Profit Income Transaction(s) on Selected Closing Date:</strong>' +
+                                  '<div class="small mt-1">Existing records on the selected closing date do not match canonical monthly profit format. They are <strong>strictly excluded</strong> from automatic mentor income calculation to preserve ledger safety. (Note: Preview scan is scoped to the selected closing date).</div>';
                     $('#prevMentorAmbiguousAlert').html(ambHtml).removeClass('d-none');
                 } else {
                     $('#prevMentorAmbiguousAlert').empty().addClass('d-none');
