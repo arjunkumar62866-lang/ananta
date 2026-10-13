@@ -277,23 +277,25 @@ table.dataTable.no-footer {
 /* Mobile & Tablet Responsiveness Improvements */
 @media (max-width: 991.98px) {
     .content-wrapper {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
         padding-top: 75px !important;
     }
     .income-header-card {
-        padding: 14px 16px !important;
-        border-radius: 14px !important;
-        margin-bottom: 14px;
+        padding: 14px !important;
+        border-radius: 12px !important;
+        margin-bottom: 12px !important;
     }
-    .card-body.p-4 {
-        padding: 8px 4px !important;
+    .income-header-icon {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 18px !important;
     }
     .card-header-bar {
         flex-direction: column !important;
         align-items: flex-start !important;
-        padding: 10px 4px !important;
-        gap: 10px !important;
+        padding: 6px 2px !important;
+        gap: 8px !important;
     }
     .btn-export-excel {
         width: 100% !important;
@@ -303,10 +305,15 @@ table.dataTable.no-footer {
         border-radius: 10px !important;
         margin: 0 !important;
         width: 100% !important;
+        border: 1px solid #cbd5e1 !important;
     }
     .table thead th, .table tbody td {
-        padding: 10px 10px !important;
-        font-size: 12.5px !important;
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
+    }
+    .dataTables_wrapper {
+        padding: 4px 2px !important;
     }
     .dataTables_wrapper .dataTables_length,
     .dataTables_wrapper .dataTables_filter {
@@ -394,50 +401,45 @@ table.dataTable.no-footer {
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-lg-12">
-                        <div class="card ananta-fintech-card">
-                            <div class="card-header-bar">
-                                <div class="card-header-title">
-                                    <h4><?php echo htmlspecialchars($badgeTitle); ?></h4>
-                                    <p>Live payout records & audit log</p>
-                                </div>
-                                <button id="customExportBtn" class="btn btn-export-excel">
-                                    <i class="fa fa-file-excel-o"></i> Export to Excel
-                                </button>
+                <div class="row m-0">
+                    <div class="col-12 p-0">
+                        <div class="card-header-bar px-1 mb-2">
+                            <div class="card-header-title">
+                                <h4><?php echo htmlspecialchars($badgeTitle); ?></h4>
+                                <p>Live payout records & audit log &bull; <span class="text-primary"><i class="fa fa-arrows-h"></i> Slide horizontally to view all columns</span></p>
                             </div>
-                            <div class="card-body p-2 p-md-4">
+                            <button id="customExportBtn" class="btn btn-export-excel">
+                                <i class="fa fa-file-excel-o"></i> Export to Excel
+                            </button>
+                        </div>
 
-                                <!-- Table -->
-                                <div class="table-responsive" id="tblData">
-                                    <table class="table table-hover table-bordered" id="usersTable" style="width:100%;">
-                                        <thead>
-                                            <tr>
-                                                <th>Sno.</th>
-                                                <th>Txn ID</th>
-                                                <th>User</th>
-                                                <th>Name</th>
-                                                <th>Transaction</th>
-                                                <th>R Amount</th>
-                                                <th>Amount</th>
-                                                <th>Type</th>
-                                                <th>Name</th>
-                                                <th>A/C No.</th>
-                                                <th>IFSC</th>
-                                                <th>Wallet Address</th>
-                                                <th>Status</th>
-                                                <th>Admin Remarks</th>
-                                                <th>Date</th>
-                                                <th>Action</th> 
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- DataTables will load this directly -->
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                            </div>
+                        <!-- Table with Direct Horizontal Sliding -->
+                        <div class="table-responsive p-0" id="tblData" style="width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff;">
+                            <table class="table table-hover table-bordered mb-0" id="usersTable" style="width:100% !important; min-width: 900px;">
+                                <thead>
+                                    <tr>
+                                        <th>Sno.</th>
+                                        <th>Txn ID</th>
+                                        <th>User</th>
+                                        <th>Name</th>
+                                        <th>Transaction</th>
+                                        <th>R Amount</th>
+                                        <th>Amount</th>
+                                        <th>Type</th>
+                                        <th>Name</th>
+                                        <th>A/C No.</th>
+                                        <th>IFSC</th>
+                                        <th>Wallet Address</th>
+                                        <th>Status</th>
+                                        <th>Admin Remarks</th>
+                                        <th>Date</th>
+                                        <th>Action</th> 
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- DataTables will load this directly -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div><!-- End Row -->
