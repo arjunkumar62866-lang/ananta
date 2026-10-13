@@ -402,15 +402,51 @@ try {
         </script>
 
         <!-- Pill Navigation Tabs -->
-        <ul class="nav nav-pills mb-3" role="tablist" style="gap: 10px;">
+        <style>
+        .p2p-nav-pills .nav-link {
+            color: #0f172a !important;
+            background: #ffffff !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 12px !important;
+            padding: 10px 22px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+            transition: all 0.2s ease !important;
+        }
+        .p2p-nav-pills .nav-link i {
+            color: #0f172a !important;
+            font-size: 16px !important;
+        }
+        .p2p-nav-pills .nav-link:hover {
+            color: #000000 !important;
+            background: #f1f5f9 !important;
+            border-color: #94a3b8 !important;
+        }
+        .p2p-nav-pills .nav-link.active,
+        .p2p-nav-pills .show > .nav-link {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%) !important;
+            border-color: transparent !important;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
+        }
+        .p2p-nav-pills .nav-link.active i,
+        .p2p-nav-pills .show > .nav-link i {
+            color: #ffffff !important;
+        }
+        </style>
+        <ul class="nav nav-pills p2p-nav-pills mb-3" role="tablist" style="gap: 10px;">
             <li class="nav-item">
-                <a class="nav-link font-weight-bold <?php echo ($activeTab === 'transfer') ? 'active' : ''; ?>" data-toggle="tab" href="#tab-transfer" style="border-radius: 10px; padding: 10px 20px;">
-                    <i class="zmdi zmdi-time-restore mr-2"></i> Transfer History (Sent)
+                <a class="nav-link <?php echo ($activeTab === 'transfer') ? 'active' : ''; ?>" data-toggle="tab" href="#tab-transfer">
+                    <i class="zmdi zmdi-time-restore"></i> Transfer History (Sent)
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link font-weight-bold <?php echo ($activeTab === 'received') ? 'active' : ''; ?>" data-toggle="tab" href="#tab-received" style="border-radius: 10px; padding: 10px 20px;">
-                    <i class="zmdi zmdi-inbox mr-2"></i> Received Report
+                <a class="nav-link <?php echo ($activeTab === 'received') ? 'active' : ''; ?>" data-toggle="tab" href="#tab-received">
+                    <i class="zmdi zmdi-inbox"></i> Received Report
                 </a>
             </li>
         </ul>
@@ -466,7 +502,7 @@ try {
                                     <?php else: ?>
                                         <tr>
                                             <td colspan="10" class="text-center py-5 text-muted">
-                                                <i class="zmdi zmdi-swap-off zmdi-hc-3x d-block mb-2" style="color: #cbd5e1;"></i>
+                                                <i class="zmdi zmdi-swap-off zmdi-hc-3x d-block mb-2" style="color: #151616ff;"></i>
                                                 No P2P transfers sent yet.
                                             </td>
                                         </tr>
