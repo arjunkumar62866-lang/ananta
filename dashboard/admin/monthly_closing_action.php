@@ -235,6 +235,23 @@ if ($action === 'preview') {
         }
     }
 
+    // Check for any ambiguous Profit Income transactions already present on the closing date
+    $canonicalPattern = "Monthly Profit Income ({$closing_month}%";
+    $cDatePreview = trim($_POST['closing_date'] ?? date('Y-m-d'));
+    $stmtAmbPreview = $pdo->prepare("
+        SELECT id, user_id, type, subject, amount, created_date
+        FROM tbl_transaction
+        WHERE (type = 'Profit Income' OR subject LIKE '%Profit Income%')
+          AND status = 1
+          AND created_date = :cDate
+          AND subject NOT LIKE :cSubjectPattern
+    ");
+    $stmtAmbPreview->execute([
+        ':cSubjectPattern' => $canonicalPattern,
+        ':cDate'           => $cDatePreview
+    ]);
+    $ambPreviewTxns = $stmtAmbPreview->fetchAll(PDO::FETCH_ASSOC);
+
     echo json_encode([
         'status' => 'success',
         'closing_month' => $closing_month,
@@ -259,7 +276,8 @@ if ($action === 'preview') {
         'expected_mentor_income_inr' => round($mentor_expected_payout, 2),
         'expected_mentor_income_usd' => round($mentor_expected_payout / $rate, 2),
         'expected_mentor_income' => round($mentor_expected_payout / $rate, 2),
-        'mentor_blocked_reasons' => $mentor_blocked_details
+        'mentor_blocked_reasons' => $mentor_blocked_details,
+        'mentor_ambiguous_count' => count($ambPreviewTxns)
     ]);
     exit;
 }
@@ -463,6 +481,10 @@ if ($action === 'process') {
             $incomeSummaries[] = "Mentor Income: ₹0.00 (No eligible mentors)";
         }
 
+        if (($mentorIncomeResult['ambiguous_count'] ?? 0) > 0) {
+            $incomeSummaries[] = "{$mentorIncomeResult['ambiguous_count']} ambiguous profit transaction(s) safely excluded from mentor calculation";
+        }
+
         if (($vipClubResult['processed'] ?? 0) > 0) {
             $incomeSummaries[] = "VIP Club Income credited (₹" . number_format($vipClubResult['total_paid'] ?? 0, 2) . ")";
         }
@@ -489,6 +511,17 @@ if ($action === 'process') {
                 'mentor_mentors_processed' => $mentorIncomeResult['mentors_processed'] ?? 0,
                 'mentor_blocked_count' => $mentorIncomeResult['blocked_mentors'] ?? 0,
                 'mentor_blocked_reasons' => $mentorIncomeResult['blocked_reasons'] ?? [],
+                'mentor_ambiguous_count' => $mentorIncomeResult['ambiguous_count'] ?? 0,
+                'mentor_ambiguous_transactions' => array_map(function($tx) {
+                    return [
+                        'id'           => (int)($tx['id'] ?? 0),
+                        'user_id'      => (string)($tx['user_id'] ?? ''),
+                        'type'         => (string)($tx['type'] ?? ''),
+                        'subject'      => (string)($tx['subject'] ?? ''),
+                        'amount'       => (float)($tx['amount'] ?? 0),
+                        'created_date' => (string)($tx['created_date'] ?? '')
+                    ];
+                }, $mentorIncomeResult['ambiguous_transactions'] ?? []),
                 'vip_club_paid' => $vipClubResult['total_paid'] ?? 0.0,
                 'vip_club_count' => $vipClubResult['processed'] ?? 0
             ]

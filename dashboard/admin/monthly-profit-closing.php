@@ -325,6 +325,7 @@ body.bg-theme1 {
                                             </div>
                                         </div>
                                         <div id="prevMentorBlockedAlert" class="alert alert-danger mt-2 mb-0 d-none" style="font-size: 13px;"></div>
+                                        <div id="prevMentorAmbiguousAlert" class="alert alert-warning mt-2 mb-0 d-none" style="font-size: 13px; color: #856404; background-color: #fff3cd; border-color: #ffeeba;"></div>
                                     </div>
                                 </div>
 
@@ -495,6 +496,14 @@ $(document).ready(function(){
                     $('#prevMentorBlockedAlert').html(bHtml).removeClass('d-none');
                 } else {
                     $('#prevMentorBlockedAlert').empty().addClass('d-none');
+                }
+
+                if ((res.mentor_ambiguous_count || 0) > 0) {
+                    let ambHtml = '<strong><i class="fa fa-exclamation-triangle me-1"></i> ' + res.mentor_ambiguous_count + ' Ambiguous / Legacy Profit Income Transaction(s) Detected:</strong>' +
+                                  '<div class="small mt-1">Existing records on this date do not match canonical monthly profit format. They will be <strong>strictly excluded</strong> from automatic mentor income calculation to preserve ledger safety.</div>';
+                    $('#prevMentorAmbiguousAlert').html(ambHtml).removeClass('d-none');
+                } else {
+                    $('#prevMentorAmbiguousAlert').empty().addClass('d-none');
                 }
 
                 $('#previewCard').removeClass('d-none');

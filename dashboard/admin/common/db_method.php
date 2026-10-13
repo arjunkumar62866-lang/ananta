@@ -2379,33 +2379,73 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$closing_month) {
         return [
-            'processed'         => 0,
-            'total_paid'        => 0.0,
-            'mentors_processed' => 0,
-            'blocked_mentors'   => 0,
-            'blocked_reasons'   => [],
-            'eligible_mentors'  => 0
+            'processed'              => 0,
+            'total_paid'             => 0.0,
+            'mentors_processed'      => 0,
+            'blocked_mentors'        => 0,
+            'blocked_reasons'        => [],
+            'eligible_mentors'       => 0,
+            'ambiguous_count'        => 0,
+            'ambiguous_transactions' => []
+        ];
+    }
+    $closing_month = trim((string)$closing_month);
+    if (!preg_match('/^\d{4}-\d{2}$/', $closing_month)) {
+        return [
+            'processed'              => 0,
+            'total_paid'             => 0.0,
+            'mentors_processed'      => 0,
+            'blocked_mentors'        => 0,
+            'blocked_reasons'        => [['mentor_id' => 'SYSTEM', 'reason' => 'Invalid closing month format. Expected YYYY-MM.']],
+            'eligible_mentors'       => 0,
+            'ambiguous_count'        => 0,
+            'ambiguous_transactions' => []
         ];
     }
 
-    $cDate = $closing_date ?: date('Y-m-d');
+    $cDate = $closing_date ? trim((string)$closing_date) : date('Y-m-d');
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $cDate)) {
+        $cDate = date('Y-m-d');
+    }
     $closingIdVal = $closing_id ? (string)$closing_id : (string)$closing_month;
 
-    // 1. Identify all Mentors who earned Profit Income in this closing month
-    // Robust filter: matches type = 'Profit Income' AND (created_date = :cDate OR subject LIKE CONCAT('%', :closing_month, '%'))
+    // 1. Identify all Mentors who earned Profit Income in this exact closing month.
+    // Strict Month Isolation: Only selects transactions matching the canonical subject pattern
+    // 'Monthly Profit Income (:closing_month ...'
+    // Cross-month date matching (created_date = :cDate) is strictly disallowed to avoid cross-month contamination.
+    $canonicalPattern = "Monthly Profit Income ({$closing_month}%";
     $stmtMentors = $db->prepare("
-        SELECT user_id as mentor_id, SUM(amount) as monthly_income
+        SELECT user_id as mentor_id, SUM(CAST(amount AS DECIMAL(15,2))) as monthly_income
         FROM tbl_transaction
         WHERE type = 'Profit Income'
-          AND (created_date = :cDate OR subject LIKE :cSubjectPattern)
+          AND status = 1
+          AND subject LIKE :cSubjectPattern
         GROUP BY user_id
         HAVING monthly_income > 0
     ");
     $stmtMentors->execute([
-        ':cDate'           => $cDate,
-        ':cSubjectPattern' => "%{$closing_month}%"
+        ':cSubjectPattern' => $canonicalPattern
     ]);
     $mentors = $stmtMentors->fetchAll(PDO::FETCH_ASSOC);
+
+    // Identify and record any ambiguous Profit Income transactions for admin reporting/reconciliation:
+    // Transactions on this closing date with type = 'Profit Income' (or subject referencing Profit Income)
+    // that do NOT match the canonical closing month pattern.
+    // These are strictly EXCLUDED from automatic mentor pool payout and flagged for manual audit.
+    $stmtAmbiguous = $db->prepare("
+        SELECT id, user_id, type, subject, amount, created_date
+        FROM tbl_transaction
+        WHERE (type = 'Profit Income' OR subject LIKE '%Profit Income%')
+          AND status = 1
+          AND created_date = :cDate
+          AND subject NOT LIKE :cSubjectPattern
+    ");
+    $stmtAmbiguous->execute([
+        ':cSubjectPattern' => $canonicalPattern,
+        ':cDate'           => $cDate
+    ]);
+    $ambiguousTxns = $stmtAmbiguous->fetchAll(PDO::FETCH_ASSOC);
+    $ambiguousCount = count($ambiguousTxns);
 
     $processedCount = 0;
     $totalPaid = 0.0;
@@ -2531,12 +2571,14 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
     }
 
     return [
-        'processed'         => $processedCount,
-        'total_paid'        => round($totalPaid, 2),
-        'mentors_processed' => $mentorsProcessed,
-        'blocked_mentors'   => $blockedMentors,
-        'blocked_reasons'   => $blockedReasons,
-        'eligible_mentors'  => $eligibleMentorsCount
+        'processed'              => $processedCount,
+        'total_paid'             => round($totalPaid, 2),
+        'mentors_processed'      => $mentorsProcessed,
+        'blocked_mentors'        => $blockedMentors,
+        'blocked_reasons'        => $blockedReasons,
+        'eligible_mentors'       => $eligibleMentorsCount,
+        'ambiguous_count'        => $ambiguousCount,
+        'ambiguous_transactions' => $ambiguousTxns
     ];
 }
 }
