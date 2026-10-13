@@ -2393,7 +2393,7 @@ if (!function_exists('getRootBranchTreeDetailed')) {
             $uData = $userMap[$uid];
             $invData = $invMap[$uid] ?? [];
 
-            $userPkgInr = max((float)($uData['user_total_package'] ?? 0), (float)($uData['user_package'] ?? 0), (float)($uData['user_amount'] ?? 0));
+            $userPkgInr = max((float)($uData['user_total_package'] ?? 0), (float)($uData['user_package'] ?? 0));
             $invInr = max((float)($invData['total_inr'] ?? 0), $userPkgInr);
             $invUsd = (float)($invData['total_usd'] ?? 0);
             if ($invUsd <= 0 && $invInr > 0) {
@@ -2577,7 +2577,7 @@ function getUserTeamMembersDetailed($userid, $teamType, $pdoConnection = null) {
                 $invInr2 = (float)$stmtRoi2->fetchColumn();
             } catch (Exception $exRoi2) {}
 
-            $userPkgInr = max((float)($r['user_total_package'] ?? 0), (float)($r['user_package'] ?? 0), (float)($r['user_amount'] ?? 0));
+            $userPkgInr = max((float)($r['user_total_package'] ?? 0), (float)($r['user_package'] ?? 0));
             $invInr = max($invInr1, $invInr2, $userPkgInr);
             $invUsd = $invUsd1;
             if ($invUsd <= 0 && $invInr > 0) {
@@ -5576,7 +5576,7 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $vipClub = max(($vip1 + $vip2), $vip3);
 
         // 7. Company Turnover (Sum of CREDITED turnover_payout in tbl_vip_monthly_schedule + turnover in tbl_transaction)
-        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Turnover%' OR subject LIKE '%Company%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
+        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%' AND subject NOT LIKE '%P2P%Transfer%'");
         $stmtCT1->execute($ids);
         $ct1 = (float)$stmtCT1->fetchColumn();
 
@@ -5828,7 +5828,7 @@ if (!function_exists('getUserIncomeWalletHistory')) {
 
         // 7. Company Turnover
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'COMPANY_TURNOVER') {
-            $sql1 = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Turnover%' OR subject LIKE '%Company%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'";
+            $sql1 = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%' AND subject NOT LIKE '%P2P%Transfer%'";
             $stmt1 = $db->prepare($sql1);
             $stmt1->execute($ids);
             foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
