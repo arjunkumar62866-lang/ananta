@@ -6394,48 +6394,69 @@ if (!function_exists('getUserNotifications')) {
             $limit = max(1, (int)$limit);
             $offset = max(0, (int)$offset);
 
-            // Fetch direct user notifications AND global/targeted admin system broadcasts
-            // Uses derived table subquery for universal compatibility across MySQL and MariaDB versions
-            $sql = "
-                SELECT * FROM (
-                    SELECT
-                        n.id,
-                        n.type,
-                        n.title,
-                        n.message,
-                        n.ref_id,
-                        n.is_read,
-                        n.created_at
-                    FROM tbl_user_notifications n
-                    WHERE n.user_id = :uid OR n.user_id = :clean OR n.user_id = :an
+            // Fetch direct user notifications
+            $userNotifs = [];
+            try {
+                $stmtUser = $db->prepare("
+                    SELECT id, type, title, message, ref_id, is_read, created_at
+                    FROM tbl_user_notifications
+                    WHERE user_id = :uid OR user_id = :clean OR user_id = :an
+                    ORDER BY created_at DESC
+                    LIMIT " . ($limit + $offset) . "
+                ");
+                $stmtUser->execute([
+                    ':uid'   => (string)$userId,
+                    ':clean' => (string)$cleanUid,
+                    ':an'    => (string)$anUid
+                ]);
+                $userNotifs = $stmtUser->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $eu) {
+                error_log("getUserNotifications user_notif query error: " . $eu->getMessage());
+                $userNotifs = [];
+            }
 
-                    UNION ALL
+            // Fetch admin global broadcasts and targeted system notifications
+            $sysNotifs = [];
+            try {
+                $stmtSys = $db->prepare("
+                    SELECT 
+                        (1000000 + id) AS id,
+                        'ADMIN' AS type,
+                        title,
+                        message,
+                        CAST(id AS CHAR) AS ref_id,
+                        is_read,
+                        created_at
+                    FROM tbl_system_notifications
+                    WHERE target_type = 'GLOBAL' OR (target_type = 'USER' AND (target_user_id = :uid OR target_user_id = :clean OR target_user_id = :an))
+                    ORDER BY created_at DESC
+                    LIMIT " . ($limit + $offset) . "
+                ");
+                $stmtSys->execute([
+                    ':uid'   => (string)$userId,
+                    ':clean' => (string)$cleanUid,
+                    ':an'    => (string)$anUid
+                ]);
+                $sysNotifs = $stmtSys->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $es) {
+                error_log("getUserNotifications system_notif query error: " . $es->getMessage());
+                $sysNotifs = [];
+            }
 
-                    SELECT
-                        (1000000 + s.id) as id,
-                        'ADMIN' as type,
-                        s.title,
-                        s.message,
-                        s.id as ref_id,
-                        s.is_read as is_read,
-                        s.created_at
-                    FROM tbl_system_notifications s
-                    WHERE s.target_type = 'GLOBAL' OR (s.target_type = 'USER' AND (s.target_user_id = :uid_target OR s.target_user_id = :clean_target OR s.target_user_id = :an_target))
-                ) AS combined_notifs
-                ORDER BY created_at DESC
-                LIMIT {$limit} OFFSET {$offset}
-            ";
+            // Merge and sort uniformly by created_at DESC
+            $combined = array_merge($userNotifs, $sysNotifs);
+            if (count($combined) > 1) {
+                usort($combined, function($a, $b) {
+                    $tA = strtotime($a['created_at'] ?? '1970-01-01');
+                    $tB = strtotime($b['created_at'] ?? '1970-01-01');
+                    if ($tA === $tB) {
+                        return ((int)($b['id'] ?? 0)) <=> ((int)($a['id'] ?? 0));
+                    }
+                    return $tB <=> $tA;
+                });
+            }
 
-            $stmt = $db->prepare($sql);
-            $stmt->execute([
-                ':uid'          => (string)$userId,
-                ':clean'        => (string)$cleanUid,
-                ':an'           => (string)$anUid,
-                ':uid_target'   => (string)$userId,
-                ':clean_target' => (string)$cleanUid,
-                ':an_target'    => (string)$anUid
-            ]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return array_slice($combined, $offset, $limit);
         } catch (Exception $e) {
             error_log("getUserNotifications error for user {$userId}: " . $e->getMessage());
             return [];
