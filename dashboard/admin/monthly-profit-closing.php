@@ -291,9 +291,46 @@ body.bg-theme1 {
                                     </div>
                                 </div>
 
+                                <!-- Mentor Income Option A Preview Section -->
+                                <div class="card mt-3 border-warning" style="border-radius: 12px; background: #fffcf0;">
+                                    <div class="card-header bg-warning text-dark font-weight-bold py-2 px-3 d-flex justify-content-between align-items-center">
+                                        <span><i class="fa fa-handshake-o me-2"></i> Mentor Income Preview (Option A: Strict 100% Rule)</span>
+                                        <span class="badge bg-dark text-white">Rate: 2.0%</span>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div class="row text-center">
+                                            <div class="col-md-3 mb-2">
+                                                <div class="p-2 border rounded bg-white">
+                                                    <span class="d-block text-muted small uppercase font-weight-bold">Eligible Mentors</span>
+                                                    <h5 class="font-weight-bold text-dark mb-0" id="prevMentorEligible">-</h5>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-2">
+                                                <div class="p-2 border rounded bg-white">
+                                                    <span class="d-block text-muted small uppercase font-weight-bold">Valid (100% Config)</span>
+                                                    <h5 class="font-weight-bold text-success mb-0" id="prevMentorValid">-</h5>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-2">
+                                                <div class="p-2 border rounded bg-white">
+                                                    <span class="d-block text-muted small uppercase font-weight-bold">Blocked Mentors</span>
+                                                    <h5 class="font-weight-bold text-danger mb-0" id="prevMentorBlocked">-</h5>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-2">
+                                                <div class="p-2 border rounded bg-white">
+                                                    <span class="d-block text-muted small uppercase font-weight-bold">Est. Mentor Payout</span>
+                                                    <h5 class="font-weight-bold text-primary mb-0" id="prevMentorPayout">-</h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="prevMentorBlockedAlert" class="alert alert-danger mt-2 mb-0 d-none" style="font-size: 13px;"></div>
+                                    </div>
+                                </div>
+
                                 <div class="alert alert-warning mt-3 mb-0" style="border-radius: 10px;">
                                     <i class="fa fa-exclamation-triangle me-2"></i>
-                                    <strong>Important:</strong> Please verify the details above carefully before confirming. Once confirmed, profit will be credited to users' <strong>Profit Income Wallet</strong> and <strong>Profit Sharing</strong> will be distributed.
+                                    <strong>Important:</strong> Please verify the details above carefully before confirming. Once confirmed, profit will be credited to users' <strong>Profit Income Wallet</strong>, <strong>Profit Sharing</strong> will be distributed, and eligible <strong>Direct Bonus</strong>, <strong>Mentor Income</strong> (for 100% configured mentors) &amp; <strong>VIP Club</strong> will be processed.
                                 </div>
 
                                 <div class="text-center mt-4">
@@ -443,6 +480,23 @@ $(document).ready(function(){
                 $('#prevInvCount').text(res.eligible_investment_count);
                 $('#prevUserCount').text(res.eligible_user_count);
 
+                // Mentor Income Preview binding
+                $('#prevMentorEligible').text(res.mentor_eligible_count || 0);
+                $('#prevMentorValid').text(res.mentor_valid_config_count || 0);
+                $('#prevMentorBlocked').text(res.mentor_blocked_count || 0);
+                $('#prevMentorPayout').text(formatAdminCurrency(parseFloat(res.expected_mentor_income || 0)));
+
+                if (res.mentor_blocked_count > 0 && res.mentor_blocked_reasons && res.mentor_blocked_reasons.length > 0) {
+                    let bHtml = '<strong><i class="fa fa-ban me-1"></i> ' + res.mentor_blocked_count + ' Mentor(s) Blocked Under Option A (Strict 100% Rule):</strong><ul class="mb-0 mt-1 ps-3">';
+                    res.mentor_blocked_reasons.forEach(function(reason) {
+                        bHtml += '<li>' + reason + '</li>';
+                    });
+                    bHtml += '</ul><div class="mt-1 small">Configure exact 100.00% direct contributions in Mentor Income page to enable payouts for these mentors.</div>';
+                    $('#prevMentorBlockedAlert').html(bHtml).removeClass('d-none');
+                } else {
+                    $('#prevMentorBlockedAlert').empty().addClass('d-none');
+                }
+
                 $('#previewCard').removeClass('d-none');
             },
             error: function() {
@@ -462,6 +516,8 @@ $(document).ready(function(){
                          "Eligible Investment: " + formatAdminCurrency(parseFloat(currentPreviewData.total_eligible_investment || 0)) + "\n" +
                          "Profit Generated: " + formatAdminCurrency(parseFloat(currentPreviewData.expected_total_profit || 0)) + "\n" +
                          "Profit Sharing: " + formatAdminCurrency(parseFloat(currentPreviewData.expected_profit_sharing || 0)) + "\n" +
+                         "Mentor Income Payout: " + formatAdminCurrency(parseFloat(currentPreviewData.expected_mentor_income || 0)) + "\n" +
+                         "Blocked Mentors (0% payout): " + (currentPreviewData.mentor_blocked_count || 0) + "\n" +
                          "Eligible Users: " + currentPreviewData.eligible_user_count + "\n" +
                          "Eligible Investments: " + currentPreviewData.eligible_investment_count + "\n\n" +
                          "This action will credit user wallets and cannot be undone.";
@@ -519,6 +575,9 @@ $(document).ready(function(){
                         '<tr><th>Total Eligible Investment</th><td>' + formatAdminCurrency(parseFloat(c.total_eligible_investment || 0)) + '</td></tr>' +
                         '<tr><th>Total Profit Generated / Paid</th><td><strong class="text-success">' + formatAdminCurrency(parseFloat(c.total_profit_paid || 0)) + '</strong></td></tr>' +
                         '<tr><th>Total Profit Sharing Distributed</th><td><strong class="text-info">' + formatAdminCurrency(parseFloat(res.total_profit_sharing || 0)) + '</strong></td></tr>' +
+                        '<tr><th>Direct Bonus Paid</th><td><strong>' + formatAdminCurrency(parseFloat(res.direct_bonus_paid_usd || 0)) + '</strong></td></tr>' +
+                        '<tr><th>Mentor Income Paid (Option A)</th><td><strong class="text-warning">' + formatAdminCurrency(parseFloat(res.mentor_income_paid_usd || 0)) + '</strong> (' + (res.mentor_payout_count || 0) + ' payouts)</td></tr>' +
+                        '<tr><th>VIP Club Paid</th><td><strong>' + formatAdminCurrency(parseFloat(res.vip_club_paid_usd || 0)) + '</strong></td></tr>' +
                         '<tr><th>Eligible Users Count</th><td>' + c.eligible_user_count + '</td></tr>' +
                         '<tr><th>Eligible Investment Records Count</th><td>' + c.eligible_investment_count + '</td></tr>' +
                         '<tr><th>Status</th><td><span class="badge bg-success text-white px-2 py-1">' + c.status + '</span></td></tr>' +

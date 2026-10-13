@@ -5539,7 +5539,7 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $directBon = max($db1, $db2, $db3);
 
         // 4. Mentor Income (Sum of CREDITED tbl_mentor_income_schedule + tbl_transaction)
-        $stmtMI1 = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE mentor_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtMI1 = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id IN ($inClause) AND status = 'CREDITED'");
         $stmtMI1->execute($ids);
         $mi1 = (float)$stmtMI1->fetchColumn();
 
@@ -5767,7 +5767,7 @@ if (!function_exists('getUserIncomeWalletHistory')) {
 
         // 4. Mentor Income
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'MENTOR_INCOME') {
-            $sql1 = "SELECT id, 'Mentor Income' as income_type, payout_amount as amount, closing_month, direct_user_id, contribution_percentage, status, credited_at FROM tbl_mentor_income_schedule WHERE mentor_id IN ($inClause)";
+            $sql1 = "SELECT id, 'Mentor Income' as income_type, payout_amount as amount, closing_month, mentor_id, direct_user_id, contribution_percentage, status, credited_at FROM tbl_mentor_income_schedule WHERE direct_user_id IN ($inClause)";
             $stmt1 = $db->prepare($sql1);
             $stmt1->execute($ids);
             foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -5779,7 +5779,7 @@ if (!function_exists('getUserIncomeWalletHistory')) {
                     'amount'       => (float)$row['amount'],
                     'created_date' => $dParts[0],
                     'time'         => $dParts[1] ?? '00:00:00',
-                    'subject'      => "Mentor Income (" . $row['contribution_percentage'] . "%) from User " . $row['direct_user_id'],
+                    'subject'      => "Mentor Income (" . $row['contribution_percentage'] . "%) from Mentor " . $row['mentor_id'],
                     'status'       => $row['status'],
                     'sort_date'    => $dtStr
                 ];

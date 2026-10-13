@@ -185,7 +185,7 @@ if ($dbVal <= 0) {
 $miVal = (float)($row['mentor_income_wallet'] ?? 0.00);
 if ($miVal <= 0) {
     try {
-        $stmtMI = $pdo->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE mentor_id = :uid AND status = 'CREDITED'");
+        $stmtMI = $pdo->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id = :uid AND status = 'CREDITED'");
         $stmtMI->execute([':uid' => $targetUserId]);
         $miVal = (float)$stmtMI->fetchColumn();
     } catch (Exception $e) {}

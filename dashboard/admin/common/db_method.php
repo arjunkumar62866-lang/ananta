@@ -2187,7 +2187,9 @@ if (!defined('MENTOR_INCOME_PERCENT')) {
 
 /**
  * Get list of direct users under a mentor along with their recorded contribution percentage.
- * Source of truth: tbl_mentor_direct_contribution
+ * Canonical Source of Truth: Unified resolution between tbl_sponsor and user.sponserid,
+ * joined with tbl_mentor_direct_contribution.
+ * Excludes conflicting sponsor assignments.
  */
 if (!function_exists('getMentorDirectContributions')) {
 function getMentorDirectContributions($mentor_id, $pdoConnection = null) {
@@ -2197,25 +2199,32 @@ function getMentorDirectContributions($mentor_id, $pdoConnection = null) {
 
     $stmt = $db->prepare("
         SELECT
-            s.referral_id as direct_user_id,
+            u.userid as direct_user_id,
             u.name as direct_user_name,
             u.active as is_active,
             COALESCE(c.contribution_percentage, 0.00) as contribution_percentage,
             c.updated_at
-        FROM tbl_sponsor s
-        INNER JOIN user u ON u.userid = CONVERT(s.referral_id USING utf8mb4)
-        LEFT JOIN tbl_mentor_direct_contribution c ON c.mentor_id = CONVERT(s.sponsor_id USING utf8mb4) AND c.direct_user_id = CONVERT(s.referral_id USING utf8mb4)
-        WHERE s.sponsor_id = :mentor_id
+        FROM user u
+        LEFT JOIN tbl_sponsor s ON s.referral_id = u.userid
+        LEFT JOIN tbl_mentor_direct_contribution c ON c.mentor_id = :mentor_id AND c.direct_user_id = u.userid
+        WHERE (
+            (s.sponsor_id = :mentor_id AND (u.sponserid IS NULL OR u.sponserid = '' OR u.sponserid = s.sponsor_id))
+            OR
+            (u.sponserid = :mentor_id AND (s.sponsor_id IS NULL OR s.sponsor_id = '' OR s.sponsor_id = u.sponserid))
+        )
+        GROUP BY u.userid, u.name, u.active, c.contribution_percentage, c.updated_at
         ORDER BY u.userid ASC
     ");
-    $stmt->execute([':mentor_id' => $mentor_id]);
+    $stmt->execute([':mentor_id' => (string)$mentor_id]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 }
 
 /**
  * Save / Update a Direct User's contribution percentage under a Mentor.
- * Validation: 0 <= % <= 100
+ * Validation: 0 <= % <= 100.
+ * Verifies canonical sponsor relationship across both tbl_sponsor and user.sponserid.
+ * Rejects if there is an unresolved sponsor conflict.
  */
 if (!function_exists('saveMentorDirectContribution')) {
 function saveMentorDirectContribution($mentor_id, $direct_user_id, $contribution_percentage, $pdoConnection = null) {
@@ -2230,10 +2239,31 @@ function saveMentorDirectContribution($mentor_id, $direct_user_id, $contribution
         return ['status' => 'error', 'message' => 'Contribution percentage must be between 0% and 100%.'];
     }
 
-    // Verify direct sponsor relationship exists
-    $chkStmt = $db->prepare("SELECT COUNT(*) FROM tbl_sponsor WHERE sponsor_id = :m_id AND referral_id = :d_id");
-    $chkStmt->execute([':m_id' => $mentor_id, ':d_id' => $direct_user_id]);
-    if ($chkStmt->fetchColumn() == 0) {
+    // Verify canonical direct sponsor relationship exists and is conflict-free
+    $chkStmt = $db->prepare("
+        SELECT s.sponsor_id AS tbl_sp, u.sponserid AS usr_sp
+        FROM user u
+        LEFT JOIN tbl_sponsor s ON s.referral_id = u.userid
+        WHERE u.userid = :d_id
+        LIMIT 1
+    ");
+    $chkStmt->execute([':d_id' => (string)$direct_user_id]);
+    $rel = $chkStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$rel) {
+        return ['status' => 'error', 'message' => "User {$direct_user_id} not found."];
+    }
+
+    $tblSp = trim($rel['tbl_sp'] ?? '');
+    $usrSp = trim($rel['usr_sp'] ?? '');
+
+    // Check for sponsor contradiction
+    if ($tblSp !== '' && $usrSp !== '' && $tblSp !== $usrSp) {
+        return ['status' => 'error', 'message' => "Sponsor relationship conflict detected for user {$direct_user_id} (tbl_sponsor: '{$tblSp}' vs user.sponserid: '{$usrSp}'). Payout configuration blocked until resolved."];
+    }
+
+    $actualSponsor = ($tblSp !== '') ? $tblSp : $usrSp;
+    if ($actualSponsor !== (string)$mentor_id) {
         return ['status' => 'error', 'message' => "User {$direct_user_id} is not a direct referral of Mentor {$mentor_id}."];
     }
 
@@ -2243,8 +2273,8 @@ function saveMentorDirectContribution($mentor_id, $direct_user_id, $contribution
         ON DUPLICATE KEY UPDATE contribution_percentage = :pct_dup, updated_at = NOW()
     ");
     $stmt->execute([
-        ':mentor_id'      => $mentor_id,
-        ':direct_user_id' => $direct_user_id,
+        ':mentor_id'      => (string)$mentor_id,
+        ':direct_user_id' => (string)$direct_user_id,
         ':pct'            => $pct,
         ':pct_dup'        => $pct
     ]);
@@ -2255,31 +2285,83 @@ function saveMentorDirectContribution($mentor_id, $direct_user_id, $contribution
 
 /**
  * Validate total contribution percentage for all direct users under a Mentor.
- * Rule: Sum of all direct users' contribution percentages MUST equal exactly 100.00%.
+ * Option A Rule: Sum of all direct users' contribution percentages MUST equal exactly 100.00%.
+ * Strict precision: abs(total - 100.00) < 0.001.
+ * Returns detailed diagnostic information including eligible direct count and reasons.
  */
 if (!function_exists('validateMentorContributions')) {
 function validateMentorContributions($mentor_id, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$mentor_id) {
-        return ['valid' => false, 'total_percentage' => 0.0, 'reason' => 'Invalid parameters specified.'];
+        return ['valid' => false, 'total_percentage' => 0.0, 'reason' => 'Invalid parameters specified.', 'direct_count' => 0, 'configured_count' => 0];
     }
 
+    $directs = getMentorDirectContributions($mentor_id, $db);
+    $directCount = count($directs);
+
+    if ($directCount === 0) {
+        return [
+            'valid'            => false,
+            'total_percentage' => 0.0,
+            'reason'           => "Mentor {$mentor_id} has no direct referrals registered.",
+            'direct_count'     => 0,
+            'configured_count' => 0
+        ];
+    }
+
+    // Query recorded contributions for this mentor
     $stmt = $db->prepare("
-        SELECT COALESCE(SUM(contribution_percentage), 0.00) as total_pct
+        SELECT direct_user_id, contribution_percentage
         FROM tbl_mentor_direct_contribution
         WHERE mentor_id = :mentor_id
     ");
-    $stmt->execute([':mentor_id' => $mentor_id]);
-    $total = round((float)$stmt->fetchColumn(), 2);
+    $stmt->execute([':mentor_id' => (string)$mentor_id]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($rows)) {
+        return [
+            'valid'            => false,
+            'total_percentage' => 0.0,
+            'reason'           => "Mentor {$mentor_id} has no contribution records configured in tbl_mentor_direct_contribution (0.00% configured). Option A requires strict 100.00% distribution.",
+            'direct_count'     => $directCount,
+            'configured_count' => 0
+        ];
+    }
+
+    $total = 0.0;
+    $configuredCount = 0;
+    foreach ($rows as $r) {
+        $pct = (float)$r['contribution_percentage'];
+        if ($pct < 0 || $pct > 100) {
+            return [
+                'valid'            => false,
+                'total_percentage' => round($pct, 2),
+                'reason'           => "Mentor {$mentor_id} has invalid contribution percentage ({$pct}%) for direct referral {$r['direct_user_id']}.",
+                'direct_count'     => $directCount,
+                'configured_count' => count($rows)
+            ];
+        }
+        $total += $pct;
+        if ($pct > 0) $configuredCount++;
+    }
+    $total = round($total, 2);
 
     if (abs($total - 100.00) < 0.001) {
-        return ['valid' => true, 'total_percentage' => 100.00, 'reason' => 'Total contribution is exactly 100%.'];
+        return [
+            'valid'            => true,
+            'total_percentage' => 100.00,
+            'reason'           => 'Total contribution is exactly 100.00%.',
+            'direct_count'     => $directCount,
+            'configured_count' => $configuredCount
+        ];
     } else {
         return [
             'valid'            => false,
             'total_percentage' => $total,
-            'reason'           => "Total contribution percentage is {$total}%, which does NOT equal exactly 100.00%. Payout blocked."
+            'reason'           => "Total contribution percentage is {$total}%, which does NOT equal exactly 100.00%. Payout blocked under Option A.",
+            'direct_count'     => $directCount,
+            'configured_count' => $configuredCount
         ];
     }
 }
@@ -2288,40 +2370,55 @@ function validateMentorContributions($mentor_id, $pdoConnection = null) {
 /**
  * Process Monthly Mentor Income Payouts during Monthly Closing.
  * Calculates 2% Mentor Income from Mentor's Monthly Profit Income,
- * validates total contribution = 100%, and credits eligible Direct Users' mentor_income_wallet.
+ * validates total contribution = 100% under Option A,
+ * and credits eligible Direct Users' mentor_income_wallet.
  */
 if (!function_exists('processMentorIncome')) {
-function processMentorIncome($closing_month, $closing_date = null, $pdoConnection = null) {
+function processMentorIncome($closing_month, $closing_date = null, $pdoConnection = null, $closing_id = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$closing_month) {
-        return ['processed' => 0, 'total_paid' => 0.0, 'mentors_processed' => 0, 'blocked_mentors' => 0];
+        return [
+            'processed'         => 0,
+            'total_paid'        => 0.0,
+            'mentors_processed' => 0,
+            'blocked_mentors'   => 0,
+            'blocked_reasons'   => [],
+            'eligible_mentors'  => 0
+        ];
     }
 
     $cDate = $closing_date ?: date('Y-m-d');
+    $closingIdVal = $closing_id ? (string)$closing_id : (string)$closing_month;
 
     // 1. Identify all Mentors who earned Profit Income in this closing month
+    // Robust filter: matches type = 'Profit Income' AND (created_date = :cDate OR subject LIKE CONCAT('%', :closing_month, '%'))
     $stmtMentors = $db->prepare("
         SELECT user_id as mentor_id, SUM(amount) as monthly_income
         FROM tbl_transaction
         WHERE type = 'Profit Income'
-          AND created_date = :cDate
+          AND (created_date = :cDate OR subject LIKE :cSubjectPattern)
         GROUP BY user_id
         HAVING monthly_income > 0
     ");
-    $stmtMentors->execute([':cDate' => $cDate]);
+    $stmtMentors->execute([
+        ':cDate'           => $cDate,
+        ':cSubjectPattern' => "%{$closing_month}%"
+    ]);
     $mentors = $stmtMentors->fetchAll(PDO::FETCH_ASSOC);
 
     $processedCount = 0;
     $totalPaid = 0.0;
     $mentorsProcessed = 0;
     $blockedMentors = 0;
+    $blockedReasons = [];
+    $eligibleMentorsCount = 0;
 
     $insSchedule = $db->prepare("
         INSERT INTO tbl_mentor_income_schedule
         (mentor_id, direct_user_id, closing_month, mentor_monthly_income, mentor_income_rate, total_mentor_income, contribution_percentage, payout_amount, status, credited_at, closing_id)
         VALUES
-        (:mentor_id, :direct_user_id, :closing_month, :mentor_monthly_income, :mentor_income_rate, :total_mentor_income, :contribution_percentage, :payout_amount, 'CREDITED', NOW(), :closing_month)
+        (:mentor_id, :direct_user_id, :closing_month, :mentor_monthly_income, :mentor_income_rate, :total_mentor_income, :contribution_percentage, :payout_amount, 'CREDITED', NOW(), :closing_id)
     ");
 
     $updWallet = $db->prepare("
@@ -2340,7 +2437,7 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
     ");
 
     foreach ($mentors as $m) {
-        $mentorId = $m['mentor_id'];
+        $mentorId = (string)$m['mentor_id'];
         $monthlyInc = (float)$m['monthly_income'];
         $totalMentorInc = round($monthlyInc * (MENTOR_INCOME_PERCENT / 100.0), 2);
 
@@ -2349,14 +2446,25 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
         // Income Eligibility: Mentor must have active ID and minimum $145 investment
         if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($mentorId, $db)) {
             $blockedMentors++;
+            $blockedReasons[] = [
+                'mentor_id' => $mentorId,
+                'reason'    => "Mentor {$mentorId} does not satisfy income eligibility (active ID with minimum $145 investment)."
+            ];
             continue;
         }
 
-        // 2. Validate Contribution Total for this Mentor
+        $eligibleMentorsCount++;
+
+        // 2. Validate Contribution Total for this Mentor under Option A (Strict 100%)
         $val = validateMentorContributions($mentorId, $db);
         if (!$val['valid']) {
             $blockedMentors++;
-            continue; // STRICT RULE: If total contribution != 100%, ZERO payouts executed for this mentor
+            $blockedReasons[] = [
+                'mentor_id'        => $mentorId,
+                'reason'           => $val['reason'],
+                'total_percentage' => $val['total_percentage'] ?? 0.0
+            ];
+            continue; // STRICT OPTION A: If total contribution != 100.00%, ZERO payouts executed for this mentor
         }
 
         // 3. Fetch Recorded Direct Contributions
@@ -2364,7 +2472,7 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
         $mentorPaidAny = false;
 
         foreach ($contribs as $c) {
-            $directUserId = $c['direct_user_id'];
+            $directUserId = (string)$c['direct_user_id'];
             $contribPct = (float)$c['contribution_percentage'];
 
             if ($contribPct <= 0) continue; // 0% contribution means ₹0 payout (skipped)
@@ -2393,16 +2501,17 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
                 ':mentor_income_rate'    => MENTOR_INCOME_PERCENT,
                 ':total_mentor_income'   => $totalMentorInc,
                 ':contribution_percentage' => $contribPct,
-                ':payout_amount'         => $payoutAmount
+                ':payout_amount'         => $payoutAmount,
+                ':closing_id'            => $closingIdVal
             ]);
 
-            // B. Credit mentor_income_wallet of Direct User
+            // B. Credit mentor_income_wallet of Direct User (Recipient)
             $updWallet->execute([
                 ':amount' => $payoutAmount,
                 ':userid' => $directUserId
             ]);
 
-            // C. Record Transaction Entry
+            // C. Record Transaction Entry for Direct User (Recipient)
             $subject = "Mentor Income Payout ({$closing_month} - Mentor {$mentorId} - {$contribPct}% Contribution)";
             $insTxn->execute([
                 ':user_id'      => $directUserId,
@@ -2425,7 +2534,9 @@ function processMentorIncome($closing_month, $closing_date = null, $pdoConnectio
         'processed'         => $processedCount,
         'total_paid'        => round($totalPaid, 2),
         'mentors_processed' => $mentorsProcessed,
-        'blocked_mentors'   => $blockedMentors
+        'blocked_mentors'   => $blockedMentors,
+        'blocked_reasons'   => $blockedReasons,
+        'eligible_mentors'  => $eligibleMentorsCount
     ];
 }
 }
@@ -4307,7 +4418,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
                     }
                     $prevBalUSD = $dbVal;
                 } elseif ($wallet_column === 'mentor_income_wallet') {
-                    $stmtMI = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE mentor_id = :uid AND status = 'CREDITED'");
+                    $stmtMI = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id = :uid AND status = 'CREDITED'");
                     $stmtMI->execute([':uid' => $target_user_id]);
                     $prevBalUSD = (float)$stmtMI->fetchColumn();
                 } elseif ($wallet_column === 'rank_reward_wallet') {
@@ -6482,7 +6593,7 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $directBon = max($db1, $db2, $db3);
 
         // 4. Mentor Income (Sum of CREDITED tbl_mentor_income_schedule + tbl_transaction)
-        $stmtMI1 = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE mentor_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtMI1 = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id IN ($inClause) AND status = 'CREDITED'");
         $stmtMI1->execute($ids);
         $mi1 = (float)$stmtMI1->fetchColumn();
 

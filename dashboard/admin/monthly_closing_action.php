@@ -161,6 +161,80 @@ if ($action === 'preview') {
     $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
     if ($rate <= 0) $rate = 90.0;
 
+    // Calculate Mentor Income Preview Metrics
+    // Base: 2% of Mentor's Expected Profit Income
+    $mentor_expected_payout = 0.0;
+    $mentor_count_total = 0;
+    $mentor_valid_count = 0;
+    $mentor_blocked_count = 0;
+    $mentor_blocked_details = [];
+    $mentor_recipient_count = 0;
+
+    foreach ($user_set as $uId => $dummy) {
+        $uProfitInr = 0.0;
+        foreach ($allInvs as $inv) {
+            if ($inv['user_id'] === $uId) {
+                $count = (int)$inv['count'];
+                $inv_date = $inv['date'];
+                $rUsd = (float)($inv['real_fund_usd'] ?? 0);
+                $bUsd = (float)($inv['bonus_amount_usd'] ?? 0);
+                if ($rUsd <= 0 && (float)$inv['package'] > 0) {
+                    $rUsd = round(((float)$inv['package']) / 90.0, 2);
+                }
+                $retBaseInr = round(($rUsd + $bUsd) * 90.0, 2);
+                if ($count == 0 && !empty($inv_date)) {
+                    $inv_day = (int)date('d', strtotime($inv_date));
+                    $el_days = max(1, $days_in_month - $inv_day + 1);
+                    $full_profit = ($retBaseInr * $profit_percentage) / 100;
+                    $uProfitInr += round(($full_profit * $el_days) / $days_in_month, 2);
+                } else {
+                    $uProfitInr += round(($retBaseInr * $profit_percentage) / 100, 2);
+                }
+            }
+        }
+
+        if ($uProfitInr <= 0) continue;
+
+        $directs = function_exists('getMentorDirectContributions') ? getMentorDirectContributions($uId, $pdo) : [];
+        if (empty($directs)) continue; // Not a mentor with direct referrals
+
+        $mentor_count_total++;
+
+        // Income eligibility of mentor
+        if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($uId, $pdo)) {
+            $mentor_blocked_count++;
+            $mentor_blocked_details[] = "Mentor {$uId}: Does not meet income eligibility (active ID with minimum $145 investment).";
+            continue;
+        }
+
+        // Option A: 100% Contribution Validation
+        $val = function_exists('validateMentorContributions') ? validateMentorContributions($uId, $pdo) : ['valid' => false, 'reason' => 'Validator missing'];
+        if (!$val['valid']) {
+            $mentor_blocked_count++;
+            $mentor_blocked_details[] = "Mentor {$uId}: " . ($val['reason'] ?? 'Contribution does not equal 100.00%');
+            continue;
+        }
+
+        $mentor_valid_count++;
+        $totMentorIncInr = round($uProfitInr * 0.02, 2);
+
+        foreach ($directs as $d) {
+            $dId = $d['direct_user_id'];
+            $pct = (float)$d['contribution_percentage'];
+            if ($pct <= 0) continue;
+
+            $dPayout = round(($totMentorIncInr * $pct) / 100.0, 2);
+            if ($dPayout <= 0) continue;
+
+            if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($dId, $pdo)) {
+                continue;
+            }
+
+            $mentor_expected_payout += $dPayout;
+            $mentor_recipient_count++;
+        }
+    }
+
     echo json_encode([
         'status' => 'success',
         'closing_month' => $closing_month,
@@ -175,7 +249,17 @@ if ($action === 'preview') {
         'expected_profit_sharing_usd' => round($total_profit_sharing / $rate, 2),
         'expected_profit_sharing' => round($total_profit_sharing / $rate, 2),
         'eligible_investment_count' => $investment_count,
-        'eligible_user_count' => $user_count
+        'eligible_user_count' => $user_count,
+        // Mentor Income Preview (Option A Strict Validation)
+        'mentor_income_rate' => 2.0,
+        'mentor_eligible_count' => $mentor_count_total,
+        'mentor_valid_config_count' => $mentor_valid_count,
+        'mentor_blocked_count' => $mentor_blocked_count,
+        'mentor_recipient_count' => $mentor_recipient_count,
+        'expected_mentor_income_inr' => round($mentor_expected_payout, 2),
+        'expected_mentor_income_usd' => round($mentor_expected_payout / $rate, 2),
+        'expected_mentor_income' => round($mentor_expected_payout / $rate, 2),
+        'mentor_blocked_reasons' => $mentor_blocked_details
     ]);
     exit;
 }
@@ -352,20 +436,43 @@ if ($action === 'process') {
             }
         }
 
-        // Mark monthly closing as COMPLETED after all payouts & profit sharing calculations succeed
+        // Payout schedules execution with actual closing_id passed
         $directBonusResult  = processDirectBonusInstallments($closing_month, $closing_date, $pdo);
-        $mentorIncomeResult = processMentorIncome($closing_month, $closing_date, $pdo);
+        $mentorIncomeResult = processMentorIncome($closing_month, $closing_date, $pdo, $closing_id);
         $vipClubResult      = processVIPMonthlyIncome($closing_month, $closing_date, $pdo);
-
 
         $updClosing = $pdo->prepare("UPDATE tbl_monthly_closing SET status = 'COMPLETED' WHERE id = :id");
         $updClosing->execute([':id' => $closing_id]);
 
         $pdo->commit();
 
+        // Build truthful, comprehensive message regarding all 5 income streams
+        $incomeSummaries = [];
+        $incomeSummaries[] = "Profit Income credited (₹" . number_format($total_profit_paid, 2) . ")";
+        $incomeSummaries[] = "Profit Sharing distributed";
+
+        if (($directBonusResult['processed'] ?? 0) > 0) {
+            $incomeSummaries[] = "Direct Bonus credited (₹" . number_format($directBonusResult['total_paid'] ?? 0, 2) . ")";
+        }
+
+        if (($mentorIncomeResult['processed'] ?? 0) > 0) {
+            $incomeSummaries[] = "Mentor Income credited (₹" . number_format($mentorIncomeResult['total_paid'] ?? 0, 2) . ")";
+        } elseif (($mentorIncomeResult['blocked_mentors'] ?? 0) > 0) {
+            $incomeSummaries[] = "Mentor Income: {$mentorIncomeResult['blocked_mentors']} mentor(s) blocked (0.00 credited under Option A strict 100% rule)";
+        } else {
+            $incomeSummaries[] = "Mentor Income: ₹0.00 (No eligible mentors)";
+        }
+
+        if (($vipClubResult['processed'] ?? 0) > 0) {
+            $incomeSummaries[] = "VIP Club Income credited (₹" . number_format($vipClubResult['total_paid'] ?? 0, 2) . ")";
+        }
+
+        $summaryMsg = implode(', ', $incomeSummaries) . '.';
+        $respMsg = "Monthly Closing for {$closing_month} completed! " . $summaryMsg;
+
         echo json_encode([
             'status' => 'success',
-            'message' => "Monthly Closing for {$closing_month} completed successfully! Profit Income, Profit Sharing, Direct Bonus, Mentor Income & VIP Club Income credited.",
+            'message' => $respMsg,
             'details' => [
                 'closing_id' => $closing_id,
                 'closing_month' => $closing_month,
@@ -375,13 +482,15 @@ if ($action === 'process') {
                 'total_profit_paid' => $total_profit_paid,
                 'eligible_investment_count' => $investment_count,
                 'eligible_user_count' => $user_count,
-                'direct_bonus_paid' => $directBonusResult['total_paid'],
-                'direct_bonus_count' => $directBonusResult['processed'],
-                'mentor_income_paid' => $mentorIncomeResult['total_paid'],
-                'mentor_income_count' => $mentorIncomeResult['processed'],
-                'mentor_blocked_count' => $mentorIncomeResult['blocked_mentors'],
-                'vip_club_paid' => $vipClubResult['total_paid'],
-                'vip_club_count' => $vipClubResult['processed']
+                'direct_bonus_paid' => $directBonusResult['total_paid'] ?? 0.0,
+                'direct_bonus_count' => $directBonusResult['processed'] ?? 0,
+                'mentor_income_paid' => $mentorIncomeResult['total_paid'] ?? 0.0,
+                'mentor_income_count' => $mentorIncomeResult['processed'] ?? 0,
+                'mentor_mentors_processed' => $mentorIncomeResult['mentors_processed'] ?? 0,
+                'mentor_blocked_count' => $mentorIncomeResult['blocked_mentors'] ?? 0,
+                'mentor_blocked_reasons' => $mentorIncomeResult['blocked_reasons'] ?? [],
+                'vip_club_paid' => $vipClubResult['total_paid'] ?? 0.0,
+                'vip_club_count' => $vipClubResult['processed'] ?? 0
             ]
         ]);
         exit;
@@ -415,6 +524,25 @@ if ($action === 'details') {
     $psStmt->execute([':month' => $closing['closing_month']]);
     $total_sharing = (float)$psStmt->fetchColumn();
 
+    // Fetch actual Mentor Income credited and count from schedule
+    $miStmt = $pdo->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE closing_month = :month AND status = 'CREDITED'");
+    $miStmt->execute([':month' => $closing['closing_month']]);
+    $mentor_income_paid = (float)$miStmt->fetchColumn();
+
+    $miCntStmt = $pdo->prepare("SELECT COUNT(*) FROM tbl_mentor_income_schedule WHERE closing_month = :month AND status = 'CREDITED'");
+    $miCntStmt->execute([':month' => $closing['closing_month']]);
+    $mentor_payout_count = (int)$miCntStmt->fetchColumn();
+
+    // Fetch Direct Bonus paid for this month
+    $dbStmt = $pdo->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE closing_month = :month AND status = 'CREDITED'");
+    $dbStmt->execute([':month' => $closing['closing_month']]);
+    $direct_bonus_paid = (float)$dbStmt->fetchColumn();
+
+    // Fetch VIP Club paid for this month
+    $vipStmt = $pdo->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE closing_month = :month AND status = 'CREDITED'");
+    $vipStmt->execute([':month' => $closing['closing_month']]);
+    $vip_club_paid = (float)$vipStmt->fetchColumn();
+
     $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
     if ($rate <= 0) $rate = 90.0;
 
@@ -433,7 +561,14 @@ if ($action === 'details') {
         'closing' => $closing,
         'total_profit_sharing_inr' => round($total_sharing, 2),
         'total_profit_sharing_usd' => $total_sharing_usd,
-        'total_profit_sharing'     => $total_sharing_usd
+        'total_profit_sharing'     => $total_sharing_usd,
+        'direct_bonus_paid_inr'    => round($direct_bonus_paid, 2),
+        'direct_bonus_paid_usd'    => round($direct_bonus_paid / $rate, 2),
+        'mentor_income_paid_inr'   => round($mentor_income_paid, 2),
+        'mentor_income_paid_usd'   => round($mentor_income_paid / $rate, 2),
+        'mentor_payout_count'      => $mentor_payout_count,
+        'vip_club_paid_inr'        => round($vip_club_paid, 2),
+        'vip_club_paid_usd'        => round($vip_club_paid / $rate, 2)
     ]);
     exit;
 }

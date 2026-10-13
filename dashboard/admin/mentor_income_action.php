@@ -78,7 +78,10 @@ switch ($action) {
             $pdo->beginTransaction();
             foreach ($contributions as $direct_user_id => $pct) {
                 $pctVal = (float)$pct;
-                saveMentorDirectContribution($mentor_id, $direct_user_id, $pctVal, $pdo);
+                $saveRes = saveMentorDirectContribution($mentor_id, $direct_user_id, $pctVal, $pdo);
+                if (isset($saveRes['status']) && $saveRes['status'] === 'error') {
+                    throw new Exception($saveRes['message'] ?? "Failed to save contribution for {$direct_user_id}");
+                }
             }
             $pdo->commit();
 
