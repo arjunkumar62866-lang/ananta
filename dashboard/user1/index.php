@@ -145,21 +145,22 @@ include 'common/header.php';
 $isAccountActive = (isset($idactive) && ((string)$idactive === '1' || (int)$idactive === 1)) || (isset($status) && strtolower((string)$status) === 'active');
 
 
-// Get real-time accurate Left & Right branch downline data using single source of truth getUserTeamMembersDetailed()
+// Get real-time accurate Left & Right branch downline data using single source of truth getBinaryLegDetails()
+$legDetails = getBinaryLegDetails($userid, $pdo);
+$directbusinesstotalleft  = $legDetails['left_business_usd'];
+$directbusinesstotalright = $legDetails['right_business_usd'];
+$directbusinesstotal      = $directbusinesstotalleft + $directbusinesstotalright;
+
+// Calculate active team members in Left & Right branches (real-time from single source of truth)
+$my_left_active_directs  = $legDetails['left_ids_count'];
+$my_right_active_directs = $legDetails['right_ids_count'];
+
 $leftBranchMembers  = getUserTeamMembersDetailed($userid, 'LEFT', $pdo);
 $rightBranchMembers = getUserTeamMembersDetailed($userid, 'RIGHT', $pdo);
-
-$directbusinesstotalleft  = array_sum(array_column($leftBranchMembers,  'investment_usd'));
-$directbusinesstotalright = array_sum(array_column($rightBranchMembers, 'investment_usd'));
-$directbusinesstotal      = $directbusinesstotalleft + $directbusinesstotalright;
 
 // Real-time binary branch member count (always accurate — tree traversal single source of truth)
 $realtimeTotalTeam = count($leftBranchMembers) + count($rightBranchMembers);
 $total_team        = $realtimeTotalTeam;
-
-// Calculate active team members in Left & Right branches (real-time from branch arrays)
-$my_left_active_directs  = count(array_filter($leftBranchMembers,  function($m) { return (($m['status'] ?? '') === 'Active'); }));
-$my_right_active_directs = count(array_filter($rightBranchMembers, function($m) { return (($m['status'] ?? '') === 'Active'); }));
 
 
 // VIP Club qualification check (authoritative 10-level VIP Club system)
