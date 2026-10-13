@@ -41,56 +41,19 @@ switch ($action) {
         $vipClubWallet         = round((float)($uRow['vip_club_wallet'] ?? 0.00), 2);
         $depositWallet         = round((float)($uRow['deposite_wallet'] ?? 0.00), 2);
 
-        // 2. Cumulative Incomes Received (DB Aggregations)
-        $totProfitIncome = (float)$pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid")->execute([':uid' => $user_id]) ? (float)$pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid")->fetchColumn() : 0.00;
+        // 2. Cumulative Incomes Received & User Growth Summary (Single Source of Truth)
+        $growthSummary = function_exists('getUserIncomeWalletSummary') ? getUserIncomeWalletSummary($user_id, $pdo) : [];
+        $totProfitIncome  = round((float)($growthSummary['profit_income'] ?? $profitIncomeWallet), 2);
+        $totProfitSharing = round((float)($growthSummary['profit_sharing'] ?? $profitSharingWallet), 2);
+        $totDirectBonus   = round((float)($growthSummary['direct_bonus'] ?? $directBonusWallet), 2);
+        $totMentorIncome  = round((float)($growthSummary['mentor_income'] ?? $mentorIncomeWallet), 2);
+        $totRankReward    = round((float)($growthSummary['rank_reward'] ?? ($uRow['rank_reward_wallet'] ?? 0.00)), 2);
+        $totVipMonthly    = round((float)($growthSummary['vip_club'] ?? $vipClubWallet), 2);
+        $totTurnover      = round((float)($growthSummary['company_turnover'] ?? ($uRow['company_turnover_wallet'] ?? 0.00)), 2);
+        $totVipClubTotal  = $totVipMonthly;
 
-        $stmtPs = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id = :uid");
-        $stmtPs->execute([':uid' => $user_id]);
-        $totProfitSharing = (float)$stmtPs->fetchColumn();
-
-        $stmtDb = $pdo->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
-        $stmtDb->execute([':uid' => $user_id]);
-        $totDirectBonus = (float)$stmtDb->fetchColumn();
-        $totDirectBonus = max($totDirectBonus, $directBonusWallet);
-
-        $stmtMi = $pdo->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id = :uid AND status = 'CREDITED'");
-        $stmtMi->execute([':uid' => $user_id]);
-        $totMentorIncome = (float)$stmtMi->fetchColumn();
-        $totMentorIncome = max($totMentorIncome, $mentorIncomeWallet);
-
-        $stmtVipRewards = $pdo->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
-        $stmtVipRewards->execute([':uid' => $user_id]);
-        $totVipRewards = (float)$stmtVipRewards->fetchColumn();
-
-        $stmtVipMonthly = $pdo->prepare("SELECT COALESCE(SUM(total_payout), 0), COALESCE(SUM(turnover_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
-        $stmtVipMonthly->execute([':uid' => $user_id]);
-        $vipMonthlyRow = $stmtVipMonthly->fetch(PDO::FETCH_NUM);
-        $totVipMonthly = (float)($vipMonthlyRow[0] ?? 0.00);
-        $totTurnover   = (float)($vipMonthlyRow[1] ?? 0.00);
-
-        $totRankReward = (float)$pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid")->execute([':uid' => $user_id]) ? (float)$pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid")->fetchColumn() : 0.00;
-
-        $totVipClubTotal = round($totVipRewards + $totVipMonthly, 2);
-        $totVipClubTotal = max($totVipClubTotal, $vipClubWallet);
-
-        // Combined User Growth Total (All 7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor Income, VIP Club, Rank Reward, Company Turnover)
-        $userGrowthTotal = round(
-            $totProfitIncome +
-            $totProfitSharing +
-            $totDirectBonus +
-            $totMentorIncome +
-            $totVipClubTotal +
-            $totRankReward +
-            $totTurnover,
-            2
-        );
-
-        if (function_exists('getUserIncomeWalletSummary')) {
-            $growthSummary = getUserIncomeWalletSummary($user_id, $pdo);
-            if (!empty($growthSummary['total_income_balance'])) {
-                $userGrowthTotal = max($userGrowthTotal, round((float)$growthSummary['total_income_balance'], 2));
-            }
-        }
+        // Combined User Growth Total (All 7 Incomes without double-counting)
+        $userGrowthTotal = round((float)($growthSummary['total_income_balance'] ?? ($totProfitIncome + $totProfitSharing + $totDirectBonus + $totMentorIncome + $totRankReward + $totVipMonthly + $totTurnover)), 2);
         // Available User Growth Wallet Balance stored in database (Current spendable net balance)
         $userGrowthWallet = round((float)($uRow['user_growth_wallet'] ?? 0.00), 2);
 

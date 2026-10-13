@@ -101,9 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Received History Filter params
-$recFilterType = $_GET['rec_filter'] ?? 'today';
-if (!in_array($recFilterType, ['today', 'recent', 'custom'])) {
-    $recFilterType = 'today';
+$recFilterType = $_GET['rec_filter'] ?? 'all';
+if (!in_array($recFilterType, ['all', 'today', 'recent', 'custom'])) {
+    $recFilterType = 'all';
 }
 
 $recFromDate = trim($_GET['rec_from_date'] ?? '');
@@ -122,14 +122,27 @@ $sentHistory = getUserP2PTransferHistory($userid, $pdo);
 $receivedReport = getUserP2PReceivedReport($userid, $recFilterType, $recFromDate, $recToDate, $pdo);
 $activeTab = isset($_GET['tab']) && $_GET['tab'] === 'received' ? 'received' : (isset($_GET['rec_filter']) ? 'received' : 'transfer');
 
+// Calculate lifetime completed transfers for sent and received overview cards
 $totalSentUSD = 0;
-foreach ($sentHistory as $s) {
-    $totalSentUSD += (float)($s['amount'] ?? 0);
+try {
+    $stmtSent = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM tbl_p2p_transfer WHERE sender_id = ? AND status = 'COMPLETED'");
+    $stmtSent->execute([$userid]);
+    $totalSentUSD = (float)$stmtSent->fetchColumn();
+} catch (Exception $e) {
+    foreach ($sentHistory as $s) {
+        $totalSentUSD += (float)($s['amount'] ?? 0);
+    }
 }
 
 $totalReceivedUSD = 0;
-foreach ($receivedReport as $r) {
-    $totalReceivedUSD += (float)($r['amount'] ?? 0);
+try {
+    $stmtRec = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM tbl_p2p_transfer WHERE receiver_id = ? AND status = 'COMPLETED'");
+    $stmtRec->execute([$userid]);
+    $totalReceivedUSD = (float)$stmtRec->fetchColumn();
+} catch (Exception $e) {
+    foreach ($receivedReport as $r) {
+        $totalReceivedUSD += (float)($r['amount'] ?? 0);
+    }
 }
 ?>
 
@@ -472,6 +485,9 @@ foreach ($receivedReport as $r) {
 
                         <!-- Received History Date Filters -->
                         <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
+                            <a href="p2p.php?tab=received&rec_filter=all" class="btn btn-sm font-weight-semibold <?php echo ($recFilterType === 'all') ? 'btn-success' : 'btn-outline-secondary'; ?>" style="border-radius: 8px;">
+                                <i class="zmdi zmdi-view-list-alt mr-1"></i> All
+                            </a>
                             <a href="p2p.php?tab=received&rec_filter=today" class="btn btn-sm font-weight-semibold <?php echo ($recFilterType === 'today') ? 'btn-success' : 'btn-outline-secondary'; ?>" style="border-radius: 8px;">
                                 <i class="zmdi zmdi-calendar-note mr-1"></i> Today
                             </a>

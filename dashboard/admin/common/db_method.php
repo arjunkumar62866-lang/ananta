@@ -6645,38 +6645,38 @@ if (!function_exists('getUserIncomeWalletSummary')) {
 
         $mentorInc = max($mi1, $mi2);
 
-        // 5. Rank Reward (Sum of tbl_rewardinc + tbl_transaction)
+        // 5. Rank Reward (Sum of tbl_vip_user_qualification + tbl_rewardinc + tbl_transaction)
+        $stmtRR_vip = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id IN ($inClause) AND reward_status = 'CREDITED'");
+        $stmtRR_vip->execute($ids);
+        $rr_vip = (float)$stmtRR_vip->fetchColumn();
+
         $stmtRR1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id IN ($inClause)");
         $stmtRR1->execute($ids);
         $rr1 = (float)$stmtRR1->fetchColumn();
 
-        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Reward Income%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
+        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (subject LIKE '%Rank Reward%' OR subject LIKE '%Reward Income%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtRR2->execute($ids);
         $rr2 = (float)$stmtRR2->fetchColumn();
 
-        $rankRew = max($rr1, $rr2);
+        $rankRew = max($rr_vip, $rr1, $rr2);
 
-        // 6. VIP Club (Sum of CREDITED tbl_vip_user_qualification + weaker_leg_payout in tbl_vip_monthly_schedule + tbl_transaction)
-        $stmtVIP1 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id IN ($inClause) AND reward_status = 'CREDITED'");
+        // 6. VIP Club (Monthly Weaker-Leg Income from admin-executed monthly closing)
+        $stmtVIP1 = $db->prepare("SELECT COALESCE(SUM(weaker_leg_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
         $stmtVIP1->execute($ids);
         $vip1 = (float)$stmtVIP1->fetchColumn();
 
-        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(weaker_leg_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('VIP Club', 'VIP Income') OR subject LIKE '%VIP Club%' OR subject LIKE '%VIP Ranking%') AND subject NOT LIKE '%Rank Reward%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtVIP2->execute($ids);
         $vip2 = (float)$stmtVIP2->fetchColumn();
 
-        $stmtVIP3 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('VIP Club', 'VIP Income') OR subject LIKE '%VIP Club%' OR subject LIKE '%VIP Ranking%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
-        $stmtVIP3->execute($ids);
-        $vip3 = (float)$stmtVIP3->fetchColumn();
+        $vipClub = max($vip1, $vip2);
 
-        $vipClub = max(($vip1 + $vip2), $vip3);
-
-        // 7. Company Turnover (Sum of CREDITED turnover_payout in tbl_vip_monthly_schedule + turnover in tbl_transaction)
-        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%' AND subject NOT LIKE '%P2P%Transfer%'");
+        // 7. Company Turnover (Company Turnover Share from admin-executed monthly closing)
+        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(turnover_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
         $stmtCT1->execute($ids);
         $ct1 = (float)$stmtCT1->fetchColumn();
 
-        $stmtCT2 = $db->prepare("SELECT COALESCE(SUM(turnover_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtCT2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%' AND subject NOT LIKE '%P2P%Transfer%'");
         $stmtCT2->execute($ids);
         $ct2 = (float)$stmtCT2->fetchColumn();
 
@@ -6699,9 +6699,9 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $profitShare = max($ps1, $ps2, (float)$uPS);
         $directBon   = max($db1, $db2, $db3, (float)$uDB);
         $mentorInc   = max($mi1, $mi2, (float)$uMI);
-        $rankRew     = max($rr1, $rr2, (float)$uRR);
-        $vipClub     = max(($vip1 + $vip2), $vip3, (float)$uVIP);
-        $turnover    = max($ct1, $ct2, (float)$uCT);
+        $rankRew     = max($rankRew, (float)$uRR);
+        $vipClub     = max($vipClub, (float)$uVIP);
+        $turnover    = max($turnover, (float)$uCT);
 
         $totalIncBal = round($profitInc + $profitShare + $directBon + $mentorInc + $rankRew + $vipClub + $turnover, 2);
 

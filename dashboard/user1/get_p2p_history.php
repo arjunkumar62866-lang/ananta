@@ -12,7 +12,7 @@ if (!$userid) {
 }
 
 $sent = getUserP2PTransferHistory($userid, $pdo);
-$received = getUserP2PReceivedReport($userid, $pdo);
+$received = getUserP2PReceivedReport($userid, 'all', null, null, $pdo);
 
 echo json_encode([
     'status'   => 'success',

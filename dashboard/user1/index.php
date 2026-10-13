@@ -190,32 +190,24 @@ $direct_bonus = function_exists('getTotalDirectBonus') ? getTotalDirectBonus($us
 
 
 
-// Ranking Income
-$table="tbl_transaction";
-$ranking_income = incometotalnew($pdo, $table,$userid,'Ranking Income Payout');
-$ranking_income= round((float)($ranking_income ?? 0), 2);
+// User Growth Combined Total (7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor/Generation Income, VIP Club/Ranking Income, Company Turnover/Leadership, Rank Reward)
+$user_growth_breakdown_data = getUserGrowthBreakdown($userid, $pdo);
+$user_growth_total = round((float)($user_growth_breakdown_data["total_user_growth"] ?? 0), 2);
+
+// Ranking / VIP Club Income (Single source of truth)
+$ranking_income = round((float)($user_growth_breakdown_data['vip_club']['total_balance'] ?? ($vip_club_wallet ?? 0)), 2);
 
 // Profit Sharing Income
-$table="tbl_daily_levelinc";
-$profit_sharing_income = incometotalnew($pdo, $table,$userid,'Profit Sharing Income');
-$profit_sharing_income= round((float)($profit_sharing_income ?? 0), 2);
+$profit_sharing_income = round((float)($user_growth_breakdown_data['profit_sharing']['total_balance'] ?? ($profit_sharing_wallet ?? 0)), 2);
 
-// Reward Income
-$table="tbl_transaction";
-$reward_income = incometotalnew($pdo, $table,$userid,'Reward Income');
-$reward_income= round((float)($reward_income ?? 0), 2);
+// Reward / Rank Reward Income (Single source of truth)
+$reward_income = round((float)($user_growth_breakdown_data['rank_reward']['total_balance'] ?? ($rank_reward_wallet ?? 0)), 2);
 
 // Total Income (Profit Income Wallet + Profit Sharing Wallet)
 $total_income = round((float)$profit_income_wallet + (float)$profit_sharing_wallet, 2);
 
-// Leadership Income
-$table="tbl_transaction";
-$leadership_income_income = incometotalnew($pdo, $table,$userid,'Leadership Income');
-$leadership_income_income= round((float)($leadership_income_income ?? 0), 2);
-
-// User Growth Combined Total (7 Incomes: Profit Income, Profit Sharing, Direct Bonus, Mentor/Generation Income, VIP Club/Ranking Income, Company Turnover/Leadership, Rank Reward)
-$user_growth_breakdown_data = getUserGrowthBreakdown($userid, $pdo);
-$user_growth_total = round((float)($user_growth_breakdown_data["total_user_growth"] ?? 0), 2);
+// Company Turnover / Leadership Income (Single source of truth)
+$leadership_income_income = round((float)($user_growth_breakdown_data['company_turnover']['total_balance'] ?? ($company_turnover_wallet ?? 0)), 2);
 
 // direct income
 $table="tbl_levelinc";

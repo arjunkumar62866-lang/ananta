@@ -3337,9 +3337,14 @@ function getUserP2PTransferHistory($userid, $pdoConnection = null) {
  * Requirement #21: Fetch P2P Received Report with date range filtering.
  */
 if (!function_exists('getUserP2PReceivedReport')) {
-function getUserP2PReceivedReport($userid, $filterType = 'today', $fromDate = null, $toDate = null, $pdoConnection = null) {
+function getUserP2PReceivedReport($userid, $filterType = 'all', $fromDate = null, $toDate = null, $pdoConnection = null) {
     global $pdo;
-    $db = $pdoConnection ?: $pdo;
+    if ($filterType instanceof PDO) {
+        $db = $filterType;
+        $filterType = 'all';
+    } else {
+        $db = $pdoConnection ?: $pdo;
+    }
     if (!$db || !$userid) return [];
 
     ensureP2PTableExists($db);
@@ -3362,7 +3367,7 @@ function getUserP2PReceivedReport($userid, $filterType = 'today', $fromDate = nu
             $orderBy = "ORDER BY p.id DESC";
             $limit = "";
         } else {
-            $where .= " AND DATE(p.created_at) = CURDATE()";
+            // 'all' or default: fetch full received history
             $orderBy = "ORDER BY p.id DESC";
             $limit = "";
         }
@@ -5549,38 +5554,38 @@ if (!function_exists('getUserIncomeWalletSummary')) {
 
         $mentorInc = max($mi1, $mi2);
 
-        // 5. Rank Reward (Sum of tbl_rewardinc + tbl_transaction)
+        // 5. Rank Reward (Sum of tbl_vip_user_qualification + tbl_rewardinc + tbl_transaction)
+        $stmtRR_vip = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id IN ($inClause) AND reward_status = 'CREDITED'");
+        $stmtRR_vip->execute($ids);
+        $rr_vip = (float)$stmtRR_vip->fetchColumn();
+
         $stmtRR1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id IN ($inClause)");
         $stmtRR1->execute($ids);
         $rr1 = (float)$stmtRR1->fetchColumn();
 
-        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND subject LIKE '%Reward Income%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
+        $stmtRR2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (subject LIKE '%Rank Reward%' OR subject LIKE '%Reward Income%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtRR2->execute($ids);
         $rr2 = (float)$stmtRR2->fetchColumn();
 
-        $rankRew = max($rr1, $rr2);
+        $rankRew = max($rr_vip, $rr1, $rr2);
 
-        // 6. VIP Club (Sum of CREDITED tbl_vip_user_qualification + weaker_leg_payout in tbl_vip_monthly_schedule + tbl_transaction)
-        $stmtVIP1 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id IN ($inClause) AND reward_status = 'CREDITED'");
+        // 6. VIP Club (Monthly Weaker-Leg Income from admin-executed monthly closing)
+        $stmtVIP1 = $db->prepare("SELECT COALESCE(SUM(weaker_leg_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
         $stmtVIP1->execute($ids);
         $vip1 = (float)$stmtVIP1->fetchColumn();
 
-        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(weaker_leg_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtVIP2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('VIP Club', 'VIP Income') OR subject LIKE '%VIP Club%' OR subject LIKE '%VIP Ranking%') AND subject NOT LIKE '%Rank Reward%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
         $stmtVIP2->execute($ids);
         $vip2 = (float)$stmtVIP2->fetchColumn();
 
-        $stmtVIP3 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('VIP Club', 'VIP Income') OR subject LIKE '%VIP Club%' OR subject LIKE '%VIP Ranking%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'");
-        $stmtVIP3->execute($ids);
-        $vip3 = (float)$stmtVIP3->fetchColumn();
+        $vipClub = max($vip1, $vip2);
 
-        $vipClub = max(($vip1 + $vip2), $vip3);
-
-        // 7. Company Turnover (Sum of CREDITED turnover_payout in tbl_vip_monthly_schedule + turnover in tbl_transaction)
-        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%' AND subject NOT LIKE '%P2P%Transfer%'");
+        // 7. Company Turnover (Company Turnover Share from admin-executed monthly closing)
+        $stmtCT1 = $db->prepare("SELECT COALESCE(SUM(turnover_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
         $stmtCT1->execute($ids);
         $ct1 = (float)$stmtCT1->fetchColumn();
 
-        $stmtCT2 = $db->prepare("SELECT COALESCE(SUM(turnover_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id IN ($inClause) AND status = 'CREDITED'");
+        $stmtCT2 = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%' AND subject NOT LIKE '%P2P%Transfer%'");
         $stmtCT2->execute($ids);
         $ct2 = (float)$stmtCT2->fetchColumn();
 
@@ -5603,9 +5608,9 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $profitShare = max($ps1, $ps2, (float)$uPS);
         $directBon   = max($db1, $db2, $db3, (float)$uDB);
         $mentorInc   = max($mi1, $mi2, (float)$uMI);
-        $rankRew     = max($rr1, $rr2, (float)$uRR);
-        $vipClub     = max(($vip1 + $vip2), $vip3, (float)$uVIP);
-        $turnover    = max($ct1, $ct2, (float)$uCT);
+        $rankRew     = max($rankRew, (float)$uRR);
+        $vipClub     = max($vipClub, (float)$uVIP);
+        $turnover    = max($turnover, (float)$uCT);
 
         $totalIncBal = round($profitInc + $profitShare + $directBon + $mentorInc + $rankRew + $vipClub + $turnover, 2);
 
@@ -5786,12 +5791,50 @@ if (!function_exists('getUserIncomeWalletHistory')) {
             }
         }
 
+        $hasDateFilter = (!empty($fromDate) && !empty($toDate));
+
         // 5. Rank Reward
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'RANK_REWARD') {
-            $sql1 = "SELECT id, 'Rank Reward' as income_type, amount, created_date, time, subject FROM tbl_rewardinc WHERE user_id IN ($inClause)";
+            // A. Authoritative 10-Rank Qualifications
+            $sql1 = "SELECT q.id, 'Rank Reward' as income_type, q.reward_amount as amount, q.qualified_at, q.vip_level, q.reward_status, c.name as rank_name 
+                     FROM tbl_vip_user_qualification q 
+                     LEFT JOIN tbl_vip_level_config c ON c.level_id = q.vip_level 
+                     WHERE q.user_id IN ($inClause)";
+            $params1 = $ids;
+            if ($hasDateFilter) {
+                $sql1 .= " AND DATE(q.qualified_at) >= ? AND DATE(q.qualified_at) <= ?";
+                $params1[] = $fromDate;
+                $params1[] = $toDate;
+            }
             $stmt1 = $db->prepare($sql1);
-            $stmt1->execute($ids);
+            $stmt1->execute($params1);
             foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $dtStr = $row['qualified_at'] ?: date('Y-m-d H:i:s');
+                $dParts = explode(' ', $dtStr);
+                $rankLabel = !empty($row['rank_name']) ? $row['rank_name'] : ('Level #' . $row['vip_level']);
+                $allHistory[] = [
+                    'id'           => 'VIP_QUAL_' . $row['id'],
+                    'income_type'  => 'Rank Reward',
+                    'amount'       => (float)$row['amount'],
+                    'created_date' => $dParts[0],
+                    'time'         => $dParts[1] ?? '00:00:00',
+                    'subject'      => "Rank Reward - {$rankLabel} Qualified",
+                    'status'       => $row['reward_status'] ?: 'Credited',
+                    'sort_date'    => $dtStr
+                ];
+            }
+
+            // B. Legacy tbl_rewardinc
+            $sql2 = "SELECT id, 'Rank Reward' as income_type, amount, created_date, time, subject FROM tbl_rewardinc WHERE user_id IN ($inClause)";
+            $params2 = $ids;
+            if ($hasDateFilter) {
+                $sql2 .= " AND created_date >= ? AND created_date <= ?";
+                $params2[] = $fromDate;
+                $params2[] = $toDate;
+            }
+            $stmt2 = $db->prepare($sql2);
+            $stmt2->execute($params2);
+            foreach ($stmt2->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $allHistory[] = [
                     'id'           => 'RR_' . $row['id'],
                     'income_type'  => 'Rank Reward',
@@ -5803,45 +5846,170 @@ if (!function_exists('getUserIncomeWalletHistory')) {
                     'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
                 ];
             }
+
+            // C. tbl_transaction (Direct Rank Reward transactions if not already in qualifications)
+            $sql3 = "SELECT id, 'Rank Reward' as income_type, amount, created_date, time, subject 
+                     FROM tbl_transaction 
+                     WHERE user_id IN ($inClause) AND (subject LIKE '%Rank Reward%' OR subject LIKE '%Reward Income%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'";
+            $params3 = $ids;
+            if ($hasDateFilter) {
+                $sql3 .= " AND created_date >= ? AND created_date <= ?";
+                $params3[] = $fromDate;
+                $params3[] = $toDate;
+            }
+            $stmt3 = $db->prepare($sql3);
+            $stmt3->execute($params3);
+            foreach ($stmt3->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                // Prevent duplicate if qualifications already provided the record
+                $isDup = false;
+                foreach ($allHistory as $h) {
+                    if ($h['income_type'] === 'Rank Reward' && abs($h['amount'] - (float)$row['amount']) < 0.01 && $h['created_date'] === $row['created_date']) {
+                        $isDup = true;
+                        break;
+                    }
+                }
+                if (!$isDup) {
+                    $allHistory[] = [
+                        'id'           => 'TRX_RR_' . $row['id'],
+                        'income_type'  => 'Rank Reward',
+                        'amount'       => (float)$row['amount'],
+                        'created_date' => $row['created_date'],
+                        'time'         => $row['time'] ?: '00:00:00',
+                        'subject'      => $row['subject'] ?: 'Rank Reward Income',
+                        'status'       => 'Credited',
+                        'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
+                    ];
+                }
+            }
         }
 
-        // 6. VIP Club
+        // 6. VIP Club (Monthly Weaker-Leg Income from admin closing)
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'VIP_CLUB') {
-            $sql1 = "SELECT id, 'VIP Club' as income_type, reward_amount as amount, qualified_at, vip_level, reward_status FROM tbl_vip_user_qualification WHERE user_id IN ($inClause)";
+            $sql1 = "SELECT s.id, 'VIP Club' as income_type, s.weaker_leg_payout as amount, s.closing_month, s.closing_date, s.credited_at, s.vip_level, s.status, c.name as rank_name 
+                     FROM tbl_vip_monthly_schedule s 
+                     LEFT JOIN tbl_vip_level_config c ON c.level_id = s.vip_level 
+                     WHERE s.user_id IN ($inClause) AND s.status = 'CREDITED' AND s.weaker_leg_payout > 0";
+            $params1 = $ids;
+            if ($hasDateFilter) {
+                $sql1 .= " AND DATE(s.credited_at) >= ? AND DATE(s.credited_at) <= ?";
+                $params1[] = $fromDate;
+                $params1[] = $toDate;
+            }
             $stmt1 = $db->prepare($sql1);
-            $stmt1->execute($ids);
+            $stmt1->execute($params1);
             foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                $dtStr = $row['qualified_at'] ?: date('Y-m-d H:i:s');
+                $dtStr = $row['credited_at'] ?: ($row['closing_month'] . '-11 00:00:00');
                 $dParts = explode(' ', $dtStr);
+                $rankLabel = !empty($row['rank_name']) ? $row['rank_name'] : ('Level #' . $row['vip_level']);
                 $allHistory[] = [
-                    'id'           => 'VIP_' . $row['id'],
+                    'id'           => 'VIP_M_' . $row['id'],
                     'income_type'  => 'VIP Club',
                     'amount'       => (float)$row['amount'],
                     'created_date' => $dParts[0],
                     'time'         => $dParts[1] ?? '00:00:00',
-                    'subject'      => "VIP Club Level #" . $row['vip_level'] . " Reward Qualified",
-                    'status'       => $row['reward_status'],
+                    'subject'      => "VIP Club Monthly Income - {$rankLabel} ({$row['closing_month']})",
+                    'status'       => 'Credited',
                     'sort_date'    => $dtStr
                 ];
             }
+
+            // Also check tbl_transaction if any legacy VIP Income exists
+            $sql2 = "SELECT id, 'VIP Club' as income_type, amount, created_date, time, subject 
+                     FROM tbl_transaction 
+                     WHERE user_id IN ($inClause) AND (type IN ('VIP Club', 'VIP Income') OR subject LIKE '%VIP Club%' OR subject LIKE '%VIP Ranking%') AND subject NOT LIKE '%Rank Reward%' AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%'";
+            $params2 = $ids;
+            if ($hasDateFilter) {
+                $sql2 .= " AND created_date >= ? AND created_date <= ?";
+                $params2[] = $fromDate;
+                $params2[] = $toDate;
+            }
+            $stmt2 = $db->prepare($sql2);
+            $stmt2->execute($params2);
+            foreach ($stmt2->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $isDup = false;
+                foreach ($allHistory as $h) {
+                    if ($h['income_type'] === 'VIP Club' && abs($h['amount'] - (float)$row['amount']) < 0.01 && $h['created_date'] === $row['created_date']) {
+                        $isDup = true;
+                        break;
+                    }
+                }
+                if (!$isDup) {
+                    $allHistory[] = [
+                        'id'           => 'TRX_VIP_' . $row['id'],
+                        'income_type'  => 'VIP Club',
+                        'amount'       => (float)$row['amount'],
+                        'created_date' => $row['created_date'],
+                        'time'         => $row['time'] ?: '00:00:00',
+                        'subject'      => $row['subject'] ?: 'VIP Club Monthly Income',
+                        'status'       => 'Credited',
+                        'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
+                    ];
+                }
+            }
         }
 
-        // 7. Company Turnover
+        // 7. Company Turnover (Company Turnover Share from admin closing)
         if (empty($incomeType) || $incomeType === 'ALL' || $incomeType === 'COMPANY_TURNOVER') {
-            $sql1 = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject FROM tbl_transaction WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%' AND subject NOT LIKE '%P2P%Transfer%'";
+            $sql1 = "SELECT s.id, 'Company Turnover' as income_type, s.turnover_payout as amount, s.closing_month, s.closing_date, s.credited_at, s.vip_level, s.status, c.name as rank_name 
+                     FROM tbl_vip_monthly_schedule s 
+                     LEFT JOIN tbl_vip_level_config c ON c.level_id = s.vip_level 
+                     WHERE s.user_id IN ($inClause) AND s.status = 'CREDITED' AND s.turnover_payout > 0";
+            $params1 = $ids;
+            if ($hasDateFilter) {
+                $sql1 .= " AND DATE(s.credited_at) >= ? AND DATE(s.credited_at) <= ?";
+                $params1[] = $fromDate;
+                $params1[] = $toDate;
+            }
             $stmt1 = $db->prepare($sql1);
-            $stmt1->execute($ids);
+            $stmt1->execute($params1);
             foreach ($stmt1->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $dtStr = $row['credited_at'] ?: ($row['closing_month'] . '-11 00:00:00');
+                $dParts = explode(' ', $dtStr);
+                $rankLabel = !empty($row['rank_name']) ? $row['rank_name'] : ('Level #' . $row['vip_level']);
                 $allHistory[] = [
-                    'id'           => 'CT_' . $row['id'],
+                    'id'           => 'CT_M_' . $row['id'],
                     'income_type'  => 'Company Turnover',
                     'amount'       => (float)$row['amount'],
-                    'created_date' => $row['created_date'],
-                    'time'         => $row['time'] ?: '00:00:00',
-                    'subject'      => $row['subject'] ?: 'Company Turnover Dividend',
+                    'created_date' => $dParts[0],
+                    'time'         => $dParts[1] ?? '00:00:00',
+                    'subject'      => "Company Turnover Share - {$rankLabel} ({$row['closing_month']})",
                     'status'       => 'Credited',
-                    'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
+                    'sort_date'    => $dtStr
                 ];
+            }
+
+            // Also check tbl_transaction
+            $sql2 = "SELECT id, 'Company Turnover' as income_type, amount, created_date, time, subject 
+                     FROM tbl_transaction 
+                     WHERE user_id IN ($inClause) AND (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') AND type != 'Debit' AND subject NOT LIKE '%Unlock Access%' AND subject NOT LIKE '%P2P%Transfer%'";
+            $params2 = $ids;
+            if ($hasDateFilter) {
+                $sql2 .= " AND created_date >= ? AND created_date <= ?";
+                $params2[] = $fromDate;
+                $params2[] = $toDate;
+            }
+            $stmt2 = $db->prepare($sql2);
+            $stmt2->execute($params2);
+            foreach ($stmt2->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $isDup = false;
+                foreach ($allHistory as $h) {
+                    if ($h['income_type'] === 'Company Turnover' && abs($h['amount'] - (float)$row['amount']) < 0.01 && $h['created_date'] === $row['created_date']) {
+                        $isDup = true;
+                        break;
+                    }
+                }
+                if (!$isDup) {
+                    $allHistory[] = [
+                        'id'           => 'CT_TRX_' . $row['id'],
+                        'income_type'  => 'Company Turnover',
+                        'amount'       => (float)$row['amount'],
+                        'created_date' => $row['created_date'],
+                        'time'         => $row['time'] ?: '00:00:00',
+                        'subject'      => $row['subject'] ?: 'Company Turnover Dividend',
+                        'status'       => 'Credited',
+                        'sort_date'    => $row['created_date'] . ' ' . ($row['time'] ?: '00:00:00')
+                    ];
+                }
             }
         }
 
