@@ -73,7 +73,7 @@ Press `Ctrl + C` in your terminal window running the server.
 #### Commit & Push Code Updates to GitHub:
 ```bash
 git add .
-git commit -m "Fix: Vip club and rank and reward new iplementation fixed"
+git commit -m "Fix: Vip club and rank and reward new iplementation and sync with live data and user delete functionality and new db added"
 git push origin main
 ```
 *(Hostinger automatically deploys code pushed to `main`, and GitHub Actions executes pending database migrations safely).*
