@@ -6204,48 +6204,53 @@ if (!function_exists('getUserNotifications')) {
         $anUid    = (stripos($userId, 'AN') === 0) ? $userId : 'AN' . $userId;
 
         try {
+            $limit = max(1, (int)$limit);
+            $offset = max(0, (int)$offset);
+
             // Fetch direct user notifications AND global/targeted admin system broadcasts
+            // Uses derived table subquery for universal compatibility across MySQL and MariaDB versions
             $sql = "
-                SELECT
-                    n.id,
-                    n.type,
-                    n.title,
-                    n.message,
-                    n.ref_id,
-                    n.is_read,
-                    n.created_at
-                FROM tbl_user_notifications n
-                WHERE n.user_id = :uid OR n.user_id = :clean OR n.user_id = :an
+                SELECT * FROM (
+                    SELECT
+                        n.id,
+                        n.type,
+                        n.title,
+                        n.message,
+                        n.ref_id,
+                        n.is_read,
+                        n.created_at
+                    FROM tbl_user_notifications n
+                    WHERE n.user_id = :uid OR n.user_id = :clean OR n.user_id = :an
 
-                UNION ALL
+                    UNION ALL
 
-                SELECT
-                    (1000000 + s.id) as id,
-                    'ADMIN' as type,
-                    s.title,
-                    s.message,
-                    s.id as ref_id,
-                    s.is_read as is_read,
-                    s.created_at
-                FROM tbl_system_notifications s
-                WHERE s.target_type = 'GLOBAL' OR (s.target_type = 'USER' AND (s.target_user_id = :uid_target OR s.target_user_id = :clean_target OR s.target_user_id = :an_target))
-
+                    SELECT
+                        (1000000 + s.id) as id,
+                        'ADMIN' as type,
+                        s.title,
+                        s.message,
+                        s.id as ref_id,
+                        s.is_read as is_read,
+                        s.created_at
+                    FROM tbl_system_notifications s
+                    WHERE s.target_type = 'GLOBAL' OR (s.target_type = 'USER' AND (s.target_user_id = :uid_target OR s.target_user_id = :clean_target OR s.target_user_id = :an_target))
+                ) AS combined_notifs
                 ORDER BY created_at DESC
-                LIMIT :lim OFFSET :off
+                LIMIT {$limit} OFFSET {$offset}
             ";
 
             $stmt = $db->prepare($sql);
-            $stmt->bindValue(':uid', (string)$userId, PDO::PARAM_STR);
-            $stmt->bindValue(':clean', (string)$cleanUid, PDO::PARAM_STR);
-            $stmt->bindValue(':an', (string)$anUid, PDO::PARAM_STR);
-            $stmt->bindValue(':uid_target', (string)$userId, PDO::PARAM_STR);
-            $stmt->bindValue(':clean_target', (string)$cleanUid, PDO::PARAM_STR);
-            $stmt->bindValue(':an_target', (string)$anUid, PDO::PARAM_STR);
-            $stmt->bindValue(':lim', (int)$limit, PDO::PARAM_INT);
-            $stmt->bindValue(':off', (int)$offset, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt->execute([
+                ':uid'          => (string)$userId,
+                ':clean'        => (string)$cleanUid,
+                ':an'           => (string)$anUid,
+                ':uid_target'   => (string)$userId,
+                ':clean_target' => (string)$cleanUid,
+                ':an_target'    => (string)$anUid
+            ]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
+            error_log("getUserNotifications error for user {$userId}: " . $e->getMessage());
             return [];
         }
     }

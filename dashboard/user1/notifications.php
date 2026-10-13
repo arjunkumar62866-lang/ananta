@@ -37,8 +37,19 @@ $notifications = getUserNotifications($userid, 100, 0, $pdo);
 
 // Filter by type or unread if requested
 if (!empty($filterType)) {
-    $notifications = array_filter($notifications, function($n) use ($filterType) {
-        return strtoupper($n['type']) === strtoupper($filterType);
+    $filterTypeUpper = strtoupper($filterType);
+    $notifications = array_filter($notifications, function($n) use ($filterTypeUpper) {
+        $type = strtoupper($n['type'] ?? '');
+        if ($filterTypeUpper === 'P2P' || $filterTypeUpper === 'TRANSFER') {
+            return ($type === 'P2P' || $type === 'TRANSFER');
+        }
+        if ($filterTypeUpper === 'INVESTMENT' || $filterTypeUpper === 'PACKAGE') {
+            return ($type === 'INVESTMENT' || $type === 'PACKAGE');
+        }
+        if ($filterTypeUpper === 'ADMIN' || $filterTypeUpper === 'SYSTEM') {
+            return ($type === 'ADMIN' || $type === 'SYSTEM');
+        }
+        return $type === $filterTypeUpper;
     });
 }
 if ($unreadOnly) {
