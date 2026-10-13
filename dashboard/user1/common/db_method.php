@@ -2730,50 +2730,50 @@ function getBinaryLegDetails($user_id, $pdoConnection = null) {
     $db = $pdoConnection ?: $pdo;
     if (!$db || !$user_id) {
         return [
-            'left_id' => '', 'right_id' => '',
-            'left_ids_count' => 0, 'right_ids_count' => 0,
-            'left_business_usd' => 0.0, 'right_business_usd' => 0.0,
+            'left_id'                 => '',
+            'right_id'                => '',
+            'left_ids_count'          => 0,
+            'right_ids_count'         => 0,
+            'left_business_usd'       => 0.0,
+            'right_business_usd'      => 0.0,
             'weaker_leg_business_usd' => 0.0
         ];
     }
+
+    $leftMembers  = function_exists('getUserTeamMembersDetailed') ? getUserTeamMembersDetailed($user_id, 'LEFT', $db) : [];
+    $rightMembers = function_exists('getUserTeamMembersDetailed') ? getUserTeamMembersDetailed($user_id, 'RIGHT', $db) : [];
+
+    $leftActiveCount  = count(array_filter($leftMembers,  function($m) { return (($m['status'] ?? '') === 'Active'); }));
+    $rightActiveCount = count(array_filter($rightMembers, function($m) { return (($m['status'] ?? '') === 'Active'); }));
+
+    $leftBizUsd  = round((float)array_sum(array_column($leftMembers,  'investment_usd')), 2);
+    $rightBizUsd = round((float)array_sum(array_column($rightMembers, 'investment_usd')), 2);
+
+    $leftInrSum  = (float)array_sum(array_column($leftMembers,  'investment_inr'));
+    $rightInrSum = (float)array_sum(array_column($rightMembers, 'investment_inr'));
+
+    if ($leftInrSum > 0) {
+        $leftInrConvertedUsd = round($leftInrSum / 90.0, 2);
+        $leftBizUsd = max($leftBizUsd, $leftInrConvertedUsd);
+    }
+    if ($rightInrSum > 0) {
+        $rightInrConvertedUsd = round($rightInrSum / 90.0, 2);
+        $rightBizUsd = max($rightBizUsd, $rightInrConvertedUsd);
+    }
+
+    $weakerBizUsd = min($leftBizUsd, $rightBizUsd);
 
     $stmtTree = $db->prepare("SELECT left_id, right_id FROM tree WHERE userid = :uid LIMIT 1");
     $stmtTree->execute([':uid' => $user_id]);
     $treeNode = $stmtTree->fetch(PDO::FETCH_ASSOC);
 
-    $leftId  = $treeNode['left_id'] ?? '';
-    $rightId = $treeNode['right_id'] ?? '';
-
-    $leftSubtreeUsers  = $leftId ? array_merge([$leftId], getBinarySubtreeUserIds($leftId, $db)) : [];
-    $rightSubtreeUsers = $rightId ? array_merge([$rightId], getBinarySubtreeUserIds($rightId, $db)) : [];
-
-    // Helper to calculate active count & business in USD ($1 = ₹90)
-    $calcLegStats = function($userList) use ($db) {
-        if (empty($userList)) return ['count' => 0, 'business_usd' => 0.0];
-
-        $inClause = "'" . implode("','", array_map('addslashes', $userList)) . "'";
-        $stmtCount = $db->query("SELECT COUNT(*) FROM user WHERE userid IN ({$inClause}) AND active = '1'");
-        $activeCount = (int)$stmtCount->fetchColumn();
-
-        $stmtBiz = $db->query("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_one WHERE user_id IN ({$inClause})");
-        $bizInr = (float)$stmtBiz->fetchColumn();
-        $bizUsd = round($bizInr / 90.0, 2);
-
-        return ['count' => $activeCount, 'business_usd' => $bizUsd];
-    };
-
-    $leftStats  = $calcLegStats($leftSubtreeUsers);
-    $rightStats = $calcLegStats($rightSubtreeUsers);
-
-    $weakerBizUsd = min($leftStats['business_usd'], $rightStats['business_usd']);
-
     return [
-        'left_id'                 => $leftId,
-        'right_id'                => $rightId,
-        'left_ids_count'          => $leftStats['count'],
-        'right_ids_count'         => $rightStats['count'],
-        'left_business_usd'       => $leftStats['business_usd'],
-        'right_business_usd'      => $rightStats['business_usd'],
+        'left_id'                 => $treeNode['left_id'] ?? '',
+        'right_id'                => $treeNode['right_id'] ?? '',
+        'left_ids_count'          => $leftActiveCount,
+        'right_ids_count'         => $rightActiveCount,
+        'left_business_usd'       => $leftBizUsd,
+        'right_business_usd'      => $rightBizUsd,
         'weaker_leg_business_usd' => $weakerBizUsd
     ];
 }
@@ -2781,6 +2781,7 @@ function getBinaryLegDetails($user_id, $pdoConnection = null) {
 
 /**
  * Traverse binary tree upwards to retrieve all upline ancestors of a user.
+ * Checks both tree table and user.underuserid to ensure full upline traversal.
  */
 if (!function_exists('getBinaryAncestors')) {
 function getBinaryAncestors($user_id, $pdoConnection = null) {
@@ -2792,12 +2793,17 @@ function getBinaryAncestors($user_id, $pdoConnection = null) {
     $current = (string)$user_id;
     $visited = [];
 
-    $stmtParent = $db->prepare("SELECT userid FROM tree WHERE left_id = :uid OR right_id = :uid LIMIT 1");
+    $stmtParentTree = $db->prepare("SELECT userid FROM tree WHERE left_id = :uid OR right_id = :uid LIMIT 1");
+    $stmtParentUser = $db->prepare("SELECT underuserid FROM user WHERE userid = :uid LIMIT 1");
 
     while (!empty($current) && !isset($visited[$current])) {
         $visited[$current] = true;
-        $stmtParent->execute([':uid' => $current]);
-        $parent = $stmtParent->fetchColumn();
+        $stmtParentTree->execute([':uid' => $current]);
+        $parent = $stmtParentTree->fetchColumn();
+        if (!$parent) {
+            $stmtParentUser->execute([':uid' => $current]);
+            $parent = $stmtParentUser->fetchColumn();
+        }
         if ($parent && !isset($visited[$parent])) {
             $ancestors[] = $parent;
             $current = $parent;
@@ -2811,23 +2817,30 @@ function getBinaryAncestors($user_id, $pdoConnection = null) {
 }
 
 /**
- * Evaluate and process VIP Club Qualifications & One-Time Rewards for a user.
- */
-/**
  * Evaluate and process Canonical 10-Rank Qualifications & One-Time Rank Rewards for a user.
  * Streams: One-time Rank Reward credits user.rank_reward_wallet & updates rank/rankid.
+ * Always calculates and returns real-time binary leg details synchronized with Business Overview.
  */
 if (!function_exists('evaluateUserVIPQualifications')) {
 function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
     global $pdo;
     $db = $pdoConnection ?: $pdo;
-    if (!$db || !$user_id) return ['newly_qualified' => [], 'all_qualified' => []];
-
-    // Income Eligibility: User must have active ID and minimum $145 investment
-    if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($user_id, $db)) {
-        return ['newly_qualified' => [], 'all_qualified' => []];
+    if (!$db || !$user_id) {
+        return [
+            'leg_details'     => [
+                'left_id' => '', 'right_id' => '',
+                'left_ids_count' => 0, 'right_ids_count' => 0,
+                'left_business_usd' => 0.0, 'right_business_usd' => 0.0,
+                'weaker_leg_business_usd' => 0.0
+            ],
+            'newly_qualified' => [],
+            'all_qualified'   => [],
+            'current_rank'    => '',
+            'current_rank_id' => 0
+        ];
     }
 
+    // Always calculate real-time binary leg details first (Single Source of Truth)
     $legDetails = getBinaryLegDetails($user_id, $db);
 
     $configs = $db->query("SELECT * FROM tbl_vip_level_config ORDER BY level_id ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -2870,6 +2883,20 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
     $highestQualifiedLevel = 0;
     $highestRankName = '';
 
+    // Check existing qualification history
+    $stmtPrev = $db->prepare("SELECT vip_level FROM tbl_vip_user_qualification WHERE user_id = :uid ORDER BY vip_level ASC");
+    $stmtPrev->execute([':uid' => $user_id]);
+    $prevLvls = $stmtPrev->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($prevLvls as $pl) {
+        $pl = (int)$pl;
+        if (!in_array($pl, $allQualified)) {
+            $allQualified[] = $pl;
+        }
+        if ($pl > $highestQualifiedLevel) {
+            $highestQualifiedLevel = $pl;
+        }
+    }
+
     foreach ($configs as $c) {
         $lvl = (int)$c['level_id'];
         $rankName = trim($c['name'] ?? ('Rank ' . $lvl));
@@ -2887,7 +2914,9 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
         );
 
         if ($isQualified) {
-            $allQualified[] = $lvl;
+            if (!in_array($lvl, $allQualified)) {
+                $allQualified[] = $lvl;
+            }
             if ($lvl > $highestQualifiedLevel) {
                 $highestQualifiedLevel = $lvl;
                 $highestRankName = $rankName;
@@ -2930,6 +2959,14 @@ function evaluateUserVIPQualifications($user_id, $pdoConnection = null) {
     }
 
     if ($highestQualifiedLevel > 0) {
+        if (empty($highestRankName)) {
+            foreach ($configs as $c) {
+                if ((int)$c['level_id'] === $highestQualifiedLevel) {
+                    $highestRankName = trim($c['name'] ?? ('Rank ' . $highestQualifiedLevel));
+                    break;
+                }
+            }
+        }
         $updRankOnly->execute([
             ':rank_name' => $highestRankName,
             ':rank_id'   => $highestQualifiedLevel,

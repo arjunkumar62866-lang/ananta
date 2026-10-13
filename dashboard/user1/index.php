@@ -164,7 +164,10 @@ $my_right_active_directs = count(array_filter($rightBranchMembers, function($m) 
 
 // VIP Club qualification check (authoritative 10-level VIP Club system)
 if (function_exists('evaluateUserVIPQualifications')) {
-    evaluateUserVIPQualifications($userid, $pdo);
+    $vipQualRes = evaluateUserVIPQualifications($userid, $pdo);
+    if (!empty($vipQualRes['current_rank'])) {
+        $rank = $vipQualRes['current_rank'];
+    }
 }
 
 // withdraw ammount

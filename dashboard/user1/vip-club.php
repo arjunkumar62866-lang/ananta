@@ -487,9 +487,11 @@ table.dataTable.no-footer {
                     $('#txtLeftBiz').text(leg.formatted_left_business || (sym + ' ' + parseFloat(leg.display_left_business || leg.left_business_usd).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
                     $('#txtRightBiz').text(leg.formatted_right_business || (sym + ' ' + parseFloat(leg.display_right_business || leg.right_business_usd).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})));
 
-                    let maxBiz = Math.max(parseFloat(leg.left_business_usd), parseFloat(leg.right_business_usd), 1);
-                    let pctLeft = Math.min(100, Math.round((parseFloat(leg.left_business_usd) / maxBiz) * 100));
-                    let pctRight = Math.min(100, Math.round((parseFloat(leg.right_business_usd) / maxBiz) * 100));
+                    let targetBiz = (res.data.next_level && parseFloat(res.data.next_level.req_left_business) > 0)
+                        ? parseFloat(res.data.next_level.req_left_business)
+                        : Math.max(parseFloat(leg.left_business_usd || 0), parseFloat(leg.right_business_usd || 0), 1);
+                    let pctLeft = Math.min(100, Math.round((parseFloat(leg.left_business_usd || 0) / targetBiz) * 100));
+                    let pctRight = Math.min(100, Math.round((parseFloat(leg.right_business_usd || 0) / targetBiz) * 100));
 
                     $('#barLeft').css('width', pctLeft + '%');
                     $('#barRight').css('width', pctRight + '%');

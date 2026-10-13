@@ -29,7 +29,7 @@ $currSymbol = function_exists('getCurrencySymbol') ? getCurrencySymbol($currency
 $usdToInrRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
 
 // User Wallet & Details
-$stmtUser = $pdo->prepare("SELECT userid, name, active, rank, rankid, vip_club_wallet, rank_reward_wallet, company_turnover_wallet FROM user WHERE userid = :uid LIMIT 1");
+$stmtUser = $pdo->prepare("SELECT userid, name, active, `rank`, rankid, vip_club_wallet, rank_reward_wallet, company_turnover_wallet FROM user WHERE userid = :uid LIMIT 1");
 $stmtUser->execute([':uid' => $userid]);
 $userInfo = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
