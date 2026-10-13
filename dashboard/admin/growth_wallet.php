@@ -92,65 +92,64 @@ $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <!-- Filter Form -->
-    <div class="card border-0 mb-4" style="background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0;">
-      <div class="card-body p-3">
-        <form method="GET" class="row align-items-center">
-          <div class="col-md-8 mb-2">
-            <input type="text" name="user_id" value="<?php echo htmlspecialchars($filter_user); ?>" class="form-control" placeholder="Search by User ID or Name" style="border-radius:10px;">
-          </div>
-          <div class="col-md-4 mb-2 d-flex gap-2">
-            <button type="submit" class="btn btn-primary font-weight-bold w-100" style="border-radius:10px; background:#0284c7; border:none;">
-              <i class="fa fa-search mr-1"></i> Filter Records
-            </button>
-            <a href="export.php?module=users&format=csv" class="btn btn-success font-weight-bold px-3" style="border-radius:10px; border:none;">Export</a>
-          </div>
-        </form>
+    <div class="mb-3">
+      <form method="GET" class="row align-items-center g-2 m-0">
+        <div class="col-md-8 px-1 mb-2">
+          <input type="text" name="user_id" value="<?php echo htmlspecialchars($filter_user); ?>" class="form-control" placeholder="Search by User ID or Name" style="border-radius:10px; background:#fff; border:1.5px solid #cbd5e1; height:42px;">
+        </div>
+        <div class="col-md-4 px-1 mb-2 d-flex gap-2">
+          <button type="submit" class="btn btn-primary font-weight-bold w-100" style="border-radius:10px; background:#0284c7; border:none; height:42px;">
+            <i class="fa fa-search mr-1"></i> Filter Records
+          </button>
+          <a href="export.php?module=users&format=csv" class="btn btn-success font-weight-bold px-3 d-flex align-items-center" style="border-radius:10px; border:none; height:42px;">Export</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Table Header Title -->
+    <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+      <div>
+        <h5 class="mb-0 font-weight-bold text-dark"><i class="fa fa-line-chart text-success mr-2"></i> Active Growth Packages & Wallet Balance Ledger</h5>
+        <p class="mb-0 small text-muted"><span class="text-primary"><i class="fa fa-arrows-h"></i> Slide horizontally to view all columns</span></p>
       </div>
     </div>
 
-    <!-- Growth Wallet Data Table -->
-    <div class="card border-0" style="background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(15,23,42,0.05);">
-      <div class="card-header bg-white border-bottom p-4">
-        <h5 class="mb-0 font-weight-bold text-dark"><i class="fa fa-line-chart text-success mr-2"></i> Active Growth Packages & Wallet Balance Ledger</h5>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover align-items-center mb-0">
-            <thead style="background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase;">
-              <tr>
-                <th class="py-3 px-4">Package ID</th>
-                <th class="py-3">User ID</th>
-                <th class="py-3">Member Name</th>
-                <th class="py-3">Package Investment</th>
-                <th class="py-3">Profit %</th>
-                <th class="py-3">Growth Wallet Balance</th>
-                <th class="py-3 px-4">Investment Date</th>
-              </tr>
-            </thead>
-            <tbody style="font-size: 13.5px; color: #0f172a;">
-              <?php if (empty($packages)): ?>
-                <tr>
-                  <td colspan="7" class="text-center py-5 text-muted">No growth wallet package records found.</td>
-                </tr>
-              <?php else: foreach ($packages as $pkg): 
-                $pkgUsd = (float)(!empty($pkg['real_fund_usd']) && (float)$pkg['real_fund_usd'] > 0
-                    ? $pkg['real_fund_usd']
-                    : ((float)($pkg['package'] ?? 0) / $usdRate));
-              ?>
-                <tr>
-                  <td class="px-4 font-weight-bold">#PKG-<?php echo $pkg['id']; ?></td>
-                  <td><strong><?php echo htmlspecialchars($pkg['user_id']); ?></strong></td>
-                  <td><?php echo htmlspecialchars($pkg['name'] ?? 'N/A'); ?></td>
-                  <td class="font-weight-bold text-primary"><?php echo formatCurrency($pkgUsd); ?></td>
-                  <td><span class="badge badge-info px-2 py-1"><?php echo htmlspecialchars($pkg['percentage']); ?>% Monthly</span></td>
-                  <td class="font-weight-bold text-success"><?php echo formatCurrency((float)($pkg['profit_income_wallet'] ?? 0)); ?></td>
-                  <td class="px-4 small text-muted"><?php echo htmlspecialchars($pkg['date']); ?></td>
-                </tr>
-              <?php endforeach; endif; ?>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <!-- Growth Wallet Data Table (Card removed, edge-to-edge slideable) -->
+    <div class="table-responsive p-0" style="border-radius: 12px; border: 1px solid #cbd5e1; background: #ffffff; width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch;">
+      <table class="table table-hover align-items-center mb-0" style="min-width: 800px; width: 100% !important;">
+        <thead style="background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase;">
+          <tr>
+            <th class="py-3 px-4">Package ID</th>
+            <th class="py-3">User ID</th>
+            <th class="py-3">Member Name</th>
+            <th class="py-3">Package Investment</th>
+            <th class="py-3">Profit %</th>
+            <th class="py-3">Growth Wallet Balance</th>
+            <th class="py-3 px-4">Investment Date</th>
+          </tr>
+        </thead>
+        <tbody style="font-size: 13.5px; color: #0f172a;">
+          <?php if (empty($packages)): ?>
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">No growth wallet package records found.</td>
+            </tr>
+          <?php else: foreach ($packages as $pkg): 
+            $pkgUsd = (float)(!empty($pkg['real_fund_usd']) && (float)$pkg['real_fund_usd'] > 0
+                ? $pkg['real_fund_usd']
+                : ((float)($pkg['package'] ?? 0) / $usdRate));
+          ?>
+            <tr>
+              <td class="px-4 font-weight-bold">#PKG-<?php echo $pkg['id']; ?></td>
+              <td><strong><?php echo htmlspecialchars($pkg['user_id']); ?></strong></td>
+              <td><?php echo htmlspecialchars($pkg['name'] ?? 'N/A'); ?></td>
+              <td class="font-weight-bold text-primary"><?php echo formatCurrency($pkgUsd); ?></td>
+              <td><span class="badge badge-info px-2 py-1"><?php echo htmlspecialchars($pkg['percentage']); ?>% Monthly</span></td>
+              <td class="font-weight-bold text-success"><?php echo formatCurrency((float)($pkg['profit_income_wallet'] ?? 0)); ?></td>
+              <td class="px-4 small text-muted"><?php echo htmlspecialchars($pkg['date']); ?></td>
+            </tr>
+          <?php endforeach; endif; ?>
+        </tbody>
+      </table>
     </div>
 
   </div>

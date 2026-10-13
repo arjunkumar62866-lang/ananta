@@ -112,15 +112,34 @@ body.bg-theme1 {
 }
 
 /* DataTables Light Fintech Table Styling */
-.table-responsive {
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff !important;
-    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03);
-    margin-top: 10px;
+.dt-table-scroll-wrapper {
     width: 100% !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff !important;
+    margin: 10px 0 16px 0;
+}
+
+.dt-top-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.dt-bottom-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+    width: 100%;
 }
 
 table.dataTable.no-footer {
@@ -172,7 +191,7 @@ table.dataTable.no-footer {
 .dataTables_wrapper .dataTables_filter {
     color: #0f172a !important;
     font-weight: 700 !important;
-    margin-bottom: 14px;
+    margin-bottom: 0;
 }
 
 .dataTables_wrapper .dataTables_length label,
@@ -218,14 +237,14 @@ table.dataTable.no-footer {
 }
 
 .dataTables_wrapper .dataTables_info {
-    padding-top: 14px !important;
+    padding-top: 0 !important;
     color: #64748b !important;
     font-size: 13px !important;
     font-weight: 600 !important;
 }
 
 .dataTables_wrapper .dataTables_paginate {
-    padding-top: 10px !important;
+    padding-top: 0 !important;
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button {
@@ -301,9 +320,9 @@ table.dataTable.no-footer {
         width: 100% !important;
         justify-content: center !important;
     }
-    .table-responsive {
+    .dt-table-scroll-wrapper {
         border-radius: 10px !important;
-        margin: 0 !important;
+        margin: 8px 0 14px 0 !important;
         width: 100% !important;
         border: 1px solid #cbd5e1 !important;
     }
@@ -312,15 +331,18 @@ table.dataTable.no-footer {
         font-size: 13px !important;
         white-space: nowrap !important;
     }
-    .dataTables_wrapper {
-        padding: 4px 2px !important;
+    .dt-top-controls {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        margin-bottom: 8px !important;
     }
     .dataTables_wrapper .dataTables_length,
     .dataTables_wrapper .dataTables_filter {
         float: none !important;
         text-align: left !important;
         width: 100% !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 0 !important;
     }
     .dataTables_wrapper .dataTables_filter label,
     .dataTables_wrapper .dataTables_length label {
@@ -333,6 +355,12 @@ table.dataTable.no-footer {
         width: 100% !important;
         margin-left: 0 !important;
         flex: 1 1 auto;
+    }
+    .dt-bottom-controls {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px !important;
+        margin-top: 10px !important;
     }
     .dataTables_wrapper .dataTables_info,
     .dataTables_wrapper .dataTables_paginate {
@@ -413,8 +441,8 @@ table.dataTable.no-footer {
                             </button>
                         </div>
 
-                        <!-- Table with Direct Horizontal Sliding -->
-                        <div class="table-responsive p-0" id="tblData" style="width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff;">
+                        <!-- Table Area (Controls stay fixed full width, table scrolls horizontally inside dt-table-scroll-wrapper) -->
+                        <div id="tblData" style="width: 100% !important;">
                             <table class="table table-hover table-bordered mb-0" id="usersTable" style="width:100% !important; min-width: 900px;">
                                 <thead>
                                     <tr>
@@ -579,7 +607,7 @@ table.dataTable.no-footer {
                 ],
                 pageLength: 10,
                 lengthMenu: [5, 10, 25, 50, 100, 1000],
-                dom: 'lfrtip',
+                dom: '<"dt-top-controls"lf><"dt-table-scroll-wrapper"t><"dt-bottom-controls"ip>',
                 buttons: [
                     {
                         extend: 'excelHtml5',
