@@ -6279,12 +6279,15 @@ if (!function_exists('getUnreadNotificationCount')) {
 if (!function_exists('markNotificationAsRead')) {
     function markNotificationAsRead($userId, $notificationId, $pdoConnection = null) {
         global $pdo;
-        // Swap tolerance if caller swapped arguments:
+        // Robust argument resolution if caller swapped parameters:
+        // A valid notification ID is a positive integer.
+        // A user ID can be numeric or alphanumeric (e.g. 'AN1290').
         if (is_numeric($userId) && !is_numeric($notificationId)) {
             $temp = $userId;
             $userId = $notificationId;
             $notificationId = $temp;
         }
+
         $db = $pdoConnection ?: $pdo;
         if (!$db || !$userId || !$notificationId) return false;
 
@@ -6295,11 +6298,22 @@ if (!function_exists('markNotificationAsRead')) {
         try {
             if ($notifId >= 1000000) {
                 $sysId = $notifId - 1000000;
-                $stmt = $db->prepare("UPDATE tbl_system_notifications SET is_read = 1 WHERE id = :nid");
-                return $stmt->execute([':nid' => $sysId]);
+                // Only mark targeted system notifications as read for this user, avoiding global broadcast pollution
+                $stmt = $db->prepare("UPDATE tbl_system_notifications SET is_read = 1 WHERE id = :nid AND (target_user_id = :uid OR target_user_id = :clean OR target_user_id = :an OR target_type = 'GLOBAL')");
+                return $stmt->execute([
+                    ':nid'   => $sysId,
+                    ':uid'   => (string)$userId,
+                    ':clean' => (string)$cleanUid,
+                    ':an'    => (string)$anUid
+                ]);
             } else {
                 $stmt = $db->prepare("UPDATE tbl_user_notifications SET is_read = 1 WHERE id = :nid AND (user_id = :uid OR user_id = :clean OR user_id = :an)");
-                $stmt->execute([':nid' => $notifId, ':uid' => (string)$userId, ':clean' => (string)$cleanUid, ':an' => (string)$anUid]);
+                $stmt->execute([
+                    ':nid'   => $notifId,
+                    ':uid'   => (string)$userId,
+                    ':clean' => (string)$cleanUid,
+                    ':an'    => (string)$anUid
+                ]);
                 return ($stmt->rowCount() > 0);
             }
         } catch (Exception $e) {

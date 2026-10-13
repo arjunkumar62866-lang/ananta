@@ -1,4 +1,4 @@
-<?php 
+<?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -6,7 +6,7 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-if (!isset($_SESSION["userid"])) { 
+if (!isset($_SESSION["userid"])) {
     header("Location:login.php");
     exit();
 }
@@ -33,10 +33,10 @@ if ($lrcState['status'] === 'OFF') {
 
 // Set userid from GET or Session
 if (isset($_GET['uid'])) {
-    $_SESSION['userid'] = $_GET['uid']; 
-    $userid = $_SESSION['userid']; 
+    $_SESSION['userid'] = $_GET['uid'];
+    $userid = $_SESSION['userid'];
 } else {
-    $userid = $_SESSION['userid'];  
+    $userid = $_SESSION['userid'];
 }
 
 $selectedCurrency = getUserCurrency();
@@ -151,7 +151,7 @@ if (function_exists('date_default_timezone_set')) {
     date_default_timezone_set("Asia/Kolkata");
 }
 $date=date('Y-m-d');
-  //Time Formate AM/PM 
+  //Time Formate AM/PM
 $time=date('h:i a');
 $day=date("l");
 
@@ -338,7 +338,7 @@ $news = $newsdata['news'];
   </style>
 </head>
 
-<?php if (!empty($_SESSION['lrc_warning_message'])): 
+<?php if (!empty($_SESSION['lrc_warning_message'])):
     $lrcWarnMsg = htmlspecialchars($_SESSION['lrc_warning_message'], ENT_QUOTES, 'UTF-8');
     unset($_SESSION['lrc_warning_message']);
 ?>
@@ -499,8 +499,8 @@ setTimeout(function() {
       </a>
     </li>
     <?php } ?>
-    
-    
+
+
     </li>
   </ul>
 </div>
@@ -2314,7 +2314,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.status === 'success') {
                     const unreadCount = data.unread_count || 0;
                     const badges = document.querySelectorAll('.ananta-notif-badge');
-                    
+
                     badges.forEach(b => {
                         if (unreadCount > 0) {
                             b.textContent = unreadCount > 99 ? '99+' : unreadCount;
@@ -2350,7 +2350,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
 
                                 html += `
-                                    <div class="p-2.5 border-bottom d-flex align-items-start gap-2 ${isUnread ? 'bg-light' : ''}" style="padding: 10px 12px; transition: background 0.2s;">
+                                    <div class="ananta-notif-item p-2.5 border-bottom d-flex align-items-start gap-2 ${isUnread ? 'bg-light' : ''}" data-id="${n.id}" data-unread="${isUnread ? '1' : '0'}" style="padding: 10px 12px; transition: background 0.2s; cursor: pointer;">
                                         <div style="width: 32px; height: 32px; border-radius: 8px; background: ${iconBg}; color: ${iconColor}; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-top: 2px;">
                                             <i class="zmdi ${icon}"></i>
                                         </div>
@@ -2361,6 +2361,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </div>
                                             <p style="font-size: 11.5px; color: #475569; margin: 0; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(n.message)}</p>
                                         </div>
+                                        ${isUnread ? '<span style="width: 7px; height: 7px; border-radius: 50%; background: #0284c7; flex-shrink: 0; margin-top: 6px;" title="Unread"></span>' : ''}
                                     </div>
                                 `;
                             });
@@ -2395,7 +2396,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const toast = document.createElement('div');
         toast.style.cssText = 'pointer-events: auto; background: #ffffff; border-left: 5px solid #0284c7; border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18); min-width: 280px; max-width: 320px; transition: all 0.3s ease; transform: translateY(-20px); opacity: 0;';
-        
+
         toast.innerHTML = `
             <div class="d-flex align-items-start justify-content-between mb-1">
                 <div class="d-flex align-items-center gap-2">
@@ -2424,23 +2425,51 @@ document.addEventListener('DOMContentLoaded', function() {
         return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
+    // Mark individual notification as read on dropdown item click
+    document.addEventListener('click', function(e) {
+        const item = e.target.closest('.ananta-notif-item');
+        if (item && item.getAttribute('data-unread') === '1') {
+            const notifId = item.getAttribute('data-id');
+            if (notifId) {
+                const formData = new FormData();
+                formData.append('action', 'mark_read');
+                formData.append('id', notifId);
+                fetch('ajax_notifications.php', { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            item.classList.remove('bg-light');
+                            item.setAttribute('data-unread', '0');
+                            const dot = item.querySelector('span[title="Unread"]');
+                            if (dot) dot.remove();
+                            fetchRealTimeNotifications();
+                        }
+                    })
+                    .catch(err => console.error('Mark read error:', err));
+            }
+        }
+    });
+
     // Mark all as read click handler
     document.addEventListener('click', function(e) {
         if (e.target && e.target.classList.contains('mark-all-notif-btn')) {
             e.preventDefault();
-            fetch('ajax_notifications.php?action=mark_all_read', { method: 'POST' })
+            const formData = new FormData();
+            formData.append('action', 'mark_all_read');
+            fetch('ajax_notifications.php', { method: 'POST', body: formData })
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
                         fetchRealTimeNotifications();
                     }
-                });
+                })
+                .catch(err => console.error('Mark all read error:', err));
         }
     });
 
-    // Initial fetch & set poll interval every 15 seconds
+    // Initial fetch & set poll interval every 20 seconds
     fetchRealTimeNotifications();
-    setInterval(fetchRealTimeNotifications, 15000);
+    setInterval(fetchRealTimeNotifications, 20000);
 });
 </script>
 

@@ -18,7 +18,7 @@ $msgType = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'mark_read' && !empty($_POST['notification_id'])) {
         $notifId = intval($_POST['notification_id']);
-        if (markNotificationAsRead($notifId, $userid, $pdo)) {
+        if (markNotificationAsRead($userid, $notifId, $pdo)) {
             $msg = "Notification marked as read.";
             $msgType = "success";
         }
