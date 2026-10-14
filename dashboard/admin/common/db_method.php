@@ -6682,6 +6682,21 @@ if (!function_exists('getUserIncomeWalletSummary')) {
 
         $turnover = max($ct1, $ct2);
 
+        // Query recorded debits per income stream from tbl_transaction
+        $sqlDebits = "SELECT 
+            COALESCE(SUM(CASE WHEN subject LIKE '%Profit Income%' THEN CAST(amount AS DECIMAL(15,2)) ELSE 0 END), 0) as deb_pi,
+            COALESCE(SUM(CASE WHEN subject LIKE '%Profit Sharing%' THEN CAST(amount AS DECIMAL(15,2)) ELSE 0 END), 0) as deb_ps,
+            COALESCE(SUM(CASE WHEN (subject LIKE '%Direct Bonus%' OR subject LIKE '%direct_bonus%') THEN CAST(amount AS DECIMAL(15,2)) ELSE 0 END), 0) as deb_db,
+            COALESCE(SUM(CASE WHEN subject LIKE '%Mentor Income%' THEN CAST(amount AS DECIMAL(15,2)) ELSE 0 END), 0) as deb_mi,
+            COALESCE(SUM(CASE WHEN (subject LIKE '%Rank Reward%' OR subject LIKE '%Reward Income%') THEN CAST(amount AS DECIMAL(15,2)) ELSE 0 END), 0) as deb_rr,
+            COALESCE(SUM(CASE WHEN (type IN ('VIP Club', 'VIP Income') OR subject LIKE '%VIP Club%' OR subject LIKE '%VIP Ranking%') AND subject NOT LIKE '%Rank Reward%' THEN CAST(amount AS DECIMAL(15,2)) ELSE 0 END), 0) as deb_vip,
+            COALESCE(SUM(CASE WHEN (type IN ('Turnover', 'Company Turnover') OR subject LIKE '%Company Turnover%' OR subject LIKE '%Leadership Income%' OR subject LIKE '%Turnover Share%') THEN CAST(amount AS DECIMAL(15,2)) ELSE 0 END), 0) as deb_ct
+        FROM tbl_transaction 
+        WHERE user_id IN ($inClause) AND (type = 'Debit' OR subject LIKE '%Debit%')";
+        $stmtDeb = $db->prepare($sqlDebits);
+        $stmtDeb->execute($ids);
+        $deb = $stmtDeb->fetch(PDO::FETCH_ASSOC) ?: [];
+
         // Query user table wallet balances as single-source-of-truth reconciliation fallback
         $stmtU = $db->prepare("SELECT profit_income_wallet, profit_sharing_wallet, direct_bonus_wallet, mentor_income_wallet, rank_reward_wallet, vip_club_wallet, company_turnover_wallet, user_growth_wallet FROM user WHERE userid IN ($inClause)");
         $stmtU->execute($ids);
@@ -6695,13 +6710,13 @@ if (!function_exists('getUserIncomeWalletSummary')) {
         $uCT  = !empty($uWallets) ? max(array_column($uWallets, 'company_turnover_wallet')) : 0.0;
         $uUG  = !empty($uWallets) ? max(array_column($uWallets, 'user_growth_wallet')) : 0.0;
 
-        $profitInc   = max($pi1, $pi2, (float)$uPI);
-        $profitShare = max($ps1, $ps2, (float)$uPS);
-        $directBon   = max($db1, $db2, $db3, (float)$uDB);
-        $mentorInc   = max($mi1, $mi2, (float)$uMI);
-        $rankRew     = max($rankRew, (float)$uRR);
-        $vipClub     = max($vipClub, (float)$uVIP);
-        $turnover    = max($turnover, (float)$uCT);
+        $profitInc   = max(0.0, ((float)($deb['deb_pi'] ?? 0) > 0) ? (float)$uPI : max($pi1, $pi2, (float)$uPI));
+        $profitShare = max(0.0, ((float)($deb['deb_ps'] ?? 0) > 0) ? (float)$uPS : max($ps1, $ps2, (float)$uPS));
+        $directBon   = max(0.0, ((float)($deb['deb_db'] ?? 0) > 0) ? (float)$uDB : max($db1, $db2, $db3, (float)$uDB));
+        $mentorInc   = max(0.0, ((float)($deb['deb_mi'] ?? 0) > 0) ? (float)$uMI : max($mi1, $mi2, (float)$uMI));
+        $rankRew     = max(0.0, ((float)($deb['deb_rr'] ?? 0) > 0) ? (float)$uRR : max($rankRew, (float)$uRR));
+        $vipClub     = max(0.0, ((float)($deb['deb_vip'] ?? 0) > 0) ? (float)$uVIP : max($vipClub, (float)$uVIP));
+        $turnover    = max(0.0, ((float)($deb['deb_ct'] ?? 0) > 0) ? (float)$uCT : max($turnover, (float)$uCT));
 
         $totalIncBal = round($profitInc + $profitShare + $directBon + $mentorInc + $rankRew + $vipClub + $turnover, 2);
 
