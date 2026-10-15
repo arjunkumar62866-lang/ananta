@@ -97,7 +97,7 @@ if (!function_exists("getUserNormalizedIds")) {
     }
 }
 
-require_once 'common/connection.php';
+require_once __DIR__ . '/connection.php';
 
 if (!function_exists('newtime')) {
     function newtime($st)
@@ -2264,6 +2264,379 @@ if (!function_exists('getUserNetworkDownlineIds')) {
 
         return array_values(array_unique($descendants));
     }
+}
+
+/**
+ * =========================================================================
+ * REQUIREMENT #14 — MENTOR INCOME MONTHLY LEG BUSINESS CONTRIBUTION MODEL
+ * =========================================================================
+ */
+if (!defined('MENTOR_INCOME_PERCENT')) {
+    define('MENTOR_INCOME_PERCENT', 2.0);
+}
+
+if (!function_exists('getMentorIncomeConfig')) {
+function getMentorIncomeConfig($pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db) {
+        return [
+            'rate_percent'         => 2.00,
+            'is_auto_closing'      => 0,
+            'effective_from_month' => '2026-01',
+            'updated_by'           => 'SYSTEM',
+            'remarks'              => 'Default'
+        ];
+    }
+    try {
+        $stmt = $db->query("SELECT * FROM tbl_mentor_income_config ORDER BY id DESC LIMIT 1");
+        $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+        if ($row) {
+            return [
+                'id'                   => (int)$row['id'],
+                'rate_percent'         => (float)$row['rate_percent'],
+                'is_auto_closing'      => (int)$row['is_auto_closing'],
+                'effective_from_month' => (string)$row['effective_from_month'],
+                'updated_by'           => (string)$row['updated_by'],
+                'remarks'              => (string)$row['remarks'],
+                'updated_at'           => (string)$row['updated_at']
+            ];
+        }
+    } catch (Exception $e) {
+        // Fallback to default
+    }
+    return [
+        'rate_percent'         => 2.00,
+        'is_auto_closing'      => 0,
+        'effective_from_month' => '2026-01',
+        'updated_by'           => 'SYSTEM',
+        'remarks'              => 'Default fallback'
+    ];
+}
+}
+
+if (!function_exists('getMentorIncomeRate')) {
+function getMentorIncomeRate($closing_month = null, $pdoConnection = null) {
+    $cfg = getMentorIncomeConfig($pdoConnection);
+    return (float)($cfg['rate_percent'] ?? 2.00);
+}
+}
+
+if (!function_exists('getMentorDirectReferrals')) {
+function getMentorDirectReferrals($mentor_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || empty($mentor_id)) return [];
+
+    $cleanM = (stripos((string)$mentor_id, 'AN') === 0) ? trim(substr((string)$mentor_id, 2)) : (string)$mentor_id;
+    $anM    = (stripos((string)$mentor_id, 'AN') === 0) ? (string)$mentor_id : 'AN' . $mentor_id;
+
+    $stmt = $db->prepare("
+        SELECT
+            u.userid,
+            u.name,
+            u.active,
+            u.sponserid as user_sponsor,
+            s.sponsor_id as tbl_sponsor_id
+        FROM user u
+        LEFT JOIN tbl_sponsor s ON s.referral_id = u.userid
+        WHERE (
+            u.sponserid = :m1 OR u.sponserid = :m2
+            OR s.sponsor_id = :m3 OR s.sponsor_id = :m4
+        )
+        AND u.userid != :m5 AND u.userid != :m6
+        GROUP BY u.userid, u.name, u.active, u.sponserid, s.sponsor_id
+        ORDER BY u.userid ASC
+    ");
+    $stmt->execute([
+        ':m1' => $cleanM, ':m2' => $anM,
+        ':m3' => $cleanM, ':m4' => $anM,
+        ':m5' => $cleanM, ':m6' => $anM
+    ]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $directs = [];
+    foreach ($rows as $r) {
+        $spUser = trim((string)($r['user_sponsor'] ?? ''));
+        $spTbl  = trim((string)($r['tbl_sponsor_id'] ?? ''));
+
+        if ($spUser !== '' && $spTbl !== '' && $spUser !== $spTbl) {
+            $r['has_contradiction'] = true;
+            $r['effective_sponsor'] = $spTbl;
+        } else {
+            $r['has_contradiction'] = false;
+            $r['effective_sponsor'] = ($spTbl !== '') ? $spTbl : $spUser;
+        }
+
+        $effClean = (stripos($r['effective_sponsor'], 'AN') === 0) ? trim(substr($r['effective_sponsor'], 2)) : $r['effective_sponsor'];
+        if ($effClean === $cleanM) {
+            $directs[] = $r;
+        }
+    }
+
+    return $directs;
+}
+}
+
+if (!function_exists('getDirectLegSponsorDownlineIds')) {
+function getDirectLegSponsorDownlineIds($direct_user_id, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || empty($direct_user_id)) return [];
+
+    $rootId = trim((string)$direct_user_id);
+    $cleanRoot = (stripos($rootId, 'AN') === 0) ? trim(substr($rootId, 2)) : $rootId;
+    $anRoot    = (stripos($rootId, 'AN') === 0) ? $rootId : 'AN' . $cleanRoot;
+
+    $downline = [$rootId];
+    if ($cleanRoot !== $rootId) $downline[] = $cleanRoot;
+    $queue = [$cleanRoot, $anRoot];
+    $visited = [
+        $rootId    => true,
+        $cleanRoot => true,
+        $anRoot    => true
+    ];
+
+    while (!empty($queue)) {
+        $curr = array_shift($queue);
+        $currClean = (stripos($curr, 'AN') === 0) ? trim(substr($curr, 2)) : $curr;
+        $currAn    = (stripos($curr, 'AN') === 0) ? $curr : 'AN' . $currClean;
+
+        $stmtU = $db->prepare("
+            SELECT userid FROM user
+            WHERE (sponserid = :sp1 OR sponserid = :sp2)
+              AND userid != :c1 AND userid != :c2
+        ");
+        $stmtU->execute([
+            ':sp1' => $currClean, ':sp2' => $currAn,
+            ':c1'  => $currClean, ':c2'  => $currAn
+        ]);
+        $uList = $stmtU->fetchAll(PDO::FETCH_COLUMN);
+
+        try {
+            $stmtS = $db->prepare("
+                SELECT referral_id FROM tbl_sponsor
+                WHERE (sponsor_id = :sp1 OR sponsor_id = :sp2)
+                  AND referral_id != :c1 AND referral_id != :c2
+            ");
+            $stmtS->execute([
+                ':sp1' => $currClean, ':sp2' => $currAn,
+                ':c1'  => $currClean, ':c2'  => $currAn
+            ]);
+            $sList = $stmtS->fetchAll(PDO::FETCH_COLUMN);
+        } catch (Exception $e) {
+            $sList = [];
+        }
+
+        $allChildren = array_unique(array_merge($uList, $sList));
+        foreach ($allChildren as $childId) {
+            $childId = trim((string)$childId);
+            $cleanChild = (stripos($childId, 'AN') === 0) ? trim(substr($childId, 2)) : $childId;
+            $anChild    = (stripos($childId, 'AN') === 0) ? $childId : 'AN' . $cleanChild;
+
+            if (!empty($childId) && !isset($visited[$childId]) && !isset($visited[$cleanChild])) {
+                $visited[$childId]    = true;
+                $visited[$cleanChild] = true;
+                $visited[$anChild]    = true;
+                $downline[] = $childId;
+                $queue[] = $cleanChild;
+            }
+        }
+    }
+
+    return array_values(array_unique($downline));
+}
+}
+
+if (!function_exists('calculateLegMonthlyBusinessForMembers')) {
+function calculateLegMonthlyBusinessForMembers(array $member_ids, $closing_month, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || empty($member_ids) || empty($closing_month)) {
+        return ['business_usd' => 0.00, 'business_inr' => 0.00, 'investment_count' => 0];
+    }
+
+    $cMonth = trim((string)$closing_month);
+    $cMonthPattern = $cMonth . '%';
+
+    $inPlaceholders = implode(',', array_fill(0, count($member_ids), '?'));
+
+    $sql = "
+        SELECT 
+            COALESCE(SUM(real_fund_usd), 0.00) as total_usd,
+            COALESCE(SUM(package), 0.00) as total_inr,
+            COUNT(*) as inv_count
+        FROM tbl_roi_one
+        WHERE user_id IN ({$inPlaceholders})
+          AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+          AND status = '0'
+          AND (
+              date LIKE ?
+              OR (STR_TO_DATE(date, '%Y-%m-%d') IS NOT NULL AND DATE_FORMAT(STR_TO_DATE(date, '%Y-%m-%d'), '%Y-%m') = ?)
+          )
+    ";
+
+    $params = array_values($member_ids);
+    $params[] = $cMonthPattern;
+    $params[] = $cMonth;
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    $res = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : 90.0;
+    if ($rate <= 0) $rate = 90.0;
+
+    $busUsd = (float)($res['total_usd'] ?? 0.00);
+    $busInr = (float)($res['total_inr'] ?? 0.00);
+
+    if ($busUsd > 0) {
+        $calcInr = round($busUsd * $rate, 2);
+    } else if ($busInr > 0) {
+        $busUsd = round($busInr / $rate, 2);
+        $calcInr = round($busInr, 2);
+    } else {
+        $calcInr = 0.00;
+    }
+
+    return [
+        'business_usd'     => round($busUsd, 2),
+        'business_inr'     => round($calcInr, 2),
+        'investment_count' => (int)($res['inv_count'] ?? 0)
+    ];
+}
+}
+
+if (!function_exists('calculateMentorMonthlyLegBusiness')) {
+function calculateMentorMonthlyLegBusiness($mentor_id, $closing_month, $pdoConnection = null) {
+    global $pdo;
+    $db = $pdoConnection ?: $pdo;
+    if (!$db || empty($mentor_id) || empty($closing_month)) {
+        return [
+            'status'                      => 'error',
+            'message'                     => 'Mentor ID and closing month are required.',
+            'mentor_id'                   => $mentor_id,
+            'closing_month'               => $closing_month,
+            'is_mentor_eligible'          => false,
+            'mentor_eligibility_reason'   => 'Invalid parameters',
+            'total_directs'               => 0,
+            'eligible_legs_count'         => 0,
+            'ineligible_legs_count'       => 0,
+            'total_eligible_business_usd' => 0.00,
+            'total_eligible_business_inr' => 0.00,
+            'legs'                        => []
+        ];
+    }
+
+    $mentorId = trim((string)$mentor_id);
+    $cMonth   = trim((string)$closing_month);
+
+    $mentorEligible = function_exists('isUserIncomeEligible') ? isUserIncomeEligible($mentorId, $db) : false;
+    $mentorReason = $mentorEligible ? 'Eligible' : 'Mentor must have active ID and minimum $145 active package in tbl_roi_one';
+
+    $directs = getMentorDirectReferrals($mentorId, $db);
+    $legs = [];
+    $totalEligibleBusinessUsd = 0.00;
+    $totalEligibleBusinessInr = 0.00;
+    $eligibleCount = 0;
+    $ineligibleCount = 0;
+
+    foreach ($directs as $d) {
+        $dId = (string)$d['userid'];
+        $dName = (string)($d['name'] ?? '');
+        $isActive = ((string)($d['active'] ?? '0') === '1');
+
+        $isRecipientIncomeEligible = function_exists('isUserIncomeEligible') ? isUserIncomeEligible($dId, $db) : false;
+        $hasContradiction = !empty($d['has_contradiction']);
+
+        $downlineIds = getDirectLegSponsorDownlineIds($dId, $db);
+
+        $cleanM = (stripos($mentorId, 'AN') === 0) ? trim(substr($mentorId, 2)) : $mentorId;
+        $anM    = (stripos($mentorId, 'AN') === 0) ? $mentorId : 'AN' . $cleanM;
+        $downlineIds = array_diff($downlineIds, [$mentorId, $cleanM, $anM]);
+
+        $legBus = calculateLegMonthlyBusinessForMembers($downlineIds, $cMonth, $db);
+        $busUsd = $legBus['business_usd'];
+        $busInr = $legBus['business_inr'];
+
+        $isEligible = true;
+        $exclusionReason = '';
+
+        if ($hasContradiction) {
+            $isEligible = false;
+            $exclusionReason = 'Sponsor relationship contradiction between tbl_sponsor and user.sponserid';
+        } elseif (!$isActive) {
+            $isEligible = false;
+            $exclusionReason = 'Direct account is inactive';
+        } elseif (!$isRecipientIncomeEligible) {
+            $isEligible = false;
+            $exclusionReason = 'Direct account does not meet minimum $145 active package';
+        } elseif ($busUsd <= 0.00) {
+            $isEligible = false;
+            $exclusionReason = 'Zero qualifying leg business in ' . $cMonth;
+        }
+
+        if ($isEligible) {
+            $eligibleCount++;
+            $totalEligibleBusinessUsd += $busUsd;
+            $totalEligibleBusinessInr += $busInr;
+        } else {
+            $ineligibleCount++;
+        }
+
+        $legs[] = [
+            'direct_user_id'    => $dId,
+            'direct_user_name'  => $dName,
+            'is_active'         => $isActive,
+            'has_min_package'   => $isRecipientIncomeEligible,
+            'is_eligible'       => $isEligible,
+            'exclusion_reason'  => $exclusionReason,
+            'leg_members_count' => count($downlineIds),
+            'monthly_business_usd' => $busUsd,
+            'monthly_business_inr' => $busInr,
+            'contribution_percentage' => 0.00,
+            'calculated_payout_usd'   => 0.00,
+            'calculated_payout_inr'   => 0.00
+        ];
+    }
+
+    if ($totalEligibleBusinessUsd > 0.00) {
+        $pctSum = 0.00;
+        $lastEligibleIdx = -1;
+
+        foreach ($legs as $idx => &$leg) {
+            if ($leg['is_eligible']) {
+                $rawPct = ($leg['monthly_business_usd'] / $totalEligibleBusinessUsd) * 100.0;
+                $roundedPct = round($rawPct, 2);
+                $leg['contribution_percentage'] = $roundedPct;
+                $pctSum += $roundedPct;
+                $lastEligibleIdx = $idx;
+            } else {
+                $leg['contribution_percentage'] = 0.00;
+            }
+        }
+        unset($leg);
+
+        if ($lastEligibleIdx >= 0 && abs($pctSum - 100.00) > 0.0001) {
+            $diff = round(100.00 - $pctSum, 2);
+            $legs[$lastEligibleIdx]['contribution_percentage'] = round($legs[$lastEligibleIdx]['contribution_percentage'] + $diff, 2);
+        }
+    }
+
+    return [
+        'status'                      => 'success',
+        'mentor_id'                   => $mentorId,
+        'closing_month'               => $cMonth,
+        'is_mentor_eligible'          => $mentorEligible,
+        'mentor_eligibility_reason'   => $mentorReason,
+        'total_directs'               => count($directs),
+        'eligible_legs_count'         => $eligibleCount,
+        'ineligible_legs_count'       => $ineligibleCount,
+        'total_eligible_business_usd' => round($totalEligibleBusinessUsd, 2),
+        'total_eligible_business_inr' => round($totalEligibleBusinessInr, 2),
+        'legs'                        => $legs
+    ];
+}
 }
 
 /**

@@ -19,8 +19,92 @@ if (!isset($_SESSION['auserid'])) {
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
-    case 'get_mentor_directs':
+    case 'get_rate_config':
+        $config = getMentorIncomeConfig($pdo);
+        $stmtHistory = $pdo->query("
+            SELECT h.*, a.auserid as admin_name
+            FROM tbl_mentor_income_rate_history h
+            LEFT JOIN admin a ON (CONVERT(h.admin_id USING utf8mb4) = CONVERT(a.auserid USING utf8mb4) OR CONVERT(h.admin_id USING utf8mb4) = CONVERT(a.id USING utf8mb4))
+            ORDER BY h.id DESC LIMIT 20
+        ");
+        $history = $stmtHistory ? $stmtHistory->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        echo json_encode([
+            'status' => 'success',
+            'config' => $config,
+            'history' => $history
+        ]);
+        break;
+
+    case 'update_rate':
+        $admin_id = $_SESSION['auserid'];
+        $new_rate = filter_var($_POST['rate_percent'] ?? null, FILTER_VALIDATE_FLOAT);
+        $reason = trim($_POST['reason'] ?? '');
+        $effective_from_month = trim($_POST['effective_from_month'] ?? date('Y-m'));
+        $is_auto_closing = isset($_POST['is_auto_closing']) ? (int)$_POST['is_auto_closing'] : null;
+
+        if ($new_rate === false || $new_rate < 0 || $new_rate > 100) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Valid rate percentage between 0% and 100% is required.'
+            ]);
+            exit;
+        }
+
+        $res = updateMentorIncomeRate($new_rate, $admin_id, $reason, $effective_from_month, $is_auto_closing, $pdo);
+        echo json_encode($res);
+        break;
+
+    case 'preview_closing':
+        $closing_month = trim($_POST['closing_month'] ?? $_GET['closing_month'] ?? date('Y-m'));
+        if (!preg_match('/^\d{4}-\d{2}$/', $closing_month)) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Invalid closing month format. Expected YYYY-MM.'
+            ]);
+            exit;
+        }
+
+        $preview = previewMentorIncomeMonthlyClosing($closing_month, $pdo);
+        echo json_encode($preview);
+        break;
+
+    case 'process_closing':
+        $closing_month = trim($_POST['closing_month'] ?? '');
+        $closing_date  = trim($_POST['closing_date'] ?? date('Y-m-d'));
+
+        if (!preg_match('/^\d{4}-\d{2}$/', $closing_month)) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Invalid closing month format. Expected YYYY-MM.'
+            ]);
+            exit;
+        }
+
+        try {
+            $pdo->beginTransaction();
+            $res = processMentorIncome($closing_month, $closing_date, $pdo, 'MANUAL_ADMIN_' . $closing_month . '_' . time());
+            $pdo->commit();
+
+            echo json_encode([
+                'status' => 'success',
+                'message' => "Mentor Income for {$closing_month} processed successfully. Credited: ₹" . number_format($res['total_paid'] ?? 0, 2) . " across {$res['processed']} direct leg(s).",
+                'data' => $res
+            ]);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Closing failed: ' . $e->getMessage()
+            ]);
+        }
+        break;
+
+    case 'get_mentor_leg_breakdown':
         $mentor_id = trim($_GET['mentor_id'] ?? $_POST['mentor_id'] ?? '');
+        $closing_month = trim($_GET['closing_month'] ?? $_POST['closing_month'] ?? date('Y-m'));
 
         if (empty($mentor_id)) {
             echo json_encode([
@@ -30,76 +114,17 @@ switch ($action) {
             exit;
         }
 
-        $directs = getMentorDirectContributions($mentor_id, $pdo);
-        $validation = validateMentorContributions($mentor_id, $pdo);
-
+        $data = calculateMentorMonthlyLegBusiness($mentor_id, $closing_month, $pdo);
         echo json_encode([
             'status' => 'success',
-            'data' => [
-                'mentor_id' => $mentor_id,
-                'directs' => $directs,
-                'validation' => $validation
-            ]
+            'data' => $data
         ]);
-        break;
-
-    case 'save_contribution':
-        $mentor_id = trim($_POST['mentor_id'] ?? '');
-        $direct_user_id = trim($_POST['direct_user_id'] ?? '');
-        $contribution_percentage = filter_var($_POST['contribution_percentage'] ?? null, FILTER_VALIDATE_FLOAT);
-
-        if (empty($mentor_id) || empty($direct_user_id) || $contribution_percentage === false) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Mentor ID, Direct User ID, and a valid contribution percentage are required.'
-            ]);
-            exit;
-        }
-
-        $res = saveMentorDirectContribution($mentor_id, $direct_user_id, $contribution_percentage, $pdo);
-        $val = validateMentorContributions($mentor_id, $pdo);
-        $res['validation'] = $val;
-        echo json_encode($res);
-        break;
-
-    case 'save_bulk_contributions':
-        $mentor_id = trim($_POST['mentor_id'] ?? '');
-        $contributions = $_POST['contributions'] ?? []; // Array of direct_user_id => percentage
-
-        if (empty($mentor_id) || !is_array($contributions)) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Mentor ID and a valid list of contributions are required.'
-            ]);
-            exit;
-        }
-
-        try {
-            $pdo->beginTransaction();
-            foreach ($contributions as $direct_user_id => $pct) {
-                $pctVal = (float)$pct;
-                $saveRes = saveMentorDirectContribution($mentor_id, $direct_user_id, $pctVal, $pdo);
-                if (isset($saveRes['status']) && $saveRes['status'] === 'error') {
-                    throw new Exception($saveRes['message'] ?? "Failed to save contribution for {$direct_user_id}");
-                }
-            }
-            $pdo->commit();
-
-            $val = validateMentorContributions($mentor_id, $pdo);
-            echo json_encode([
-                'status' => 'success',
-                'message' => 'Contributions saved successfully.',
-                'validation' => $val
-            ]);
-        } catch (Exception $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
-            echo json_encode(['status' => 'error', 'message' => 'Save failed: ' . $e->getMessage()]);
-        }
         break;
 
     case 'get_schedules':
         $mentor_id = trim($_GET['mentor_id'] ?? $_POST['mentor_id'] ?? '');
         $closing_month = trim($_GET['closing_month'] ?? $_POST['closing_month'] ?? '');
+        $status_filter = trim($_GET['status_filter'] ?? $_POST['status_filter'] ?? '');
         $limit = (int)($_GET['limit'] ?? 500);
 
         $query = "
@@ -113,10 +138,14 @@ switch ($action) {
                 s.closing_month,
                 s.mentor_monthly_income,
                 s.mentor_income_rate,
+                s.leg_monthly_business,
+                s.total_eligible_legs_business,
                 s.total_mentor_income,
                 s.contribution_percentage,
                 s.payout_amount,
                 s.status,
+                s.closing_id,
+                s.calculation_version,
                 s.credited_at
             FROM tbl_mentor_income_schedule s
             LEFT JOIN user u1 ON u1.userid = s.mentor_id
@@ -133,6 +162,10 @@ switch ($action) {
             $query .= " AND s.closing_month = :closing_month";
             $params[':closing_month'] = $closing_month;
         }
+        if (!empty($status_filter)) {
+            $query .= " AND s.status = :status_filter";
+            $params[':status_filter'] = $status_filter;
+        }
 
         $query .= " ORDER BY s.id DESC LIMIT " . $limit;
 
@@ -148,6 +181,14 @@ switch ($action) {
             $s['mentor_monthly_income_inr'] = round($mInc, 2);
             $s['mentor_monthly_income_usd'] = round($mInc / $rate, 2);
             $s['mentor_monthly_income']     = round($mInc / $rate, 2);
+
+            $legB = (float)($s['leg_monthly_business'] ?? 0);
+            $s['leg_monthly_business_inr']  = round($legB, 2);
+            $s['leg_monthly_business_usd']  = round($legB / $rate, 2);
+
+            $totLegB = (float)($s['total_eligible_legs_business'] ?? 0);
+            $s['total_eligible_legs_business_inr'] = round($totLegB, 2);
+            $s['total_eligible_legs_business_usd'] = round($totLegB / $rate, 2);
 
             $totM = (float)($s['total_mentor_income'] ?? 0);
             $s['total_mentor_income_inr'] = round($totM, 2);
@@ -258,4 +299,3 @@ switch ($action) {
         ]);
         break;
 }
-

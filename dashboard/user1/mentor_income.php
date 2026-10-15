@@ -14,7 +14,7 @@ $mentor_income_display = round((float)($mentorIncomeSummary['mentor_income'] ?? 
 
 <style>
 /* =========================================================
-   USER DASHBOARD - MENTOR INCOME UI (REQ #14)
+   USER DASHBOARD - MENTOR INCOME MONTHLY LEG BUSINESS UI
 ========================================================= */
 html, body {
     min-height: 100%;
@@ -135,7 +135,7 @@ body.bg-theme1 {
                             </div>
                             <div>
                                 <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">Mentor Income Payouts</h3>
-                                <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">Log of received 2% Mentor Income payouts based on your recorded contribution percentage.</p>
+                                <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">Log of received Mentor Income payouts calculated proportionally from your monthly leg business contribution.</p>
                             </div>
                         </div>
                         <div>
@@ -153,7 +153,7 @@ body.bg-theme1 {
                             <div class="card-header-bar">
                                 <div>
                                     <h4 class="mb-0 fw-bold" style="color:#0f172a;">Received Mentor Income Ledger</h4>
-                                    <p class="mb-0 text-muted" style="font-size:13px;">Detailed monthly distribution payouts credited from your Mentor</p>
+                                    <p class="mb-0 text-muted" style="font-size:13px;">Transparent monthly payout statements based on your qualifying direct leg business.</p>
                                 </div>
                             </div>
                             <div class="card-body p-4">
@@ -164,12 +164,13 @@ body.bg-theme1 {
                                                 <th>Sr</th>
                                                 <th>Mentor ID</th>
                                                 <th>Closing Month</th>
-                                                <th>Mentor Monthly Income</th>
-                                                <th>Rate</th>
-                                                <th>Total Mentor Income</th>
+                                                <th>My Leg Business</th>
+                                                <th>Total Legs Business</th>
+                                                <th>Mentor Pool</th>
                                                 <th>My Contrib %</th>
-                                                <th>Payout Amount</th>
+                                                <th>My Payout</th>
                                                 <th>Credit Date</th>
+                                                <th>Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -215,16 +216,16 @@ body.bg-theme1 {
                         render: (data) => '<span class="badge bg-light text-dark fw-bold border">' + data + '</span>'
                     },
                     {
-                        data: 'mentor_monthly_income',
+                        data: 'leg_monthly_business',
                         render: (data) => '<span><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
                     },
                     {
-                        data: 'mentor_income_rate',
-                        render: (data) => '<span style="color:#0284c7; font-weight:700;">' + parseFloat(data || 2.0).toFixed(2) + '%</span>'
+                        data: 'total_eligible_legs_business',
+                        render: (data) => '<span style="color:#64748b;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
                     },
                     {
                         data: 'total_mentor_income',
-                        render: (data) => '<span><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toFixed(2) + '</span>'
+                        render: (data) => '<span style="color:#9333ea; font-weight:700;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
                     },
                     {
                         data: 'contribution_percentage',
@@ -232,11 +233,15 @@ body.bg-theme1 {
                     },
                     {
                         data: 'payout_amount',
-                        render: (data) => '<span style="font-weight:800; color:#10b981;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toFixed(2) + '</span>'
+                        render: (data) => '<span style="font-weight:800; color:#10b981;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
                     },
                     {
                         data: 'credited_at',
                         render: (data) => '<span style="color:#64748b; font-size:13px;">' + (data || 'Not Credited') + '</span>'
+                    },
+                    {
+                        data: 'status',
+                        render: (data) => '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight:700; padding: 4px 10px; border-radius: 100px;">' + (data || 'CREDITED') + '</span>'
                     }
                 ],
                 pageLength: 10,

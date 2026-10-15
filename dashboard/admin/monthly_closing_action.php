@@ -195,7 +195,7 @@ if ($action === 'preview') {
 
         if ($uProfitInr <= 0) continue;
 
-        $directs = function_exists('getMentorDirectContributions') ? getMentorDirectContributions($uId, $pdo) : [];
+        $directs = function_exists('getMentorDirectReferrals') ? getMentorDirectReferrals($uId, $pdo) : [];
         if (empty($directs)) continue; // Not a mentor with direct referrals
 
         $mentor_count_total++;
@@ -207,28 +207,26 @@ if ($action === 'preview') {
             continue;
         }
 
-        // Option A: 100% Contribution Validation
-        $val = function_exists('validateMentorContributions') ? validateMentorContributions($uId, $pdo) : ['valid' => false, 'reason' => 'Validator missing'];
-        if (!$val['valid']) {
+        $activeRate = function_exists('getMentorIncomeRate') ? getMentorIncomeRate($closing_month, $pdo) : 2.00;
+        $legData = function_exists('calculateMentorMonthlyLegBusiness') ? calculateMentorMonthlyLegBusiness($uId, $closing_month, $pdo) : ['eligible_legs_count' => 0, 'legs' => []];
+
+        if (($legData['eligible_legs_count'] ?? 0) === 0 || ($legData['total_eligible_business_usd'] ?? 0.0) <= 0.0) {
             $mentor_blocked_count++;
-            $mentor_blocked_details[] = "Mentor {$uId}: " . ($val['reason'] ?? 'Contribution does not equal 100.00%');
+            $mentor_blocked_details[] = "Mentor {$uId}: No eligible direct legs with qualifying business in {$closing_month}.";
             continue;
         }
 
         $mentor_valid_count++;
-        $totMentorIncInr = round($uProfitInr * 0.02, 2);
+        $totMentorIncInr = round($uProfitInr * ($activeRate / 100.0), 2);
 
-        foreach ($directs as $d) {
+        foreach (($legData['legs'] ?? []) as $d) {
+            if (!$d['is_eligible']) continue;
             $dId = $d['direct_user_id'];
             $pct = (float)$d['contribution_percentage'];
             if ($pct <= 0) continue;
 
             $dPayout = round(($totMentorIncInr * $pct) / 100.0, 2);
             if ($dPayout <= 0) continue;
-
-            if (function_exists('isUserIncomeEligible') && !isUserIncomeEligible($dId, $pdo)) {
-                continue;
-            }
 
             $mentor_expected_payout += $dPayout;
             $mentor_recipient_count++;

@@ -8,7 +8,7 @@
 
 <style>
 /* =========================================================
-   ANANTA FINTECH THEME - MENTOR INCOME SYSTEM (REQ #14 & #15)
+   ANANTA FINTECH THEME - MENTOR INCOME MONTHLY LEG BUSINESS MODEL
 ========================================================= */
 html, body {
     min-height: 100%;
@@ -118,34 +118,37 @@ body.bg-theme1 {
     font-weight: 500;
 }
 
-.btn-export-excel {
-    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+.btn-adjust-modal {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     color: #ffffff !important;
-    font-weight: 700 !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 8px 18px !important;
-    font-size: 13.5px !important;
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25) !important;
-    transition: all 0.2s ease !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 8px !important;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 700;
+    font-size: 13.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    transition: all 0.2s ease;
 }
 
-.btn-adjust-modal {
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+.btn-adjust-modal:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+}
+
+.btn-export-excel {
+    background: #10b981;
     color: #ffffff !important;
-    font-weight: 700 !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 8px 18px !important;
-    font-size: 13.5px !important;
-    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
-    transition: all 0.2s ease !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 8px !important;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-weight: 700;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .nav-tabs-custom {
@@ -170,7 +173,6 @@ body.bg-theme1 {
     border-bottom: 3px solid #10b981;
 }
 
-/* DataTables Light Fintech Table Styling */
 .table-responsive {
     border-radius: 16px;
     border: 1px solid #e2e8f0;
@@ -249,13 +251,16 @@ table.dataTable.no-footer {
                                 <i class="fa fa-handshake-o"></i>
                             </div>
                             <div>
-                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">Mentor Income Management </h3>
-                                <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">2% Mentor Income distribution & financial adjustment admin control portal.</p>
+                                <h3 class="mb-1" style="font-weight: 800; color: #0f172a;">Mentor Income Management</h3>
+                                <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 14px;">Monthly Leg Business Contribution Model (Dynamic Rate Control, Live Preview & Automated Closing).</p>
                             </div>
                         </div>
-                        <div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary fw-bold" id="btnOpenRateModal" style="border-radius: 12px;">
+                                <i class="fa fa-percent me-1"></i> Rate Config (<span id="bannerActiveRate">2.00%</span>)
+                            </button>
                             <button class="btn btn-adjust-modal" data-bs-toggle="modal" data-bs-target="#adjustmentModal">
-                                <i class="fa fa-pencil-square-o"></i> Authorized Wallet Adjustment
+                                <i class="fa fa-pencil-square-o"></i> Wallet Adjustment
                             </button>
                         </div>
                     </div>
@@ -263,30 +268,39 @@ table.dataTable.no-footer {
 
                 <!-- Program Configuration Card -->
                 <div class="card ananta-fintech-card mb-4 p-4" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);">
-                    <h5 class="fw-bold mb-3" style="color: #0f172a;"><i class="fa fa-cogs text-success me-2"></i> Program Configuration & Validation Rules</h5>
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                        <h5 class="fw-bold mb-0" style="color: #0f172a;"><i class="fa fa-cogs text-success me-2"></i> Monthly Leg Business Model Configuration</h5>
+                        <button class="btn btn-sm btn-primary fw-bold" id="btnEditRateDirect" style="border-radius: 8px;">
+                            <i class="fa fa-edit me-1"></i> Change Mentor Income Rate
+                        </button>
+                    </div>
                     <div class="row g-3">
                         <div class="col-md-3 col-sm-6">
                             <div class="p-3 border rounded-3 bg-white">
-                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Mentor Income Rate</span>
-                                <span class="h5 fw-extrabold text-success mb-0">2.00% of Monthly Income</span>
+                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Active Mentor Income Rate</span>
+                                <span class="h4 fw-extrabold text-success mb-0" id="cardActiveRate">2.00%</span>
+                                <small class="text-muted d-block mt-1">Default 2%, Admin Controlled</small>
                             </div>
                         </div>
                         <div class="col-md-3 col-sm-6">
                             <div class="p-3 border rounded-3 bg-white">
-                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Contribution Source</span>
-                                <span class="h6 fw-bold text-dark mb-0">tbl_mentor_direct_contribution (Manual Admin Input)</span>
+                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Pool Formula</span>
+                                <span class="h6 fw-bold text-dark mb-0">Monthly Profit Income × Rate%</span>
+                                <small class="text-muted d-block mt-1">From canonical Profit Income transactions</small>
                             </div>
                         </div>
                         <div class="col-md-3 col-sm-6">
                             <div class="p-3 border rounded-3 bg-white">
-                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Total Contribution Rule</span>
-                                <span class="h5 fw-extrabold text-primary mb-0">MUST Equal Exactly 100%</span>
+                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Contribution Percentage</span>
+                                <span class="h6 fw-bold text-primary mb-0">(Leg Business / Total Legs) × 100</span>
+                                <small class="text-muted d-block mt-1">Eligible direct legs share 100% pool</small>
                             </div>
                         </div>
                         <div class="col-md-3 col-sm-6">
                             <div class="p-3 border rounded-3 bg-white">
-                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Validation Failure Policy</span>
-                                <span class="h6 fw-bold text-danger mb-0">BLOCKED (Zero Payouts Executed)</span>
+                                <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Eligibility Rule</span>
+                                <span class="h6 fw-bold text-dark mb-0">Active ID + Min $145 Package</span>
+                                <small class="text-muted d-block mt-1">Ineligible legs excluded from denominator</small>
                             </div>
                         </div>
                     </div>
@@ -333,7 +347,7 @@ table.dataTable.no-footer {
                                 <i class="fa fa-exclamation-triangle"></i>
                             </div>
                             <div>
-                                <span class="text-muted fw-bold d-block" style="font-size: 12px;">VALIDATION BLOCKED MENTORS</span>
+                                <span class="text-muted fw-bold d-block" style="font-size: 12px;">BLOCKED / INELIGIBLE</span>
                                 <h4 class="mb-0 fw-extrabold" id="statBlockedMentors" style="color: #dc2626;">0</h4>
                             </div>
                         </div>
@@ -343,8 +357,8 @@ table.dataTable.no-footer {
                 <!-- Navigation Tabs -->
                 <ul class="nav nav-tabs nav-tabs-custom mb-3" id="mentorTabs" role="tablist">
                     <li class="nav-item">
-                        <button class="nav-link active" id="manager-tab" data-bs-toggle="tab" data-bs-target="#managerTabContent" type="button" role="tab">
-                            <i class="fa fa-sliders me-1"></i> Direct User Contribution % Manager
+                        <button class="nav-link active" id="closing-tab" data-bs-toggle="tab" data-bs-target="#closingTabContent" type="button" role="tab">
+                            <i class="fa fa-calculator me-1"></i> Monthly Closing & Preview
                         </button>
                     </li>
                     <li class="nav-item">
@@ -360,68 +374,94 @@ table.dataTable.no-footer {
                 </ul>
 
                 <div class="tab-content" id="mentorTabsContent">
-                    <!-- Tab 1: Contribution Manager -->
-                    <div class="tab-pane fade show active" id="managerTabContent" role="tabpanel">
+                    <!-- Tab 1: Monthly Closing & Preview -->
+                    <div class="tab-pane fade show active" id="closingTabContent" role="tabpanel">
                         <div class="card ananta-fintech-card">
                             <div class="card-header-bar">
                                 <div class="card-header-title">
-                                    <h4>Mentor Direct Contribution Manager</h4>
-                                    <p>Select a Mentor User ID to view direct referrals and manage contribution percentages.</p>
+                                    <h4>Monthly Mentor Income Closing Preview</h4>
+                                    <p>Preview Mentor-wise Profit Income, calculated pool, direct leg business, contribution % and calculated payout before processing.</p>
                                 </div>
                             </div>
                             <div class="card-body p-4">
-                                <!-- Mentor Search Form -->
-                                <div class="row g-3 align-items-end mb-4">
-                                    <div class="col-md-5">
-                                        <label class="form-label fw-bold" style="color:#0f172a;">Mentor User ID</label>
-                                        <input type="text" id="mentorSearchInput" class="form-control fw-bold" placeholder="e.g. 1001" style="border-radius:10px;">
+                                <!-- Control form -->
+                                <div class="row g-3 align-items-end mb-4 p-3 bg-light rounded-3 border">
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold" style="color:#0f172a; font-size:13px;">SELECT CLOSING MONTH</label>
+                                        <input type="month" id="closingMonthInput" class="form-control fw-bold" value="<?php echo date('Y-m'); ?>" style="border-radius:10px;">
                                     </div>
                                     <div class="col-md-3">
-                                        <button id="btnLoadMentorDirects" class="btn text-white fw-bold w-100" style="background:#10b981; border-radius:10px; padding:9px;">
-                                            <i class="fa fa-search me-1"></i> Load Direct Referrals
+                                        <button id="btnGeneratePreview" class="btn text-white fw-bold w-100" style="background:#0284c7; border-radius:10px; padding:9px;">
+                                            <i class="fa fa-eye me-1"></i> Preview Calculation
                                         </button>
                                     </div>
+                                    <div class="col-md-3">
+                                        <button id="btnProcessClosing" class="btn text-white fw-bold w-100" style="background:#10b981; border-radius:10px; padding:9px;" disabled>
+                                            <i class="fa fa-check-circle me-1"></i> Approve & Process Closing
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3 text-end">
+                                        <span class="text-muted d-block" style="font-size:11px;">SAFETY GUARANTEE</span>
+                                        <span class="badge bg-secondary">Read-only preview</span>
+                                    </div>
                                 </div>
 
-                                <!-- Contribution Editor Section -->
-                                <div id="contributionSection" style="display:none;">
-                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 bg-light rounded-3 mb-3 border">
-                                        <div>
-                                            <h6 class="mb-0 fw-bold" id="contribMentorTitle" style="color:#0f172a;">Mentor: --</h6>
-                                            <small class="text-muted">Total sum of all direct user contributions must equal exactly 100.00%</small>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div id="validationBadgeContainer">
-                                                <span class="badge bg-secondary fs-6 p-2">Total: 0.00%</span>
+                                <!-- Preview Summary Banner -->
+                                <div id="previewSummaryContainer" style="display:none;" class="mb-4">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <div class="p-3 bg-white border rounded-3 shadow-sm">
+                                                <span class="text-muted text-uppercase fw-bold d-block" style="font-size:11px;">Qualifying Mentors</span>
+                                                <h4 class="mb-0 fw-bold text-dark" id="prevQualMentors">0</h4>
                                             </div>
-                                            <button id="btnSaveAllContributions" class="btn text-white fw-bold" style="background:#0284c7; border-radius:10px;">
-                                                <i class="fa fa-save me-1"></i> Save All Contributions
-                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="p-3 bg-white border rounded-3 shadow-sm">
+                                                <span class="text-muted text-uppercase fw-bold d-block" style="font-size:11px;">Eligible Mentors</span>
+                                                <h4 class="mb-0 fw-bold text-success" id="prevEligMentors">0</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="p-3 bg-white border rounded-3 shadow-sm">
+                                                <span class="text-muted text-uppercase fw-bold d-block" style="font-size:11px;">Total Mentor Pool</span>
+                                                <h4 class="mb-0 fw-bold text-primary" id="prevTotalPool">₹0.00</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="p-3 bg-white border rounded-3 shadow-sm">
+                                                <span class="text-muted text-uppercase fw-bold d-block" style="font-size:11px;">Total Calculated Payout</span>
+                                                <h4 class="mb-0 fw-bold text-success" id="prevTotalPayout">₹0.00</h4>
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <form id="bulkContribForm">
-                                        <input type="hidden" name="action" value="save_bulk_contributions">
-                                        <input type="hidden" name="mentor_id" id="contribMentorIdInput">
-                                        
-                                        <div class="table-responsive mb-3">
-                                            <table class="table table-hover table-bordered" id="contribTable">
-                                                <thead>
-                                                    <tr class="bg-light">
-                                                        <th>Direct User ID</th>
-                                                        <th>Direct User Name</th>
-                                                        <th>Account Status</th>
-                                                        <th>Contribution Percentage (%)</th>
-                                                        <th>Last Updated</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <!-- Loaded via AJAX -->
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </form>
                                 </div>
+
+                                <!-- Mentors Table -->
+                                <div id="previewTableContainer" style="display:none;">
+                                    <h6 class="fw-bold mb-3" style="color:#0f172a;"><i class="fa fa-list me-1"></i> Mentor-Wise Breakdown</h6>
+                                    <div class="table-responsive mb-4">
+                                        <table class="table table-hover table-bordered" id="previewMentorsTable" style="width:100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mentor ID</th>
+                                                    <th>Mentor Name</th>
+                                                    <th>Month Profit Income</th>
+                                                    <th>Applied Rate</th>
+                                                    <th>Mentor Pool</th>
+                                                    <th>Eligible / Total Legs</th>
+                                                    <th>Total Leg Business</th>
+                                                    <th>Expected Payout</th>
+                                                    <th>Closing Status</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Dynamic via AJAX -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -432,7 +472,7 @@ table.dataTable.no-footer {
                             <div class="card-header-bar">
                                 <div class="card-header-title">
                                     <h4>Monthly Mentor Income Payout Ledger</h4>
-                                    <p>Live history of all 2% Mentor Income payouts generated during monthly closings.</p>
+                                    <p>Live history of all Mentor Income payouts generated during monthly closings with leg business and rate snapshots.</p>
                                 </div>
                                 <button id="customExportBtn" class="btn btn-export-excel">
                                     <i class="fa fa-file-excel-o"></i> Export to Excel
@@ -444,6 +484,10 @@ table.dataTable.no-footer {
                                 <div>
                                     <label class="form-label mb-1 text-muted fw-bold" style="font-size:12px;">CLOSING MONTH FILTER</label>
                                     <input type="month" id="monthFilterInput" class="form-control form-control-sm fw-bold" style="width: 170px; border-radius: 8px;">
+                                </div>
+                                <div>
+                                    <label class="form-label mb-1 text-muted fw-bold" style="font-size:12px;">MENTOR USER ID</label>
+                                    <input type="text" id="mentorFilterInput" class="form-control form-control-sm fw-bold" placeholder="e.g. 1001" style="width: 150px; border-radius: 8px;">
                                 </div>
                                 <div>
                                     <button id="btnApplyHistoryFilter" class="btn btn-sm text-white fw-bold mt-4" style="background:#0284c7; border-radius:8px;">
@@ -463,12 +507,15 @@ table.dataTable.no-footer {
                                                 <th>Sr</th>
                                                 <th>Beneficiary Direct</th>
                                                 <th>Source Mentor</th>
-                                                <th>Closing Month</th>
-                                                <th>Mentor Monthly Income</th>
+                                                <th>Month</th>
+                                                <th>Mentor Profit</th>
                                                 <th>Rate</th>
-                                                <th>Total Mentor Income</th>
+                                                <th>Leg Business</th>
+                                                <th>Total Legs Business</th>
+                                                <th>Mentor Pool</th>
                                                 <th>Contrib %</th>
                                                 <th>Payout Amount</th>
+                                                <th>Closing ID</th>
                                                 <th>Status</th>
                                                 <th>Credit Date</th>
                                             </tr>
@@ -526,6 +573,92 @@ table.dataTable.no-footer {
 
         <!-- Footer -->
         <?php include 'common/footer.php'; ?>
+    </div>
+
+    <!-- Rate Configuration Modal -->
+    <div class="modal fade" id="rateModal" tabindex="-1" aria-labelledby="rateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff;">
+                    <h5 class="modal-title fw-bold" id="rateModalLabel"><i class="fa fa-percent me-2"></i> Mentor Income Rate Configuration</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rateConfigForm">
+                    <input type="hidden" name="action" value="update_rate">
+                    <div class="modal-body p-4">
+                        <div class="alert alert-info py-2 px-3 fw-bold mb-3" style="font-size: 13px;">
+                            <i class="fa fa-info-circle me-1"></i> Default rate is <strong>2.00%</strong>. Any rate change is logged in <strong>tbl_mentor_income_rate_history</strong> with admin ID and timestamp.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" style="color: #0f172a;">Mentor Income Rate (%)</label>
+                            <input type="number" step="0.01" min="0" max="100" name="rate_percent" id="modalRateInput" class="form-control fw-bold" required style="border-radius: 10px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" style="color: #0f172a;">Effective From Month</label>
+                            <input type="month" name="effective_from_month" id="modalEffMonthInput" class="form-control fw-bold" value="<?php echo date('Y-m'); ?>" required style="border-radius: 10px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" style="color: #0f172a;">Automatic Monthly Closing</label>
+                            <select name="is_auto_closing" id="modalAutoCloseSelect" class="form-select fw-bold" style="border-radius: 10px;">
+                                <option value="0">Manual Admin Closing Only (Recommended)</option>
+                                <option value="1">Automatic Monthly Closing Enabled</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" style="color: #0f172a;">Mandatory Reason / Remarks</label>
+                            <textarea name="reason" class="form-control fw-bold" rows="2" placeholder="State reason for changing the rate..." required style="border-radius: 10px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal" style="border-radius: 10px;">Cancel</button>
+                        <button type="submit" id="btnSaveRate" class="btn text-white fw-bold" style="background: #10b981; border-radius: 10px;">Update Rate</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leg Breakdown Modal -->
+    <div class="modal fade" id="legBreakdownModal" tabindex="-1" aria-labelledby="legBreakdownModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff;">
+                    <h5 class="modal-title fw-bold" id="legBreakdownModalLabel"><i class="fa fa-sitemap me-2"></i> Direct Legs Business & Contribution Breakdown</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0" id="modalMentorHeader" style="color:#0f172a;">Mentor: --</h6>
+                            <small class="text-muted" id="modalMonthHeader">Closing Month: --</small>
+                        </div>
+                        <div id="modalMentorEligibilityBadge"></div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered" id="legBreakdownTable">
+                            <thead>
+                                <tr class="bg-light">
+                                    <th>Direct User</th>
+                                    <th>Status</th>
+                                    <th>Eligibility</th>
+                                    <th>Leg Members</th>
+                                    <th>Monthly Business</th>
+                                    <th>Contrib %</th>
+                                    <th>Calculated Payout</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamic via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal" style="border-radius: 10px;">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Financial Adjustment Modal (Req #15) -->
@@ -588,6 +721,185 @@ table.dataTable.no-footer {
 
     <script>
         $(document).ready(function () {
+            let cachedPreviewData = null;
+
+            // Load Rate Config
+            function loadRateConfig() {
+                $.getJSON('mentor_income_action.php', { action: 'get_rate_config' }, function(res) {
+                    if (res.status === 'success' && res.config) {
+                        let r = parseFloat(res.config.rate_percent || 2.0).toFixed(2) + '%';
+                        $('#bannerActiveRate').text(r);
+                        $('#cardActiveRate').text(r);
+                        $('#modalRateInput').val(res.config.rate_percent);
+                        $('#modalEffMonthInput').val(res.config.effective_from_month || '<?php echo date('Y-m'); ?>');
+                        $('#modalAutoCloseSelect').val(res.config.is_auto_closing || 0);
+                    }
+                });
+            }
+            loadRateConfig();
+
+            $('#btnOpenRateModal, #btnEditRateDirect').on('click', function() {
+                $('#rateModal').modal('show');
+            });
+
+            $('#rateConfigForm').on('submit', function(e) {
+                e.preventDefault();
+                let formData = $(this).serialize();
+                $('#btnSaveRate').prop('disabled', true).text('Updating...');
+
+                $.post('mentor_income_action.php', formData, function(res) {
+                    $('#btnSaveRate').prop('disabled', false).text('Update Rate');
+                    if (res.status === 'success') {
+                        alert(res.message);
+                        $('#rateModal').modal('hide');
+                        loadRateConfig();
+                    } else {
+                        alert('Error: ' + res.message);
+                    }
+                }, 'json').fail(function() {
+                    $('#btnSaveRate').prop('disabled', false).text('Update Rate');
+                    alert('Network error while updating rate.');
+                });
+            });
+
+            // Preview Mentor Income Closing
+            $('#btnGeneratePreview').on('click', function() {
+                let month = $('#closingMonthInput').val();
+                if (!month) {
+                    alert('Please select a valid closing month.');
+                    return;
+                }
+
+                $('#btnGeneratePreview').prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Calculating...');
+                $('#btnProcessClosing').prop('disabled', true);
+
+                $.getJSON('mentor_income_action.php', { action: 'preview_closing', closing_month: month }, function(res) {
+                    $('#btnGeneratePreview').prop('disabled', false).html('<i class="fa fa-eye me-1"></i> Preview Calculation');
+
+                    if (res.status === 'success') {
+                        cachedPreviewData = res;
+                        $('#prevQualMentors').text(res.total_mentors || 0);
+                        $('#prevEligMentors').text(res.eligible_mentors || 0);
+                        $('#prevTotalPool').text(formatAdminCurrency(res.total_pool_inr || 0));
+                        $('#prevTotalPayout').text(formatAdminCurrency(res.total_expected_payout_inr || 0));
+                        $('#previewSummaryContainer').show();
+
+                        let rows = '';
+                        if (res.mentors && res.mentors.length > 0) {
+                            res.mentors.forEach(m => {
+                                let statusBadge = '';
+                                if (m.status === 'ELIGIBLE') {
+                                    statusBadge = '<span class="badge bg-success">ELIGIBLE</span>';
+                                } else {
+                                    statusBadge = `<span class="badge bg-danger" title="${m.status_reason}">${m.status}</span><br><small class="text-danger">${m.status_reason}</small>`;
+                                }
+
+                                rows += `<tr>
+                                    <td class="fw-bold"><?php echo $hmpre; ?>${m.mentor_id}</td>
+                                    <td>${m.mentor_name || 'Member'}</td>
+                                    <td class="fw-bold">${formatAdminCurrency(m.monthly_profit_inr)}</td>
+                                    <td class="fw-bold text-primary">${parseFloat(m.mentor_income_rate).toFixed(2)}%</td>
+                                    <td class="fw-bold text-purple" style="color:#9333ea;">${formatAdminCurrency(m.mentor_pool_inr)}</td>
+                                    <td><span class="badge bg-light text-dark border">${m.eligible_legs} / ${m.total_directs} Legs</span></td>
+                                    <td>${formatAdminCurrency(m.total_leg_business_inr)}</td>
+                                    <td class="fw-bold text-success">${formatAdminCurrency(m.total_payout_inr)}</td>
+                                    <td>${statusBadge}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info fw-bold btn-view-legs" data-mentor="${m.mentor_id}">
+                                            <i class="fa fa-eye"></i> View Legs
+                                        </button>
+                                    </td>
+                                </tr>`;
+                            });
+                            $('#btnProcessClosing').prop('disabled', false);
+                        } else {
+                            rows = '<tr><td colspan="10" class="text-center text-muted p-4">No Mentors earned Profit Income in ' + month + '.</td></tr>';
+                        }
+
+                        $('#previewMentorsTable tbody').html(rows);
+                        $('#previewTableContainer').show();
+                    } else {
+                        alert('Preview Error: ' + res.message);
+                    }
+                }).fail(function() {
+                    $('#btnGeneratePreview').prop('disabled', false).html('<i class="fa fa-eye me-1"></i> Preview Calculation');
+                    alert('Network error while generating preview.');
+                });
+            });
+
+            // View Mentor Legs Breakdown Modal
+            $(document).on('click', '.btn-view-legs', function() {
+                let mentorId = $(this).data('mentor');
+                let month = $('#closingMonthInput').val();
+
+                if (!cachedPreviewData || !cachedPreviewData.mentors) return;
+                let mentorData = cachedPreviewData.mentors.find(m => m.mentor_id == mentorId);
+                if (!mentorData) return;
+
+                $('#modalMentorHeader').text('Mentor: <?php echo $hmpre; ?>' + mentorData.mentor_id + ' (' + (mentorData.mentor_name || 'Member') + ')');
+                $('#modalMonthHeader').text('Closing Month: ' + month + ' | Mentor Pool: ' + formatAdminCurrency(mentorData.mentor_pool_inr));
+
+                if (mentorData.status === 'ELIGIBLE') {
+                    $('#modalMentorEligibilityBadge').html('<span class="badge bg-success fs-6">Mentor Eligible</span>');
+                } else {
+                    $('#modalMentorEligibilityBadge').html(`<span class="badge bg-danger fs-6">${mentorData.status_reason}</span>`);
+                }
+
+                let legRows = '';
+                if (mentorData.legs && mentorData.legs.length > 0) {
+                    mentorData.legs.forEach(l => {
+                        let eligBadge = l.is_eligible 
+                            ? '<span class="badge bg-success">ELIGIBLE</span>' 
+                            : `<span class="badge bg-danger" title="${l.exclusion_reason}">EXCLUDED</span><br><small class="text-danger">${l.exclusion_reason}</small>`;
+
+                        legRows += `<tr>
+                            <td class="fw-bold"><?php echo $hmpre; ?>${l.direct_user_id}<br><small class="text-muted">${l.direct_user_name || 'Direct'}</small></td>
+                            <td><span class="badge ${l.is_active ? 'bg-success' : 'bg-secondary'}">${l.is_active ? 'Active' : 'Inactive'}</span></td>
+                            <td>${eligBadge}</td>
+                            <td>${l.leg_members_count} Members</td>
+                            <td class="fw-bold">${formatAdminCurrency(l.monthly_business_inr)}</td>
+                            <td class="fw-bold text-primary">${parseFloat(l.contribution_percentage).toFixed(2)}%</td>
+                            <td class="fw-bold text-success">${formatAdminCurrency(l.calculated_payout_inr)}</td>
+                        </tr>`;
+                    });
+                } else {
+                    legRows = '<tr><td colspan="7" class="text-center text-muted">No direct referrals found for this Mentor.</td></tr>';
+                }
+
+                $('#legBreakdownTable tbody').html(legRows);
+                $('#legBreakdownModal').modal('show');
+            });
+
+            // Process Closing
+            $('#btnProcessClosing').on('click', function() {
+                let month = $('#closingMonthInput').val();
+                if (!confirm(`Are you sure you want to approve and execute Mentor Income Monthly Closing for ${month}?\n\nThis will credit wallets and record irreversible ledger entries.`)) {
+                    return;
+                }
+
+                $('#btnProcessClosing').prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Processing Closing...');
+
+                $.post('mentor_income_action.php', {
+                    action: 'process_closing',
+                    closing_month: month,
+                    closing_date: new Date().toISOString().slice(0, 10)
+                }, function(res) {
+                    $('#btnProcessClosing').prop('disabled', false).html('<i class="fa fa-check-circle me-1"></i> Approve & Process Closing');
+                    if (res.status === 'success') {
+                        alert(res.message);
+                        historyTable.ajax.reload();
+                        auditTable.ajax.reload();
+                        $('#btnGeneratePreview').trigger('click');
+                    } else {
+                        alert('Closing Failed: ' + res.message);
+                    }
+                }, 'json').fail(function() {
+                    $('#btnProcessClosing').prop('disabled', false).html('<i class="fa fa-check-circle me-1"></i> Approve & Process Closing');
+                    alert('Network error while processing closing.');
+                });
+            });
+
+            // Payout History DataTable
             let historyTable = $('#historyTable').DataTable({
                 ajax: {
                     url: 'mentor_income_action.php',
@@ -595,6 +907,7 @@ table.dataTable.no-footer {
                     data: function(d) {
                         d.action = 'get_schedules';
                         d.closing_month = $('#monthFilterInput').val();
+                        d.mentor_id = $('#mentorFilterInput').val();
                     },
                     dataSrc: function (json) {
                         if (json.status === 'success' && json.data) {
@@ -639,6 +952,14 @@ table.dataTable.no-footer {
                         render: (data) => '<span style="font-weight:700; color:#0284c7;">' + parseFloat(data || 2.0).toFixed(2) + '%</span>'
                     },
                     {
+                        data: 'leg_monthly_business',
+                        render: (data) => '<span style="font-weight:600; color:#0f172a;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
+                    },
+                    {
+                        data: 'total_eligible_legs_business',
+                        render: (data) => '<span style="font-weight:600; color:#64748b;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
+                    },
+                    {
                         data: 'total_mentor_income',
                         render: (data) => '<span style="font-weight:700; color:#9333ea;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
                     },
@@ -649,6 +970,10 @@ table.dataTable.no-footer {
                     {
                         data: 'payout_amount',
                         render: (data) => '<span style="font-weight:800; color:#10b981;">' + formatAdminCurrency(parseFloat(data || 0)) + '</span>'
+                    },
+                    {
+                        data: 'closing_id',
+                        render: (data) => '<small class="text-muted">' + (data || '-') + '</small>'
                     },
                     {
                         data: 'status',
@@ -667,6 +992,7 @@ table.dataTable.no-footer {
                 ]
             });
 
+            // Adjustments Audit Table
             let auditTable = $('#auditTable').DataTable({
                 ajax: {
                     url: 'mentor_income_action.php',
@@ -699,6 +1025,7 @@ table.dataTable.no-footer {
 
             $('#btnClearHistoryFilter').on('click', function() {
                 $('#monthFilterInput').val('');
+                $('#mentorFilterInput').val('');
                 historyTable.ajax.reload();
             });
 
@@ -706,87 +1033,7 @@ table.dataTable.no-footer {
                 historyTable.button('.buttons-excel').trigger();
             });
 
-            // Load Mentor Direct Referrals & Contributions
-            $('#btnLoadMentorDirects').on('click', function() {
-                let mentorId = $('#mentorSearchInput').val().trim();
-                if (!mentorId) {
-                    alert('Please enter a valid Mentor User ID.');
-                    return;
-                }
-
-                $.getJSON('mentor_income_action.php', { action: 'get_mentor_directs', mentor_id: mentorId }, function(res) {
-                    if (res.status === 'success' && res.data) {
-                        $('#contribMentorTitle').text('Mentor ID: <?php echo $hmpre; ?>' + res.data.mentor_id);
-                        $('#contribMentorIdInput').val(res.data.mentor_id);
-                        $('#contributionSection').show();
-
-                        let rows = '';
-                        if (res.data.directs && res.data.directs.length > 0) {
-                            res.data.directs.forEach(d => {
-                                rows += `<tr>
-                                    <td class="fw-bold"><?php echo $hmpre; ?>${d.direct_user_id}</td>
-                                    <td>${d.direct_user_name}</td>
-                                    <td><span class="badge ${d.is_active == 1 ? 'bg-success' : 'bg-secondary'}">${d.is_active == 1 ? 'Active' : 'Inactive'}</span></td>
-                                    <td>
-                                        <input type="number" step="0.01" min="0" max="100" class="form-control form-control-sm fw-bold contrib-pct-input" name="contributions[${d.direct_user_id}]" value="${parseFloat(d.contribution_percentage).toFixed(2)}" style="width:120px;">
-                                    </td>
-                                    <td><small class="text-muted">${d.updated_at || 'Never'}</small></td>
-                                </tr>`;
-                            });
-                        } else {
-                            rows = '<tr><td colspan="5" class="text-center text-muted">No direct referrals found for this Mentor.</td></tr>';
-                        }
-                        $('#contribTable tbody').html(rows);
-                        updateLiveValidation(res.data.validation);
-                    } else {
-                        alert(res.message || 'Failed to load direct referrals.');
-                    }
-                });
-            });
-
-            // Live contribution total validation calculator
-            $(document).on('input', '.contrib-pct-input', function() {
-                recalcLiveValidation();
-            });
-
-            function recalcLiveValidation() {
-                let sum = 0;
-                $('.contrib-pct-input').each(function() {
-                    sum += parseFloat($(this).val() || 0);
-                });
-                sum = Math.round(sum * 100) / 100;
-
-                let isValid = (Math.abs(sum - 100.00) < 0.001);
-                let badgeClass = isValid ? 'bg-success' : 'bg-danger';
-                let text = isValid ? 'Total: 100.00% (VALID)' : 'Total: ' + sum.toFixed(2) + '% (INVALID - MUST EQUAL 100%)';
-
-                $('#validationBadgeContainer').html(`<span class="badge ${badgeClass} fs-6 p-2">${text}</span>`);
-            }
-
-            function updateLiveValidation(val) {
-                if (!val) return;
-                let isValid = val.valid;
-                let badgeClass = isValid ? 'bg-success' : 'bg-danger';
-                let text = isValid ? 'Total: 100.00% (VALID)' : 'Total: ' + parseFloat(val.total_percentage).toFixed(2) + '% (INVALID - MUST EQUAL 100%)';
-                $('#validationBadgeContainer').html(`<span class="badge ${badgeClass} fs-6 p-2">${text}</span>`);
-            }
-
-            // Save All Contributions Form
-            $('#btnSaveAllContributions').on('click', function(e) {
-                e.preventDefault();
-                let formData = $('#bulkContribForm').serialize();
-
-                $.post('mentor_income_action.php', formData, function(res) {
-                    if (res.status === 'success') {
-                        alert(res.message);
-                        updateLiveValidation(res.validation);
-                    } else {
-                        alert('Error: ' + res.message);
-                    }
-                }, 'json');
-            });
-
-            // Handle Financial Adjustment Form Submit
+            // Financial Adjustment Form Submit
             $('#adjustmentForm').on('submit', function (e) {
                 e.preventDefault();
                 let formData = $(this).serialize() + '&action=adjust_balance';
