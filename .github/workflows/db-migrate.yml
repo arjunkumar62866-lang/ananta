@@ -104,6 +104,29 @@ jobs:
             -p "$CLEAN_PORT" \
             $SSH_OPTS \
             "$CLEAN_USER@$CLEAN_HOST" \
-            'cd /home/u914531711/domains/anantamtptl.com/public_html && php database/migration.php migrate'
+            "bash -c '
+              set -euo pipefail
+              DEPLOY_DIR=\"/home/u914531711/domains/anantamtptl.com/public_html\"
+              MIGRATION_SCRIPT=\"\$DEPLOY_DIR/database/migration.php\"
+
+              echo \"Verifying deployment directory: \$DEPLOY_DIR\"
+              if [ ! -d \"\$DEPLOY_DIR\" ]; then
+                echo \"FATAL: Deployment directory does not exist: \$DEPLOY_DIR\" >&2
+                exit 1
+              fi
+
+              cd \"\$DEPLOY_DIR\"
+              echo \"Current working directory: \$(pwd)\"
+
+              if [ ! -f \"\$MIGRATION_SCRIPT\" ]; then
+                echo \"FATAL: Migration script not found at: \$MIGRATION_SCRIPT\" >&2
+                ls -la \"\$DEPLOY_DIR\" >&2
+                exit 1
+              fi
+
+              echo \"Migration script verified at: \$MIGRATION_SCRIPT\"
+              echo \"Executing database migrations...\"
+              php \"\$MIGRATION_SCRIPT\" migrate
+            '"
 
 
