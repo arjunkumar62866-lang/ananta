@@ -166,11 +166,25 @@ try {
     assert($mPre['mentor_pool_inr'] === 10000.00, "Pool must be ₹10,000 for ₹5,00,000 @ 2%");
     assert($mPre['total_payout_inr'] === 10000.00, "Total payout must equal pool ₹10,000");
 
+    $previewLegPayouts = [];
     foreach ($mPre['legs'] as $l) {
+        $previewLegPayouts[$l['direct_user_id']] = (float)($l['calculated_payout_inr'] ?? 0);
         if ($l['is_eligible']) {
             echo "   -> Payout for {$l['direct_user_id']}: ₹" . number_format($l['calculated_payout_inr'], 2) . "\n";
         }
     }
+
+    // Required explicit assertions:
+    assert(abs($previewLegPayouts[$testDirect1] - 5000.00) < 0.01, "Direct 1 (50% leg) must receive ₹5,000.00");
+    assert(abs($previewLegPayouts[$testDirect2] - 3000.00) < 0.01, "Direct 2 (30% leg) must receive ₹3,000.00");
+    assert(abs($previewLegPayouts[$testDirect3] - 1000.00) < 0.01, "Direct 3 (10% leg) must receive ₹1,000.00");
+    assert(abs($previewLegPayouts[$testDirect4_b] - 1000.00) < 0.01, "Direct 4B (10% leg) must receive ₹1,000.00");
+    assert(($previewLegPayouts[$testDirect4] ?? 0.0) == 0.00, "Ineligible Direct 4 must receive ₹0.00");
+    assert(($previewLegPayouts[$testDirect5] ?? 0.0) == 0.00, "Zero business Direct 5 must receive ₹0.00");
+
+    $totalAllocated = $previewLegPayouts[$testDirect1] + $previewLegPayouts[$testDirect2] + $previewLegPayouts[$testDirect3] + $previewLegPayouts[$testDirect4_b];
+    assert(abs($totalAllocated - 10000.00) < 0.01, "Total allocations must equal ₹10,000.00 exactly");
+
     echo "[PASS] Test 3: Read-only preview correctly computed ₹10,000 pool and ₹5,000, ₹3,000, ₹1,000, ₹1,000 payouts.\n";
 
     echo "\n--- TEST 4: Payout Execution & Accounting Integrity ---\n";
