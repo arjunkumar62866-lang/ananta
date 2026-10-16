@@ -780,8 +780,8 @@ table.dataTable.no-footer {
                         cachedPreviewData = res;
                         $('#prevQualMentors').text(res.total_mentors || 0);
                         $('#prevEligMentors').text(res.eligible_mentors || 0);
-                        $('#prevTotalPool').text(formatAdminCurrency(res.total_pool_inr || 0));
-                        $('#prevTotalPayout').text(formatAdminCurrency(res.total_expected_payout_inr || 0));
+                        $('#prevTotalPool').text(formatAdminCurrency(res.total_pool_usd || 0));
+                        $('#prevTotalPayout').text(formatAdminCurrency(res.total_expected_payout_usd || 0));
                         $('#previewSummaryContainer').show();
 
                         let rows = '';
@@ -797,12 +797,12 @@ table.dataTable.no-footer {
                                 rows += `<tr>
                                     <td class="fw-bold"><?php echo $hmpre; ?>${m.mentor_id}</td>
                                     <td>${m.mentor_name || 'Member'}</td>
-                                    <td class="fw-bold">${formatAdminCurrency(m.monthly_profit_inr)}</td>
+                                    <td class="fw-bold">${formatAdminCurrency(m.monthly_profit_usd)}</td>
                                     <td class="fw-bold text-primary">${parseFloat(m.mentor_income_rate).toFixed(2)}%</td>
-                                    <td class="fw-bold text-purple" style="color:#9333ea;">${formatAdminCurrency(m.mentor_pool_inr)}</td>
+                                    <td class="fw-bold text-purple" style="color:#9333ea;">${formatAdminCurrency(m.mentor_pool_usd)}</td>
                                     <td><span class="badge bg-light text-dark border">${m.eligible_legs} / ${m.total_directs} Legs</span></td>
-                                    <td>${formatAdminCurrency(m.total_leg_business_inr)}</td>
-                                    <td class="fw-bold text-success">${formatAdminCurrency(m.total_payout_inr)}</td>
+                                    <td>${formatAdminCurrency(m.total_leg_business_usd)}</td>
+                                    <td class="fw-bold text-success">${formatAdminCurrency(m.total_payout_usd)}</td>
                                     <td>${statusBadge}</td>
                                     <td>
                                         <button class="btn btn-sm btn-outline-info fw-bold btn-view-legs" data-mentor="${m.mentor_id}">
@@ -837,7 +837,7 @@ table.dataTable.no-footer {
                 if (!mentorData) return;
 
                 $('#modalMentorHeader').text('Mentor: <?php echo $hmpre; ?>' + mentorData.mentor_id + ' (' + (mentorData.mentor_name || 'Member') + ')');
-                $('#modalMonthHeader').text('Closing Month: ' + month + ' | Mentor Pool: ' + formatAdminCurrency(mentorData.mentor_pool_inr));
+                $('#modalMonthHeader').text('Closing Month: ' + month + ' | Mentor Pool: ' + formatAdminCurrency(mentorData.mentor_pool_usd));
 
                 if (mentorData.status === 'ELIGIBLE') {
                     $('#modalMentorEligibilityBadge').html('<span class="badge bg-success fs-6">Mentor Eligible</span>');
@@ -857,9 +857,9 @@ table.dataTable.no-footer {
                             <td><span class="badge ${l.is_active ? 'bg-success' : 'bg-secondary'}">${l.is_active ? 'Active' : 'Inactive'}</span></td>
                             <td>${eligBadge}</td>
                             <td>${l.leg_members_count} Members</td>
-                            <td class="fw-bold">${formatAdminCurrency(l.monthly_business_inr)}</td>
+                            <td class="fw-bold">${formatAdminCurrency(l.monthly_business_usd)}</td>
                             <td class="fw-bold text-primary">${parseFloat(l.contribution_percentage).toFixed(2)}%</td>
-                            <td class="fw-bold text-success">${formatAdminCurrency(l.calculated_payout_inr)}</td>
+                            <td class="fw-bold text-success">${formatAdminCurrency(l.calculated_payout_usd)}</td>
                         </tr>`;
                     });
                 } else {

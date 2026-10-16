@@ -185,10 +185,12 @@ switch ($action) {
             $legB = (float)($s['leg_monthly_business'] ?? 0);
             $s['leg_monthly_business_inr']  = round($legB, 2);
             $s['leg_monthly_business_usd']  = round($legB / $rate, 2);
+            $s['leg_monthly_business']      = round($legB / $rate, 2);
 
             $totLegB = (float)($s['total_eligible_legs_business'] ?? 0);
             $s['total_eligible_legs_business_inr'] = round($totLegB, 2);
             $s['total_eligible_legs_business_usd'] = round($totLegB / $rate, 2);
+            $s['total_eligible_legs_business']     = round($totLegB / $rate, 2);
 
             $totM = (float)($s['total_mentor_income'] ?? 0);
             $s['total_mentor_income_inr'] = round($totM, 2);
