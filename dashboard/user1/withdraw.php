@@ -1,3 +1,4 @@
+
 <?php
 ob_start();
 session_start();
@@ -415,7 +416,7 @@ label.form-label, label {
                                   <div class="d-flex justify-content-between align-items-center pt-1" style="background: rgba(22, 163, 74, 0.08); padding: 10px 12px; border-radius: 10px;">
                                       <div>
                                           <span class="font-weight-bold text-success" style="font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.3px;">Final Payable Amount:</span>
-                                          <small class="d-block text-success font-weight-bold" id="preview_payable_subtext" style="font-size: 11px;">Net amount credited to your account</small>
+                                          <!-- <small class="d-block text-success font-weight-bold" id="preview_payable_subtext" style="font-size: 11px;"></small> -->
                                       </div>
                                       <span id="preview_net_payable" class="font-weight-bold text-success" style="font-size: 18px;">$0.00</span>
                                   </div>
