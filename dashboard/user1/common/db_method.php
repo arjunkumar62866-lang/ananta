@@ -4081,14 +4081,24 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
             return ['status' => 'error', 'message' => "Insufficient wallet balance ($" . number_format($userBal, 2) . "). Requested: $" . number_format($amount, 2)];
         }
 
-        // Deduct from user amount
+        // Deduct full requested amount from user Net Balance
         $db->prepare("UPDATE user SET amount = amount - :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $userid]);
 
+        // Calculate applicable charge based on selected withdrawal method:
+        // INR: 8% deduction (e.g. ₹10,000 withdrawal = ₹800 charge, net payable ₹9,200)
+        // BEP20 (USDT): 3% deduction (e.g. 100 USDT withdrawal = 3 USDT charge, net payable 97 USDT)
+        $chargePercent = ($method === 'INR') ? 8.00 : 3.00;
+        $chargeAmountUsd = round($amount * ($chargePercent / 100.0), 2);
+        $netPayableUsd = round($amount - $chargeAmountUsd, 2);
+
         $inrEquivalent = round($amount * 90.0, 2);
+        $chargeAmountInr = round($chargeAmountUsd * 90.0, 2);
+        $netPayableInr = round($netPayableUsd * 90.0, 2);
+
         if ($method === 'INR') {
-            $subject = "Withdrawal Request (INR - ₹" . number_format($inrEquivalent, 2) . ") - $" . number_format($amount, 2);
+            $subject = "Withdrawal Request (INR - ₹" . number_format($inrEquivalent, 2) . ") - $" . number_format($amount, 2) . " [Charge 8%: ₹" . number_format($chargeAmountInr, 2) . " / Net: ₹" . number_format($netPayableInr, 2) . "]";
         } else {
-            $subject = "Withdrawal Request ({$method}) - $" . number_format($amount, 2);
+            $subject = "Withdrawal Request (BEP20 USDT) - $" . number_format($amount, 2) . " [Charge 3%: $" . number_format($chargeAmountUsd, 2) . " / Net: $" . number_format($netPayableUsd, 2) . "]";
         }
 
         $cDate = date('Y-m-d');
@@ -4096,26 +4106,28 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
 
         ensureWithdrawalRemarksColumnExists($db);
 
-        // Insert into tbl_transaction with withdrawal_method stored
+        // Insert into tbl_transaction:
+        // act_amount = Gross Requested Amount
+        // amount     = Net Payable Amount (after deducting 8% INR or 3% USDT charge)
         $insTxn = $db->prepare("
             INSERT INTO tbl_transaction (user_id, amount, act_amount, type, subject, withdrawal_method, status, created_date, time)
-            VALUES (:uid, :amt, :act_amt, 'Debit', :sub, :method, '0', :cdate, :ctime)
+            VALUES (:uid, :net_amt, :gross_amt, 'Debit', :sub, :method, '0', :cdate, :ctime)
         ");
         $insTxn->execute([
-            ':uid'     => $userid,
-            ':amt'     => $amount,
-            ':act_amt' => $amount,
-            ':sub'     => $subject,
-            ':method'  => $method,
-            ':cdate'   => $cDate,
-            ':ctime'   => $cTime
+            ':uid'       => $userid,
+            ':net_amt'   => $netPayableUsd,
+            ':gross_amt' => $amount,
+            ':sub'       => $subject,
+            ':method'    => $method,
+            ':cdate'     => $cDate,
+            ':ctime'     => $cTime
         ]);
 
         $wdId = $db->lastInsertId();
 
         $notifBody = ($method === 'INR')
-            ? "Your INR withdrawal request of $" . number_format($amount, 2) . " (₹" . number_format($inrEquivalent, 2) . " INR at ₹90/USD) has been submitted successfully and is pending approval."
-            : "Your {$method} withdrawal request of $" . number_format($amount, 2) . " has been submitted successfully and is pending approval.";
+            ? "Your INR withdrawal request of $" . number_format($amount, 2) . " (₹" . number_format($inrEquivalent, 2) . ") with 8% deduction (Charge: ₹" . number_format($chargeAmountInr, 2) . ", Net Payable: ₹" . number_format($netPayableInr, 2) . ") has been submitted successfully and is pending approval."
+            : "Your BEP20 USDT withdrawal request of $" . number_format($amount, 2) . " with 3% deduction (Charge: $" . number_format($chargeAmountUsd, 2) . ", Net Payable: $" . number_format($netPayableUsd, 2) . ") has been submitted successfully and is pending approval.";
 
         // Trigger Withdrawal Submitted Notification
         if (function_exists('createUserNotification')) {
