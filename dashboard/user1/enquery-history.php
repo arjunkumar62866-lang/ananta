@@ -306,6 +306,7 @@ table.dataTable.no-footer {
                                                 <th>User ID</th>
                                                 <th>Subject</th>
                                                 <th>Status</th>
+                                                <th>Admin Reply / Note</th>
                                                 <th>Submission Date</th>
                                             </tr>
                                         </thead>
@@ -366,12 +367,18 @@ table.dataTable.no-footer {
                             return '<span class="badge bg-light text-dark font-weight-bold border px-2 py-1">' + (data || '') + '</span>';
                         }
                     },
-                    { data: 'sub' },
+                    { 
+                        data: 'sub',
+                        render: function(data, type, row) {
+                            return '<strong style="color:#0f172a;">' + (data || '') + '</strong>' + 
+                                   (row.message ? '<div class="small text-muted text-truncate" style="max-width:200px;">' + row.message + '</div>' : '');
+                        }
+                    },
                     { 
                         data: 'status',
                         render: function(data, type, row) {
                             if (data == '1') {
-                              return '<span class="badge-status badge-status-viewed"><i class="fa fa-check-circle"></i> Viewed</span>';
+                              return '<span class="badge-status badge-status-viewed"><i class="fa fa-check-circle"></i> Resolved</span>';
                             } else if (data == '0') {
                               return '<span class="badge-status badge-status-pending"><i class="fa fa-clock-o"></i> Pending</span>';
                             } else if (data == '2') {
@@ -379,6 +386,16 @@ table.dataTable.no-footer {
                             } else {
                               return '<span class="badge bg-secondary">Unknown</span>';
                             }
+                        }
+                    },
+                    {
+                        data: 'admin_reply',
+                        render: function(data, type, row) {
+                            if (data && data.trim() !== '') {
+                                var dateStr = row.reply_date ? '<div class="small text-muted mt-1">' + row.reply_date + '</div>' : '';
+                                return '<div class="p-2 rounded" style="background:#f0fdf4; border:1px solid #bbf7d0; font-size:12.5px; color:#166534;"><i class="fa fa-reply me-1 text-success"></i><strong>Admin:</strong> ' + data + dateStr + '</div>';
+                            }
+                            return '<span class="text-muted small">Awaiting admin review...</span>';
                         }
                     },
                     { data: 'or_date' },

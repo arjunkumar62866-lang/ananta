@@ -662,7 +662,51 @@ $inactivePct = 100 - $activePct;
                 </div>
                 <div class="metric-title">New Registration</div>
                 <div class="metric-value" style="font-size:18px;">Today: <?php echo number_format($stats['today_registrations']); ?></div>
-                
+              </div>
+            </a>
+          </div>
+
+          <!-- 12. Pending Fund Request -->
+          <div class="col mb-3 metric-card-item">
+            <a href="pending-fund-request.php" class="metric-card-link">
+              <div class="executive-card p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="metric-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #d97706;">
+                    <i class="fa fa-money"></i>
+                  </div>
+                </div>
+                <div class="metric-title">Pending Fund Request</div>
+                <div class="metric-value" style="color: #d97706;"><?php echo number_format($stats['pending_fund_requests_count']); ?></div>
+              </div>
+            </a>
+          </div>
+
+          <!-- 13. Ticket Support -->
+          <div class="col mb-3 metric-card-item">
+            <a href="support_tickets.php" class="metric-card-link">
+              <div class="executive-card p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="metric-icon-box" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
+                    <i class="fa fa-ticket"></i>
+                  </div>
+                </div>
+                <div class="metric-title">Ticket Support</div>
+                <div class="metric-value" style="color: #0284c7;"><?php echo number_format($stats['support_tickets_open']); ?></div>
+              </div>
+            </a>
+          </div>
+
+          <!-- 14. P2P Person -->
+          <div class="col mb-3 metric-card-item">
+            <a href="p2p_management.php" class="metric-card-link">
+              <div class="executive-card p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="metric-icon-box" style="background: rgba(139, 92, 246, 0.15); color: #7c3aed;">
+                    <i class="fa fa-users"></i>
+                  </div>
+                </div>
+                <div class="metric-title">P2P Person</div>
+                <div class="metric-value" style="color: #7c3aed;"><?php echo number_format($stats['p2p_person_count']); ?></div>
               </div>
             </a>
           </div>

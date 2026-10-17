@@ -120,9 +120,7 @@ $title = $_GET['title'] ?? 'all';
                                             <th>SUBJECT</th>
                                             <th>STATUS</th>
                                             <th>DATE</th>
-                                            <?php if ($title == "Pending Enquiry"): ?>
-                                                <th>Action</th>
-                                            <?php endif; ?>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -181,16 +179,15 @@ $title = $_GET['title'] ?? 'all';
                         render: function(data) {
                             if (data == '0' || data == 'Pending') {
                                 return `<span class="badge" style="background-color:#fff7ed; color:#c2410c; border:1px solid #ffedd5; padding:6px 12px; border-radius:20px; font-weight:600;">Pending</span>`;
+                            } else if (data == '2' || data == 'Reject') {
+                                return `<span class="badge" style="background-color:#fef2f2; color:#b91c1c; border:1px solid #fee2e2; padding:6px 12px; border-radius:20px; font-weight:600;">Rejected</span>`;
                             }
-                            return `<span class="badge" style="background-color:#f0fdf4; color:#15803d; border:1px solid #dcfce7; padding:6px 12px; border-radius:20px; font-weight:600;">Viewed</span>`;
+                            return `<span class="badge" style="background-color:#f0fdf4; color:#15803d; border:1px solid #dcfce7; padding:6px 12px; border-radius:20px; font-weight:600;">Resolved</span>`;
                         }
                     },
-                    { data: 'date' }
+                    { data: 'date' },
+                    { data: 'action' }
                 ];
-
-            if (titleParam === "Pending Enquiry") {
-                columns.push({ data: 'action' });
-            }
 
             let table = $('#usersTable').DataTable({
                     ajax: {

@@ -5161,6 +5161,27 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
 
     $kycPending   = (int)$db->query("SELECT COUNT(*) FROM kyc WHERE status = '0'")->fetchColumn();
     $openTickets  = (int)$db->query("SELECT COUNT(*) FROM tbl_support_tickets WHERE status = 'OPEN'")->fetchColumn();
+    $pendingQuery = (int)$db->query("SELECT COUNT(*) FROM tbl_query WHERE status = '0'")->fetchColumn();
+    $totalOpenTickets = $openTickets + $pendingQuery;
+
+    // Pending Fund Requests (tbl_payment status = '0')
+    $pendingFundReq = 0;
+    try {
+        $pendingFundReq = (int)$db->query("SELECT COUNT(*) FROM tbl_payment WHERE status = '0'")->fetchColumn();
+    } catch (Exception $ePf) {}
+
+    // P2P Person count (unique users participating in P2P transfers)
+    $p2pPersons = 0;
+    try {
+        $p2pPersons = (int)$db->query("
+            SELECT COUNT(DISTINCT user_id) 
+            FROM (
+                SELECT sender_id AS user_id FROM tbl_p2p_transfer
+                UNION
+                SELECT receiver_id AS user_id FROM tbl_p2p_transfer
+            ) AS p2p_unique_users
+        ")->fetchColumn();
+    } catch (Exception $eP2p) {}
 
     return [
         'today_registrations'          => $todayRegs,
@@ -5187,7 +5208,9 @@ function getAdminComprehensiveDashboardStats($pdoConnection = null) {
         'vip_club_income_paid'         => round($vipPaid + $vipMonthly, 2),
         'total_income_distributed'     => $totIncomePaid,
         'kyc_pending_count'            => $kycPending,
-        'support_tickets_open'         => $openTickets
+        'support_tickets_open'         => $totalOpenTickets,
+        'pending_fund_requests_count'  => $pendingFundReq,
+        'p2p_person_count'             => $p2pPersons
     ];
 }
 }

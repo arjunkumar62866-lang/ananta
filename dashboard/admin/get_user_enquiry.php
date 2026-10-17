@@ -30,13 +30,9 @@ foreach ($rows as $row) {
         $statusBadge = '<span class="badge badge-secondary">Unknown</span>';
     }
 
-    // Action button for pending enquiry
-    $action = '';
-    if ($title == "Pending Enquiry") {
-        $action = '<a href="view_enquiry.php?id=' . $row['id'] . '" class="btn btn-info btn-sm">Viewed</a>';
-    }
+    // Action button for viewing and replying to enquiry
+    $action = '<a href="view_enquiry.php?id=' . $row['id'] . '" class="btn btn-sm btn-outline-primary font-weight-bold" style="border-radius:8px;"><i class="fa fa-reply mr-1"></i> View & Reply</a>';
 
-    
     $data[] = [
         'sn' => $sn++,
         'userid' => $row['userid'],

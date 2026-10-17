@@ -15,6 +15,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $new_st = trim($_POST['status'] ?? 'RESOLVED');
 
     if ($t_id > 0 && !empty($reply)) {
+        // Fetch ticket details first
+        $stmtCur = $pdo->prepare("SELECT * FROM tbl_support_tickets WHERE id = :tid LIMIT 1");
+        $stmtCur->execute([':tid' => $t_id]);
+        $curTkt = $stmtCur->fetch(PDO::FETCH_ASSOC);
+
         // Insert into ticket replies table
         $insReply = $pdo->prepare("INSERT INTO tbl_ticket_replies (ticket_id, sender_type, sender_id, message) VALUES (:tid, 'ADMIN', :aid, :msg)");
         $insReply->execute([':tid' => $t_id, ':aid' => $admin_id, ':msg' => $reply]);
@@ -23,9 +28,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $updTicket = $pdo->prepare("UPDATE tbl_support_tickets SET status = :st, admin_reply = :reply, replied_by = :aid, replied_at = NOW() WHERE id = :tid");
         $updTicket->execute([':st' => $new_st, ':reply' => $reply, ':aid' => $admin_id, ':tid' => $t_id]);
 
+        // Sync with tbl_query if matching query exists
+        if (!empty($curTkt['user_id'])) {
+            try {
+                $updQry = $pdo->prepare("UPDATE tbl_query SET status = '1', admin_reply = :reply, reply_date = NOW(), replied_by = :aid WHERE userid = :uid AND sub = :sub ORDER BY id DESC LIMIT 1");
+                $updQry->execute([
+                    ':reply' => $reply,
+                    ':aid'   => $admin_id,
+                    ':uid'   => $curTkt['user_id'],
+                    ':sub'   => $curTkt['subject']
+                ]);
+            } catch (Exception $eQry) {}
+
+            // Send Real-time In-App Notification to User
+            if (function_exists('createUserNotification')) {
+                $notifTitle = "Support Ticket Update (#{$curTkt['ticket_no']})";
+                $notifMsg   = "Admin has replied to your ticket '{$curTkt['subject']}'. Status: {$new_st}. Response: " . mb_substr($reply, 0, 100) . "...";
+                createUserNotification($curTkt['user_id'], 'SYSTEM', $notifTitle, $notifMsg, (string)$t_id, $pdo);
+            }
+        }
+
         logAdminAuditAction($admin_id, 'REPLY_SUPPORT_TICKET', null, 0.00, 'support_ticket', 0, 0, "Replied to ticket #{$t_id} (Status: {$new_st})", (string)$t_id, $pdo);
 
-        echo '<script>alert("Ticket reply posted and status updated successfully!"); window.location.href="support_tickets.php?ticket_id=' . $t_id . '";</script>';
+        echo '<script>alert("Ticket reply posted and status updated successfully! User notified."); window.location.href="support_tickets.php?ticket_id=' . $t_id . '";</script>';
         exit;
     }
 }

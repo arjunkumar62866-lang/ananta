@@ -16,6 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (!empty($subject) && !empty($description)) {
         try {
+            // 1. Insert into tbl_query
             $sql = "INSERT INTO tbl_query (userid, username, email, mobile, sub, message, status, or_date)
                     VALUES (:userid, :username, :email, :mobile, :subject, :message, '0', :or_date)";
             $stmt = $pdo->prepare($sql);
@@ -26,12 +27,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(':subject', $subject);
             $stmt->bindParam(':message', $description);
             $stmt->bindParam(':or_date', $date);
+            $stmt->execute();
+            $queryId = $pdo->lastInsertId();
 
-            if ($stmt->execute()) {
-                echo "<script>alert('Enquiry sent successfully! We will contact you soon.');</script>";
-            } else {
-                echo "<script>alert('Sorry, something went wrong. Please try again.');</script>";
+            // 2. Also ensure tbl_support_tickets is synced so Admin Support Ticket system receives it
+            try {
+                $ticketNo = 'TKT' . date('Ymd') . rand(1000, 9999);
+                $stmtTkt = $pdo->prepare("
+                    INSERT INTO tbl_support_tickets (ticket_no, user_id, subject, category, message, status, created_at)
+                    VALUES (:tno, :uid, :sub, 'Support Enquiry', :msg, 'OPEN', NOW())
+                ");
+                $stmtTkt->execute([
+                    ':tno' => $ticketNo,
+                    ':uid' => (string)$userid,
+                    ':sub' => $subject,
+                    ':msg' => $description
+                ]);
+                $tktId = $pdo->lastInsertId();
+
+                if ($tktId) {
+                    $stmtRep = $pdo->prepare("
+                        INSERT INTO tbl_ticket_replies (ticket_id, sender_type, sender_id, message, created_at)
+                        VALUES (:tid, 'USER', :uid, :msg, NOW())
+                    ");
+                    $stmtRep->execute([
+                        ':tid' => $tktId,
+                        ':uid' => (string)$userid,
+                        ':msg' => $description
+                    ]);
+                }
+            } catch (Exception $eTkt) {
+                // Table sync fallback logged without disrupting user
+                error_log("Error syncing ticket to tbl_support_tickets: " . $eTkt->getMessage());
             }
+
+            echo "<script>alert('Support Enquiry / Ticket submitted successfully! Admin will respond shortly.');window.location.assign('enquery-history.php');</script>";
         } catch (PDOException $e) {
             echo "<script>alert('Database Error: " . addslashes($e->getMessage()) . "');</script>";
         }
