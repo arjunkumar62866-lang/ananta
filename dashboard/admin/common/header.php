@@ -271,7 +271,7 @@ $news = $newsdata['news'];
         <i class="zmdi zmdi-chevron-down arrow-icon"></i>
       </button>
       <ul class="submenu">
-        <li><a href="company_deposit_settings.php"><i class="zmdi zmdi-circle-o"></i> Company Deposit Settings (QR & UPI)</a></li>
+        <li><a href="company_deposit_settings.php"><i class="zmdi zmdi-circle-o"></i> Company Deposit </a></li>
         <li><a href="pending-fund-request.php"><i class="zmdi zmdi-circle-o"></i> Pending Fund Requests</a></li>
         <!-- <li><a href="fund-request.php?status=1"><i class="zmdi zmdi-circle-o"></i> Approved / Success Deposits</a></li> -->
         <!-- <li><a href="fund-request.php?status=2"><i class="zmdi zmdi-circle-o"></i> Rejected Deposits</a></li> -->
