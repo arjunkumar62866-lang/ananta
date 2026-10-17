@@ -8,9 +8,11 @@
 // Fetch Company Deposit Settings from tbl_system_control or default fallbacks
 $company_upi_id = 'ananta@upi';
 $company_bep20_address = '0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7';
+$company_upi_qr = '';
+$company_bep20_qr = '';
 
 try {
-    $stmtConfig = $pdo->prepare("SELECT setting_key, setting_value FROM tbl_system_control WHERE setting_key IN ('company_upi_id', 'company_bep20_address')");
+    $stmtConfig = $pdo->prepare("SELECT setting_key, setting_value FROM tbl_system_control WHERE setting_key IN ('company_upi_id', 'company_bep20_address', 'company_upi_qr', 'company_bep20_qr')");
     $stmtConfig->execute();
     $configRows = $stmtConfig->fetchAll(PDO::FETCH_KEY_PAIR);
     if (!empty($configRows['company_upi_id'])) {
@@ -18,6 +20,12 @@ try {
     }
     if (!empty($configRows['company_bep20_address'])) {
         $company_bep20_address = $configRows['company_bep20_address'];
+    }
+    if (!empty($configRows['company_upi_qr'])) {
+        $company_upi_qr = $configRows['company_upi_qr'];
+    }
+    if (!empty($configRows['company_bep20_qr'])) {
+        $company_bep20_qr = $configRows['company_bep20_qr'];
     }
 } catch (Exception $e) {
     // fallback defaults remain intact
@@ -458,7 +466,11 @@ label.form-label, label {
                                 
                                 <div class="payment-info-box">
                                     <?php 
-                                    $inrQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" . urlencode("upi://pay?pa=" . $company_upi_id . "&pn=Ananta%20Fintech");
+                                    if (!empty($company_upi_qr) && file_exists('../../img/' . $company_upi_qr)) {
+                                        $inrQrUrl = "../../img/" . htmlspecialchars($company_upi_qr);
+                                    } else {
+                                        $inrQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" . urlencode("upi://pay?pa=" . $company_upi_id . "&pn=Ananta%20Fintech");
+                                    }
                                     ?>
                                     <img src="<?php echo $inrQrUrl; ?>" alt="Company UPI QR Code" class="qr-code-img">
                                     <div style="flex: 1;">
@@ -519,7 +531,11 @@ label.form-label, label {
                                 
                                 <div class="payment-info-box">
                                     <?php 
-                                    $bep20QrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" . urlencode($company_bep20_address);
+                                    if (!empty($company_bep20_qr) && file_exists('../../img/' . $company_bep20_qr)) {
+                                        $bep20QrUrl = "../../img/" . htmlspecialchars($company_bep20_qr);
+                                    } else {
+                                        $bep20QrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" . urlencode($company_bep20_address);
+                                    }
                                     ?>
                                     <img src="<?php echo $bep20QrUrl; ?>" alt="Company BEP20 QR Code" class="qr-code-img">
                                     <div style="flex: 1;">
