@@ -65,6 +65,49 @@ body.bg-theme1 {
     flex-shrink: 0;
 }
 
+@media (max-width: 767.98px) {
+    .content-wrapper {
+        padding-top: 70px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .income-header-card {
+        padding: 16px !important;
+        border-radius: 18px !important;
+        margin-bottom: 16px !important;
+    }
+    .income-header-icon {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 18px !important;
+        border-radius: 12px !important;
+    }
+    .header-content-box {
+        width: 100% !important;
+    }
+    .header-badge-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+    .header-title-text {
+        font-size: 18px !important;
+        line-height: 1.3 !important;
+    }
+    .header-sub-text {
+        font-size: 12.5px !important;
+        line-height: 1.4 !important;
+    }
+    .header-action-btn {
+        width: 100% !important;
+        text-align: center !important;
+        margin-top: 10px !important;
+    }
+    .breadcrumb-mobile-hide {
+        display: none !important;
+    }
+}
+
 /* Breadcrumb Styling - Force Black / Dark Gray */
 .breadcrumb-section .page-title,
 h4.page-title {
@@ -238,28 +281,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <div class="content-wrapper">
     <div class="container-fluid">
 
-        <!-- Header Banner Card (Standard Across All Admin Pages) -->
-        <div class="card income-header-card p-4">
+        <!-- Header Banner Card (Clean Mobile & Desktop Layout) -->
+        <div class="card income-header-card p-3 p-md-4">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3 header-content-box">
                     <div class="income-header-icon">
                         <i class="fa fa-qrcode"></i>
                     </div>
-                    <div>
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 800; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">DEPOSIT CONTROL</span>
-                            <ol class="breadcrumb d-inline-flex mb-0" style="background: transparent; padding: 0;">
-                                <li class="breadcrumb-item"><a href="index.php" style="color: #475569; font-weight: 700; text-decoration: none;">Dashboard</a></li>
-                                <li class="breadcrumb-item"><a href="fund-request.php" style="color: #475569; font-weight: 700; text-decoration: none;">Deposit Management</a></li>
-                                <li class="breadcrumb-item active" style="color: #0f172a; font-weight: 800;">Company Deposit</li>
-                            </ol>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 800; border-radius: 100px; padding: 3px 10px; letter-spacing: 0.5px;">DEPOSIT CONTROL</span>
+                            <span class="text-muted d-none d-md-inline" style="font-size: 12.5px;">
+                                <a href="index.php" style="color: #64748b; font-weight: 600; text-decoration: none;">Dashboard</a> / 
+                                <a href="fund-request.php" style="color: #64748b; font-weight: 600; text-decoration: none;">Deposit Management</a> / 
+                                <strong style="color: #0f172a;">Company Deposit</strong>
+                            </span>
                         </div>
-                        <h3 class="mb-1" style="font-weight: 800; color: #0f172a; font-size: 22px;">Company Deposit Settings</h3>
-                        <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 13.5px;">Manage official Company UPI ID, BEP20 Wallet Address & Custom QR Code images for all users.</p>
+                        <h3 class="mb-1 header-title-text" style="font-weight: 800; color: #0f172a; font-size: 22px;">Company Deposit Settings</h3>
+                        <p class="mb-0 header-sub-text" style="color: #64748b; font-weight: 500; font-size: 13.5px;">Manage Company UPI ID, BEP20 Address & Custom QR Code images.</p>
                     </div>
                 </div>
-                <div>
-                    <a href="fund-request.php" class="btn btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 12px; font-size: 13px;">
+                <div class="header-action-btn">
+                    <a href="fund-request.php" class="btn btn-outline-secondary font-weight-bold px-3 py-2 w-100-mobile" style="border-radius: 12px; font-size: 13px;">
                         <i class="fa fa-history mr-1"></i> Full Deposit History
                     </a>
                 </div>
