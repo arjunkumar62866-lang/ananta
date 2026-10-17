@@ -408,14 +408,15 @@ table.dataTable.no-footer {
                         data: null, 
                         render: function (data, type, row) {
                             var passId = row.tr_id || row.id;
+                            var amtDisplay = (row.mode === 'BEP20' ? '$ ' : '₹ ') + parseFloat(row.amount || 0).toFixed(2);
                             return `
                                 <div class="d-flex gap-1">
-                                    <a class="btn btn-success btn-sm font-weight-bold" href="action-payment.php?id=${encodeURIComponent(passId)}&uid=${row.userid}&title=Approved&amt=${row.amount}" onclick="return confirm('Approve deposit request of ${row.amount}?');">
+                                    <button type="button" class="btn btn-success btn-sm font-weight-bold" onclick="openDepositActionModal('${encodeURIComponent(passId)}', '${row.userid}', 'Approved', '${row.amount}', '${amtDisplay}', '${row.mode || 'INR'}')">
                                         <i class="fa fa-check me-1"></i> Approve
-                                    </a>
-                                    <a class="btn btn-danger btn-sm font-weight-bold" href="action-payment.php?id=${encodeURIComponent(passId)}&uid=${row.userid}&title=Cancel&amt=${row.amount}" onclick="return confirm('Reject deposit request?');">
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm font-weight-bold" onclick="openDepositActionModal('${encodeURIComponent(passId)}', '${row.userid}', 'Cancel', '${row.amount}', '${amtDisplay}', '${row.mode || 'INR'}')">
                                         <i class="fa fa-times me-1"></i> Reject
-                                    </a>
+                                    </button>
                                 </div>
                             `;
                         }
@@ -487,10 +488,58 @@ table.dataTable.no-footer {
             if (backdrop) backdrop.style.display = 'none';
         };
 
+        // Deposit Action (Approve / Reject) with Remark Handler
+        window.openDepositActionModal = function(id, uid, actionType, amt, amtFormatted, mode) {
+            document.getElementById('actionReqId').value = decodeURIComponent(id);
+            document.getElementById('actionReqUid').value = uid;
+            document.getElementById('actionReqTitle').value = actionType;
+            document.getElementById('actionReqAmt').value = amt;
+
+            var titleEl = document.getElementById('depositActionModalTitle');
+            var descEl  = document.getElementById('depositActionModalDesc');
+            var submitBtn = document.getElementById('depositActionSubmitBtn');
+            var remarkInput = document.getElementById('actionReqRemark');
+
+            if (actionType === 'Approved') {
+                titleEl.innerHTML = '<i class="fa fa-check-circle text-success mr-2"></i> Approve Deposit Request';
+                descEl.innerHTML = `You are approving deposit request for User <strong>${uid}</strong> of amount <strong class="text-success">${amtFormatted} (${mode})</strong>. Enter an optional admin note/remark:`;
+                submitBtn.className = 'btn btn-success font-weight-bold px-4';
+                submitBtn.innerHTML = '<i class="fa fa-check mr-1"></i> Confirm & Approve';
+                remarkInput.value = 'Approved and credited to Main Wallet';
+            } else {
+                titleEl.innerHTML = '<i class="fa fa-times-circle text-danger mr-2"></i> Reject Deposit Request';
+                descEl.innerHTML = `You are rejecting deposit request for User <strong>${uid}</strong> of amount <strong class="text-danger">${amtFormatted} (${mode})</strong>. Please provide a rejection reason/remark:`;
+                submitBtn.className = 'btn btn-danger font-weight-bold px-4';
+                submitBtn.innerHTML = '<i class="fa fa-times mr-1"></i> Confirm & Reject';
+                remarkInput.value = 'Invalid deposit slip / UTR transaction not verified';
+            }
+
+            var modal = document.getElementById('depositActionModal');
+            var backdrop = document.getElementById('depositActionBackdrop');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+                document.body.classList.add('modal-open');
+            }
+            if (backdrop) backdrop.style.display = 'block';
+        };
+
+        window.closeDepositActionModal = function() {
+            var modal = document.getElementById('depositActionModal');
+            var backdrop = document.getElementById('depositActionBackdrop');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+            if (backdrop) backdrop.style.display = 'none';
+        };
+
         // Close on ESC key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' || e.keyCode === 27) {
                 window.closeDepositSlipModal();
+                window.closeDepositActionModal();
             }
         });
     </script>
@@ -518,6 +567,51 @@ table.dataTable.no-footer {
               <i class="fa fa-times mr-1"></i> Close
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deposit Action (Approve / Reject) Modal with Admin Remark -->
+    <div id="depositActionBackdrop" onclick="closeDepositActionModal()" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.75); backdrop-filter:blur(4px); z-index:99998;"></div>
+    
+    <div class="modal fade" id="depositActionModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 99999; align-items:center; justify-content:center;">
+      <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 520px; width: 95%; margin: auto;">
+        <div class="modal-content" style="border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; background:#ffffff;">
+          <form method="POST" action="action-payment.php" id="depositActionForm">
+            <input type="hidden" name="id" id="actionReqId" value="">
+            <input type="hidden" name="uid" id="actionReqUid" value="">
+            <input type="hidden" name="title" id="actionReqTitle" value="">
+            <input type="hidden" name="amt" id="actionReqAmt" value="">
+
+            <div class="modal-header d-flex align-items-center justify-content-between p-3" style="background: #0f172a; color: #ffffff;">
+              <h6 class="modal-title font-weight-bold mb-0 text-white" id="depositActionModalTitle">
+                <i class="fa fa-check-circle text-success mr-2"></i> Approve Deposit Request
+              </h6>
+              <button type="button" class="close text-white" onclick="closeDepositActionModal()" aria-label="Close" style="opacity: 0.9; font-size: 28px; font-weight: 300; line-height: 1; outline: none; border: none; background: transparent; cursor: pointer;">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+
+            <div class="modal-body p-4" style="background: #f8fafc;">
+              <p class="text-dark mb-3" id="depositActionModalDesc" style="font-size: 14px; line-height: 1.5;"></p>
+              
+              <div class="form-group mb-0">
+                <label class="font-weight-bold text-dark mb-1" style="font-size: 13px;">
+                  <i class="fa fa-commenting-o text-primary mr-1"></i> Admin Note / Remark (Visible in user history & notification):
+                </label>
+                <textarea name="remark" id="actionReqRemark" class="form-control" rows="3" placeholder="Enter remark here..." style="border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13.5px;" required></textarea>
+              </div>
+            </div>
+
+            <div class="modal-footer p-3 d-flex justify-content-end align-items-center gap-2" style="background: #ffffff; border-top: 1px solid #e2e8f0;">
+              <button type="button" class="btn btn-secondary btn-sm px-3 font-weight-bold" onclick="closeDepositActionModal()" style="border-radius: 8px; cursor: pointer;">
+                Cancel
+              </button>
+              <button type="submit" id="depositActionSubmitBtn" class="btn btn-success font-weight-bold px-4" style="border-radius: 8px;">
+                <i class="fa fa-check mr-1"></i> Confirm
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
