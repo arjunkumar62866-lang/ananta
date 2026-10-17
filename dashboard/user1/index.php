@@ -162,6 +162,10 @@ $rightBranchMembers = getUserTeamMembersDetailed($userid, 'RIGHT', $pdo);
 $realtimeTotalTeam = count($leftBranchMembers) + count($rightBranchMembers);
 $total_team        = $realtimeTotalTeam;
 
+// Calculate inactive team members in Left & Right branches
+$my_left_inactive_team  = max(0, count($leftBranchMembers) - $my_left_active_directs);
+$my_right_inactive_team = max(0, count($rightBranchMembers) - $my_right_active_directs);
+
 
 // VIP Club qualification check (authoritative 10-level VIP Club system)
 if (function_exists('evaluateUserVIPQualifications')) {
@@ -1549,6 +1553,10 @@ body.ananta-user-dashboard {
                         <div class="d-flex justify-content-between py-1 border-bottom">
                             <span class="text-muted">Active Team (Left / Right)</span>
                             <span class="font-weight-bold text-dark"><?php echo $my_left_active_directs . " / " . $my_right_active_directs; ?></span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted">Inactive Team (Left / Right)</span>
+                            <span class="font-weight-bold text-danger"><?php echo $my_left_inactive_team . " / " . $my_right_inactive_team; ?></span>
                         </div>
                         <div class="d-flex justify-content-between py-1">
                             <span class="text-muted">Total Downline Members</span>
