@@ -308,9 +308,9 @@ label.form-label, label {
                               <h4 class="mb-0" style="font-size: 22px; font-weight: 800; color: #0f172a;">
                                   Withdrawal <span style="background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Portal</span> 🏦
                               </h4>
-                              <p class="mb-0 text-muted" style="font-size: 13.5px; margin-top: 3px;">
+                              <!-- <p class="mb-0 text-muted" style="font-size: 13.5px; margin-top: 3px;">
                                   Manage Net Balance Payouts and Package Capital Withdrawals simultaneously.
-                              </p>
+                              </p> -->
                           </div>
                       </div>
                       <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -377,9 +377,9 @@ label.form-label, label {
                               <h5>
                                   <i class="fa fa-university text-primary"></i> 1. Net Balance Wallet
                               </h5>
-                              <p>Profit / Income withdrawal ke liye (Bank INR & BEP20 USDT)</p>
+                              <!-- <p>Profit / Income withdrawal ke liye (Bank INR & BEP20 USDT)</p> -->
                           </div>
-                          <span class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size: 11px;">Profit / Income</span>
+                          <!-- <span class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size: 11px;">Profit / Income</span> -->
                       </div>
                   </div>
                   <div class="p-4 p-md-4 flex-grow-1 d-flex flex-column justify-content-between">
@@ -408,7 +408,7 @@ label.form-label, label {
                                   <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                       <div>
                                           <span class="text-danger font-weight-bold" style="font-size: 13px;">Applicable Charge (<span id="preview_charge_pct">8%</span>):</span>
-                                          <small class="d-block text-muted" id="preview_charge_desc" style="font-size: 11px;">8% deduction for INR Direct Bank</small>
+                                          <!-- <small class="d-block text-muted" id="preview_charge_desc" style="font-size: 11px;">8% deduction for INR Direct Bank</small> -->
                                       </div>
                                       <span id="preview_charge_amt" class="font-weight-bold text-danger" style="font-size: 15px;">-$0.00</span>
                                   </div>
@@ -419,11 +419,11 @@ label.form-label, label {
                                       </div>
                                       <span id="preview_net_payable" class="font-weight-bold text-success" style="font-size: 18px;">$0.00</span>
                                   </div>
-                                  <div class="mt-2 text-right">
+                                  <!-- <div class="mt-2 text-right">
                                       <small class="text-muted font-weight-semibold" id="preview_conversion_note" style="font-size: 11.5px;">
                                           <i class="fa fa-info-circle text-primary mr-1"></i> Conversion: 1 USD = ₹90.00 INR
                                       </small>
-                                  </div>
+                                  </div> -->
                               </div>
                           </div>
 
@@ -801,17 +801,17 @@ function updateWithdrawalCalculationPreview() {
         if (method === 'INR') {
             reqSpan.innerText = '₹0.00 ($0.00)';
             chargePctSpan.innerText = '8%';
-            chargeDescSpan.innerText = '8% deduction for INR Direct Bank';
+            if (chargeDescSpan) chargeDescSpan.innerText = '8% deduction for INR Direct Bank';
             chargeAmtSpan.innerText = '-₹0.00 (-$0.00)';
             payableSpan.innerText = '₹0.00 ($0.00)';
-            noteSpan.innerHTML = '<i class="fa fa-info-circle text-primary mr-1"></i> Conversion Rate: 1 USD = ₹90.00 INR';
+            if (noteSpan) noteSpan.innerHTML = '<i class="fa fa-info-circle text-primary mr-1"></i> Conversion Rate: 1 USD = ₹90.00 INR';
         } else {
             reqSpan.innerText = '0.00 USDT ($0.00)';
             chargePctSpan.innerText = '3%';
-            chargeDescSpan.innerText = '3% deduction for USDT (BEP-20)';
+            if (chargeDescSpan) chargeDescSpan.innerText = '3% deduction for USDT (BEP-20)';
             chargeAmtSpan.innerText = '-0.00 USDT (-$0.00)';
             payableSpan.innerText = '0.00 USDT ($0.00)';
-            noteSpan.innerHTML = '<i class="fa fa-info-circle text-primary mr-1"></i> Crypto Network: BEP-20 (Binance Smart Chain)';
+            if (noteSpan) noteSpan.innerHTML = '<i class="fa fa-info-circle text-primary mr-1"></i> Crypto Network: BEP-20 (Binance Smart Chain)';
         }
         return;
     }
@@ -826,12 +826,12 @@ function updateWithdrawalCalculationPreview() {
         const netInr = grossInr - chargeInr;
 
         chargePctSpan.innerText = '8%';
-        chargeDescSpan.innerText = '8% deduction for INR Direct Bank';
+        if (chargeDescSpan) chargeDescSpan.innerText = '8% deduction for INR Direct Bank';
 
         reqSpan.innerText = '₹' + grossInr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ($' + grossUsd.toFixed(2) + ')';
         chargeAmtSpan.innerText = '-₹' + chargeInr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (-$' + chargeUsd.toFixed(2) + ')';
         payableSpan.innerText = '₹' + netInr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ($' + netUsd.toFixed(2) + ')';
-        noteSpan.innerHTML = '<i class="fa fa-info-circle text-primary mr-1"></i> Conversion Rate: 1 USD = ₹90.00 INR (Final Bank Credit: ₹' + netInr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')';
+        if (noteSpan) noteSpan.innerHTML = '<i class="fa fa-info-circle text-primary mr-1"></i> Conversion Rate: 1 USD = ₹90.00 INR (Final Bank Credit: ₹' + netInr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')';
     } else {
         const grossUsdt = val;
         const chargeRate = 0.03; // 3%
@@ -839,12 +839,12 @@ function updateWithdrawalCalculationPreview() {
         const netUsdt = grossUsdt - chargeUsdt;
 
         chargePctSpan.innerText = '3%';
-        chargeDescSpan.innerText = '3% deduction for USDT (BEP-20)';
+        if (chargeDescSpan) chargeDescSpan.innerText = '3% deduction for USDT (BEP-20)';
 
         reqSpan.innerText = grossUsdt.toFixed(2) + ' USDT ($' + grossUsdt.toFixed(2) + ')';
         chargeAmtSpan.innerText = '-' + chargeUsdt.toFixed(2) + ' USDT (-$' + chargeUsdt.toFixed(2) + ')';
         payableSpan.innerText = netUsdt.toFixed(2) + ' USDT ($' + netUsdt.toFixed(2) + ')';
-        noteSpan.innerHTML = '<i class="fa fa-info-circle text-primary mr-1"></i> Crypto Network: BEP-20 (Final Wallet Credit: ' + netUsdt.toFixed(2) + ' USDT)';
+        if (noteSpan) noteSpan.innerHTML = '<i class="fa fa-info-circle text-primary mr-1"></i> Crypto Network: BEP-20 (Final Wallet Credit: ' + netUsdt.toFixed(2) + ' USDT)';
     }
 }
 function switchWithdrawalView(view) {
