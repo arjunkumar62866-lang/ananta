@@ -1,15 +1,17 @@
+<?php 
+ob_start(); 
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<?php 
+include 'common/header.php'; 
+?>
+
+<body class="ananta-admin-dashboard bg-theme bg-theme1">
+
+<div id="wrapper">
 <?php
-ob_start();
-session_start();
-require_once 'common/header.php';
-require_once 'common/connection.php';
-require_once 'common/db_method.php';
-
-if (!isset($_SESSION['admin'])) {
-    header("Location: login.php");
-    exit();
-}
-
 $msg = '';
 $msgType = '';
 
@@ -268,4 +270,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     </div>
 </div>
 
+<div class="overlay toggle-menu"></div>
+<a href="javaScript:void();" class="back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
 <?php include 'common/footer.php'; ?>
+</div>
+</body>
+</html>
