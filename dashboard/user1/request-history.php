@@ -470,22 +470,66 @@ table.ananta-custom-table tbody td {
             });
         });
 
-        // Deposit Slip Modal Preview Handler
-        function viewDepositSlip(imgSrc) {
-            $('#depositSlipModalImg').attr('src', imgSrc);
-            $('#depositSlipModal').modal('show');
-        }
+        // Deposit Slip Modal Preview Handler - Robust with standalone fallback
+        window.viewDepositSlip = function(imgSrc) {
+            if (!imgSrc) return;
+            var modal = document.getElementById('depositSlipModal');
+            var img = document.getElementById('depositSlipModalImg');
+            if (img) img.src = imgSrc;
+            
+            // Try jQuery Bootstrap modal first if available
+            if (window.jQuery && typeof jQuery.fn.modal === 'function') {
+                try {
+                    jQuery('#depositSlipModal').modal('show');
+                    return;
+                } catch (e) {}
+            }
+            
+            // Standalone pure JS fallback
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+                document.body.classList.add('modal-open');
+                var backdrop = document.getElementById('depositSlipBackdrop');
+                if (backdrop) backdrop.style.display = 'block';
+            }
+        };
+
+        window.closeDepositSlipModal = function() {
+            var modal = document.getElementById('depositSlipModal');
+            if (window.jQuery && typeof jQuery.fn.modal === 'function') {
+                try {
+                    jQuery('#depositSlipModal').modal('hide');
+                } catch (e) {}
+            }
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+            var backdrop = document.getElementById('depositSlipBackdrop');
+            if (backdrop) backdrop.style.display = 'none';
+        };
+
+        // Close on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' || e.keyCode === 27) {
+                window.closeDepositSlipModal();
+            }
+        });
     </script>
 
     <!-- Deposit Slip Popup Modal -->
-    <div class="modal fade" id="depositSlipModal" tabindex="-1" role="dialog" aria-labelledby="depositSlipModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 600px;">
-        <div class="modal-content" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden;">
+    <div id="depositSlipBackdrop" onclick="closeDepositSlipModal()" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.75); backdrop-filter:blur(4px); z-index:99998;"></div>
+    
+    <div class="modal fade" id="depositSlipModal" tabindex="-1" role="dialog" aria-labelledby="depositSlipModalLabel" aria-hidden="true" style="z-index: 99999; align-items:center; justify-content:center;">
+      <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 600px; width: 95%; margin: auto;">
+        <div class="modal-content" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; background:#ffffff;">
           <div class="modal-header d-flex align-items-center justify-content-between p-3" style="background: #0f172a; color: #ffffff;">
             <h6 class="modal-title font-weight-bold mb-0 text-white" id="depositSlipModalLabel">
               <i class="fa fa-file-image-o text-success mr-2"></i> Payment Deposit Slip
             </h6>
-            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.9; font-size: 28px; font-weight: 300; line-height: 1; outline: none; border: none; background: transparent;">
+            <button type="button" class="close text-white" onclick="closeDepositSlipModal()" data-dismiss="modal" aria-label="Close" style="opacity: 0.9; font-size: 28px; font-weight: 300; line-height: 1; outline: none; border: none; background: transparent; cursor: pointer;">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -494,7 +538,7 @@ table.ananta-custom-table tbody td {
           </div>
           <div class="modal-footer p-2 d-flex justify-content-between align-items-center" style="background: #ffffff; border-top: 1px solid #e2e8f0;">
             <span class="small text-muted ml-2 font-weight-bold"><i class="fa fa-info-circle text-primary mr-1"></i> Preview mode &bull; ID stays logged in</span>
-            <button type="button" class="btn btn-secondary btn-sm px-3 font-weight-bold" data-dismiss="modal" style="border-radius: 8px;">
+            <button type="button" class="btn btn-secondary btn-sm px-3 font-weight-bold" onclick="closeDepositSlipModal()" data-dismiss="modal" style="border-radius: 8px; cursor: pointer;">
               <i class="fa fa-times mr-1"></i> Close
             </button>
           </div>
