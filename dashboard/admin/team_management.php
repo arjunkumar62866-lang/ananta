@@ -29,15 +29,17 @@ $legStats = getBinaryLegDetails($uid, $pdo);
 
 // Fetch Direct Referrals List
 $stmtDirects = $pdo->prepare("
-  SELECT u.userid, u.name, u.mobile, u.active, u.joining_date, COALESCE(SUM(r.package), 0) as total_inv
+  SELECT u.userid, u.name, u.mobile, u.active, u.joining_date, 
+         COALESCE(SUM(r.package), 0) as total_inv_inr,
+         COALESCE(SUM(r.real_fund_usd), 0) as total_inv_usd
   FROM tbl_sponsor s
   INNER JOIN user u ON u.userid = s.referral_id
   LEFT JOIN tbl_roi_one r ON r.user_id = u.userid
-  WHERE s.sponsor_id = :uid
+  WHERE s.sponsor_id = ? OR s.sponsor_id = ?
   GROUP BY u.id, u.userid, u.name, u.mobile, u.active, u.joining_date
   ORDER BY u.id DESC
 ");
-$stmtDirects->execute([':uid' => $uid]);
+$stmtDirects->execute([$uid, $cleanUid]);
 $directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -63,6 +65,9 @@ $directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
     <div class="card border-0 mb-4" style="background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0;">
       <div class="card-body p-3">
         <form method="GET" class="row align-items-center">
+          <?php if (!empty($_GET['curr'])): ?>
+            <input type="hidden" name="curr" value="<?php echo htmlspecialchars($_GET['curr']); ?>">
+          <?php endif; ?>
           <div class="col-md-8 mb-2">
             <input type="text" name="user_id" value="<?php echo htmlspecialchars($search_user); ?>" class="form-control" placeholder="Enter User ID to Inspect Team (e.g. AN1290)" style="border-radius:10px;" required>
           </div>
@@ -126,10 +131,17 @@ $directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
                 <tr>
                   <td colspan="6" class="text-center py-5 text-muted">No direct referrals recorded for this user.</td>
                 </tr>
-              <?php else: foreach ($directs as $d): ?>
+              <?php else: foreach ($directs as $d): 
+                $dInvUsd = (float)($d['total_inv_usd'] ?? 0);
+                if ($dInvUsd <= 0 && (float)($d['total_inv_inr'] ?? 0) > 0) {
+                    $dInvUsd = round((float)$d['total_inv_inr'] / 90.0, 2);
+                }
+                $linkParams = ['user_id' => $d['userid']];
+                if (!empty($_GET['curr'])) $linkParams['curr'] = $_GET['curr'];
+              ?>
                 <tr>
                   <td class="px-4 font-weight-bold">
-                    <a href="?user_id=<?php echo urlencode($d['userid']); ?>" class="text-primary">
+                    <a href="?<?php echo http_build_query($linkParams); ?>" class="text-primary">
                       <strong><?php echo htmlspecialchars($d['userid']); ?></strong> <i class="fa fa-external-link small ml-1"></i>
                     </a>
                   </td>
@@ -140,7 +152,7 @@ $directs = $stmtDirects->fetchAll(PDO::FETCH_ASSOC);
                       <?php echo $d['active']=='1'?'ACTIVE':'INACTIVE'; ?>
                     </span>
                   </td>
-                  <td class="font-weight-bold text-success"><?php echo formatCurrency((float)$d['total_inv']); ?></td>
+                  <td class="font-weight-bold text-success"><?php echo formatCurrency($dInvUsd); ?></td>
                   <td class="px-4 small text-muted"><?php echo htmlspecialchars($d['joining_date']); ?></td>
                 </tr>
               <?php endforeach; endif; ?>

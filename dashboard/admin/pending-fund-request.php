@@ -391,8 +391,8 @@ table.dataTable.no-footer {
                       data: 'image',
                       render: function (data) {
                         if (!data) return '<span class="text-muted">No Image</span>';
-                        return `<a href="../img/${data}" target="_blank" title="Click to view full screenshot">
-                            <img src="../img/${data}" height="55" width="55" style="object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" alt="Pay Slip">
+                        return `<a href="javascript:void(0);" onclick="viewDepositSlip('../img/${data}')" title="Click to view full screenshot">
+                            <img src="../img/${data}" height="55" width="55" style="object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" alt="Pay Slip">
                         </a>`;
                         }
                     },
@@ -445,7 +445,38 @@ table.dataTable.no-footer {
                 table.button('.buttons-excel').trigger();
             });
         });
+
+        // Deposit Slip Modal Preview Handler
+        function viewDepositSlip(imgSrc) {
+            $('#depositSlipModalImg').attr('src', imgSrc);
+            $('#depositSlipModal').modal('show');
+        }
     </script>
+
+    <!-- Deposit Slip Popup Modal -->
+    <div class="modal fade" id="depositSlipModal" tabindex="-1" role="dialog" aria-labelledby="depositSlipModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width: 600px;">
+        <div class="modal-content" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden;">
+          <div class="modal-header d-flex align-items-center justify-content-between p-3" style="background: #0f172a; color: #ffffff;">
+            <h6 class="modal-title font-weight-bold mb-0 text-white" id="depositSlipModalLabel">
+              <i class="fa fa-file-image-o text-success mr-2"></i> Payment Deposit Slip
+            </h6>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.9; font-size: 28px; font-weight: 300; line-height: 1; outline: none; border: none; background: transparent;">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body p-3 text-center" style="background: #f8fafc; min-height: 250px; display: flex; align-items: center; justify-content: center;">
+            <img id="depositSlipModalImg" src="" alt="Payment Deposit Slip" style="max-width: 100%; max-height: 75vh; width: auto; height: auto; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); object-fit: contain;">
+          </div>
+          <div class="modal-footer p-2 d-flex justify-content-between align-items-center" style="background: #ffffff; border-top: 1px solid #e2e8f0;">
+            <span class="small text-muted ml-2 font-weight-bold"><i class="fa fa-info-circle text-primary mr-1"></i> Preview mode &bull; ID stays logged in</span>
+            <button type="button" class="btn btn-secondary btn-sm px-3 font-weight-bold" data-dismiss="modal" style="border-radius: 8px;">
+              <i class="fa fa-times mr-1"></i> Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
 </body>
 </html>
