@@ -10,6 +10,111 @@ include 'common/header.php';
 
 <body class="ananta-admin-dashboard bg-theme bg-theme1">
 
+<style>
+/* =========================================================
+   ANANTA FINTECH THEME - COMPANY DEPOSIT SETTINGS
+   Matches all other admin pages (Fund Request, Withdrawals, Index)
+========================================================= */
+html, body {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body.ananta-admin-dashboard,
+body.bg-theme,
+body.bg-theme1 {
+    background: #f4f6f8 !important;
+    background-color: #f4f6f8 !important;
+    background-image: none !important;
+    color: #0f172a !important;
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+#wrapper {
+    background: #f4f6f8 !important;
+    min-height: 100vh !important;
+}
+
+.content-wrapper {
+    background-color: #f4f6f8 !important;
+    padding-top: 85px !important;
+    padding-bottom: 60px !important;
+}
+
+/* Header Banner Card */
+.income-header-card {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.10) 0%, rgba(22, 163, 74, 0.10) 100%), #ffffff !important;
+    border-radius: 24px !important;
+    border: 1px solid rgba(2, 132, 199, 0.18) !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
+    margin-bottom: 24px;
+}
+
+.income-header-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%);
+    color: #ffffff;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
+    flex-shrink: 0;
+}
+
+/* Breadcrumb Styling - Force Black / Dark Gray */
+.breadcrumb-section .page-title,
+h4.page-title {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+}
+
+.breadcrumb {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.breadcrumb-item,
+.breadcrumb-item a {
+    color: #475569 !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+}
+
+.breadcrumb-item a:hover {
+    color: #0284c7 !important;
+    text-decoration: underline !important;
+}
+
+.breadcrumb-item.active {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: #94a3b8 !important;
+}
+
+/* Fintech Card Styling */
+.ananta-fintech-card {
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.05) !important;
+    overflow: hidden;
+}
+
+.card-header-bar {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    background: linear-gradient(135deg, #ffffff 0%, #fbfdff 60%, #f8fafc 100%);
+}
+</style>
+
 <div id="wrapper">
 <?php
 $msg = '';
@@ -133,20 +238,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <div class="content-wrapper">
     <div class="container-fluid">
 
-        <!-- Breadcrumb / Header Title -->
-        <div class="row pt-2 pb-2">
-            <div class="col-sm-9">
-                <h4 class="page-title"><i class="fa fa-qrcode text-primary mr-2"></i> Company Deposit Settings (QR & UPI / BEP20)</h4>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.php">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="fund-request.php">Deposit Management</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Company Deposit Settings</li>
-                </ol>
-            </div>
-            <div class="col-sm-3 text-right">
-                <a href="fund-request.php" class="btn btn-outline-secondary font-weight-bold" style="border-radius: 10px;">
-                    <i class="fa fa-list mr-1"></i> Deposit History
-                </a>
+        <!-- Header Banner Card (Standard Across All Admin Pages) -->
+        <div class="card income-header-card p-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="income-header-icon">
+                        <i class="fa fa-qrcode"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-size: 11px; font-weight: 800; border-radius: 100px; padding: 4px 12px; letter-spacing: 0.5px;">DEPOSIT CONTROL</span>
+                            <ol class="breadcrumb d-inline-flex mb-0" style="background: transparent; padding: 0;">
+                                <li class="breadcrumb-item"><a href="index.php" style="color: #475569; font-weight: 700; text-decoration: none;">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="fund-request.php" style="color: #475569; font-weight: 700; text-decoration: none;">Deposit Management</a></li>
+                                <li class="breadcrumb-item active" style="color: #0f172a; font-weight: 800;">Company Deposit</li>
+                            </ol>
+                        </div>
+                        <h3 class="mb-1" style="font-weight: 800; color: #0f172a; font-size: 22px;">Company Deposit Settings</h3>
+                        <p class="mb-0" style="color: #64748b; font-weight: 600; font-size: 13.5px;">Manage official Company UPI ID, BEP20 Wallet Address & Custom QR Code images for all users.</p>
+                    </div>
+                </div>
+                <div>
+                    <a href="fund-request.php" class="btn btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 12px; font-size: 13px;">
+                        <i class="fa fa-history mr-1"></i> Full Deposit History
+                    </a>
+                </div>
             </div>
         </div>
 
