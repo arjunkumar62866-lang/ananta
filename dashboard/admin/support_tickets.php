@@ -8,6 +8,28 @@ $admin_id = $_SESSION['auserid'] ?? 'AN1290';
 $status_filter = trim($_GET['status'] ?? '');
 $ticket_id = (int)($_GET['ticket_id'] ?? 0);
 
+// Auto-sync: Ensure all user queries from tbl_query are present in tbl_support_tickets
+try {
+    $pdo->exec("
+        INSERT INTO tbl_support_tickets (ticket_no, user_id, subject, category, message, status, admin_reply, replied_by, replied_at, created_at)
+        SELECT 
+          CONCAT('TKT', DATE_FORMAT(COALESCE(q.or_date, NOW()), '%Y%m%d'), LPAD(q.id, 4, '0')),
+          q.userid,
+          COALESCE(NULLIF(TRIM(q.sub), ''), 'Support Query'),
+          'Support Query',
+          COALESCE(NULLIF(TRIM(q.message), ''), 'No details provided'),
+          CASE WHEN q.status = '1' THEN 'RESOLVED' WHEN q.status = '2' THEN 'CLOSED' ELSE 'OPEN' END,
+          q.admin_reply,
+          q.replied_by,
+          q.reply_date,
+          COALESCE(CONCAT(q.or_date, ' 00:00:00'), NOW())
+        FROM tbl_query q
+        WHERE NOT EXISTS (
+          SELECT 1 FROM tbl_support_tickets t WHERE t.user_id = q.userid AND t.subject = q.sub AND t.message = q.message
+        )
+    ");
+} catch (Exception $eSync) {}
+
 // Handle Ticket Reply & Status Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reply_ticket') {
     $t_id   = (int)($_POST['ticket_id'] ?? 0);
@@ -21,8 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $curTkt = $stmtCur->fetch(PDO::FETCH_ASSOC);
 
         // Insert into ticket replies table
-        $insReply = $pdo->prepare("INSERT INTO tbl_ticket_replies (ticket_id, sender_type, sender_id, message) VALUES (:tid, 'ADMIN', :aid, :msg)");
-        $insReply->execute([':tid' => $t_id, ':aid' => $admin_id, ':msg' => $reply]);
+        try {
+            $insReply = $pdo->prepare("INSERT INTO tbl_ticket_replies (ticket_id, sender_type, sender_id, message) VALUES (:tid, 'ADMIN', :aid, :msg)");
+            $insReply->execute([':tid' => $t_id, ':aid' => $admin_id, ':msg' => $reply]);
+        } catch (Exception $eR) {}
 
         // Update main ticket record
         $updTicket = $pdo->prepare("UPDATE tbl_support_tickets SET status = :st, admin_reply = :reply, replied_by = :aid, replied_at = NOW() WHERE id = :tid");
@@ -31,12 +55,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Sync with tbl_query if matching query exists
         if (!empty($curTkt['user_id'])) {
             try {
-                $updQry = $pdo->prepare("UPDATE tbl_query SET status = '1', admin_reply = :reply, reply_date = NOW(), replied_by = :aid WHERE userid = :uid AND sub = :sub ORDER BY id DESC LIMIT 1");
+                $qryStatus = ($new_st === 'RESOLVED') ? '1' : (($new_st === 'CLOSED') ? '2' : '0');
+                $updQry = $pdo->prepare("UPDATE tbl_query SET status = :st, admin_reply = :reply, reply_date = NOW(), replied_by = :aid WHERE userid = :uid AND (sub = :sub OR message = :msg) ORDER BY id DESC LIMIT 1");
                 $updQry->execute([
+                    ':st'    => $qryStatus,
                     ':reply' => $reply,
                     ':aid'   => $admin_id,
                     ':uid'   => $curTkt['user_id'],
-                    ':sub'   => $curTkt['subject']
+                    ':sub'   => $curTkt['subject'],
+                    ':msg'   => $curTkt['message']
                 ]);
             } catch (Exception $eQry) {}
 
@@ -48,7 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
 
-        logAdminAuditAction($admin_id, 'REPLY_SUPPORT_TICKET', null, 0.00, 'support_ticket', 0, 0, "Replied to ticket #{$t_id} (Status: {$new_st})", (string)$t_id, $pdo);
+        if (function_exists('logAdminAuditAction')) {
+            logAdminAuditAction($admin_id, 'REPLY_SUPPORT_TICKET', null, 0.00, 'support_ticket', 0, 0, "Replied to ticket #{$t_id} (Status: {$new_st})", (string)$t_id, $pdo);
+        }
 
         echo '<script>alert("Ticket reply posted and status updated successfully! User notified."); window.location.href="support_tickets.php?ticket_id=' . $t_id . '";</script>';
         exit;
