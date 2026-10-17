@@ -670,12 +670,11 @@ $inactivePct = 100 - $activePct;
         </div>
 
         <!-- ANALYTICS & OPERATIONS SECTION (Exact Design from Reference Screenshot 2) -->
-        <div class="mb-4">
+        <!-- <div class="mb-4">
           <h4 class="section-heading-title">Analytics & Operations</h4>
           <p class="section-heading-sub">Platform performance, users, transactions and more.</p>
 
           <div class="row">
-            <!-- Platform Overview Line Chart Card -->
             <div class="col-12 col-lg-7 mb-4">
               <div class="executive-card p-4">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -687,7 +686,6 @@ $inactivePct = 100 - $activePct;
                   </div>
                 </div>
 
-                <!-- Smooth SVG Line Chart Representation -->
                 <div class="my-3">
                   <svg viewBox="0 0 600 180" style="width: 100%; height: auto; max-height: 220px;">
                     <defs>
@@ -696,7 +694,6 @@ $inactivePct = 100 - $activePct;
                         <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
                       </linearGradient>
                     </defs>
-                    <!-- Grid Lines -->
                     <line x1="0" y1="30" x2="600" y2="30" stroke="#f1f5f9" stroke-width="1" />
                     <line x1="0" y1="80" x2="600" y2="80" stroke="#f1f5f9" stroke-width="1" />
                     <line x1="0" y1="130" x2="600" y2="130" stroke="#f1f5f9" stroke-width="1" />
@@ -704,12 +701,8 @@ $inactivePct = 100 - $activePct;
                     <text x="5" y="75" fill="#94a3b8" font-size="10">100K</text>
                     <text x="5" y="125" fill="#94a3b8" font-size="10">0</text>
 
-                    <!-- Path Area Fill -->
                     <path d="M 40,130 C 120,90 200,80 280,100 C 360,60 440,75 560,40 L 560,160 L 40,160 Z" fill="url(#chartTealGrad)" />
-                    <!-- Curve Line -->
                     <path d="M 40,130 C 120,90 200,80 280,100 C 360,60 440,75 560,40" fill="none" stroke="#10b981" stroke-width="3.5" stroke-linecap="round" />
-
-                    <!-- Data Nodes -->
                     <circle cx="40" cy="130" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="2" />
                     <circle cx="120" cy="98" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="2" />
                     <circle cx="200" cy="85" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="2" />
@@ -717,8 +710,6 @@ $inactivePct = 100 - $activePct;
                     <circle cx="360" cy="62" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="2" />
                     <circle cx="440" cy="72" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="2" />
                     <circle cx="560" cy="40" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="2" />
-
-                    <!-- Dates Labels -->
                     <text x="30" y="175" fill="#64748b" font-size="11" font-weight="600">Apr 20</text>
                     <text x="110" y="175" fill="#64748b" font-size="11" font-weight="600">Apr 21</text>
                     <text x="190" y="175" fill="#64748b" font-size="11" font-weight="600">Apr 22</text>
@@ -731,18 +722,14 @@ $inactivePct = 100 - $activePct;
               </div>
             </div>
 
-            <!-- User Distribution Donut Chart Card -->
             <div class="col-12 col-lg-5 mb-4">
               <div class="executive-card p-4 d-flex flex-column justify-content-between">
                 <h5 class="mb-3 font-weight-bold" style="font-size:17px; color:#0f172a;">User Distribution</h5>
 
                 <div class="d-flex align-items-center justify-content-around flex-wrap gap-3 my-2">
-                  <!-- Donut SVG representation -->
                   <div style="position:relative; width:150px; height:150px;">
                     <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
-                      <!-- Background ring -->
                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f43f5e" stroke-width="4.5" stroke-dasharray="100, 100" />
-                      <!-- Active ring portion -->
                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-width="4.8" stroke-dasharray="<?php echo $activePct; ?>, 100" stroke-linecap="round" />
                     </svg>
                     <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
@@ -751,7 +738,6 @@ $inactivePct = 100 - $activePct;
                     </div>
                   </div>
 
-                  <!-- Legend -->
                   <div class="d-flex flex-column gap-2">
                     <div class="d-flex align-items-center gap-2">
                       <span style="width:12px; height:12px; border-radius:50%; background:#10b981; display:inline-block;"></span>
@@ -772,7 +758,7 @@ $inactivePct = 100 - $activePct;
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <!-- DATA TABLES SECTION (Exact Design from Reference Screenshot 2) -->
         <div class="row">
