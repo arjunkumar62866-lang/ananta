@@ -136,20 +136,11 @@ $hmcolor = $homeset['color'];
 
         <div class="text-center mb-4">
 
-          <?php if (!empty($hmlogo)): ?>
-
-            <img src="<?php echo $hmlogo;?>" 
+          <div class="auth-logo mb-2">
+            <img src="/assets/images/pwa-icon.png" 
                  alt="ANANTA Logo" 
-                 height="70px" 
-                 style="max-width: 220px; object-fit: contain;">
-
-          <?php else: ?>
-
-            <h2 style="font-weight: 800; color: #0284c7; letter-spacing: -0.5px; margin: 0;">
-              ANANTA
-            </h2>
-
-          <?php endif; ?>
+                 style="max-height: 85px; width: auto; object-fit: contain;">
+          </div>
 
 
           <h4 class="mt-3 mb-1" style="font-size: 22px; font-weight: 800; color: #0f172a;">

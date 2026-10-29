@@ -85,7 +85,7 @@ $hmcolor = $homeset['color'];
       <div class="card-body">
         <div class="card-content p-2">
           <div class="text-center">
-            <img src="<?php echo $hmlogo;?>" alt="logo icon" height="80px">
+            <img src="/assets/images/pwa-icon.png" alt="ANANTA Logo" height="80px">
           </div>
           <div class="card-title text-uppercase text-center py-3">Thanks For Registration</div>
           <div style="text-align: left; font-family: Arial, sans-serif; font-size: 15px; color: #444;">
