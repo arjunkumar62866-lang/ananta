@@ -46,7 +46,7 @@ $history = getUserIncomeWalletHistory($userid, 'PROFIT_INCOME', null, null, $pdo
                     <div>
                         <span class="text-muted small text-uppercase font-weight-bold">Total Accumulated Profit Income</span>
                         <h3 class="mb-0 font-weight-bold" style="color: #0f172a;">
-                            <?php echo formatCurrency($profitTotal, $selectedCurrency); ?>
+                            <?php echo formatCurrencyFromINR($profitTotal, $selectedCurrency); ?>
                         </h3>
                     </div>
                 </div>
@@ -86,7 +86,7 @@ $history = getUserIncomeWalletHistory($userid, 'PROFIT_INCOME', null, null, $pdo
                                             <?php echo htmlspecialchars($h['subject'] ?? 'Daily Profit Income'); ?>
                                         </td>
                                         <td class="py-3 px-3 text-right font-weight-bold" style="color: #16a34a;">
-                                            <?php echo formatCurrency((float)($h['amount'] ?? 0), $selectedCurrency); ?>
+                                            <?php echo formatCurrencyFromINR((float)($h['amount'] ?? 0), $selectedCurrency); ?>
                                         </td>
                                         <td class="py-3 px-3 text-center text-muted small">
                                             <?php echo htmlspecialchars($h['created_date'] ?? $h['date'] ?? 'N/A'); ?>
