@@ -18,6 +18,44 @@ if (function_exists('date_default_timezone_set')) {
     date_default_timezone_set("Asia/Kolkata");
 }
 
+if (!function_exists('calculateInvestmentProfit')) {
+    function calculateInvestmentProfit($inv_date, $closing_month, $returnBaseInr, $profit_percentage) {
+        // closing_month format: YYYY-MM (e.g. 2026-11)
+        // Closing on 1st of month covers the previous calendar month (e.g. 2026-10)
+        $closing_first_day = strtotime($closing_month . '-01');
+        $prev_month_ts = strtotime('-1 month', $closing_first_day);
+        $prev_month_str = date('Y-m', $prev_month_ts);
+        $days_in_prev_month = (int)date('t', $prev_month_ts);
+        $period_end_ts = strtotime(date('Y-m-t', $prev_month_ts));
+
+        $inv_ts = !empty($inv_date) ? strtotime($inv_date) : 0;
+        $inv_month_str = $inv_ts ? date('Y-m', $inv_ts) : '';
+
+        // If investment was made during the period month (e.g. October 2026)
+        if ($inv_month_str === $prev_month_str) {
+            $inv_day = (int)date('d', $inv_ts);
+            if ($inv_day <= 1) {
+                // Full month
+                $profit = round(($returnBaseInr * $profit_percentage) / 100, 2);
+                return ['profit' => $profit, 'is_prorata' => false, 'eligible_days' => $days_in_prev_month, 'total_days' => $days_in_prev_month];
+            } else {
+                // Date-wise elapsed days: period end minus investment day (e.g. 31 - 30 = 1 day)
+                $eligible_days = max(1, (int)round(($period_end_ts - strtotime(date('Y-m-d', $inv_ts))) / 86400));
+                $full_monthly_profit = ($returnBaseInr * $profit_percentage) / 100;
+                $profit = round(($full_monthly_profit * $eligible_days) / $days_in_prev_month, 2);
+                return ['profit' => $profit, 'is_prorata' => true, 'eligible_days' => $eligible_days, 'total_days' => $days_in_prev_month];
+            }
+        } elseif ($inv_ts && $inv_ts > $period_end_ts) {
+            // Investment made after period end (e.g. in current month)
+            return ['profit' => 0.0, 'is_prorata' => true, 'eligible_days' => 0, 'total_days' => $days_in_prev_month];
+        } else {
+            // Older investment prior to period month: full monthly profit
+            $profit = round(($returnBaseInr * $profit_percentage) / 100, 2);
+            return ['profit' => $profit, 'is_prorata' => false, 'eligible_days' => $days_in_prev_month, 'total_days' => $days_in_prev_month];
+        }
+    }
+}
+
 $action = $_REQUEST['action'] ?? '';
 
 if ($action === 'preview') {
@@ -80,19 +118,9 @@ if ($action === 'preview') {
         $total_investment += $returnBaseInr;
         $user_set[$inv['user_id']] = true;
 
-        $count = (int)$inv['count'];
         $inv_date = $inv['date'];
-
-        if ($count == 0 && !empty($inv_date)) {
-            // First Month Pro-rata calculation on combined return base
-            $inv_day = (int)date('d', strtotime($inv_date));
-            $eligible_days = max(1, $days_in_month - $inv_day + 1);
-            $full_monthly_profit = ($returnBaseInr * $profit_percentage) / 100;
-            $gen_profit = round(($full_monthly_profit * $eligible_days) / $days_in_month, 2);
-        } else {
-            // Normal full monthly profit on combined return base
-            $gen_profit = round(($returnBaseInr * $profit_percentage) / 100, 2);
-        }
+        $calcResult = calculateInvestmentProfit($inv_date, $closing_month, $returnBaseInr, $profit_percentage);
+        $gen_profit = $calcResult['profit'];
         $expected_profit += $gen_profit;
     }
     $user_count = count($user_set);
@@ -109,17 +137,9 @@ if ($action === 'preview') {
             $returnBaseUsd = round($realUsd + $bonusUsd, 2);
             $returnBaseInr = round($returnBaseUsd * 90.0, 2);
 
-            $count = (int)$inv['count'];
             $inv_date = $inv['date'];
-
-            if ($count == 0 && !empty($inv_date)) {
-                $inv_day = (int)date('d', strtotime($inv_date));
-                $eligible_days = max(1, $days_in_month - $inv_day + 1);
-                $full_monthly_profit = ($returnBaseInr * $profit_percentage) / 100;
-                $gen_profit = round(($full_monthly_profit * $eligible_days) / $days_in_month, 2);
-            } else {
-                $gen_profit = round(($returnBaseInr * $profit_percentage) / 100, 2);
-            }
+            $calcResult = calculateInvestmentProfit($inv_date, $closing_month, $returnBaseInr, $profit_percentage);
+            $gen_profit = $calcResult['profit'];
 
             $pinfinal = $inv['user_id'];
             $price = $gen_profit;
@@ -182,14 +202,8 @@ if ($action === 'preview') {
                     $rUsd = round(((float)$inv['package']) / 90.0, 2);
                 }
                 $retBaseInr = round(($rUsd + $bUsd) * 90.0, 2);
-                if ($count == 0 && !empty($inv_date)) {
-                    $inv_day = (int)date('d', strtotime($inv_date));
-                    $el_days = max(1, $days_in_month - $inv_day + 1);
-                    $full_profit = ($retBaseInr * $profit_percentage) / 100;
-                    $uProfitInr += round(($full_profit * $el_days) / $days_in_month, 2);
-                } else {
-                    $uProfitInr += round(($retBaseInr * $profit_percentage) / 100, 2);
-                }
+                $cRes = calculateInvestmentProfit($inv_date, $closing_month, $retBaseInr, $profit_percentage);
+                $uProfitInr += $cRes['profit'];
             }
         }
 
@@ -352,20 +366,11 @@ if ($action === 'process') {
             $returnBaseUsd = round($realUsd + $bonusUsd, 2);
             $returnBaseInr = round($returnBaseUsd * 90.0, 2);
 
-            $count = (int)$inv['count'];
             $inv_date = $inv['date'];
-
-            if ($count == 0 && !empty($inv_date)) {
-                $inv_day = (int)date('d', strtotime($inv_date));
-                $eligible_days = max(1, $days_in_month - $inv_day + 1);
-                $full_monthly_profit = ($returnBaseInr * $profit_percentage) / 100;
-                $profit = round(($full_monthly_profit * $eligible_days) / $days_in_month, 2);
-                $inv['_is_prorata'] = true;
-                $inv['_eligible_days'] = $eligible_days;
-            } else {
-                $profit = round(($returnBaseInr * $profit_percentage) / 100, 2);
-                $inv['_is_prorata'] = false;
-            }
+            $calcRes = calculateInvestmentProfit($inv_date, $closing_month, $returnBaseInr, $profit_percentage);
+            $profit = $calcRes['profit'];
+            $inv['_is_prorata'] = $calcRes['is_prorata'];
+            $inv['_eligible_days'] = $calcRes['eligible_days'];
 
             $inv['_return_base_usd'] = $returnBaseUsd;
             $inv['_return_base_inr'] = $returnBaseInr;
