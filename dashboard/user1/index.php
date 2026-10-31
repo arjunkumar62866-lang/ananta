@@ -1031,7 +1031,7 @@ body.ananta-user-dashboard {
                     <!-- Big Amount Display with Eye Hide/Show Toggle -->
                     <div class="d-flex align-items-center my-3">
                         <h1 class="mb-0 font-weight-bold text-white mr-3" id="userGrowthAmountText" style="font-size: 38px; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.5px;">
-                            <?php echo formatCurrency($user_growth_total, $selectedCurrency); ?>
+                            <?php echo formatCurrencyFromINR($user_growth_total, $selectedCurrency); ?>
                         </h1>
                         <button type="button" class="btn p-0 text-white opacity-80" id="toggleGrowthEyeBtn" onclick="toggleUserGrowthVisibility()" title="Toggle Balance Visibility" style="background: transparent; border: none; outline: none;">
                             <i class="zmdi zmdi-eye zmdi-hc-lg" id="growthEyeIcon" style="font-size: 22px;"></i>
@@ -1059,7 +1059,7 @@ body.ananta-user-dashboard {
             function toggleUserGrowthVisibility() {
                 const textEl = document.getElementById('userGrowthAmountText');
                 const iconEl = document.getElementById('growthEyeIcon');
-                const fullAmount = "<?php echo formatCurrency($user_growth_total, $selectedCurrency); ?>";
+                const fullAmount = "<?php echo formatCurrencyFromINR($user_growth_total, $selectedCurrency); ?>";
                 if (isGrowthVisible) {
                     textEl.textContent = "<?php echo getCurrencySymbol($selectedCurrency); ?> ••••••";
                     iconEl.className = "zmdi zmdi-eye-off zmdi-hc-lg";
@@ -1358,7 +1358,7 @@ body.ananta-user-dashboard {
                             <span class="font-weight-bold text-truncate" style="color: #334155; font-size: 14px;">Profit Income</span>
                         </div>
                         <h3 class="font-weight-bold mb-1 text-truncate" style="color: #0f172a; font-size: 20px; font-family: 'Plus Jakarta Sans', sans-serif;">
-                            <?php echo formatCurrency($profit_income_wallet, $selectedCurrency); ?>
+                            <?php echo formatCurrencyFromINR($profit_income_wallet, $selectedCurrency); ?>
                         </h3>
                         <!-- <div class="d-flex align-items-center justify-content-between mt-1">
                             <span class="small font-weight-bold" style="color: #16a34a; font-size: 12.5px;">+8.2%</span>

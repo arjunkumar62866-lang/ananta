@@ -35,7 +35,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                     <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap">
                         <div>
                             <span class="d-block text-white-50 font-weight-bold uppercase mb-1" style="font-size: 12px; letter-spacing: 0.5px;">TOTAL USER GROWTH (7 INCOMES)</span>
-                            <h2 class="mb-0 text-white font-weight-bold" style="font-size: 34px;"><?php echo formatCurrency($growth["total_user_growth"] ?? 0, $selectedCurrency); ?></h2>
+                            <h2 class="mb-0 text-white font-weight-bold" style="font-size: 34px;"><?php echo formatCurrencyFromINR($growth["total_user_growth"] ?? 0, $selectedCurrency); ?></h2>
                         </div>
                         <div class="mt-2 mt-sm-0">
                             <span class="badge badge-light p-2 font-weight-bold" style="color: #4338ca; border-radius: 10px; font-size: 13px;">Live Credited Ledger Sum</span>
@@ -51,7 +51,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                 <div class="card border-0 shadow-sm user-growth-hero-card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; border-radius: 18px; color: #ffffff !important;">
                     <div class="card-body p-3">
                         <span class="d-block small text-white-50 font-weight-bold uppercase mb-1" style="font-size: 11px;">1. Profit Income</span>
-                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['profit_income']['total_balance'], $selectedCurrency); ?></h4>
+                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrencyFromINR($growth['profit_income']['total_balance'], $selectedCurrency); ?></h4>
                     </div>
                 </div>
             </div>
