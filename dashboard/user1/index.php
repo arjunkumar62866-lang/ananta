@@ -1184,7 +1184,7 @@ body.ananta-user-dashboard {
                             Net Balance
                         </span>
                         <h4 class="mb-0 font-weight-bold quick-wallet-amount" style="color: #0f172a;">
-                            <?php echo formatCurrency($useramount, $selectedCurrency); ?>
+                            <?php echo formatCurrencyFromINR($useramount, $selectedCurrency); ?>
                         </h4>
                     </div>
                 </div>
@@ -1739,7 +1739,7 @@ body.ananta-user-dashboard {
                                 </div>
                                 <div class="text-right">
                                     <small class="text-muted font-weight-bold d-block text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Net Available Balance</small>
-                                    <span class="font-weight-bold text-primary" style="font-size: 17px;"><?php echo formatCurrency($userNetBal, $selectedCurrency); ?></span>
+                                    <span class="font-weight-bold text-primary" style="font-size: 17px;"><?php echo formatCurrencyFromINR($userNetBal, $selectedCurrency); ?></span>
                                 </div>
                             </div>
                         </div>
