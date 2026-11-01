@@ -1259,9 +1259,9 @@ function getUserActiveInvestmentTotal($userid, $pdoConnection = null) {
             $totPkg = (float)($uRow['total_package'] ?? 0);
             $bonusBal = (float)($uRow['bonus_30_wallet'] ?? 0);
             if ($actInv > 0) {
-                $totalRealUsd = $actInv;
+                $totalRealUsd = max(0.00, round($actInv - $bonusBal, 2));
                 $totalBonusUsd = $bonusBal;
-                $totalReturnBaseUsd = round($actInv + $bonusBal, 2);
+                $totalReturnBaseUsd = round($actInv, 2);
                 $totalInr = round($totalReturnBaseUsd * 90.0, 2);
             } elseif ($totPkg > 0) {
                 $totalRealUsd = function_exists('parseInputToUSD') ? parseInputToUSD($totPkg, 'INR', $db) : round($totPkg / 90.0, 2);
@@ -4552,7 +4552,7 @@ if (!function_exists('processAnantaPackageInvestment')) {
                 ':inr_pkg'       => $returnBaseInr,
                 ':cdate'         => $cDate,
                 ':ctime'         => $cTime,
-                ':lock_days'     => $lockMonths,
+                ':lock_days'     => round($lockMonths * 30.4),
                 ':capping'       => $incLimitCapping
             ]);
 
