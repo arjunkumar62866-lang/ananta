@@ -318,7 +318,7 @@ label.form-label, label {
                           <div class="px-3 py-2" style="background: #ffffff; border-radius: 14px; border: 1px solid rgba(2, 132, 199, 0.25); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
                               <span class="text-muted d-block" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Net Available Balance</span>
                               <span class="font-weight-bold" style="font-size: 18px; color: #0284c7; font-weight: 800;">
-                                  <?php echo formatCurrency($userBal, $selectedCurrency); ?>
+                                  <?php echo formatCurrencyFromINR($userBal, $selectedCurrency); ?>
                               </span>
                           </div>
                       </div>
@@ -398,7 +398,7 @@ label.form-label, label {
                           <div class="form-group mb-4">
                               <label for="amount">Withdrawal Amount ($ USD)</label>
                               <input type="number" step="0.01" min="10" class="form-control" id="amount" name="amount" placeholder="Enter amount (Minimum $10)" required <?php echo $isWithdrawalDisabled ? 'disabled' : ''; ?> style="height: 48px;" oninput="updateWithdrawalCalculationPreview()" onchange="updateWithdrawalCalculationPreview()">
-                              <small class="text-muted mt-1 d-block font-weight-bold">Available Net Balance: <?php echo formatCurrency($userBal, $selectedCurrency); ?></small>
+                              <small class="text-muted mt-1 d-block font-weight-bold">Available Net Balance: <?php echo formatCurrencyFromINR($userBal, $selectedCurrency); ?></small>
                               
                               <!-- Live Withdrawal Breakdown Preview (Total Requested, Applicable Charge & Final Payable) -->
                               <div class="p-3 mt-3" id="withdrawal_breakdown_card" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; box-shadow: 0 4px 12px rgba(15,23,42,0.03);">

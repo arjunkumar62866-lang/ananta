@@ -265,6 +265,7 @@ $walletsConfig = [
         'name' => 'Main Wallet',
         'key'  => 'deposite_wallet',
         'val'  => $mainWalletBal,
+        'is_inr' => false,
         'icon' => 'fa-wallet',
         'color' => '#0284c7'
     ],
@@ -272,6 +273,7 @@ $walletsConfig = [
         'name' => 'Net Balance',
         'key'  => 'amount',
         'val'  => (float)($row['amount'] ?? $row['net_balance'] ?? 0.00),
+        'is_inr' => true,
         'icon' => 'fa-balance-scale',
         'color' => '#0d9488'
     ],
@@ -279,6 +281,7 @@ $walletsConfig = [
         'name' => 'Active Investment',
         'key'  => 'active_investment',
         'val'  => $activeInvVal,
+        'is_inr' => false,
         'icon' => 'fa-line-chart',
         'color' => '#16a34a'
     ],
@@ -286,6 +289,7 @@ $walletsConfig = [
         'name' => 'All Withdrawal',
         'key'  => 'total_withdrawal',
         'val'  => $totalWdVal,
+        'is_inr' => false,
         'icon' => 'fa-arrow-circle-down',
         'color' => '#ef4444'
     ],
@@ -293,6 +297,7 @@ $walletsConfig = [
         'name' => 'Profit Income',
         'key'  => 'profit_income_wallet',
         'val'  => $piVal,
+        'is_inr' => true,
         'icon' => 'fa-money',
         'color' => '#8b5cf6'
     ],
@@ -300,6 +305,7 @@ $walletsConfig = [
         'name' => 'Profit Sharing',
         'key'  => 'profit_sharing_wallet',
         'val'  => $psVal,
+        'is_inr' => true,
         'icon' => 'fa-share-alt',
         'color' => '#ec4899'
     ],
@@ -307,6 +313,7 @@ $walletsConfig = [
         'name' => 'Direct Bonus',
         'key'  => 'direct_bonus_wallet',
         'val'  => $dbVal,
+        'is_inr' => true,
         'icon' => 'fa-gift',
         'color' => '#f59e0b'
     ],
@@ -314,6 +321,7 @@ $walletsConfig = [
         'name' => 'Mentor Income',
         'key'  => 'mentor_income_wallet',
         'val'  => $miVal,
+        'is_inr' => true,
         'icon' => 'fa-user-secret',
         'color' => '#6366f1'
     ],
@@ -321,6 +329,7 @@ $walletsConfig = [
         'name' => 'Rank Reward',
         'key'  => 'rank_reward_wallet',
         'val'  => $rrVal,
+        'is_inr' => true,
         'icon' => 'fa-trophy',
         'color' => '#eab308'
     ],
@@ -328,6 +337,7 @@ $walletsConfig = [
         'name' => 'VIP Club Income',
         'key'  => 'vip_club_wallet',
         'val'  => $vipVal,
+        'is_inr' => true,
         'icon' => 'fa-star',
         'color' => '#3b82f6'
     ],
@@ -335,6 +345,7 @@ $walletsConfig = [
         'name' => 'User Growth',
         'key'  => 'user_growth_wallet',
         'val'  => $userGrowthVal,
+        'is_inr' => true,
         'icon' => 'fa-level-up',
         'color' => '#10b981'
     ],
@@ -342,6 +353,7 @@ $walletsConfig = [
         'name' => 'Company Turnover Income',
         'key'  => 'company_turnover_wallet',
         'val'  => $ctVal,
+        'is_inr' => true,
         'icon' => 'fa-building',
         'color' => '#14b8a6'
     ]
@@ -852,7 +864,13 @@ body.ananta-admin-dashboard, body.bg-theme, body.bg-theme1 {
                                         <div class="mb-3">
                                             <div class="text-muted small text-uppercase font-weight-bold">Current Balance</div>
                                             <div class="h3 font-weight-bold mb-0" style="color: #0f172a;">
-                                                <?php echo formatCurrency($wMeta['val']); ?>
+                                                <?php 
+                                                if (!empty($wMeta['is_inr'])) {
+                                                    echo formatCurrencyFromINR($wMeta['val']);
+                                                } else {
+                                                    echo formatCurrency($wMeta['val']);
+                                                }
+                                                ?>
                                             </div>
                                         </div>
 
