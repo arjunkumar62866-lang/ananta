@@ -114,7 +114,17 @@ switch ($action) {
             exit;
         }
 
-        $data = calculateMentorMonthlyLegBusiness($mentor_id, $closing_month, $pdo);
+        $busMonthCandidate = date('Y-m', strtotime('-1 month', strtotime($closing_month . '-01')));
+        $chkBus = $pdo->prepare("
+            SELECT COUNT(*) FROM tbl_roi_one 
+            WHERE status = '0' 
+              AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+              AND (date LIKE :bm1 OR (STR_TO_DATE(date, '%Y-%m-%d') IS NOT NULL AND DATE_FORMAT(STR_TO_DATE(date, '%Y-%m-%d'), '%Y-%m') = :bm2))
+        ");
+        $chkBus->execute([':bm1' => $busMonthCandidate . '%', ':bm2' => $busMonthCandidate]);
+        $busMonth = ((int)$chkBus->fetchColumn() > 0) ? $busMonthCandidate : $closing_month;
+
+        $data = calculateMentorMonthlyLegBusiness($mentor_id, $busMonth, $pdo);
         echo json_encode([
             'status' => 'success',
             'data' => $data

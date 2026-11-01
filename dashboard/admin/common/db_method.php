@@ -2751,6 +2751,19 @@ function previewMentorIncomeMonthlyClosing($closing_month, $pdoConnection = null
     $fxRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : 90.0;
     if ($fxRate <= 0) $fxRate = 90.0;
 
+    // Determine qualifying business month:
+    // Monthly Profit Income in closing month (e.g. 2026-11) is earned on business of previous month (e.g. 2026-10).
+    // If the business month has active business, use it; otherwise fallback to closing month.
+    $busMonthCandidate = date('Y-m', strtotime('-1 month', strtotime($cMonth . '-01')));
+    $chkBus = $db->prepare("
+        SELECT COUNT(*) FROM tbl_roi_one 
+        WHERE status = '0' 
+          AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+          AND (date LIKE :bm1 OR (STR_TO_DATE(date, '%Y-%m-%d') IS NOT NULL AND DATE_FORMAT(STR_TO_DATE(date, '%Y-%m-%d'), '%Y-%m') = :bm2))
+    ");
+    $chkBus->execute([':bm1' => $busMonthCandidate . '%', ':bm2' => $busMonthCandidate]);
+    $businessMonth = ((int)$chkBus->fetchColumn() > 0) ? $busMonthCandidate : $cMonth;
+
     // 1. Identify Mentors with positive Profit Income in this closing month
     $canonicalPattern = "Monthly Profit Income ({$cMonth}%";
     $stmtMentors = $db->prepare("
@@ -2781,7 +2794,7 @@ function previewMentorIncomeMonthlyClosing($closing_month, $pdoConnection = null
         $mPoolInr = round($mProfitInr * ($rate / 100.0), 2);
         $mPoolUsd = round($mPoolInr / $fxRate, 2);
 
-        $legData = calculateMentorMonthlyLegBusiness($mId, $cMonth, $db);
+        $legData = calculateMentorMonthlyLegBusiness($mId, $businessMonth, $db);
 
         $mentorStatus = 'ELIGIBLE';
         $statusReason = 'Valid';
@@ -2792,7 +2805,7 @@ function previewMentorIncomeMonthlyClosing($closing_month, $pdoConnection = null
             $blockedMentorsCount++;
         } elseif ($legData['eligible_legs_count'] === 0) {
             $mentorStatus = 'NO_ELIGIBLE_LEGS';
-            $statusReason = 'No direct referral legs with qualifying business in ' . $cMonth;
+            $statusReason = 'No direct referral legs with qualifying business in ' . $businessMonth;
             $blockedMentorsCount++;
         } elseif ($legData['total_eligible_business_usd'] <= 0.00) {
             $mentorStatus = 'NO_ELIGIBLE_BUSINESS';

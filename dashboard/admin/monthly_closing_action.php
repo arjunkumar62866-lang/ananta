@@ -222,11 +222,21 @@ if ($action === 'preview') {
         }
 
         $activeRate = function_exists('getMentorIncomeRate') ? getMentorIncomeRate($closing_month, $pdo) : 2.00;
-        $legData = function_exists('calculateMentorMonthlyLegBusiness') ? calculateMentorMonthlyLegBusiness($uId, $closing_month, $pdo) : ['eligible_legs_count' => 0, 'legs' => []];
+        $busMonthCandidate = date('Y-m', strtotime('-1 month', strtotime($closing_month . '-01')));
+        $chkBus = $pdo->prepare("
+            SELECT COUNT(*) FROM tbl_roi_one 
+            WHERE status = '0' 
+              AND (capital_withdrawal_status IS NULL OR capital_withdrawal_status != 'WITHDRAWN')
+              AND (date LIKE :bm1 OR (STR_TO_DATE(date, '%Y-%m-%d') IS NOT NULL AND DATE_FORMAT(STR_TO_DATE(date, '%Y-%m-%d'), '%Y-%m') = :bm2))
+        ");
+        $chkBus->execute([':bm1' => $busMonthCandidate . '%', ':bm2' => $busMonthCandidate]);
+        $busMonth = ((int)$chkBus->fetchColumn() > 0) ? $busMonthCandidate : $closing_month;
+
+        $legData = function_exists('calculateMentorMonthlyLegBusiness') ? calculateMentorMonthlyLegBusiness($uId, $busMonth, $pdo) : ['eligible_legs_count' => 0, 'legs' => []];
 
         if (($legData['eligible_legs_count'] ?? 0) === 0 || ($legData['total_eligible_business_usd'] ?? 0.0) <= 0.0) {
             $mentor_blocked_count++;
-            $mentor_blocked_details[] = "Mentor {$uId}: No eligible direct legs with qualifying business in {$closing_month}.";
+            $mentor_blocked_details[] = "Mentor {$uId}: No eligible direct legs with qualifying business in {$busMonth}.";
             continue;
         }
 
