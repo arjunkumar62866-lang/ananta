@@ -891,7 +891,7 @@ $typeLabels = [
                         </span>
 
                         <h1 class="iw-hero-amount">
-                            <?php echo formatCurrency($incomeSummary['total_income_balance'], $selectedCurrency); ?>
+                            <?php echo formatCurrencyFromINR($incomeSummary['total_income_balance'], $selectedCurrency); ?>
                         </h1>
 
                         <div class="iw-hero-status">
@@ -941,7 +941,7 @@ $typeLabels = [
                     </div>
 
                     <h4 class="iw-income-amount">
-                        <?php echo formatCurrency($incomeSummary['profit_income'], $selectedCurrency); ?>
+                        <?php echo formatCurrencyFromINR($incomeSummary['profit_income'], $selectedCurrency); ?>
                     </h4>
 
                 </div>
@@ -989,7 +989,7 @@ $typeLabels = [
                     </div>
 
                     <h4 class="iw-income-amount">
-                        <?php echo formatCurrency($incomeSummary['direct_bonus'], $selectedCurrency); ?>
+                        <?php echo formatCurrencyFromINR($incomeSummary['direct_bonus'], $selectedCurrency); ?>
                     </h4>
 
                 </div>
@@ -1013,7 +1013,7 @@ $typeLabels = [
                     </div>
 
                     <h4 class="iw-income-amount">
-                        <?php echo formatCurrency($incomeSummary['mentor_income'], $selectedCurrency); ?>
+                        <?php echo formatCurrencyFromINR($incomeSummary['mentor_income'], $selectedCurrency); ?>
                     </h4>
 
                 </div>

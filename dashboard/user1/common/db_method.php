@@ -4297,7 +4297,7 @@ if (!function_exists('formatCurrencyFromINR')) {
     function formatCurrencyFromINR($amountInINR, $targetCurrency = null, $includeSymbol = true, $pdoConnection = null) {
         $curr = $targetCurrency ? strtoupper(trim($targetCurrency)) : getUserCurrency(null, $pdoConnection);
         $converted = convertCurrencyFromINR($amountInINR, $curr, $pdoConnection);
-        $symbol = $includeSymbol ? (getCurrencySymbol($curr) . ' ') : '';
+        $symbol = $includeSymbol ? getCurrencySymbol($curr) : '';
         return $symbol . number_format($converted, 2);
     }
 }

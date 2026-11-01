@@ -141,7 +141,7 @@ body.bg-theme1 {
                         <div>
                             <div class="p-3 bg-white border rounded-3 text-end shadow-sm">
                                 <span class="text-muted d-block text-uppercase fw-bold" style="font-size:11px;">Mentor Income Wallet</span>
-                                <span class="h4 fw-extrabold text-success mb-0"><?php echo $hmcurrency . " " . number_format((float)($mentor_income_display ?? 0), 2); ?></span>
+                                <span class="h4 fw-extrabold text-success mb-0"><?php echo formatCurrencyFromINR($mentor_income_display, $selectedCurrency); ?></span>
                             </div>
                         </div>
                     </div>
@@ -216,24 +216,24 @@ body.bg-theme1 {
                         render: (data) => '<span class="badge bg-light text-dark fw-bold border">' + data + '</span>'
                     },
                     {
-                        data: 'leg_monthly_business',
-                        render: (data) => '<span><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
+                        data: 'leg_monthly_business_fmt',
+                        render: (data, type, row) => '<span>' + (data || row.leg_monthly_business) + '</span>'
                     },
                     {
-                        data: 'total_eligible_legs_business',
-                        render: (data) => '<span style="color:#64748b;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
+                        data: 'total_eligible_legs_business_fmt',
+                        render: (data, type, row) => '<span style="color:#64748b;">' + (data || row.total_eligible_legs_business) + '</span>'
                     },
                     {
-                        data: 'total_mentor_income',
-                        render: (data) => '<span style="color:#9333ea; font-weight:700;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
+                        data: 'total_mentor_income_fmt',
+                        render: (data, type, row) => '<span style="color:#9333ea; font-weight:700;">' + (data || row.total_mentor_income) + '</span>'
                     },
                     {
                         data: 'contribution_percentage',
                         render: (data) => '<span class="badge bg-info text-white fw-bold">' + parseFloat(data || 0).toFixed(2) + '%</span>'
                     },
                     {
-                        data: 'payout_amount',
-                        render: (data) => '<span style="font-weight:800; color:#10b981;"><?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toLocaleString('en-IN', {minimumFractionDigits:2}) + '</span>'
+                        data: 'payout_amount_fmt',
+                        render: (data, type, row) => '<span style="font-weight:800; color:#10b981;">' + (data || row.payout_amount) + '</span>'
                     },
                     {
                         data: 'credited_at',
