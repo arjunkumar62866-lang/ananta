@@ -33,9 +33,14 @@ if (!empty($uid) && $tid > 0) {
             throw new Exception("Withdrawal request #{$tid} is ALREADY rejected/cancelled.");
         }
 
+        $fxRate = function_exists('getUSDToINRRate') ? getUSDToINRRate($pdo) : 90.0;
+        if ($fxRate <= 0) $fxRate = 90.0;
+
         $method = $txnRow['withdrawal_method'] ?? 'INR';
         $invId  = (int)($txnRow['api_txn_no'] ?? 0);
-        $refundAmt = ($tamt > 0) ? $tamt : (float)($txnRow['amount'] ?? 0);
+        // Gross requested amount in USD (act_amount stores gross USD; if 0 fallback to amount or $tamt)
+        $grossUsd = ((float)($txnRow['act_amount'] ?? 0) > 0) ? (float)$txnRow['act_amount'] : (($tamt > 0) ? $tamt : (float)($txnRow['amount'] ?? 0));
+        $refundAmtInr = round($grossUsd * $fxRate, 2);
 
         // Update transaction status & admin_remarks
         $updTxn = $pdo->prepare("UPDATE tbl_transaction SET a_status = '2', status = 2, subject = 'Cancel Withdrawal', admin_remarks = :rem WHERE id = :id");
@@ -56,15 +61,15 @@ if (!empty($uid) && $tid > 0) {
             $redirectPage = 'investment-withdraw-history.php?type=2';
 
         } else {
-            // Net Balance Withdrawal Rejection: Refund net balance wallet
+            // Net Balance Withdrawal Rejection: Refund net balance wallet in INR (matching the initial INR deduction)
             $updTxnType = $pdo->prepare("UPDATE tbl_transaction SET type = 'Credit' WHERE id = :id");
             $updTxnType->execute([':id' => $tid]);
 
             $updUser = $pdo->prepare("UPDATE user SET amount = amount + :amt WHERE userid = :uid");
-            $updUser->execute([':amt' => $refundAmt, ':uid' => $uid]);
+            $updUser->execute([':amt' => $refundAmtInr, ':uid' => $uid]);
 
-            $notifMsg = "Your withdrawal request #{$tid} of $" . number_format($refundAmt, 2) . " has been rejected/cancelled by Admin. Reason: " . $adminRemarks;
-            $alertMsg = "Withdrawal Request #{$tid} Rejected & $" . number_format($refundAmt, 2) . " Refunded to User Net Balance Successfully.";
+            $notifMsg = "Your withdrawal request #{$tid} of $" . number_format($grossUsd, 2) . " (₹" . number_format($refundAmtInr, 2) . ") has been rejected/cancelled by Admin. Reason: " . $adminRemarks;
+            $alertMsg = "Withdrawal Request #{$tid} Rejected & $" . number_format($grossUsd, 2) . " (₹" . number_format($refundAmtInr, 2) . ") Refunded to User Net Balance Successfully.";
             $redirectPage = 'withdraw-history.php?type=2';
         }
 

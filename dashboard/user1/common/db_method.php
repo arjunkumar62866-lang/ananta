@@ -4075,14 +4075,20 @@ function processUserWithdrawalRequest($userid, $withdrawalMethod, $amount, $txnK
             return ['status' => 'error', 'message' => 'BEP20 wallet address is missing in your Profile Settings. Please add your BEP20 address before requesting crypto withdrawal.'];
         }
 
-        $userBal = (float)$uRow['amount'];
-        if ($userBal < $amount) {
+        $rate = function_exists('getUSDToINRRate') ? getUSDToINRRate($db) : 90.0;
+        if ($rate <= 0) $rate = 90.0;
+
+        $userBalInr = (float)$uRow['amount'];
+        $userBalUsd = round($userBalInr / $rate, 2);
+
+        if ($userBalUsd < $amount) {
             if ($inLocalTxn) $db->rollBack();
-            return ['status' => 'error', 'message' => "Insufficient wallet balance ($" . number_format($userBal, 2) . "). Requested: $" . number_format($amount, 2)];
+            return ['status' => 'error', 'message' => "Insufficient wallet balance ($" . number_format($userBalUsd, 2) . " / ₹" . number_format($userBalInr, 2) . "). Requested: $" . number_format($amount, 2)];
         }
 
-        // Deduct full requested amount from user Net Balance
-        $db->prepare("UPDATE user SET amount = amount - :amt WHERE userid = :uid")->execute([':amt' => $amount, ':uid' => $userid]);
+        // Deduct requested amount (converted to INR) from user Net Balance (which is stored in INR)
+        $deductInr = round($amount * $rate, 2);
+        $db->prepare("UPDATE user SET amount = GREATEST(0, amount - :amt) WHERE userid = :uid")->execute([':amt' => $deductInr, ':uid' => $userid]);
 
         // Calculate applicable charge based on selected withdrawal method:
         // INR: 8% deduction (e.g. ₹10,000 withdrawal = ₹800 charge, net payable ₹9,200)
