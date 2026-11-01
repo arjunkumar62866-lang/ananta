@@ -965,7 +965,7 @@ $typeLabels = [
                     </div>
 
                     <h4 class="iw-income-amount">
-                        <?php echo formatCurrency($incomeSummary['profit_sharing'], $selectedCurrency); ?>
+                        <?php echo formatCurrencyFromINR($incomeSummary['profit_sharing'], $selectedCurrency); ?>
                     </h4>
 
                 </div>

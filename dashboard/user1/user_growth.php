@@ -59,7 +59,7 @@ $growth = getUserGrowthBreakdown($userid, $pdo);
                 <div class="card border-0 shadow-sm user-growth-hero-card" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important; border-radius: 18px; color: #ffffff !important;">
                     <div class="card-body p-3">
                         <span class="d-block small text-white-50 font-weight-bold uppercase mb-1" style="font-size: 11px;">2. Profit Sharing</span>
-                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrency($growth['profit_sharing']['total_balance'], $selectedCurrency); ?></h4>
+                        <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><?php echo formatCurrencyFromINR($growth['profit_sharing']['total_balance'], $selectedCurrency); ?></h4>
                     </div>
                 </div>
             </div>

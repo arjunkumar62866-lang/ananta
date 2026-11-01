@@ -342,7 +342,7 @@ table.ananta-custom-table tbody td {
                                 <div>
                                     <div class="px-3 py-2" style="background: #ffffff; border-radius: 14px; border: 1px solid rgba(13, 148, 136, 0.2); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
                                         <span class="text-muted d-block" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Total Profit Sharing</span>
-                                        <span class="font-weight-bold" style="font-size: 18px; color: #0d9488; font-weight: 800;"><?php echo $hmcurrency . " " . number_format($profit_sharing_total, 2); ?></span>
+                                        <span class="font-weight-bold" style="font-size: 18px; color: #0d9488; font-weight: 800;"><?php echo formatCurrencyFromINR($profit_sharing_total, $selectedCurrency); ?></span>
                                     </div>
                                 </div>
                             </div>
@@ -432,7 +432,10 @@ table.ananta-custom-table tbody td {
                 ajax: {
                     url: 'get_profit_sharing_income.php',
                     type: 'GET',
-                    data: { type: '' },
+                    data: { 
+                        type: '',
+                        currency: '<?php echo $selectedCurrency; ?>'
+                    },
                     dataSrc: ''
                 },
                 columns: [
@@ -442,7 +445,14 @@ table.ananta-custom-table tbody td {
                     },
                     { 
                         data: 'amount',
-                        render: (data) => '<span class="amount-badge">+ <?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toFixed(2) + '</span>'
+                        render: (data, type, row) => {
+                            if (row && row.formatted_amount) {
+                                return '<span class="amount-badge">+ ' + row.formatted_amount + '</span>';
+                            }
+                            let sym = (row && row.currency_symbol) ? row.currency_symbol : '<?php echo getCurrencySymbol($selectedCurrency); ?>';
+                            let val = (row && row.display_amount !== undefined) ? row.display_amount : data;
+                            return '<span class="amount-badge">+ ' + sym + ' ' + parseFloat(val || 0).toFixed(2) + '</span>';
+                        }
                     },
                     { 
                         data: 'level_num',
