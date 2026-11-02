@@ -700,7 +700,7 @@ label.form-label, label {
                                       <tr>
                                           <td class="font-weight-bold">#<?= $row['id']; ?></td>
                                           <td><span class="badge badge-info px-2 py-1"><?= htmlspecialchars($row['withdrawal_method'] ?: 'INR'); ?></span></td>
-                                          <td class="font-weight-bold text-dark">$<?= number_format((float)$row['amount'], 2); ?></td>
+                                          <td class="font-weight-bold text-dark"><?= formatCurrency((float)$row['amount'], $selectedCurrency); ?></td>
                                           <td><small class="text-muted font-weight-bold"><?= $row['created_date']; ?> <?= $row['time']; ?></small></td>
                                           <td><?= $stBadge; ?></td>
                                           <td class="small text-muted font-weight-semibold"><?= !empty($admRem) ? htmlspecialchars($admRem) : '—'; ?></td>
@@ -757,8 +757,8 @@ label.form-label, label {
                                       <tr>
                                           <td class="font-weight-bold">#<?= $cRow['id']; ?></td>
                                           <td class="font-weight-bold text-primary"><?= htmlspecialchars($cRow['package_name'] ?: $cRow['package_code'] ?: 'ANANTA'); ?></td>
-                                          <td class="font-weight-bold">$<?= number_format((float)$cRow['real_fund_usd'], 2); ?></td>
-                                          <td class="font-weight-bold text-success">$<?= number_format((float)$cRow['net_withdrawal_usd'], 2); ?></td>
+                                          <td class="font-weight-bold"><?= formatCurrency((float)$cRow['real_fund_usd'], $selectedCurrency); ?></td>
+                                          <td class="font-weight-bold text-success"><?= formatCurrency((float)$cRow['net_withdrawal_usd'], $selectedCurrency); ?></td>
                                           <td><small class="text-muted font-weight-bold"><?= substr($cRow['requested_at'] ?: $cRow['created_at'] ?: '', 0, 10); ?></small></td>
                                           <td><?= $cBadge; ?></td>
                                           <td class="small text-muted font-weight-semibold"><?= !empty($cRem) ? htmlspecialchars($cRem) : '—'; ?></td>

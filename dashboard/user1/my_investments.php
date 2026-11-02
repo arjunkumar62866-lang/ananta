@@ -325,11 +325,12 @@ table.dataTable.no-footer {
 
     <script>
         $(document).ready(function () {
+            let userCurrency = '<?php echo $selectedCurrency; ?>';
             let table = $('#usersTable').DataTable({
                 ajax: {
                     url: 'get_my_investments.php',
                     type: 'GET',
-                    data: { type: '' },
+                    data: { currency: userCurrency },
                     dataSrc: ''
                 },
                 columns: [
@@ -342,8 +343,14 @@ table.dataTable.no-footer {
                     },
                     { 
                         data: 'package',
-                        render: function(data) {
-                            return '<strong class="text-success" style="font-size: 15px;">₹' + parseFloat(data || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</strong>';
+                        render: function(data, type, row) {
+                            if (row && row.formatted_package) {
+                                return '<strong class="text-success" style="font-size: 15px;">' + row.formatted_package + '</strong>';
+                            }
+                            if (typeof window.formatCurrency === 'function' && row && row.real_fund_usd) {
+                                return '<strong class="text-success" style="font-size: 15px;">' + window.formatCurrency(row.real_fund_usd) + '</strong>';
+                            }
+                            return '<strong class="text-success" style="font-size: 15px;">' + (parseFloat(data || 0).toFixed(2)) + '</strong>';
                         }
                     },
                     { data: 'date' },

@@ -312,7 +312,7 @@ table.ananta-custom-table tbody td {
                                 <div>
                                     <div class="px-3 py-2" style="background: #ffffff; border-radius: 14px; border: 1px solid rgba(234, 179, 8, 0.25); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
                                         <span class="text-muted d-block" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Total Ranking Income</span>
-                                        <span class="font-weight-bold" style="font-size: 18px; color: #ca8a04; font-weight: 800;"><?php echo $hmcurrency . " " . number_format($ranking_income_total, 2); ?></span>
+                                        <span class="font-weight-bold" style="font-size: 18px; color: #ca8a04; font-weight: 800;"><?php echo formatCurrency($ranking_income_total, $selectedCurrency); ?></span>
                                     </div>
                                 </div>
                             </div>
@@ -396,11 +396,12 @@ table.ananta-custom-table tbody td {
 
     <script>
         $(document).ready(function () {
+            let userCurrency = '<?php echo $selectedCurrency; ?>';
             let table = $('#usersTable').DataTable({
                 ajax: {
                     url: 'get_ranking_income.php',
                     type: 'GET',
-                    data: { type: '' },
+                    data: { currency: userCurrency },
                     dataSrc: ''
                 },
                 columns: [
@@ -410,7 +411,15 @@ table.ananta-custom-table tbody td {
                     },
                     { 
                         data: 'amount',
-                        render: (data) => '<span class="amount-badge">+ <?php echo $hmcurrency; ?> ' + parseFloat(data || 0).toFixed(2) + '</span>'
+                        render: (data, type, row) => {
+                            if (row && row.formatted_amount) {
+                                return '<span class="amount-badge">+ ' + row.formatted_amount + '</span>';
+                            }
+                            if (typeof window.formatCurrency === 'function' && row) {
+                                return '<span class="amount-badge">+ ' + window.formatCurrency(row.amount_usd || data || 0) + '</span>';
+                            }
+                            return '<span class="amount-badge">+ <?php echo getCurrencySymbol($selectedCurrency); ?> ' + parseFloat(data || 0).toFixed(2) + '</span>';
+                        }
                     },
                     { 
                         data: 'subject',

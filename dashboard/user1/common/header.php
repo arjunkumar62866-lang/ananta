@@ -336,6 +336,48 @@ $news = $newsdata['news'];
       margin-bottom: 6px !important;
     }
   </style>
+
+  <!-- Global User Currency Configuration & Helpers -->
+  <script>
+    window.CURRENT_CURRENCY = "<?php echo $selectedCurrency; ?>";
+    window.USD_TO_INR_RATE = <?php echo getUSDToINRRate($pdo); ?>;
+
+    window.getUserCurrencySymbol = function(curr) {
+      var c = (curr || window.CURRENT_CURRENCY || 'USD').toUpperCase();
+      return c === 'INR' ? '₹' : '$';
+    };
+
+    window.convertUserCurrency = function(amountInUSD, targetCurrency) {
+      var amt = parseFloat(amountInUSD) || 0;
+      var c = (targetCurrency || window.CURRENT_CURRENCY || 'USD').toUpperCase();
+      if (c === 'INR') {
+        var rate = window.USD_TO_INR_RATE > 0 ? window.USD_TO_INR_RATE : 90;
+        return Math.round((amt * rate) * 100) / 100;
+      }
+      return Math.round(amt * 100) / 100;
+    };
+
+    window.formatCurrency = function(amountInUSD, targetCurrency, includeSymbol) {
+      if (typeof includeSymbol === 'undefined') includeSymbol = true;
+      var c = (targetCurrency || window.CURRENT_CURRENCY || 'USD').toUpperCase();
+      var converted = window.convertUserCurrency(amountInUSD, c);
+      var symbol = includeSymbol ? window.getUserCurrencySymbol(c) : '';
+      var locale = (c === 'INR') ? 'en-IN' : 'en-US';
+      var formatted = converted.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return symbol + formatted;
+    };
+
+    window.parseUserINRToUSD = function(amountInINR) {
+      var amt = parseFloat(amountInINR) || 0;
+      var rate = window.USD_TO_INR_RATE > 0 ? window.USD_TO_INR_RATE : 90;
+      return rate > 0 ? Math.round((amt / rate) * 100) / 100 : amt;
+    };
+
+    window.formatCurrencyFromINR = function(amountInINR, targetCurrency, includeSymbol) {
+      var usdEquivalent = window.parseUserINRToUSD(amountInINR);
+      return window.formatCurrency(usdEquivalent, targetCurrency, includeSymbol);
+    };
+  </script>
 </head>
 
 <?php if (!empty($_SESSION['lrc_warning_message'])):

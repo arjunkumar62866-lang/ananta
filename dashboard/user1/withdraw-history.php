@@ -370,32 +370,50 @@ table.dataTable.no-footer {
 
     <script>
         $(document).ready(function () {
+            let userCurrency = '<?php echo $selectedCurrency; ?>';
             let table = $('#usersTable').DataTable({
                 ajax: {
                     url: 'get_withdraw_history.php',
                     type: 'GET',
-                    data: { type: '' },
+                    data: { currency: userCurrency },
                     dataSrc: ''
                 },
                 columns: [
                     { data: null, render: (data, type, row, meta) => meta.row + 1 },
                     { 
-                        data: 'act_amount',
-                        render: function(data) {
-                            return '₹' + parseFloat(data || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        }
-                    },
-                    { 
-                        data: null,
+                        data: 'display_gross',
                         render: function(data, type, row) {
-                            let value = (row.act_amount || 0) - (row.amount || 0);
-                            return '₹' + parseFloat(value || 0).toFixed(2);
+                            if (row && row.formatted_gross) {
+                                return '<span class="font-weight-bold">' + row.formatted_gross + '</span>';
+                            }
+                            if (typeof window.formatCurrency === 'function' && row) {
+                                return '<span class="font-weight-bold">' + window.formatCurrency(row.gross_usd || row.act_amount || 0) + '</span>';
+                            }
+                            return '₹' + parseFloat(data || 0).toFixed(2);
                         }
                     },
                     { 
-                        data: 'amount',
-                        render: function(data) {
-                            return '<strong class="text-success">₹' + parseFloat(data || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</strong>';
+                        data: 'display_charge',
+                        render: function(data, type, row) {
+                            if (row && row.formatted_charge) {
+                                return '<span class="text-muted">' + row.formatted_charge + '</span>';
+                            }
+                            if (typeof window.formatCurrency === 'function' && row) {
+                                return '<span class="text-muted">' + window.formatCurrency(row.charge_usd || 0) + '</span>';
+                            }
+                            return '₹' + parseFloat(data || 0).toFixed(2);
+                        }
+                    },
+                    { 
+                        data: 'display_net',
+                        render: function(data, type, row) {
+                            if (row && row.formatted_net) {
+                                return '<strong class="text-success">' + row.formatted_net + '</strong>';
+                            }
+                            if (typeof window.formatCurrency === 'function' && row) {
+                                return '<strong class="text-success">' + window.formatCurrency(row.net_usd || row.amount || 0) + '</strong>';
+                            }
+                            return '<strong class="text-success">₹' + parseFloat(data || 0).toFixed(2) + '</strong>';
                         }
                     },
                     { 
