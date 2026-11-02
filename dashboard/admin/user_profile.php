@@ -146,9 +146,17 @@ if ($kycVal === 2 || $kycVal === 1) {
 // Fetch User Wallet Balances from Single Source of Truth
 $mainWalletBal = function_exists('getUserWalletBalance') ? getUserWalletBalance($targetUserId, $pdo) : (float)($row['deposite_wallet'] ?? $row['pin_wallet'] ?? 0.00);
 
+// Check if admin has made any adjustments for this user across wallets
+$adjustedWallets = [];
+try {
+    $stmtAdjCheck = $pdo->prepare("SELECT DISTINCT wallet_type FROM tbl_admin_audit_log WHERE target_user_id = :uid");
+    $stmtAdjCheck->execute([':uid' => $targetUserId]);
+    $adjustedWallets = $stmtAdjCheck->fetchAll(PDO::FETCH_COLUMN) ?: [];
+} catch (Exception $e) {}
+
 // 1. Profit Income
 $piVal = (float)($row['profit_income_wallet'] ?? 0.00);
-if ($piVal <= 0) {
+if ($piVal <= 0 && !in_array('profit_income_wallet', $adjustedWallets, true)) {
     try {
         $stmtPI = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid");
         $stmtPI->execute([':uid' => $targetUserId]);
@@ -158,7 +166,7 @@ if ($piVal <= 0) {
 
 // 2. Profit Sharing
 $psVal = (float)($row['profit_sharing_wallet'] ?? 0.00);
-if ($psVal <= 0) {
+if ($psVal <= 0 && !in_array('profit_sharing_wallet', $adjustedWallets, true)) {
     try {
         $stmtPS = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id = :uid");
         $stmtPS->execute([':uid' => $targetUserId]);
@@ -168,7 +176,7 @@ if ($psVal <= 0) {
 
 // 3. Direct Bonus
 $dbVal = (float)($row['direct_bonus_wallet'] ?? 0.00);
-if ($dbVal <= 0) {
+if ($dbVal <= 0 && !in_array('direct_bonus_wallet', $adjustedWallets, true)) {
     try {
         $stmtDB = $pdo->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
         $stmtDB->execute([':uid' => $targetUserId]);
@@ -183,7 +191,7 @@ if ($dbVal <= 0) {
 
 // 4. Mentor Income
 $miVal = (float)($row['mentor_income_wallet'] ?? 0.00);
-if ($miVal <= 0) {
+if ($miVal <= 0 && !in_array('mentor_income_wallet', $adjustedWallets, true)) {
     try {
         $stmtMI = $pdo->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id = :uid AND status = 'CREDITED'");
         $stmtMI->execute([':uid' => $targetUserId]);
@@ -193,7 +201,7 @@ if ($miVal <= 0) {
 
 // 5. Rank Reward
 $rrVal = (float)($row['rank_reward_wallet'] ?? 0.00);
-if ($rrVal <= 0) {
+if ($rrVal <= 0 && !in_array('rank_reward_wallet', $adjustedWallets, true)) {
     try {
         $stmtRR = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid");
         $stmtRR->execute([':uid' => $targetUserId]);
@@ -203,7 +211,7 @@ if ($rrVal <= 0) {
 
 // 6. VIP Club Income
 $vipVal = (float)($row['vip_club_wallet'] ?? 0.00);
-if ($vipVal <= 0) {
+if ($vipVal <= 0 && !in_array('vip_club_wallet', $adjustedWallets, true)) {
     try {
         $stmtVip1 = $pdo->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
         $stmtVip1->execute([':uid' => $targetUserId]);
@@ -219,7 +227,7 @@ if ($vipVal <= 0) {
 
 // 7. Company Turnover Income
 $ctVal = (float)($row['company_turnover_wallet'] ?? 0.00);
-if ($ctVal <= 0) {
+if ($ctVal <= 0 && !in_array('company_turnover_wallet', $adjustedWallets, true)) {
     try {
         $stmtCT = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Turnover%' OR subject LIKE '%Leadership%')");
         $stmtCT->execute([':uid' => $targetUserId]);
@@ -229,7 +237,7 @@ if ($ctVal <= 0) {
 
 // 8. Active Investment
 $activeInvVal = (float)($row['active_investment'] ?? 0.00);
-if ($activeInvVal <= 0) {
+if ($activeInvVal <= 0 && !in_array('active_investment', $adjustedWallets, true)) {
     try {
         $stmtInv = $pdo->prepare("SELECT COALESCE(SUM(real_fund_usd), 0), COALESCE(SUM(package), 0) FROM tbl_roi_one WHERE user_id = :uid AND status = '0'");
         $stmtInv->execute([':uid' => $targetUserId]);
@@ -248,7 +256,7 @@ if ($activeInvVal <= 0) {
 
 // 9. All Withdrawal
 $totalWdVal = (float)($row['total_withdrawal'] ?? 0.00);
-if ($totalWdVal <= 0) {
+if ($totalWdVal <= 0 && !in_array('total_withdrawal', $adjustedWallets, true)) {
     try {
         $stmtWd = $pdo->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Withdraw%' OR type = 'Withdrawal Request') AND status != 2 AND subject NOT LIKE 'Admin Adjustment%'");
         $stmtWd->execute([':uid' => $targetUserId]);
@@ -257,7 +265,12 @@ if ($totalWdVal <= 0) {
 }
 
 // 10. User Growth Total
-$userGrowthVal = round($piVal + $psVal + $dbVal + $miVal + $rrVal + $vipVal + $ctVal, 2);
+$ugStored = (float)($row['user_growth_wallet'] ?? 0.00);
+if ($ugStored > 0 || in_array('user_growth_wallet', $adjustedWallets, true)) {
+    $userGrowthVal = $ugStored;
+} else {
+    $userGrowthVal = round($piVal + $psVal + $dbVal + $miVal + $rrVal + $vipVal + $ctVal, 2);
+}
 
 // Map the 12 Wallets to DB columns / Real-Time Single Source of Truth
 $walletsConfig = [
@@ -877,12 +890,12 @@ body.ananta-admin-dashboard, body.bg-theme, body.bg-theme1 {
                                         <div class="d-flex gap-2">
                                             <button type="button" 
                                                     class="btn btn-wallet-credit flex-grow-1"
-                                                    onclick="openWalletModal('<?php echo $wMeta['key']; ?>', '<?php echo htmlspecialchars(addslashes($wMeta['name'])); ?>', 'CREDIT', <?php echo $wMeta['val']; ?>)">
+                                                    onclick="openWalletModal('<?php echo $wMeta['key']; ?>', '<?php echo htmlspecialchars(addslashes($wMeta['name'])); ?>', 'CREDIT', <?php echo $wMeta['val']; ?>, <?php echo !empty($wMeta['is_inr']) ? 'true' : 'false'; ?>)">
                                                 <i class="fa fa-plus-circle me-1"></i> CREDIT
                                             </button>
                                             <button type="button" 
                                                     class="btn btn-wallet-debit flex-grow-1"
-                                                    onclick="openWalletModal('<?php echo $wMeta['key']; ?>', '<?php echo htmlspecialchars(addslashes($wMeta['name'])); ?>', 'DEBIT', <?php echo $wMeta['val']; ?>)">
+                                                    onclick="openWalletModal('<?php echo $wMeta['key']; ?>', '<?php echo htmlspecialchars(addslashes($wMeta['name'])); ?>', 'DEBIT', <?php echo $wMeta['val']; ?>, <?php echo !empty($wMeta['is_inr']) ? 'true' : 'false'; ?>)">
                                                 <i class="fa fa-minus-circle me-1"></i> DEBIT
                                             </button>
                                         </div>
@@ -1169,7 +1182,7 @@ function formatActiveAdminCurrency(amountInActiveCurrency) {
     return symbol + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function openWalletModal(walletKey, walletName, actionType, currentBal) {
+function openWalletModal(walletKey, walletName, actionType, currentBal, isINR) {
     var activeCurr = (typeof window.ADMIN_CURRENCY !== 'undefined' && window.ADMIN_CURRENCY) ? window.ADMIN_CURRENCY : 'USD';
     var symbol = (typeof window.getAdminCurrencySymbol === 'function') ? window.getAdminCurrencySymbol() : (activeCurr === 'INR' ? '₹' : '$');
     
@@ -1179,11 +1192,30 @@ function openWalletModal(walletKey, walletName, actionType, currentBal) {
     $('#modalCurrencySymbol').text(symbol);
     $('#modalAmount').attr('placeholder', 'Enter amount in ' + activeCurr + ' > 0');
     
-    // Display balance in active currency
-    $('#modalCurrentBalance').val(formatAdminCurrency(currentBal));
-    rawCurrentBalUSD = parseFloat(currentBal) || 0;
-    var convBal = (typeof window.convertAdminCurrency === 'function') ? window.convertAdminCurrency(currentBal) : parseFloat(currentBal);
-    currentBalNum = parseFloat(convBal) || 0;
+    // Display balance correctly formatted from its native storage currency into the active admin viewing currency
+    var formattedBal = '';
+    var balInActiveCurr = 0;
+    var rawBal = parseFloat(currentBal) || 0;
+    var rate = (typeof window.USD_TO_INR_RATE !== 'undefined' && window.USD_TO_INR_RATE > 0) ? window.USD_TO_INR_RATE : 90.0;
+
+    if (isINR) {
+        if (typeof window.formatAdminCurrencyFromINR === 'function') {
+            formattedBal = window.formatAdminCurrencyFromINR(rawBal);
+        } else {
+            formattedBal = (activeCurr === 'INR') ? ('₹' + rawBal.toFixed(2)) : ('$' + (rawBal / rate).toFixed(2));
+        }
+        balInActiveCurr = (activeCurr === 'INR') ? rawBal : (rawBal / rate);
+    } else {
+        if (typeof window.formatAdminCurrency === 'function') {
+            formattedBal = window.formatAdminCurrency(rawBal);
+        } else {
+            formattedBal = (activeCurr === 'INR') ? ('₹' + (rawBal * rate).toFixed(2)) : ('$' + rawBal.toFixed(2));
+        }
+        balInActiveCurr = (activeCurr === 'INR') ? (rawBal * rate) : rawBal;
+    }
+
+    $('#modalCurrentBalance').val(formattedBal);
+    currentBalNum = parseFloat(balInActiveCurr) || 0;
 
     $('#modalAmount').val('');
     $('#modalReason').val('');

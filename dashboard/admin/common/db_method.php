@@ -4642,6 +4642,7 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
 
         } elseif ($isNetBalance) {
             // Net Balance operates ONLY on amount & net_balance (isolated from Main Wallet)
+            // Note: user.amount and user.net_balance are INR-denominated balances.
             $stmtUser = $db->prepare("SELECT userid, amount, net_balance FROM user WHERE userid = :userid OR userid = :clean OR userid = :prefixed FOR UPDATE");
             $stmtUser->execute([
                 ':userid'   => $target_user_id,
@@ -4656,33 +4657,36 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             }
 
             $target_user_id = $userRow['userid'];
-            $amtBal = (float)($userRow['amount'] ?? 0.00);
-            $netBal = (float)($userRow['net_balance'] ?? 0.00);
-            $prevBalUSD = max($amtBal, $netBal);
+            $amtBalINR = (float)($userRow['amount'] ?? 0.00);
+            $netBalINR = (float)($userRow['net_balance'] ?? 0.00);
+            $prevBalINR = max($amtBalINR, $netBalINR);
+            $prevBalUSD = round($prevBalINR / $rate, 2);
 
             if ($adjType === 'DEBIT') {
-                if ($prevBalUSD < $amountInUSD) {
+                if ($prevBalINR < ($amountInINR - 0.0001)) {
                     if ($inLocalTxn) $db->rollBack();
-                    $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalUSD * $rate, 2)) : ('$' . number_format($prevBalUSD, 2));
+                    $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalINR, 2)) : ('$' . number_format($prevBalUSD, 2));
                     return [
                         'status'  => 'error',
                         'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
                     ];
                 }
-                $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
+                $newBalINR = round(max(0, $prevBalINR - $amountInINR), 2);
+                $newBalUSD = round($newBalINR / $rate, 2);
                 $updStmt = $db->prepare("UPDATE user SET
-                    amount = GREATEST(0, amount - :amt),
-                    net_balance = GREATEST(0, net_balance - :amt)
+                    amount = GREATEST(0, CAST(amount AS DECIMAL(15,2)) - :amt),
+                    net_balance = GREATEST(0, CAST(net_balance AS DECIMAL(15,2)) - :amt)
                     WHERE userid = :userid");
+                $updStmt->execute([':amt' => $amountInINR, ':userid' => $target_user_id]);
             } else {
-                $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
+                $newBalINR = round($prevBalINR + $amountInINR, 2);
+                $newBalUSD = round($newBalINR / $rate, 2);
                 $updStmt = $db->prepare("UPDATE user SET
-                    amount = amount + :amt,
-                    net_balance = net_balance + :amt
+                    amount = CAST(amount AS DECIMAL(15,2)) + :amt,
+                    net_balance = CAST(net_balance AS DECIMAL(15,2)) + :amt
                     WHERE userid = :userid");
+                $updStmt->execute([':amt' => $amountInINR, ':userid' => $target_user_id]);
             }
-
-            $updStmt->execute([':amt' => $amountInUSD, ':userid' => $target_user_id]);
 
         } elseif ($isActiveInvestment) {
             // Active Investment operates on tbl_roi_one (source of truth) and synchronizes user.active_investment & user.total_package
@@ -4924,73 +4928,127 @@ function processUniversalAdminWalletAdjustment($admin_id, $target_user_id, $wall
             }
 
             $target_user_id = $userRow['userid'];
-            $prevBalUSD = (float)($userRow[$wallet_column] ?? 0.00);
+            $colVal = (float)($userRow[$wallet_column] ?? 0.00);
 
-            // Fallback for income wallets if user column is 0.00 but history has accumulated payouts
-            if ($prevBalUSD <= 0.00) {
-                if ($wallet_column === 'profit_income_wallet') {
-                    $stmtPI = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid");
-                    $stmtPI->execute([':uid' => $target_user_id]);
-                    $prevBalUSD = (float)$stmtPI->fetchColumn();
-                } elseif ($wallet_column === 'profit_sharing_wallet') {
-                    $stmtPS = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id = :uid");
-                    $stmtPS->execute([':uid' => $target_user_id]);
-                    $prevBalUSD = (float)$stmtPS->fetchColumn();
-                } elseif ($wallet_column === 'direct_bonus_wallet') {
-                    $stmtDB = $db->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
-                    $stmtDB->execute([':uid' => $target_user_id]);
-                    $dbVal = (float)$stmtDB->fetchColumn();
-                    if ($dbVal <= 0) {
-                        $stmtRoi2 = $db->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_two WHERE user_id = :uid");
-                        $stmtRoi2->execute([':uid' => $target_user_id]);
-                        $dbVal = (float)$stmtRoi2->fetchColumn();
-                    }
-                    $prevBalUSD = $dbVal;
-                } elseif ($wallet_column === 'mentor_income_wallet') {
-                    $stmtMI = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id = :uid AND status = 'CREDITED'");
-                    $stmtMI->execute([':uid' => $target_user_id]);
-                    $prevBalUSD = (float)$stmtMI->fetchColumn();
-                } elseif ($wallet_column === 'rank_reward_wallet') {
-                    $stmtRR = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid");
-                    $stmtRR->execute([':uid' => $target_user_id]);
-                    $prevBalUSD = (float)$stmtRR->fetchColumn();
-                } elseif ($wallet_column === 'vip_club_wallet') {
-                    $stmtVip1 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
-                    $stmtVip1->execute([':uid' => $target_user_id]);
-                    $v1 = (float)$stmtVip1->fetchColumn();
-                    $stmtVip2 = $db->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
-                    $stmtVip2->execute([':uid' => $target_user_id]);
-                    $v2 = (float)$stmtVip2->fetchColumn();
-                    $prevBalUSD = round($v1 + $v2, 2);
-                } elseif ($wallet_column === 'company_turnover_wallet') {
-                    $stmtCT = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Turnover%' OR subject LIKE '%Leadership%')");
-                    $stmtCT->execute([':uid' => $target_user_id]);
-                    $prevBalUSD = (float)$stmtCT->fetchColumn();
-                } elseif ($wallet_column === 'user_growth_wallet') {
-                    if (function_exists('getUserIncomeWalletSummary')) {
-                        $growthSummary = getUserIncomeWalletSummary($target_user_id, $db);
-                        $prevBalUSD = (float)($growthSummary['total_income_balance'] ?? 0.00);
-                    }
-                }
-                $prevBalUSD = round($prevBalUSD, 2);
-            }
+            // Determine if column is stored in INR or USD
+            // In the Ananta financial schema, income wallets and user growth are stored in INR:
+            $isInrWallet = in_array($wallet_column, [
+                'profit_income_wallet',
+                'profit_sharing_wallet',
+                'direct_bonus_wallet',
+                'mentor_income_wallet',
+                'rank_reward_wallet',
+                'vip_club_wallet',
+                'user_growth_wallet',
+                'company_turnover_wallet'
+            ], true);
 
-            if ($adjType === 'DEBIT') {
-                if ($prevBalUSD < $amountInUSD) {
-                    if ($inLocalTxn) $db->rollBack();
-                    $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalUSD * $rate, 2)) : ('$' . number_format($prevBalUSD, 2));
-                    return [
-                        'status'  => 'error',
-                        'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
-                    ];
+            if ($isInrWallet) {
+                $prevBalINR = $colVal;
+                // Fallback for income wallets if user column is 0.00 but history has accumulated payouts
+                if ($prevBalINR <= 0.00) {
+                    if ($wallet_column === 'profit_income_wallet') {
+                        $stmtPI = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_roiinc WHERE user_id = :uid");
+                        $stmtPI->execute([':uid' => $target_user_id]);
+                        $prevBalINR = (float)$stmtPI->fetchColumn();
+                    } elseif ($wallet_column === 'profit_sharing_wallet') {
+                        $stmtPS = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_daily_levelinc WHERE user_id = :uid");
+                        $stmtPS->execute([':uid' => $target_user_id]);
+                        $prevBalINR = (float)$stmtPS->fetchColumn();
+                    } elseif ($wallet_column === 'direct_bonus_wallet') {
+                        $stmtDB = $db->prepare("SELECT COALESCE(SUM(installment_amount), 0) FROM tbl_direct_bonus_schedule WHERE beneficiary_id = :uid AND status = 'CREDITED'");
+                        $stmtDB->execute([':uid' => $target_user_id]);
+                        $dbVal = (float)$stmtDB->fetchColumn();
+                        if ($dbVal <= 0) {
+                            $stmtRoi2 = $db->prepare("SELECT COALESCE(SUM(package), 0) FROM tbl_roi_two WHERE user_id = :uid");
+                            $stmtRoi2->execute([':uid' => $target_user_id]);
+                            $dbVal = (float)$stmtRoi2->fetchColumn();
+                        }
+                        $prevBalINR = $dbVal;
+                    } elseif ($wallet_column === 'mentor_income_wallet') {
+                        $stmtMI = $db->prepare("SELECT COALESCE(SUM(payout_amount), 0) FROM tbl_mentor_income_schedule WHERE direct_user_id = :uid AND status = 'CREDITED'");
+                        $stmtMI->execute([':uid' => $target_user_id]);
+                        $prevBalINR = (float)$stmtMI->fetchColumn();
+                    } elseif ($wallet_column === 'rank_reward_wallet') {
+                        $stmtRR = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_rewardinc WHERE user_id = :uid");
+                        $stmtRR->execute([':uid' => $target_user_id]);
+                        $prevBalINR = (float)$stmtRR->fetchColumn();
+                    } elseif ($wallet_column === 'vip_club_wallet') {
+                        $stmtVip1 = $db->prepare("SELECT COALESCE(SUM(reward_amount), 0) FROM tbl_vip_user_qualification WHERE user_id = :uid AND reward_status = 'CREDITED'");
+                        $stmtVip1->execute([':uid' => $target_user_id]);
+                        $v1 = (float)$stmtVip1->fetchColumn();
+                        $stmtVip2 = $db->prepare("SELECT COALESCE(SUM(total_payout), 0) FROM tbl_vip_monthly_schedule WHERE user_id = :uid AND status = 'CREDITED'");
+                        $stmtVip2->execute([':uid' => $target_user_id]);
+                        $v2 = (float)$stmtVip2->fetchColumn();
+                        $prevBalINR = round($v1 + $v2, 2);
+                    } elseif ($wallet_column === 'company_turnover_wallet') {
+                        $stmtCT = $db->prepare("SELECT COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) FROM tbl_transaction WHERE user_id = :uid AND (subject LIKE '%Turnover%' OR subject LIKE '%Leadership%')");
+                        $stmtCT->execute([':uid' => $target_user_id]);
+                        $prevBalINR = (float)$stmtCT->fetchColumn();
+                    } elseif ($wallet_column === 'user_growth_wallet') {
+                        if (function_exists('getUserIncomeWalletSummary')) {
+                            $growthSummary = getUserIncomeWalletSummary($target_user_id, $db);
+                            $prevBalINR = (float)($growthSummary['total_income_balance'] ?? 0.00);
+                        }
+                    }
+                    $prevBalINR = round($prevBalINR, 2);
                 }
-                $newBalUSD = round($prevBalUSD - $amountInUSD, 2);
-                $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = :new_bal WHERE userid = :userid");
-                $updStmt->execute([':new_bal' => $newBalUSD, ':userid' => $target_user_id]);
+
+                $prevBalUSD = round($prevBalINR / $rate, 2);
+
+                if ($adjType === 'DEBIT') {
+                    if ($prevBalINR < ($amountInINR - 0.0001)) {
+                        if ($inLocalTxn) $db->rollBack();
+                        $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalINR, 2)) : ('$' . number_format($prevBalUSD, 2));
+                        return [
+                            'status'  => 'error',
+                            'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
+                        ];
+                    }
+                    $newBalINR = round(max(0, $prevBalINR - $amountInINR), 2);
+                    $newBalUSD = round($newBalINR / $rate, 2);
+                    $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = :new_bal WHERE userid = :userid");
+                    $updStmt->execute([':new_bal' => $newBalINR, ':userid' => $target_user_id]);
+                } else {
+                    $newBalINR = round($prevBalINR + $amountInINR, 2);
+                    $newBalUSD = round($newBalINR / $rate, 2);
+                    $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = :new_bal WHERE userid = :userid");
+                    $updStmt->execute([':new_bal' => $newBalINR, ':userid' => $target_user_id]);
+                }
+
+                // If updating a sub-income wallet, also update or sync user_growth_wallet coherently
+                if ($wallet_column !== 'user_growth_wallet') {
+                    try {
+                        if ($adjType === 'DEBIT') {
+                            $db->prepare("UPDATE user SET user_growth_wallet = GREATEST(0, user_growth_wallet - :delta) WHERE userid = :uid")
+                               ->execute([':delta' => $amountInINR, ':uid' => $target_user_id]);
+                        } else {
+                            $db->prepare("UPDATE user SET user_growth_wallet = user_growth_wallet + :delta WHERE userid = :uid")
+                               ->execute([':delta' => $amountInINR, ':uid' => $target_user_id]);
+                        }
+                    } catch (Exception $eUg) {}
+                }
+
             } else {
-                $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
-                $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = :new_bal WHERE userid = :userid");
-                $updStmt->execute([':new_bal' => $newBalUSD, ':userid' => $target_user_id]);
+                // USD-based generic wallet
+                $prevBalUSD = $colVal;
+                if ($adjType === 'DEBIT') {
+                    if ($prevBalUSD < ($amountInUSD - 0.0001)) {
+                        if ($inLocalTxn) $db->rollBack();
+                        $dispPrev = ($currency === 'INR') ? ('₹' . number_format($prevBalUSD * $rate, 2)) : ('$' . number_format($prevBalUSD, 2));
+                        return [
+                            'status'  => 'error',
+                            'message' => "Insufficient balance in {$walletDisplayName}. Current: {$dispPrev}, Requested Debit: {$dispAmount}. Negative balance is blocked."
+                        ];
+                    }
+                    $newBalUSD = round(max(0, $prevBalUSD - $amountInUSD), 2);
+                    $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = :new_bal WHERE userid = :userid");
+                    $updStmt->execute([':new_bal' => $newBalUSD, ':userid' => $target_user_id]);
+                } else {
+                    $newBalUSD = round($prevBalUSD + $amountInUSD, 2);
+                    $updStmt = $db->prepare("UPDATE user SET `{$wallet_column}` = :new_bal WHERE userid = :userid");
+                    $updStmt->execute([':new_bal' => $newBalUSD, ':userid' => $target_user_id]);
+                }
             }
         }
 
