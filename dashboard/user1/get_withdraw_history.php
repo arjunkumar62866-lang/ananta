@@ -29,8 +29,22 @@ try {
     $stmt->execute([':userid' => $userid]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Fetch user's registered bank details from KYC
+    $stmtKyc = $pdo->prepare("SELECT holder_name, bank, ac_number, ifsc FROM kyc WHERE userid = :userid ORDER BY id DESC LIMIT 1");
+    $stmtKyc->execute([':userid' => $userid]);
+    $kycRow = $stmtKyc->fetch(PDO::FETCH_ASSOC) ?: [];
+    $userBankName   = trim($kycRow['bank'] ?? '');
+    $userAccNumber  = trim($kycRow['ac_number'] ?? '');
+    $userHolderName = trim($kycRow['holder_name'] ?? '');
+    $userIfsc       = trim($kycRow['ifsc'] ?? '');
+
     $formattedRows = [];
     foreach ($rows as $r) {
+        $r['bank']        = $userBankName;
+        $r['ac_number']   = $userAccNumber;
+        $r['holder_name'] = $userHolderName;
+        $r['ifsc']        = $userIfsc;
+
         $rawAct = isset($r['act_amount']) && $r['act_amount'] !== null && $r['act_amount'] !== '' ? (float)$r['act_amount'] : null;
         $rawAmt = isset($r['amount']) && $r['amount'] !== null && $r['amount'] !== '' ? (float)$r['amount'] : 0.0;
 

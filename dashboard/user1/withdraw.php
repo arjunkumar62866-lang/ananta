@@ -680,7 +680,7 @@ label.form-label, label {
                                   <thead>
                                       <tr>
                                           <th>#</th>
-                                          <th>Method</th>
+                                          <th>Method / Destination</th>
                                           <th>Amount</th>
                                           <th>Date & Time</th>
                                           <th>Status</th>
@@ -696,10 +696,16 @@ label.form-label, label {
                                                   ? '<span class="badge badge-danger px-2 py-1">REJECTED</span>' 
                                                   : '<span class="badge badge-warning text-dark px-2 py-1">PENDING</span>');
                                           $admRem = trim($row['admin_remarks'] ?? '');
+                                          $mth = strtoupper(trim($row['withdrawal_method'] ?? 'INR'));
                                       ?>
                                       <tr>
                                           <td class="font-weight-bold">#<?= $row['id']; ?></td>
-                                          <td><span class="badge badge-info px-2 py-1"><?= htmlspecialchars($row['withdrawal_method'] ?: 'INR'); ?></span></td>
+                                          <td>
+                                              <span class="badge badge-info px-2 py-1"><?= htmlspecialchars($row['withdrawal_method'] ?: 'INR'); ?></span>
+                                              <?php if ($mth === 'INR' && !empty($bankName)): ?>
+                                                  <div class="small text-muted font-weight-bold mt-1"><i class="fa fa-university text-primary mr-1"></i><?= htmlspecialchars($bankName); ?><?= !empty($bankAccNo) ? " (".substr($bankAccNo, -4).")" : ""; ?></div>
+                                              <?php endif; ?>
+                                          </td>
                                           <td class="font-weight-bold text-dark"><?= formatCurrency((float)$row['amount'], $selectedCurrency); ?></td>
                                           <td><small class="text-muted font-weight-bold"><?= $row['created_date']; ?> <?= $row['time']; ?></small></td>
                                           <td><?= $stBadge; ?></td>

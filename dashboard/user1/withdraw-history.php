@@ -321,6 +321,7 @@ table.dataTable.no-footer {
                                                 <th>Total Amount</th>
                                                 <th>TDS 5% + Admin 3%</th>
                                                 <th>Net Amount</th>
+                                                <th>Bank Details</th>
                                                 <th>Type</th>
                                                 <th>Date</th>
                                                 <th>Time</th>
@@ -414,6 +415,22 @@ table.dataTable.no-footer {
                                 return '<strong class="text-success">' + window.formatCurrency(row.net_usd || row.amount || 0) + '</strong>';
                             }
                             return '<strong class="text-success">₹' + parseFloat(data || 0).toFixed(2) + '</strong>';
+                        }
+                    },
+                    {
+                        data: 'bank',
+                        render: function(data, type, row) {
+                            let method = row.withdrawal_method || 'INR';
+                            if (method.toUpperCase() === 'BEP20' || method.toUpperCase() === 'USDT') {
+                                return '<span class="badge bg-light text-dark border px-2 py-1"><i class="fa fa-cube text-warning me-1"></i>BEP20 Crypto</span>';
+                            }
+                            if (data) {
+                                return `<div>
+                                    <span class="badge bg-light text-primary border px-2 py-1" style="font-weight: 700;"><i class="fa fa-university me-1"></i>${data}</span>
+                                    ${row.ac_number ? `<div class="small text-muted font-weight-bold mt-1" style="font-family: monospace;">A/C: ${row.ac_number}</div>` : ''}
+                                </div>`;
+                            }
+                            return '<span class="text-muted small">—</span>';
                         }
                     },
                     { 
