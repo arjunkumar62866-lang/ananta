@@ -89,11 +89,13 @@ foreach ($users as &$user) {
     $userBep20   = $uRow['bep20_address'] ?? '';
 
     // Fetch KYC data
-    $kycStmt = $pdo->prepare("SELECT holder_name, ac_number, ifsc, bit_coin FROM kyc WHERE userid = :userid LIMIT 1");
+    $kycStmt = $pdo->prepare("SELECT holder_name, bank, branch, ac_number, ifsc, bit_coin FROM kyc WHERE userid = :userid ORDER BY id DESC LIMIT 1");
     $kycStmt->execute(['userid' => $user['user_id']]);
     $kycData = $kycStmt->fetch(PDO::FETCH_ASSOC);
 
     $user['holder_name'] = $kycData['holder_name'] ?? '';
+    $user['bank']        = $kycData['bank'] ?? '';
+    $user['branch']      = $kycData['branch'] ?? '';
     $user['ac_number']   = $kycData['ac_number'] ?? '';
     $user['ifsc']        = $kycData['ifsc'] ?? '';
 

@@ -449,7 +449,8 @@ table.dataTable.no-footer {
                                         <th>R Amount</th>
                                         <th>Amount</th>
                                         <th>Type</th>
-                                        <th>Name</th>
+                                        <th>A/C Holder</th>
+                                        <th>Bank Name</th>
                                         <th>A/C No.</th>
                                         <th>IFSC</th>
                                         <th>Wallet Address</th>
@@ -557,9 +558,30 @@ table.dataTable.no-footer {
                         }
                     },
                     { data: 'type'},
-                    { data: 'holder_name' },
-                    { data: 'ac_number'},
-                    { data: 'ifsc' },
+                    { 
+                        data: 'holder_name',
+                        render: function (data) {
+                            return data ? `<span class="fw-bold text-dark">${data}</span>` : '—';
+                        }
+                    },
+                    { 
+                        data: 'bank',
+                        render: function (data) {
+                            return data ? `<span class="badge bg-light text-primary border px-2 py-1" style="font-size: 12px; font-weight: 700;"><i class="fa fa-university me-1"></i>${data}</span>` : '<span class="text-muted small">—</span>';
+                        }
+                    },
+                    { 
+                        data: 'ac_number',
+                        render: function (data) {
+                            return data ? `<span style="font-family: monospace; font-weight: 700; color: #0f172a;">${data}</span>` : '—';
+                        }
+                    },
+                    { 
+                        data: 'ifsc',
+                        render: function (data) {
+                            return data ? `<span style="font-family: monospace; font-weight: 600; color: #475569;">${data}</span>` : '—';
+                        }
+                    },
                     { data: 'bit_coin' },
                     {
                       data: 'a_status',
